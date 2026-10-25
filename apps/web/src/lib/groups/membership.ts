@@ -1,6 +1,6 @@
 // Joining, creating and leaving groups: the steps that touch more than one record.
 
-import type { Invitation } from '@malla/protocol';
+import type { Invitation } from '@teselia/protocol';
 
 import { deleteGroupEvents } from '../events/event-log.ts';
 import type { AppDb } from '../storage/app-db.ts';

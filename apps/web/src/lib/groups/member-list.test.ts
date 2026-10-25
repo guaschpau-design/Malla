@@ -1,5 +1,5 @@
-import { stateOf } from '@malla/core';
-import type { NodeId } from '@malla/protocol';
+import { stateOf } from '@teselia/core';
+import type { NodeId } from '@teselia/protocol';
 import { describe, expect, it } from 'vitest';
 
 import { memberRows } from './member-list.ts';

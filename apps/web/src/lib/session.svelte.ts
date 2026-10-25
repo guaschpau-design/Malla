@@ -1,7 +1,7 @@
 // Reactive view of who this device is and which groups it belongs to. Components read it and
 // call its methods; the rules live in identity/ and groups/, persistence in storage/.
 
-import type { Invitation } from '@malla/protocol';
+import type { Invitation } from '@teselia/protocol';
 
 import type { JoinOutcome, StoredGroup } from './groups/group.ts';
 import { getActiveGroupId, listGroups, setActiveGroupId } from './groups/group-store.ts';

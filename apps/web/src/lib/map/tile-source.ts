@@ -6,7 +6,7 @@ import { PMTiles } from 'pmtiles';
 import type { TileArchive } from './area-download.ts';
 import type { TileStore } from './tile-store.ts';
 
-const PROTOCOL = 'malla-tiles';
+const PROTOCOL = 'teselia-tiles';
 
 /** Tile URL template used by the map style. */
 export const TILE_URL_TEMPLATE = `${PROTOCOL}://basemap/{z}/{x}/{y}`;

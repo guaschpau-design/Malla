@@ -1,8 +1,8 @@
 # Architecture
 
-This document explains how Malla is put together: the pieces, what each one owns, and how they talk. Read it before changing code. Decisions and their reasons live in [`docs/decisions/`](docs/decisions/); the wire format lives in [`docs/protocol.md`](docs/protocol.md).
+This document explains how Teselia is put together: the pieces, what each one owns, and how they talk. Read it before changing code. Decisions and their reasons live in [`docs/decisions/`](docs/decisions/); the wire format lives in [`docs/protocol.md`](docs/protocol.md).
 
-> Malla is a provisional name. Product scope and goals are in [`docs/briefing.md`](docs/briefing.md) (Spanish).
+> Product scope and goals are in [`docs/briefing.md`](docs/briefing.md) (Spanish). The name was chosen in [ADR-0014](docs/decisions/0014-name-teselia.md).
 
 ## 1. The idea in one paragraph
 
@@ -95,7 +95,7 @@ The web app keeps a WebSocket to the active group's server; groups that are not 
 
 ### 4.2 LoRa (MeshCore)
 
-The web app connects to a MeshCore companion radio over Web Bluetooth (Chrome and Edge only), stores the group secret in one of the radio's channel slots, and sends each event's raw bytes as a **channel data datagram** with Malla's `data_type`. The radio floods it through the mesh and encrypts it with the channel key; other radios on the same channel deliver it to their apps. See [ADR-0006](docs/decisions/0006-meshcore-first-channel-datagrams.md).
+The web app connects to a MeshCore companion radio over Web Bluetooth (Chrome and Edge only), stores the group secret in one of the radio's channel slots, and sends each event's raw bytes as a **channel data datagram** with Teselia's `data_type`. The radio floods it through the mesh and encrypts it with the channel key; other radios on the same channel deliver it to their apps. See [ADR-0006](docs/decisions/0006-meshcore-first-channel-datagrams.md).
 
 LoRa is slow and legally limited to 10 % airtime in the EU 869.4–869.65 MHz sub-band, so outgoing LoRa traffic goes through a **scheduler** in `packages/core` that:
 
@@ -127,16 +127,16 @@ Command-post mode needs HTTPS on a local network, because browsers require a sec
 
 ## 6. Persistence
 
-| Where   | What                                                                                 | Technology                                                               |
-| ------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| Browser | Identity keys, groups, settings, each group's event log, the outbox and sync cursors | IndexedDB database `malla`                                               |
-| Browser | Offline map tiles, with the areas they belong to                                     | IndexedDB database `malla-map`, separate so it can be cleared on its own |
-| Server  | Encrypted envelopes per group, with retention limit                                  | SQLite through `node:sqlite`                                             |
-| Server  | Base map                                                                             | One PMTiles file, served as a static file with range requests            |
+| Where   | What                                                                                 | Technology                                                                 |
+| ------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| Browser | Identity keys, groups, settings, each group's event log, the outbox and sync cursors | IndexedDB database `teselia`                                               |
+| Browser | Offline map tiles, with the areas they belong to                                     | IndexedDB database `teselia-map`, separate so it can be cleared on its own |
+| Server  | Encrypted envelopes per group, with retention limit                                  | SQLite through `node:sqlite`                                               |
+| Server  | Base map                                                                             | One PMTiles file, served as a static file with range requests              |
 
 ## 7. Maps
 
-The base map is OpenStreetMap data rendered as vector tiles from a single PMTiles file that **we host**. The public OpenStreetMap tile servers forbid bulk downloading, so they cannot be used for offline maps. To prepare for an incident, the web app downloads every tile of an area, up to zoom 14, straight from that file and stores it in IndexedDB. MapLibre reads tiles through a `malla-tiles://` protocol that answers from IndexedDB first and the network second. Glyphs and sprites ship inside the app. See [ADR-0007](docs/decisions/0007-self-hosted-vector-maps.md) and [ADR-0011](docs/decisions/0011-client-side-area-download.md).
+The base map is OpenStreetMap data rendered as vector tiles from a single PMTiles file that **we host**. The public OpenStreetMap tile servers forbid bulk downloading, so they cannot be used for offline maps. To prepare for an incident, the web app downloads every tile of an area, up to zoom 14, straight from that file and stores it in IndexedDB. MapLibre reads tiles through a `teselia-tiles://` protocol that answers from IndexedDB first and the network second. Glyphs and sprites ship inside the app. See [ADR-0007](docs/decisions/0007-self-hosted-vector-maps.md) and [ADR-0011](docs/decisions/0011-client-side-area-download.md).
 
 ## 8. Security model
 

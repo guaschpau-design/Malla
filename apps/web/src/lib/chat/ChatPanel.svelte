@@ -1,7 +1,7 @@
 <!-- The active group's chat. -->
 <script lang="ts">
-  import type { GroupState } from '@malla/core';
-  import { CHAT_MAX_BYTES, utf8ByteLength, type NodeId } from '@malla/protocol';
+  import type { GroupState } from '@teselia/core';
+  import { CHAT_MAX_BYTES, utf8ByteLength, type NodeId } from '@teselia/protocol';
   import { tick } from 'svelte';
 
   import { formatTime } from '../format.ts';

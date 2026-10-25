@@ -17,15 +17,15 @@ const signal = new AbortController().signal;
 
 describe('tile loading', () => {
   it('prefers a downloaded tile over the network', async () => {
-    expect(await loadTile('malla-tiles://basemap/5/1/2', store, online, signal)).toBe(stored);
+    expect(await loadTile('teselia-tiles://basemap/5/1/2', store, online, signal)).toBe(stored);
   });
 
   it('falls back to the network for tiles not downloaded', async () => {
-    expect(await loadTile('malla-tiles://basemap/5/1/3', store, online, signal)).toBe(remote);
+    expect(await loadTile('teselia-tiles://basemap/5/1/3', store, online, signal)).toBe(remote);
   });
 
   it('returns an empty tile when offline instead of failing', async () => {
-    const tile = await loadTile('malla-tiles://basemap/5/1/3', store, offline, signal);
+    const tile = await loadTile('teselia-tiles://basemap/5/1/3', store, offline, signal);
     expect(tile.byteLength).toBe(0);
   });
 

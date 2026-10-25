@@ -1,8 +1,8 @@
 {
-  "name": "@malla/protocol",
+  "name": "@teselia/protocol",
   "version": "0.0.0",
   "private": true,
-  "description": "Malla wire format: event codec, group cryptography and invitations. Pure TypeScript, no I/O.",
+  "description": "Teselia wire format: event codec, group cryptography and invitations. Pure TypeScript, no I/O.",
   "license": "EUPL-1.2",
   "type": "module",
   "exports": {

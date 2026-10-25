@@ -1,5 +1,5 @@
-# Malla server image. Build from the repository root:
-#   docker build -f apps/server/Dockerfile -t malla-server .
+# Teselia server image. Build from the repository root:
+#   docker build -f apps/server/Dockerfile -t teselia-server .
 #
 # Node runs the TypeScript sources directly (type stripping), so there is no build step. The
 # workspace layout is kept because Node only strips types outside node_modules.
@@ -10,15 +10,15 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/protocol/package.json packages/protocol/
 COPY apps/server/package.json apps/server/
-RUN pnpm install --prod --frozen-lockfile --filter @malla/server...
+RUN pnpm install --prod --frozen-lockfile --filter @teselia/server...
 
 FROM node:24-slim
-LABEL org.opencontainers.image.title="Malla server" \
-      org.opencontainers.image.description="Zero-knowledge relay for Malla groups" \
+LABEL org.opencontainers.image.title="Teselia server" \
+      org.opencontainers.image.description="Zero-knowledge relay for Teselia groups" \
       org.opencontainers.image.licenses="EUPL-1.2"
 ENV NODE_ENV=production \
-    MALLA_DB=/data/malla.db \
-    MALLA_PORT=8080
+    TESELIA_DB=/data/teselia.db \
+    TESELIA_PORT=8080
 WORKDIR /app
 COPY --from=install /app ./
 COPY packages/protocol/src packages/protocol/src

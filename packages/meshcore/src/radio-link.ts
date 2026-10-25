@@ -1,4 +1,4 @@
-// The contract between Malla and a LoRa radio. Implemented for MeshCore on day 5 (ADR-0006).
+// The contract between Teselia and a LoRa radio. Implemented for MeshCore on day 5 (ADR-0006).
 
 export type RadioLinkState = 'disconnected' | 'connecting' | 'ready' | 'unsupported-firmware';
 

@@ -1,6 +1,6 @@
 # Instructions for AI assistants
 
-You are working on Malla, an open-source situational-awareness app. You do not remember previous sessions, so this file is how continuity works.
+You are working on Teselia, an open-source situational-awareness app. You do not remember previous sessions, so this file is how continuity works.
 
 At the start of every session, before writing code:
 

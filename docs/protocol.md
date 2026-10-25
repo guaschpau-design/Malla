@@ -1,6 +1,6 @@
-# Malla protocol, version 1
+# Teselia protocol, version 1
 
-This is the normative specification of everything Malla puts on the wire. It is written so that someone could build a compatible implementation without reading our code. When code and this document disagree, the document wins and the code is a bug — unless the pull request changes both.
+This is the normative specification of everything Teselia puts on the wire. It is written so that someone could build a compatible implementation without reading our code. When code and this document disagree, the document wins and the code is a bug — unless the pull request changes both.
 
 Keywords MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119.
 
@@ -213,12 +213,12 @@ Receivers MUST display unknown codes as neutral.
 
 A group is a 16-byte random **group secret** `S`, generated with a cryptographically secure random number generator. From it:
 
-| Value                 | Derivation                                                      | Size     |
-| --------------------- | --------------------------------------------------------------- | -------- |
-| Group ID              | `HKDF-SHA256(ikm = S, salt = "malla/v1", info = "group-id")`    | 16 bytes |
-| Content key           | `HKDF-SHA256(ikm = S, salt = "malla/v1", info = "content-key")` | 32 bytes |
-| Event-key MAC key     | `HKDF-SHA256(ikm = S, salt = "malla/v1", info = "event-key")`   | 32 bytes |
-| Event key of an event | `HMAC-SHA256(eventKeyMacKey, origin ‖ seq as u32)`, truncated   | 16 bytes |
+| Value                 | Derivation                                                        | Size     |
+| --------------------- | ----------------------------------------------------------------- | -------- |
+| Group ID              | `HKDF-SHA256(ikm = S, salt = "teselia/v1", info = "group-id")`    | 16 bytes |
+| Content key           | `HKDF-SHA256(ikm = S, salt = "teselia/v1", info = "content-key")` | 32 bytes |
+| Event-key MAC key     | `HKDF-SHA256(ikm = S, salt = "teselia/v1", info = "event-key")`   | 32 bytes |
+| Event key of an event | `HMAC-SHA256(eventKeyMacKey, origin ‖ seq as u32)`, truncated     | 16 bytes |
 
 Strings are ASCII. The group ID is public; the others are secret.
 
@@ -242,7 +242,7 @@ An invitation is a URL:
 {app-base-url}join#{token}
 ```
 
-`{app-base-url}` is the URL the web app is served from, ending in `/`: `https://app.example/` or, for an app served from a sub-path, `https://example.github.io/malla/`.
+`{app-base-url}` is the URL the web app is served from, ending in `/`: `https://app.example/` or, for an app served from a sub-path, `https://example.github.io/teselia/`.
 
 In this section a **secure URL** is an `https:` URL, or an `http:` URL whose host is `localhost`, `127.0.0.1` or `[::1]` (development only; these are the origins browsers treat as secure contexts).
 

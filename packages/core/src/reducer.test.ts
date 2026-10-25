@@ -1,4 +1,4 @@
-import type { ChatEvent, MallaEvent, NodeId, PositionEvent } from '@malla/protocol';
+import type { ChatEvent, TeseliaEvent, NodeId, PositionEvent } from '@teselia/protocol';
 import { describe, expect, it } from 'vitest';
 
 import { EMPTY_STATE, reduce, stateOf } from './reducer.ts';
@@ -27,7 +27,7 @@ const position = (origin: NodeId, seq: number, time: number, lat: number): Posit
   speed: null,
 });
 
-const EVENTS: readonly MallaEvent[] = [
+const EVENTS: readonly TeseliaEvent[] = [
   {
     type: 'member-info',
     origin: ALICE,
@@ -65,7 +65,7 @@ const EVENTS: readonly MallaEvent[] = [
 ];
 
 /** Every ordering of a few events, plus a few shuffles of all of them. */
-function* orderings(events: readonly MallaEvent[]): Generator<readonly MallaEvent[]> {
+function* orderings(events: readonly TeseliaEvent[]): Generator<readonly TeseliaEvent[]> {
   yield events;
   yield [...events].reverse();
   let seed = 7;
@@ -74,7 +74,7 @@ function* orderings(events: readonly MallaEvent[]): Generator<readonly MallaEven
     for (let i = shuffled.length - 1; i > 0; i--) {
       seed = (seed * 1_103_515_245 + 12_345) % 2 ** 31;
       const j = seed % (i + 1);
-      [shuffled[i], shuffled[j]] = [shuffled[j] as MallaEvent, shuffled[i] as MallaEvent];
+      [shuffled[i], shuffled[j]] = [shuffled[j] as TeseliaEvent, shuffled[i] as TeseliaEvent];
     }
     yield shuffled;
   }

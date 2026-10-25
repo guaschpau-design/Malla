@@ -1,4 +1,4 @@
-import type { Role } from '@malla/protocol';
+import type { Role } from '@teselia/protocol';
 
 import type { MessageKey } from '../i18n/index.ts';
 

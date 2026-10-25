@@ -32,9 +32,9 @@ export const en = {
   update: 'Update',
   readyOffline: 'The app is ready to work offline.',
 
-  welcomeTitle: 'Welcome to Malla',
+  welcomeTitle: 'Welcome to Teselia',
   welcomeIntro:
-    'Malla works without accounts. Choose the name your group will see. This device gets its own key, which never leaves it.',
+    'Teselia works without accounts. Choose the name your group will see. This device gets its own key, which never leaves it.',
   aliasLabel: 'Your name in the group',
   aliasHint: 'Short: a name or a nickname.',
   nameInvalid: 'Write a shorter name.',
@@ -47,7 +47,7 @@ export const en = {
   join: 'Join',
   notNow: 'Not now',
   invitationDamaged: 'This invitation is damaged or incomplete. Ask for a new one.',
-  notAnInvitation: 'That is not a Malla invitation.',
+  notAnInvitation: 'That is not a Teselia invitation.',
   joined: 'You joined “{group}”.',
   promoted: 'You now coordinate “{group}”.',
   alreadyMember: 'You already belong to “{group}”.',
@@ -78,7 +78,7 @@ export const en = {
   inviteTitle: 'Invite to “{group}”',
   inviteRole: 'They join as',
   inviteHowTo:
-    'The person you invite scans this code from Malla (Groups → Scan QR code) or with the phone camera. On iPhone, scan it from Malla.',
+    'The person you invite scans this code from Teselia (Groups → Scan QR code) or with the phone camera. On iPhone, scan it from Teselia.',
   inviteWarning:
     'Whoever has this code or link joins the group. Share it in person or through a channel you trust.',
   invitationNeedsHttps:

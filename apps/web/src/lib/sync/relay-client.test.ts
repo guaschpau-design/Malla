@@ -1,4 +1,4 @@
-import { encodeRelayMessage, parseClientMessage, type ServerMessage } from '@malla/protocol';
+import { encodeRelayMessage, parseClientMessage, type ServerMessage } from '@teselia/protocol';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RelayClient, type RelayStatus, type SocketLike } from './relay-client.ts';

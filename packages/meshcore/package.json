@@ -1,8 +1,8 @@
 {
-  "name": "@malla/meshcore",
+  "name": "@teselia/meshcore",
   "version": "0.0.0",
   "private": true,
-  "description": "Adapter between Malla and a MeshCore companion radio over Web Bluetooth.",
+  "description": "Adapter between Teselia and a MeshCore companion radio over Web Bluetooth.",
   "license": "EUPL-1.2",
   "type": "module",
   "exports": {

@@ -79,7 +79,7 @@ describe('relay messages', () => {
   });
 
   it('derives the WebSocket URL from the server base URL', () => {
-    expect(relayUrl('https://malla.example')).toBe('wss://malla.example/v1/ws');
+    expect(relayUrl('https://teselia.example')).toBe('wss://teselia.example/v1/ws');
     expect(relayUrl('https://example.org/relay/')).toBe('wss://example.org/relay/v1/ws');
     expect(relayUrl('http://localhost:8787')).toBe('ws://localhost:8787/v1/ws');
   });

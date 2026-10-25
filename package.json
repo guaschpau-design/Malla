@@ -1,5 +1,5 @@
 {
-  "name": "malla",
+  "name": "teselia",
   "private": true,
   "description": "Open-source situational awareness for European civil society, online and over LoRa mesh.",
   "license": "EUPL-1.2",
@@ -18,7 +18,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
-    "test:e2e": "pnpm --filter @malla/web test:e2e"
+    "test:e2e": "pnpm --filter @teselia/web test:e2e"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",

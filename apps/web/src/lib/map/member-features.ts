@@ -1,7 +1,7 @@
 // Members' latest positions as GeoJSON for the map.
 
-import type { GroupState } from '@malla/core';
-import type { NodeId } from '@malla/protocol';
+import type { GroupState } from '@teselia/core';
+import type { NodeId } from '@teselia/protocol';
 import type { Feature, FeatureCollection, Point } from 'geojson';
 
 /** A position older than this is drawn as stale. */

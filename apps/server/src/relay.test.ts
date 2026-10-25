@@ -5,7 +5,7 @@ import {
   parseServerMessage,
   type ClientMessage,
   type ServerMessage,
-} from '@malla/protocol';
+} from '@teselia/protocol';
 import type { FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';

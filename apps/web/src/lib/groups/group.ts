@@ -13,7 +13,7 @@ import {
   type NodeId,
   type RandomSource,
   type Role,
-} from '@malla/protocol';
+} from '@teselia/protocol';
 
 export interface StoredGroup {
   /** Group ID (protocol §5) in base64url: public, safe to use as a key and in logs. */

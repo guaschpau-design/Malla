@@ -32,9 +32,9 @@ export const es: Messages = {
   updateAvailable: 'Hay una versión nueva.',
   update: 'Actualizar',
   readyOffline: 'La app ya funciona sin conexión.',
-  welcomeTitle: 'Te damos la bienvenida a Malla',
+  welcomeTitle: 'Te damos la bienvenida a Teselia',
   welcomeIntro:
-    'Malla funciona sin cuentas. Elige el nombre que verá tu grupo. Este dispositivo recibe su propia clave, que nunca sale de él.',
+    'Teselia funciona sin cuentas. Elige el nombre que verá tu grupo. Este dispositivo recibe su propia clave, que nunca sale de él.',
   aliasLabel: 'Tu nombre en el grupo',
   aliasHint: 'Corto: un nombre o un apodo.',
   nameInvalid: 'Escribe un nombre más corto.',
@@ -48,7 +48,7 @@ export const es: Messages = {
   join: 'Unirme',
   notNow: 'Ahora no',
   invitationDamaged: 'Esta invitación está dañada o incompleta. Pide una nueva.',
-  notAnInvitation: 'Eso no es una invitación de Malla.',
+  notAnInvitation: 'Eso no es una invitación de Teselia.',
   joined: 'Te has unido a «{group}».',
   promoted: 'Ahora coordinas «{group}».',
   alreadyMember: 'Ya formas parte de «{group}».',
@@ -79,7 +79,7 @@ export const es: Messages = {
   inviteTitle: 'Invitar a «{group}»',
   inviteRole: 'Se une como',
   inviteHowTo:
-    'La persona invitada lo escanea desde Malla (Grupos → Escanear código QR) o con la cámara del móvil. En iPhone, mejor desde Malla.',
+    'La persona invitada lo escanea desde Teselia (Grupos → Escanear código QR) o con la cámara del móvil. En iPhone, mejor desde Teselia.',
   inviteWarning:
     'Quien tenga este código o este enlace entra en el grupo. Compártelo en persona o por un canal de confianza.',
   invitationNeedsHttps:

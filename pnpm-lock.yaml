@@ -47,7 +47,7 @@ importers:
       '@fastify/websocket':
         specifier: 11.3.4
         version: 11.3.4
-      '@malla/protocol':
+      '@teselia/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
       fastify:
@@ -63,15 +63,15 @@ importers:
 
   apps/web:
     dependencies:
-      '@malla/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@malla/protocol':
-        specifier: workspace:*
-        version: link:../../packages/protocol
       '@protomaps/basemaps':
         specifier: ^5.7.2
         version: 5.7.2
+      '@teselia/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@teselia/protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
       idb:
         specifier: ^8.0.4
         version: 8.0.4
@@ -118,7 +118,7 @@ importers:
 
   packages/core:
     dependencies:
-      '@malla/protocol':
+      '@teselia/protocol':
         specifier: workspace:*
         version: link:../protocol
 

@@ -1,7 +1,7 @@
 // Keeps one group's WebSocket to its server open (protocol §8): joins with the last cursor,
 // passes envelopes on in order and reconnects with back-off when the link drops.
 
-import { encodeRelayMessage, parseServerMessage, type ServerMessage } from '@malla/protocol';
+import { encodeRelayMessage, parseServerMessage, type ServerMessage } from '@teselia/protocol';
 
 /** The part of the browser's WebSocket the client uses, so tests can provide a fake. */
 export interface SocketLike {

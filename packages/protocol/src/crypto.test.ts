@@ -30,18 +30,18 @@ describe('group keys', () => {
   const keys = deriveGroupKeys(SECRET);
 
   it('derives the group ID, content key and event-key MAC key from the spec test vector', () => {
-    expect(toHex(keys.groupId)).toBe('1da5674088bd7533a22731aa66685a0b');
+    expect(toHex(keys.groupId)).toBe('56d82484aa9361a73f110b487b2a3bbc');
     expect(toHex(keys.contentKey)).toBe(
-      'f4726b615a5a2f0083689798e7b291e136e3ed7b6d99820a6c5dfe5f64336d13',
+      '14f1bee34e4893d3da95692379b7feb58951f059445f2d4e5f972c839c1810e4',
     );
     expect(toHex(keys.eventKeyMacKey)).toBe(
-      '12baf1649a004a2a4d25cfbf33ae36697a7d4349daca9e66c7c102363d6e74b7',
+      '3e793c7969f0e5e8e12bab2fe12fcb93c2e13251e39d5e0a440b5e1612559a61',
     );
   });
 
   it('computes event keys from the spec test vector', () => {
     expect(toHex(eventKey(keys, { origin: ALICE, seq: 1 }))).toBe(
-      'efeb7b19324ccd1259ad8ffaab3bf9ee',
+      '50cc4a0f2d7d3e86694f29fd07e0e33b',
     );
   });
 

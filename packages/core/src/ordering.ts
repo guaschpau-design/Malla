@@ -1,6 +1,6 @@
 // Last-writer-wins ordering (docs/protocol.md §3.10, ADR-0003).
 
-import type { EventHeader } from '@malla/protocol';
+import type { EventHeader } from '@teselia/protocol';
 
 /**
  * Orders events by (time, origin, seq). Returns a negative number if `a` is older than `b`,

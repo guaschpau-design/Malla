@@ -1,4 +1,4 @@
-import { toBase64url, type Invitation, type NodeId } from '@malla/protocol';
+import { toBase64url, type Invitation, type NodeId } from '@teselia/protocol';
 import { describe, expect, it } from 'vitest';
 
 import {

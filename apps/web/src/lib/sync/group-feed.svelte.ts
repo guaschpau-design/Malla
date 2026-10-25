@@ -1,7 +1,7 @@
 // The live picture of one group: its event log on this device, kept in sync with the group's
 // server, and the actions that add events to it. Components read `state` and `status`.
 
-import { EMPTY_STATE, reduce, type GroupState } from '@malla/core';
+import { EMPTY_STATE, reduce, type GroupState } from '@teselia/core';
 import {
   decodeEvent,
   deriveGroupKeys,
@@ -12,8 +12,8 @@ import {
   toBase64url,
   type EventHeader,
   type GroupKeys,
-  type MallaEvent,
-} from '@malla/protocol';
+  type TeseliaEvent,
+} from '@teselia/protocol';
 
 import {
   confirmStored,
@@ -127,7 +127,7 @@ export class GroupFeed {
     }));
   }
 
-  async #publish(build: (header: EventHeader) => MallaEvent): Promise<void> {
+  async #publish(build: (header: EventHeader) => TeseliaEvent): Promise<void> {
     const header = { origin: this.#identity.nodeId, time: Math.floor(Date.now() / 1000) };
     const { entry, bytes } = await publishEvent(this.#db, this.#group.id, build, header);
     this.#apply(bytes);

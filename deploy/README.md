@@ -15,10 +15,10 @@ The server runs on any Debian or Ubuntu VPS with a domain pointing to it ([ADR-0
 
    ```sh
    curl -fsSL https://raw.githubusercontent.com/guaschpau-design/Malla/main/deploy/vps/install.sh \
-     | sudo bash -s -- --domain malla.example.eu
+     | sudo bash -s -- --domain teselia.example.eu
    ```
 
-3. Use `https://malla.example.eu` as the server when creating groups.
+3. Use `https://teselia.example.eu` as the server when creating groups.
 
 What [`vps/install.sh`](vps/install.sh) sets up:
 
@@ -29,17 +29,17 @@ What [`vps/install.sh`](vps/install.sh) sets up:
 | SSH        | `fail2ban` bans repeated failed logins; password logins are turned off if an SSH key is installed                   |
 | Containers | Docker with [`vps/compose.yaml`](vps/compose.yaml): the server (read-only, no capabilities, unprivileged) and Caddy |
 | HTTPS      | Caddy gets and renews a Let's Encrypt certificate ([`vps/Caddyfile`](vps/Caddyfile)); no access logs are kept       |
-| Updates    | A systemd timer pulls `ghcr.io/guaschpau-design/malla-server:latest` every 15 minutes and restarts what changed     |
+| Updates    | A systemd timer pulls `ghcr.io/guaschpau-design/teselia-server:latest` every 15 minutes and restarts what changed   |
 
 CI publishes that image after every green push to `main` (job `image`), for amd64 and arm64. Running the script again applies changes to `compose.yaml` or `Caddyfile` and is otherwise harmless.
 
 Useful commands on the VPS:
 
 ```sh
-cd /opt/malla
+cd /opt/teselia
 docker compose ps                   # what is running
 docker compose logs --tail 100      # recent logs
-systemctl list-timers malla-update  # when the next update check runs
+systemctl list-timers teselia-update  # when the next update check runs
 ```
 
 The same image runs a local command post on a laptop or Raspberry Pi (see ADR-0008); that setup arrives on day 6.

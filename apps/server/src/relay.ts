@@ -6,7 +6,7 @@ import {
   parseClientMessage,
   toBase64url,
   type ServerMessage,
-} from '@malla/protocol';
+} from '@teselia/protocol';
 import WebSocket from 'ws';
 
 import type { EnvelopeStore, StoredEnvelope } from './envelope-store.ts';

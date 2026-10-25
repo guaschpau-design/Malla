@@ -6,12 +6,12 @@
 
 import type {
   ChatEvent,
-  MallaEvent,
+  TeseliaEvent,
   MemberInfoEvent,
   NodeId,
   PositionEvent,
   PositionHiddenEvent,
-} from '@malla/protocol';
+} from '@teselia/protocol';
 
 import { compareEvents, newerOf } from './ordering.ts';
 
@@ -27,7 +27,7 @@ export interface GroupState {
 export const EMPTY_STATE: GroupState = { members: new Map(), positions: new Map(), chat: [] };
 
 /** The state after one more event. Returns `state` itself when nothing changes. */
-export function reduce(state: GroupState, event: MallaEvent): GroupState {
+export function reduce(state: GroupState, event: TeseliaEvent): GroupState {
   switch (event.type) {
     case 'member-info': {
       const members = latestPerOrigin(state.members, event);
@@ -55,13 +55,13 @@ export function reduce(state: GroupState, event: MallaEvent): GroupState {
 }
 
 /** The state of a set of events, in any order. */
-export function stateOf(events: Iterable<MallaEvent>): GroupState {
+export function stateOf(events: Iterable<TeseliaEvent>): GroupState {
   let state = EMPTY_STATE;
   for (const event of events) state = reduce(state, event);
   return state;
 }
 
-function latestPerOrigin<T extends MallaEvent>(
+function latestPerOrigin<T extends TeseliaEvent>(
   current: ReadonlyMap<NodeId, T>,
   event: T,
 ): ReadonlyMap<NodeId, T> {
@@ -71,7 +71,7 @@ function latestPerOrigin<T extends MallaEvent>(
 }
 
 /** Inserts keeping order; an event already present (same origin and seq) changes nothing. */
-function insertOrdered<T extends MallaEvent>(list: readonly T[], event: T): readonly T[] {
+function insertOrdered<T extends TeseliaEvent>(list: readonly T[], event: T): readonly T[] {
   let low = 0;
   let high = list.length;
   while (low < high) {
@@ -85,6 +85,6 @@ function insertOrdered<T extends MallaEvent>(list: readonly T[], event: T): read
   return [...list.slice(0, low), event, ...list.slice(low)];
 }
 
-function isSameEvent(a: MallaEvent, b: MallaEvent): boolean {
+function isSameEvent(a: TeseliaEvent, b: TeseliaEvent): boolean {
   return a.origin === b.origin && a.seq === b.seq;
 }

@@ -1,4 +1,4 @@
-import type { EventHeader, NodeId } from '@malla/protocol';
+import type { EventHeader, NodeId } from '@teselia/protocol';
 import { describe, expect, it } from 'vitest';
 
 import { compareEvents, newerOf } from './ordering.ts';

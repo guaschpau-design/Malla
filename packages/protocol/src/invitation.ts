@@ -75,7 +75,7 @@ export function decodeInvitationToken(token: string): Result<Invitation, Protoco
 
 /**
  * Builds `{appBaseUrl}join#{token}`. The base URL is where the app is served, ending in a slash:
- * `https://app.example/` or `https://example.github.io/malla/`.
+ * `https://app.example/` or `https://example.github.io/teselia/`.
  */
 export function buildInvitationUrl(
   appBaseUrl: string,

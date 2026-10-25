@@ -1,6 +1,6 @@
 <!-- First launch: the user picks an alias and the device creates its identity. -->
 <script lang="ts">
-  import { ALIAS_MAX_BYTES } from '@malla/protocol';
+  import { ALIAS_MAX_BYTES } from '@teselia/protocol';
 
   import type { Translate } from '../i18n/index.ts';
   import Dialog from '../ui/Dialog.svelte';

@@ -1,6 +1,6 @@
 <!-- Confirms joining the group of an invitation the app was opened with or that was scanned. -->
 <script lang="ts">
-  import type { Invitation } from '@malla/protocol';
+  import type { Invitation } from '@teselia/protocol';
 
   import type { Translate } from '../i18n/index.ts';
   import Dialog from '../ui/Dialog.svelte';

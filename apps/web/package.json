@@ -1,8 +1,8 @@
 {
-  "name": "@malla/web",
+  "name": "@teselia/web",
   "version": "0.0.0",
   "private": true,
-  "description": "Malla progressive web app.",
+  "description": "Teselia progressive web app.",
   "license": "EUPL-1.2",
   "type": "module",
   "scripts": {
@@ -13,8 +13,8 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@malla/core": "workspace:*",
-    "@malla/protocol": "workspace:*",
+    "@teselia/core": "workspace:*",
+    "@teselia/protocol": "workspace:*",
     "@protomaps/basemaps": "^5.7.2",
     "idb": "^8.0.4",
     "jsqr": "1.4.0",

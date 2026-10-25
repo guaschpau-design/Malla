@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { GroupState } from '@malla/core';
-  import type { NodeId } from '@malla/protocol';
+  import type { GroupState } from '@teselia/core';
+  import type { NodeId } from '@teselia/protocol';
 
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import { memberRows, type PositionStatus } from './member-list.ts';

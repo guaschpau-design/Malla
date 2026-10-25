@@ -1,7 +1,7 @@
 <!-- Draws the group's members on the map. Survives restyling (theme or language changes). -->
 <script lang="ts">
-  import type { GroupState } from '@malla/core';
-  import type { NodeId } from '@malla/protocol';
+  import type { GroupState } from '@teselia/core';
+  import type { NodeId } from '@teselia/protocol';
   import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl';
   import { onMount } from 'svelte';
 
@@ -15,7 +15,7 @@
 
   let { map, groupState, self }: Props = $props();
 
-  const SOURCE = 'malla-members';
+  const SOURCE = 'teselia-members';
   /** Stale markers are re-evaluated this often even when no event arrives. */
   const REFRESH_MS = 30_000;
   let now = $state(Date.now() / 1000);

@@ -1,4 +1,4 @@
-# Malla
+# Teselia
 
 **Consciencia situacional libre para la sociedad civil europea.** Un mapa compartido en tiempo real donde un grupo ve a sus miembros, se comunica y marca lo que ocurre sobre el terreno, con internet o sin él, a través de radios LoRa MeshCore.
 
@@ -6,7 +6,7 @@
 
 > Estado: en desarrollo, hacia la v0.1. · Status: in development, towards v0.1.
 >
-> _Malla_ es un nombre provisional. · _Malla_ is a provisional name.
+> El nombre viene de las **teselas**, las piezas de un mosaico y de un mapa digital: muchas pequeñas que solo juntas forman la imagen. · The name comes from **tesserae**: the small tiles of a mosaic, and of a digital map.
 
 **Pruébala · Try it:** <https://guaschpau-design.github.io/Malla/> — se publica sola con cada cambio que pasa las pruebas · published automatically on every change that passes CI.
 

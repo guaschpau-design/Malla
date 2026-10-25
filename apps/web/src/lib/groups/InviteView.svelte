@@ -1,6 +1,6 @@
 <!-- Shows a coordinator the invitation to a group as a QR code and a link. -->
 <script lang="ts">
-  import type { NodeId, Role } from '@malla/protocol';
+  import type { NodeId, Role } from '@teselia/protocol';
 
   import type { Translate } from '../i18n/index.ts';
   import QrCode from '../ui/QrCode.svelte';

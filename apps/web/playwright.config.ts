@@ -28,7 +28,7 @@ export default defineConfig({
     },
     {
       // The relay server, with its database in memory so every run starts empty.
-      command: `MALLA_PORT=${SERVER_PORT} MALLA_DB=:memory: node ../server/src/main.ts`,
+      command: `TESELIA_PORT=${SERVER_PORT} TESELIA_DB=:memory: node ../server/src/main.ts`,
       url: `http://localhost:${SERVER_PORT}/healthz`,
       reuseExistingServer: false,
       timeout: 30_000,

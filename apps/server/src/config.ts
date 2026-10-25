@@ -11,10 +11,10 @@ export interface ServerConfig {
 
 export function readConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
   return {
-    host: env['MALLA_HOST'] ?? '0.0.0.0',
-    port: integer(env, 'MALLA_PORT', 8080, 1, 65535),
-    databasePath: env['MALLA_DB'] ?? 'data/malla.db',
-    retentionDays: integer(env, 'MALLA_RETENTION_DAYS', 30, 1, 3650),
+    host: env['TESELIA_HOST'] ?? '0.0.0.0',
+    port: integer(env, 'TESELIA_PORT', 8080, 1, 65535),
+    databasePath: env['TESELIA_DB'] ?? 'data/teselia.db',
+    retentionDays: integer(env, 'TESELIA_RETENTION_DAYS', 30, 1, 3650),
   };
 }
 

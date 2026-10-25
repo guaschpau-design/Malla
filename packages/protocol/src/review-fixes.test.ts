@@ -6,11 +6,11 @@ import { fromBase64url, toBase64url } from './base64url.ts';
 import { decodeEvent, encodeEvent, peekHeader } from './codec.ts';
 import { MAX_EVENT_SIZE } from './constants.ts';
 import { deriveGroupKeys, sealEnvelope } from './crypto.ts';
-import type { MallaEvent, NodeId, ShapeEvent } from './events.ts';
+import type { TeseliaEvent, NodeId, ShapeEvent } from './events.ts';
 import { decodeInvitationToken, encodeInvitationToken, parseInvitationUrl } from './invitation.ts';
 import { ALICE, CAROL, T0 } from './test-helpers.ts';
 
-function encodeOrFail(event: MallaEvent): Uint8Array {
+function encodeOrFail(event: TeseliaEvent): Uint8Array {
   const result = encodeEvent(event);
   if (!result.ok) throw new Error(`encoding failed: ${result.error.detail}`);
   return result.value;
@@ -29,7 +29,7 @@ const polygonAt = (points: ShapeEvent['geometry']): ShapeEvent => ({
 
 describe('text fields', () => {
   it('keeps a leading byte-order mark instead of silently dropping it', () => {
-    const event: MallaEvent = { type: 'chat', origin: ALICE, seq: 1, time: T0, text: '﻿hi' };
+    const event: TeseliaEvent = { type: 'chat', origin: ALICE, seq: 1, time: T0, text: '﻿hi' };
     expect(decodeEvent(encodeOrFail(event))).toEqual({ ok: true, value: event });
   });
 });
@@ -82,7 +82,7 @@ describe('polygon closure', () => {
 
 describe('member info', () => {
   const publicKey = Uint8Array.from({ length: 32 }, (_, i) => i);
-  const member: MallaEvent = {
+  const member: TeseliaEvent = {
     type: 'member-info',
     origin: CAROL,
     seq: 1,
@@ -138,7 +138,7 @@ describe('reserved values and unknown types', () => {
 
 describe('input validation', () => {
   it('refuses a malformed node ID instead of encoding zeros', () => {
-    const event: MallaEvent = {
+    const event: TeseliaEvent = {
       type: 'position-hidden',
       origin: 'zz' as NodeId,
       seq: 1,
@@ -166,7 +166,7 @@ describe('invitation links', () => {
 
   it('accepts only https links whose last path segment is join', () => {
     expect(parseInvitationUrl(`https://app.example/join#${tokenText}`).ok).toBe(true);
-    expect(parseInvitationUrl(`https://app.example/malla/join#${tokenText}`).ok).toBe(true);
+    expect(parseInvitationUrl(`https://app.example/teselia/join#${tokenText}`).ok).toBe(true);
     expect(parseInvitationUrl(`http://app.example/join#${tokenText}`).ok).toBe(false);
     expect(parseInvitationUrl(`https://app.example/xjoin#${tokenText}`).ok).toBe(false);
     expect(parseInvitationUrl(`https://app.example/join/#${tokenText}`).ok).toBe(false);

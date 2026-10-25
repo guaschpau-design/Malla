@@ -1,6 +1,6 @@
 // Shared fixtures for this package's tests. Not exported from the package.
 
-import type { MallaEvent, NodeId } from './events.ts';
+import type { TeseliaEvent, NodeId } from './events.ts';
 
 export const ALICE = 'a1b2c3d4' as NodeId;
 export const BOB = '0f1e2d3c' as NodeId;
@@ -32,7 +32,7 @@ export function seededRandom(seed: number): (length: number) => Uint8Array {
 }
 
 /** One valid event of every type, with coordinates already at wire precision. */
-export const SAMPLE_EVENTS: readonly MallaEvent[] = [
+export const SAMPLE_EVENTS: readonly TeseliaEvent[] = [
   {
     type: 'member-info',
     origin: CAROL,

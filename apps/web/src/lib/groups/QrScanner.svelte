@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { parseInvitationUrl, type Invitation } from '@malla/protocol';
+  import { parseInvitationUrl, type Invitation } from '@teselia/protocol';
   import { onMount } from 'svelte';
 
   import type { Translate } from '../i18n/index.ts';

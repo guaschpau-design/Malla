@@ -1,8 +1,8 @@
 {
-  "name": "@malla/core",
+  "name": "@teselia/core",
   "version": "0.0.0",
   "private": true,
-  "description": "Malla application logic: event log, state reducer, outbox, LoRa scheduler and bridge. Pure TypeScript, no I/O.",
+  "description": "Teselia application logic: event log, state reducer, outbox, LoRa scheduler and bridge. Pure TypeScript, no I/O.",
   "license": "EUPL-1.2",
   "type": "module",
   "exports": {
@@ -12,6 +12,6 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@malla/protocol": "workspace:*"
+    "@teselia/protocol": "workspace:*"
   }
 }

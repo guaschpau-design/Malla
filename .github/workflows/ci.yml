@@ -28,7 +28,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @malla/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @teselia/web exec playwright install --with-deps chromium
       - run: pnpm test:e2e
       - uses: actions/upload-artifact@v7
         if: failure()
@@ -59,9 +59,9 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @malla/web build
+      - run: pnpm --filter @teselia/web build
         env:
-          MALLA_BASE: /${{ github.event.repository.name }}/
+          TESELIA_BASE: /${{ github.event.repository.name }}/
       # Static hosts cannot route /{base}/join to the app; GitHub Pages serves 404.html instead.
       - run: cp apps/web/dist/index.html apps/web/dist/404.html
       - uses: actions/upload-pages-artifact@v5
@@ -96,5 +96,5 @@ jobs:
           push: true
           labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           tags: |
-            ghcr.io/${{ github.repository_owner }}/malla-server:latest
-            ghcr.io/${{ github.repository_owner }}/malla-server:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/teselia-server:latest
+            ghcr.io/${{ github.repository_owner }}/teselia-server:${{ github.sha }}

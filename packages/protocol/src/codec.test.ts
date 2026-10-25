@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import { decodeEvent, encodeEvent } from './codec.ts';
 import { MAX_EVENT_SIZE } from './constants.ts';
-import type { MallaEvent, ShapeEvent } from './events.ts';
+import type { TeseliaEvent, ShapeEvent } from './events.ts';
 import { ALICE, BOB, hex, SAMPLE_EVENTS, seededRandom, T0, toHex } from './test-helpers.ts';
 
-function encodeOrFail(event: MallaEvent): Uint8Array {
+function encodeOrFail(event: TeseliaEvent): Uint8Array {
   const result = encodeEvent(event);
   if (!result.ok) throw new Error(`encoding failed: ${result.error.detail}`);
   return result.value;
@@ -28,12 +28,12 @@ describe('event codec', () => {
   );
 
   it('matches the chat test vector computed independently from the spec', () => {
-    const event: MallaEvent = { type: 'chat', origin: ALICE, seq: 1, time: T0, text: 'Hola' };
+    const event: TeseliaEvent = { type: 'chat', origin: ALICE, seq: 1, time: T0, text: 'Hola' };
     expect(toHex(encodeOrFail(event))).toBe('0104a1b2c3d4010000000013fc68486f6c61');
   });
 
   it('matches the position test vector computed independently from the spec', () => {
-    const event: MallaEvent = {
+    const event: TeseliaEvent = {
       type: 'position',
       origin: ALICE,
       seq: 7,
@@ -51,7 +51,7 @@ describe('event codec', () => {
 
   describe('encoding limits', () => {
     it('accepts a chat text that fills the event exactly', () => {
-      const event: MallaEvent = {
+      const event: TeseliaEvent = {
         type: 'chat',
         origin: BOB,
         seq: 1,
@@ -62,7 +62,7 @@ describe('event codec', () => {
     });
 
     it('refuses a chat text one byte too long', () => {
-      const event: MallaEvent = {
+      const event: TeseliaEvent = {
         type: 'chat',
         origin: BOB,
         seq: 1,
@@ -74,7 +74,7 @@ describe('event codec', () => {
     });
 
     it('counts text limits in UTF-8 bytes, not characters', () => {
-      const event: MallaEvent = {
+      const event: TeseliaEvent = {
         type: 'chat',
         origin: BOB,
         seq: 1,
@@ -85,12 +85,12 @@ describe('event codec', () => {
     });
 
     it('refuses sequence number 0', () => {
-      const event: MallaEvent = { type: 'position-hidden', origin: BOB, seq: 0, time: T0 };
+      const event: TeseliaEvent = { type: 'position-hidden', origin: BOB, seq: 0, time: T0 };
       expect(encodeEvent(event).ok).toBe(false);
     });
 
     it('saturates huge measurements below the unknown marker', () => {
-      const event: MallaEvent = {
+      const event: TeseliaEvent = {
         type: 'position',
         origin: BOB,
         seq: 1,

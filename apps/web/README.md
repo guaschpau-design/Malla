@@ -1,6 +1,6 @@
-# @malla/web
+# @teselia/web
 
-The Malla progressive web app: map and offline areas, identity and groups, the event log and its sync with the group's server, live positions and chat.
+The Teselia progressive web app: map and offline areas, identity and groups, the event log and its sync with the group's server, live positions and chat.
 
 | Path                        | Content                                                                                                                                      |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -25,7 +25,7 @@ The Malla progressive web app: map and offline areas, identity and groups, the e
 | ------------------ | ------------------------------------------------------------------------------ |
 | `VITE_BASEMAP_URL` | PMTiles base map. Defaults to the Protomaps demo archive, for development only |
 | `VITE_SERVER_URL`  | Server proposed for new groups; empty for none                                 |
-| `MALLA_BASE`       | Base path when served from a sub-folder, e.g. `/Malla/` on GitHub Pages        |
+| `TESELIA_BASE`     | Base path when served from a sub-folder, e.g. `/Teselia/` on GitHub Pages      |
 
 ```sh
 pnpm dev        # development server

@@ -16,7 +16,7 @@ const invitation: Invitation = {
   secret: Uint8Array.from({ length: 16 }, (_, i) => 255 - i),
   issuer: ALICE,
   groupName: 'Agrupación Voluntarios',
-  server: 'https://malla.example.eu',
+  server: 'https://teselia.example.eu',
 };
 
 describe('base64url', () => {
@@ -57,7 +57,7 @@ describe('invitations', () => {
   });
 
   it('puts the secret in the URL fragment, which browsers never send to servers', () => {
-    const url = buildInvitationUrl('https://app.malla.eu/', invitation);
+    const url = buildInvitationUrl('https://app.teselia.eu/', invitation);
     expect(url.ok).toBe(true);
     if (!url.ok) return;
     const parsed = new URL(url.value);
@@ -67,14 +67,14 @@ describe('invitations', () => {
   });
 
   it('builds the link under the base path of an app served from a sub-path', () => {
-    const url = buildInvitationUrl('https://example.github.io/malla/', invitation);
-    expect(url.ok && new URL(url.value).pathname).toBe('/malla/join');
+    const url = buildInvitationUrl('https://example.github.io/teselia/', invitation);
+    expect(url.ok && new URL(url.value).pathname).toBe('/teselia/join');
     expect(url.ok && parseInvitationUrl(url.value)).toEqual({ ok: true, value: invitation });
   });
 
   it('refuses an app base URL that is not https or does not end in a slash', () => {
-    expect(buildInvitationUrl('http://app.malla.eu/', invitation).ok).toBe(false);
-    expect(buildInvitationUrl('https://example.github.io/malla', invitation).ok).toBe(false);
+    expect(buildInvitationUrl('http://app.teselia.eu/', invitation).ok).toBe(false);
+    expect(buildInvitationUrl('https://example.github.io/teselia', invitation).ok).toBe(false);
   });
 
   it('refuses a server that is not https', () => {
@@ -88,7 +88,7 @@ describe('invitations', () => {
   });
 
   it('rejects links that are not invitations', () => {
-    expect(parseInvitationUrl('https://app.malla.eu/').ok).toBe(false);
+    expect(parseInvitationUrl('https://app.teselia.eu/').ok).toBe(false);
     expect(parseInvitationUrl('not a url').ok).toBe(false);
     expect(decodeInvitationToken('AAAA').ok).toBe(false);
   });

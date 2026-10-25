@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Installs a Malla server on a fresh Debian or Ubuntu VPS, hardened and updating itself.
+# Installs a Teselia server on a fresh Debian or Ubuntu VPS, hardened and updating itself.
 #
 #   curl -fsSL https://raw.githubusercontent.com/guaschpau-design/Malla/main/deploy/vps/install.sh \
-#     | sudo bash -s -- --domain malla.example.eu
+#     | sudo bash -s -- --domain teselia.example.eu
 #
 # Safe to run again: it converges to the same setup, which is also how configuration changes
 # in this folder reach an existing server. See deploy/README.md for what it does and why.
@@ -13,7 +13,7 @@ REPO_RAW="https://raw.githubusercontent.com/guaschpau-design/Malla"
 REF="main"
 DOMAIN=""
 SKIP_DNS_CHECK=false
-INSTALL_DIR="/opt/malla"
+INSTALL_DIR="/opt/teselia"
 
 usage() {
   echo "Usage: install.sh --domain DOMAIN [--ref GIT_REF] [--skip-dns-check]" >&2
@@ -60,7 +60,7 @@ APT::Periodic::Update-Package-Lists "1";
 APT::Periodic::Unattended-Upgrade "1";
 CONF
 # Kernel updates only take effect after a reboot; do it at night. Containers come back alone.
-cat > /etc/apt/apt.conf.d/52malla-reboot <<'CONF'
+cat > /etc/apt/apt.conf.d/52teselia-reboot <<'CONF'
 Unattended-Upgrade::Automatic-Reboot "true";
 Unattended-Upgrade::Automatic-Reboot-Time "04:00";
 CONF
@@ -75,7 +75,7 @@ ufw allow 443/udp >/dev/null
 ufw --force enable >/dev/null
 
 step "Blocking repeated failed SSH logins"
-cat > /etc/fail2ban/jail.d/malla.local <<'CONF'
+cat > /etc/fail2ban/jail.d/teselia.local <<'CONF'
 [DEFAULT]
 backend = systemd
 bantime = 1h
@@ -96,7 +96,7 @@ has_ssh_key() {
 if has_ssh_key; then
   # sshd keeps the first value it reads, and drop-ins are read in name order: "10-" goes before
   # cloud images' "50-cloud-init.conf", which turns passwords back on.
-  cat > /etc/ssh/sshd_config.d/10-malla.conf <<'CONF'
+  cat > /etc/ssh/sshd_config.d/10-teselia.conf <<'CONF'
 PasswordAuthentication no
 KbdInteractiveAuthentication no
 PermitRootLogin prohibit-password
@@ -120,31 +120,31 @@ https://download.docker.com/linux/$ID $VERSION_CODENAME stable" > /etc/apt/sourc
 fi
 systemctl enable --now docker >/dev/null
 
-step "Installing Malla in $INSTALL_DIR"
+step "Installing Teselia in $INSTALL_DIR"
 install -m 0755 -d "$INSTALL_DIR"
 for file in compose.yaml Caddyfile; do
   curl -fsSL "$REPO_RAW/$REF/deploy/vps/$file" -o "$INSTALL_DIR/$file"
 done
 cat > "$INSTALL_DIR/.env" <<CONF
-MALLA_DOMAIN=$DOMAIN
+TESELIA_DOMAIN=$DOMAIN
 CONF
 
-cat > /etc/systemd/system/malla-update.service <<'CONF'
+cat > /etc/systemd/system/teselia-update.service <<'CONF'
 [Unit]
-Description=Update Malla to the latest published version
+Description=Update Teselia to the latest published version
 After=docker.service network-online.target
 Wants=network-online.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=/opt/malla
+WorkingDirectory=/opt/teselia
 ExecStart=/usr/bin/docker compose pull --quiet
 ExecStart=/usr/bin/docker compose up --detach --remove-orphans
 ExecStart=/usr/bin/docker image prune --force
 CONF
-cat > /etc/systemd/system/malla-update.timer <<'CONF'
+cat > /etc/systemd/system/teselia-update.timer <<'CONF'
 [Unit]
-Description=Check for a new Malla version every 15 minutes
+Description=Check for a new Teselia version every 15 minutes
 
 [Timer]
 OnBootSec=5min
@@ -155,20 +155,20 @@ RandomizedDelaySec=2min
 WantedBy=timers.target
 CONF
 systemctl daemon-reload
-systemctl enable --now malla-update.timer >/dev/null
+systemctl enable --now teselia-update.timer >/dev/null
 
-step "Starting Malla"
+step "Starting Teselia"
 cd "$INSTALL_DIR"
 if ! docker compose pull --quiet; then
-  fail "could not download the Malla image. If the package on GitHub is private, make it public:
-github.com/guaschpau-design → Packages → malla-server → Package settings → Change visibility."
+  fail "could not download the Teselia image. If the package on GitHub is private, make it public:
+github.com/guaschpau-design → Packages → teselia-server → Package settings → Change visibility."
 fi
 docker compose up --detach --remove-orphans
 
 step "Waiting for https://$DOMAIN"
 for _ in $(seq 1 60); do
   if curl -fsS "https://$DOMAIN/healthz" >/dev/null 2>&1; then
-    printf '\n\033[32mMalla is running at https://%s\033[0m\n' "$DOMAIN"
+    printf '\n\033[32mTeselia is running at https://%s\033[0m\n' "$DOMAIN"
     echo "Use https://$DOMAIN as the server when creating a group."
     exit 0
   fi

@@ -1,12 +1,12 @@
 # Briefing del proyecto
 
-> Nombre provisional: **Malla**. El nombre definitivo se decidirá más adelante; está centralizado para poder cambiarlo con una búsqueda y sustitución.
+> Nombre: **Teselia** (antes, provisionalmente, Malla). Viene de las teselas: las piezas de un mosaico y de un mapa digital. Decisión en `docs/decisions/0014-name-teselia.md`.
 >
 > Estado: aprobado para desarrollo · Fecha: 25 de octubre de 2026 · Versión objetivo: v0.1
 
 ## 1. Qué es
 
-Malla es una aplicación libre, gratuita y de código abierto de **consciencia situacional para la sociedad civil europea**: un mapa compartido en tiempo real donde un grupo ve a sus miembros, se comunica y marca lo que ocurre sobre el terreno, **también cuando no hay internet**, gracias a las redes de radio LoRa (MeshCore y, más adelante, Meshtastic).
+Teselia es una aplicación libre, gratuita y de código abierto de **consciencia situacional para la sociedad civil europea**: un mapa compartido en tiempo real donde un grupo ve a sus miembros, se comunica y marca lo que ocurre sobre el terreno, **también cuando no hay internet**, gracias a las redes de radio LoRa (MeshCore y, más adelante, Meshtastic).
 
 Es la respuesta europea y abierta a lo que ATAK hace en Estados Unidos, con tres diferencias de principio:
 
@@ -161,7 +161,6 @@ El día 5 es el de más riesgo: la integración con la radio solo se valida con 
 
 | Cuestión                                                                                                           | Cuándo se decide                                                                       |
 | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| Nombre definitivo                                                                                                  | Antes de publicar la v0.1                                                              |
 | Registro de un identificador de aplicación (`data_type`) en MeshCore; mientras tanto usamos el rango de desarrollo | Al tener la v0.1 funcionando (MeshCore exige demostrar el proyecto antes de asignarlo) |
 | Fuente de mapas satélite para toda Europa con licencia libre                                                       | Al abordar mapas satélite                                                              |
 | Procedimiento de certificado HTTPS del puesto de mando                                                             | Día 6                                                                                  |

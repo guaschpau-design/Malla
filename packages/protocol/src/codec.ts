@@ -13,7 +13,7 @@ import {
   UNKNOWN_U16,
 } from './constants.ts';
 import { nodeIdFromPublicKey } from './crypto.ts';
-import type { EventHeader, MallaEvent, MemberInfoEvent } from './events.ts';
+import type { EventHeader, TeseliaEvent, MemberInfoEvent } from './events.ts';
 import {
   ALERT_LEVELS,
   ALERT_TEXT_MAX_BYTES,
@@ -43,7 +43,7 @@ export interface RawHeader extends EventHeader {
 }
 
 /** Encodes an event. Fails if a field is out of range or the result exceeds 165 bytes. */
-export function encodeEvent(event: MallaEvent): Result<Uint8Array, ProtocolError> {
+export function encodeEvent(event: TeseliaEvent): Result<Uint8Array, ProtocolError> {
   return catchFailure(() => {
     const writer = new ByteWriter();
     writeHeader(writer, event);
@@ -64,7 +64,7 @@ export function peekHeader(bytes: Uint8Array): Result<RawHeader, ProtocolError> 
 }
 
 /** Decodes an event. Never throws, whatever the input. */
-export function decodeEvent(bytes: Uint8Array): Result<MallaEvent, ProtocolError> {
+export function decodeEvent(bytes: Uint8Array): Result<TeseliaEvent, ProtocolError> {
   return catchFailure(() => {
     const reader = new ByteReader(bytes);
     const { typeCode, ...header } = readHeader(reader, bytes.length);
@@ -85,7 +85,7 @@ function catchFailure<T>(work: () => T): Result<T, ProtocolError> {
 
 // --- Header (§3.1) -----------------------------------------------------------------------
 
-function writeHeader(writer: ByteWriter, event: MallaEvent): void {
+function writeHeader(writer: ByteWriter, event: TeseliaEvent): void {
   if (event.seq < 1) throw new ProtocolFailure('invalid-value', 'seq must be at least 1');
   writer
     .u8(PROTOCOL_VERSION)
@@ -111,7 +111,7 @@ function readHeader(reader: ByteReader, totalLength: number): RawHeader {
   return { typeCode, origin, seq, time };
 }
 
-function typeKey(event: MallaEvent): keyof typeof EventTypeCode {
+function typeKey(event: TeseliaEvent): keyof typeof EventTypeCode {
   switch (event.type) {
     case 'member-info':
       return 'MEMBER_INFO';
@@ -140,7 +140,7 @@ function typeKey(event: MallaEvent): keyof typeof EventTypeCode {
 
 // --- Payloads (§3.3–§3.9) ----------------------------------------------------------------
 
-function writePayload(writer: ByteWriter, event: MallaEvent): void {
+function writePayload(writer: ByteWriter, event: TeseliaEvent): void {
   switch (event.type) {
     case 'member-info':
       checkMemberKey(event);
@@ -192,7 +192,7 @@ function writePayload(writer: ByteWriter, event: MallaEvent): void {
   }
 }
 
-function readPayload(reader: ByteReader, typeCode: number, header: EventHeader): MallaEvent {
+function readPayload(reader: ByteReader, typeCode: number, header: EventHeader): TeseliaEvent {
   switch (typeCode) {
     case EventTypeCode.MEMBER_INFO: {
       const role = enumValue(ROLES, reader.u8(), 'member');

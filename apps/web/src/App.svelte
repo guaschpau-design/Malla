@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Invitation, ProtocolError, Result } from '@malla/protocol';
+  import type { Invitation, ProtocolError, Result } from '@teselia/protocol';
   import type { Map as MapLibreMap } from 'maplibre-gl';
   import { onMount, untrack } from 'svelte';
 
@@ -159,7 +159,7 @@
 
 <div class="app">
   <header class="bar">
-    <span class="brand">Malla</span>
+    <span class="brand">Teselia</span>
     <span class="status" class:offline={!connection.online} role="status">
       <span class="dot" aria-hidden="true"></span>
       {connection.online ? t('online') : t('offline')}

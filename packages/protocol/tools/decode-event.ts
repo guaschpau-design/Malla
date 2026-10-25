@@ -1,6 +1,6 @@
 // Prints an encoded event as JSON, for debugging (ADR-0004).
 //
-//   pnpm --filter @malla/protocol decode 0104a1b2c3d4010000000013fc68486f6c61
+//   pnpm --filter @teselia/protocol decode 0104a1b2c3d4010000000013fc68486f6c61
 //
 // Accepts hex or base64url. Byte arrays are printed as hex.
 

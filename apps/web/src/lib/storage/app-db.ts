@@ -2,7 +2,7 @@
 // Map tiles live in a separate database (map/tile-store.ts) so they can be cleared without
 // touching anything else.
 
-import type { NodeId } from '@malla/protocol';
+import type { NodeId } from '@teselia/protocol';
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 
 import type { StoredGroup } from '../groups/group.ts';
@@ -42,7 +42,7 @@ export interface AppSchema extends DBSchema {
 
 export type AppDb = IDBPDatabase<AppSchema>;
 
-const DB_NAME = 'malla';
+const DB_NAME = 'teselia';
 const DB_VERSION = 2;
 
 export function openAppDb(name: string = DB_NAME): Promise<AppDb> {

@@ -2,8 +2,8 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// MALLA_BASE lets the app be served from a sub-path, e.g. "/malla/" on GitHub Pages.
-const base = process.env['MALLA_BASE'] ?? '/';
+// TESELIA_BASE lets the app be served from a sub-path, e.g. "/teselia/" on GitHub Pages.
+const base = process.env['TESELIA_BASE'] ?? '/';
 
 export default defineConfig({
   base,
@@ -13,8 +13,8 @@ export default defineConfig({
       // Updates wait for the user to accept them (see UpdatePrompt.svelte).
       registerType: 'prompt',
       manifest: {
-        name: 'Malla',
-        short_name: 'Malla',
+        name: 'Teselia',
+        short_name: 'Teselia',
         description:
           'Consciencia situacional para la sociedad civil, con internet y por malla LoRa.',
         lang: 'es',
