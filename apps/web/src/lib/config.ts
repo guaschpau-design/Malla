@@ -14,8 +14,11 @@ export function mapAssetsUrl(): string {
 }
 
 /**
- * Server proposed for new groups (protocol §8), or null if this build has none. Coordinators can
- * change it when they create a group.
+ * Server proposed for new groups (protocol §8), or null if this build has none. VITE_SERVER_URL may
+ * be relative to the app: the server image builds the app with "/", so every server proposes
+ * itself. Coordinators can change it when they create a group.
  */
-export const DEFAULT_SERVER_URL: string | null =
-  (import.meta.env['VITE_SERVER_URL'] as string | undefined) || null;
+export function defaultServerUrl(): string | null {
+  const configured = import.meta.env['VITE_SERVER_URL'] as string | undefined;
+  return configured ? new URL(configured, window.location.href).href : null;
+}

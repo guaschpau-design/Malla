@@ -3,7 +3,7 @@
   import type { GroupState } from '@teselia/core';
   import { GROUP_NAME_MAX_BYTES, parseInvitationUrl, type Invitation } from '@teselia/protocol';
 
-  import { DEFAULT_SERVER_URL } from '../config.ts';
+  import { defaultServerUrl } from '../config.ts';
   import type { Translate } from '../i18n/index.ts';
   import type { Session } from '../session.svelte.ts';
   import Panel from '../ui/Panel.svelte';
@@ -32,7 +32,7 @@
   let newName = $state('');
   const groupName = $derived(normalizeGroupName(newName));
   const nameTooLong = $derived(newName.trim() !== '' && groupName === null);
-  let serverText = $state(DEFAULT_SERVER_URL ?? '');
+  let serverText = $state(defaultServerUrl() ?? '');
   const server = $derived(normalizeServerUrl(serverText));
 
   let pasted = $state('');

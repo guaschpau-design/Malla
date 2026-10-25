@@ -7,7 +7,7 @@ import { device, twoMembers } from './helpers.ts';
 test('new groups propose the build’s own server', async ({ browser }) => {
   const ana = await device(browser, 'Ana');
   await ana.getByRole('button', { name: 'Grupos: Sin grupo' }).click();
-  await expect(ana.getByLabel('Servidor')).toHaveValue('http://localhost:8787');
+  await expect(ana.getByLabel('Servidor')).toHaveValue('http://localhost:8787/');
 });
 
 test('members of a group chat and see who shares their position', async ({ browser }) => {
