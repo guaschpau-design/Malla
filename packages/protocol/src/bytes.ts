@@ -16,7 +16,7 @@ export class ProtocolFailure extends Error {
 }
 
 const utf8Encoder = new TextEncoder();
-const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
+const utf8Decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }); // keep a leading U+FEFF: decoding must be lossless
 
 export function encodeUtf8(text: string): Uint8Array {
   return utf8Encoder.encode(text);

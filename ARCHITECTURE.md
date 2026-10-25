@@ -73,7 +73,7 @@ An event has a fixed 14-byte header — protocol version, type, origin node ID, 
 | `ALERT`                            | Broadcast warning with a severity level         |
 | `ACK`                              | Acknowledges an event (used for SOS and alerts) |
 
-`(origin, seq)` uniquely identifies an event. Sequence numbers are per device, start at 1, increase by one and are persisted, so a device never reuses one.
+`(origin, seq)` uniquely identifies an event. Sequence numbers are per device, start at 1, normally increase by one and are persisted, so a device never reuses one.
 
 ### 3.4 Deriving state
 
@@ -81,7 +81,7 @@ The current picture is a pure function of the event log, computed by the reducer
 
 - **Positions:** latest `POSITION` or `POSITION_HIDDEN` per origin.
 - **Map objects:** identified by the `(origin, seq)` of the event that created them. Later `MARKER`/`SHAPE` events for the same object replace it; `OBJECT_DELETE` removes it. Conflicts resolve by **last writer wins**, ordering by `(timestamp, origin, seq)`.
-- **Chat, SOS, alerts:** append-only, ordered by timestamp.
+- **Chat, SOS, alerts:** append-only, ordered by `(timestamp, origin, seq)` so every device shows the same order.
 
 Events can arrive late, twice or out of order — through LoRa, a bridge and the server at once. The reducer is idempotent and order-independent, so this never matters. This is the property the tests protect most. See [ADR-0003](docs/decisions/0003-event-log-last-writer-wins.md).
 
@@ -97,7 +97,7 @@ The web app connects to a MeshCore companion radio over Web Bluetooth (Chrome an
 
 LoRa is slow and legally limited to 10 % airtime in the EU 869.4–869.65 MHz sub-band, so outgoing LoRa traffic goes through a **scheduler** in `packages/core` that:
 
-1. Orders events by priority: `SOS` > `SOS_CANCEL` > `ALERT` > `ACK` > `CHAT` > map objects > `MEMBER_INFO` > `POSITION`.
+1. Orders events by priority: `SOS` > `SOS_CANCEL` > `ALERT` > `POSITION_HIDDEN` > `ACK` > `CHAT` > map objects (`MARKER`, `SHAPE`, `OBJECT_DELETE`) > `MEMBER_INFO` > `POSITION`. `POSITION_HIDDEN` is never thinned or delayed: a user who stops sharing must disappear from the map promptly.
 2. Estimates each packet's airtime from the radio preset and keeps a rolling one-hour budget.
 3. Thins positions: at most one every 2 minutes, and only after moving 50 m or 10 minutes passing.
 4. Repeats `SOS` with back-off until an `ACK` arrives.
@@ -138,14 +138,14 @@ The base map is OpenStreetMap data rendered as vector tiles from a single PMTile
 
 ## 8. Security model
 
-| Threat                                 | Mitigation in v0.1                                                                                                                                        |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Server operator reads the group's data | Impossible: events are end-to-end encrypted with a key the server never sees                                                                              |
-| Eavesdropper on LoRa                   | MeshCore encrypts channel traffic with the group secret                                                                                                   |
-| Outsider joins the group               | Requires the secret, which only travels inside invitations                                                                                                |
-| Member impersonates another member     | **Not prevented in v0.1** — anyone with the secret can forge any origin. Signatures do not fit LoRa's 165-byte budget; planned for internet traffic later |
-| Leaked secret                          | Coordinator creates a new group and re-invites; key rotation is future work                                                                               |
-| Server flooded with junk               | Rate limits per connection and per group                                                                                                                  |
+| Threat                                 | Mitigation in v0.1                                                                                                                                                                                                              |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Server operator reads the group's data | Impossible: events are end-to-end encrypted with a key the server never sees                                                                                                                                                    |
+| Eavesdropper on LoRa                   | MeshCore encrypts channel traffic with the group secret, but with AES-128-ECB and a 2-byte MAC: enough against casual listening, weak against a determined attacker (see [ADR-0010](docs/decisions/0010-lora-link-security.md)) |
+| Outsider joins the group               | Requires the secret, which only travels inside invitations                                                                                                                                                                      |
+| Member impersonates another member     | **Not prevented in v0.1** — anyone with the secret can forge any origin. Signatures do not fit LoRa's 165-byte budget; planned for internet traffic later                                                                       |
+| Leaked secret                          | Coordinator creates a new group and re-invites; key rotation is future work                                                                                                                                                     |
+| Server flooded with junk               | Rate limits per connection and per group. The group ID is enough to push envelopes; a membership token derived from the secret is future work                                                                                   |
 
 ## 9. Repository layout
 

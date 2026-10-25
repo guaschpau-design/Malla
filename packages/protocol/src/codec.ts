@@ -1,150 +1,157 @@
-// Event encoding and decoding (docs/protocol.md §3).
+// Event encoding and decoding (docs/protocol.md §3). Field helpers live in fields.ts.
 
-import { ByteReader, ByteWriter, encodeUtf8, ProtocolFailure } from './bytes.ts';
+import { ByteReader, ByteWriter, ProtocolFailure } from './bytes.ts';
 import {
   ALIAS_MAX_BYTES,
   ALIAS_MIN_BYTES,
   EventTypeCode,
-  HEADER_SIZE,
   MAX_EVENT_SIZE,
   NODE_ID_SIZE,
   PROTOCOL_VERSION,
   PUBLIC_KEY_SIZE,
   SHAPE_LABEL_MAX_BYTES,
-  ShapeKindCode,
   UNKNOWN_U16,
 } from './constants.ts';
-import type {
-  AlertLevel,
-  EventHeader,
-  EventRef,
-  MallaEvent,
-  Role,
-  ShapeGeometry,
-  SosKind,
-} from './events.ts';
-import { readPoint, readPointList, writePoint, writePointList } from './geometry.ts';
+import { nodeIdFromPublicKey } from './crypto.ts';
+import type { EventHeader, MallaEvent, MemberInfoEvent } from './events.ts';
+import {
+  ALERT_LEVELS,
+  ALERT_TEXT_MAX_BYTES,
+  CHAT_MAX_BYTES,
+  enumCode,
+  enumValue,
+  MARKER_LABEL_MAX_BYTES,
+  readGeometry,
+  readMeasurement,
+  readRef,
+  ROLES,
+  shapeKindCode,
+  SOS_KINDS,
+  SOS_TEXT_MAX_BYTES,
+  writeGeometry,
+  writeMeasurement,
+  writeRef,
+  writeTextRest,
+} from './fields.ts';
+import { readPoint, writePoint } from './geometry.ts';
 import { nodeIdFromBytes, nodeIdToBytes } from './node-id.ts';
 import { err, ok, type ProtocolError, type Result } from './result.ts';
 
-// Text limits per type. Each equals the payload budget left after the type's fixed fields.
-const CHAT_MAX_BYTES = MAX_EVENT_SIZE - HEADER_SIZE; // §3.5
-const MARKER_LABEL_MAX_BYTES = MAX_EVENT_SIZE - HEADER_SIZE - 18; // §3.6
-const SOS_TEXT_MAX_BYTES = MAX_EVENT_SIZE - HEADER_SIZE - 11; // §3.8
-const ALERT_TEXT_MAX_BYTES = MAX_EVENT_SIZE - HEADER_SIZE - 1; // §3.9
-
-const ROLES: readonly Role[] = ['member', 'coordinator']; // §3.3
-const SOS_KINDS: readonly SosKind[] = ['general', 'medical', 'trapped', 'fire', 'security']; // §3.8
-const ALERT_LEVELS: readonly AlertLevel[] = ['info', 'warning', 'critical']; // §3.9
+/** A decoded header plus the raw type code, which may belong to a type we do not know. */
+export interface RawHeader extends EventHeader {
+  readonly typeCode: number;
+}
 
 /** Encodes an event. Fails if a field is out of range or the result exceeds 165 bytes. */
 export function encodeEvent(event: MallaEvent): Result<Uint8Array, ProtocolError> {
-  try {
+  return catchFailure(() => {
     const writer = new ByteWriter();
     writeHeader(writer, event);
     writePayload(writer, event);
     if (writer.length > MAX_EVENT_SIZE) {
-      return err({
-        code: 'too-large',
-        detail: `event is ${writer.length} bytes, maximum ${MAX_EVENT_SIZE}`,
-      });
+      throw new ProtocolFailure('too-large', `event is ${writer.length} bytes`);
     }
-    return ok(writer.toBytes());
-  } catch (failure) {
-    return asError(failure);
-  }
+    return writer.toBytes();
+  });
+}
+
+/**
+ * Reads only the header. Works for event types this implementation does not know, so that
+ * bridges can de-duplicate and forward them unchanged (§3.1).
+ */
+export function peekHeader(bytes: Uint8Array): Result<RawHeader, ProtocolError> {
+  return catchFailure(() => readHeader(new ByteReader(bytes), bytes.length));
 }
 
 /** Decodes an event. Never throws, whatever the input. */
 export function decodeEvent(bytes: Uint8Array): Result<MallaEvent, ProtocolError> {
-  try {
-    if (bytes.length > MAX_EVENT_SIZE) {
-      return err({ code: 'too-large', detail: `input is ${bytes.length} bytes` });
-    }
+  return catchFailure(() => {
     const reader = new ByteReader(bytes);
-    const version = reader.u8();
-    if (version !== PROTOCOL_VERSION) {
-      return err({ code: 'unsupported-version', detail: `version ${version}` });
-    }
-    const typeCode = reader.u8();
-    const header = readHeaderFields(reader);
+    const { typeCode, ...header } = readHeader(reader, bytes.length);
     const event = readPayload(reader, typeCode, header);
     reader.end();
-    return ok(event);
+    return event;
+  });
+}
+
+function catchFailure<T>(work: () => T): Result<T, ProtocolError> {
+  try {
+    return ok(work());
   } catch (failure) {
-    return asError(failure);
+    if (failure instanceof ProtocolFailure) return err(failure.error);
+    throw failure; // A programming error, not bad input: let it surface.
   }
 }
 
-function asError(failure: unknown): { readonly ok: false; readonly error: ProtocolError } {
-  if (failure instanceof ProtocolFailure) return err(failure.error);
-  throw failure; // A programming error, not bad input: let it surface.
-}
-
-// --- Header ------------------------------------------------------------------------------
+// --- Header (§3.1) -----------------------------------------------------------------------
 
 function writeHeader(writer: ByteWriter, event: MallaEvent): void {
   if (event.seq < 1) throw new ProtocolFailure('invalid-value', 'seq must be at least 1');
   writer
     .u8(PROTOCOL_VERSION)
-    .u8(typeCodeOf(event))
+    .u8(EventTypeCode[typeKey(event)])
     .raw(nodeIdToBytes(event.origin))
     .u32(event.seq)
     .u32(event.time);
 }
 
-function readHeaderFields(reader: ByteReader): EventHeader {
+function readHeader(reader: ByteReader, totalLength: number): RawHeader {
+  if (totalLength > MAX_EVENT_SIZE) {
+    throw new ProtocolFailure('too-large', `input is ${totalLength} bytes`);
+  }
+  const version = reader.u8();
+  if (version !== PROTOCOL_VERSION) {
+    throw new ProtocolFailure('unsupported-version', `version ${version}`);
+  }
+  const typeCode = reader.u8();
   const origin = nodeIdFromBytes(reader.raw(NODE_ID_SIZE));
   const seq = reader.u32();
   const time = reader.u32();
   if (seq < 1) throw new ProtocolFailure('invalid-value', 'seq must be at least 1');
-  return { origin, seq, time };
+  return { typeCode, origin, seq, time };
 }
 
-function typeCodeOf(event: MallaEvent): number {
+function typeKey(event: MallaEvent): keyof typeof EventTypeCode {
   switch (event.type) {
     case 'member-info':
-      return EventTypeCode.MEMBER_INFO;
+      return 'MEMBER_INFO';
     case 'position':
-      return EventTypeCode.POSITION;
+      return 'POSITION';
     case 'position-hidden':
-      return EventTypeCode.POSITION_HIDDEN;
+      return 'POSITION_HIDDEN';
     case 'chat':
-      return EventTypeCode.CHAT;
+      return 'CHAT';
     case 'marker':
-      return EventTypeCode.MARKER;
+      return 'MARKER';
     case 'shape':
-      return EventTypeCode.SHAPE;
+      return 'SHAPE';
     case 'object-delete':
-      return EventTypeCode.OBJECT_DELETE;
+      return 'OBJECT_DELETE';
     case 'sos':
-      return EventTypeCode.SOS;
+      return 'SOS';
     case 'sos-cancel':
-      return EventTypeCode.SOS_CANCEL;
+      return 'SOS_CANCEL';
     case 'alert':
-      return EventTypeCode.ALERT;
+      return 'ALERT';
     case 'ack':
-      return EventTypeCode.ACK;
+      return 'ACK';
   }
 }
 
-// --- Payloads ----------------------------------------------------------------------------
+// --- Payloads (§3.3–§3.9) ----------------------------------------------------------------
 
 function writePayload(writer: ByteWriter, event: MallaEvent): void {
   switch (event.type) {
     case 'member-info':
-      if (event.publicKey.length !== PUBLIC_KEY_SIZE) {
-        throw new ProtocolFailure('invalid-value', 'public key must be 32 bytes');
-      }
-      writer.u8(ROLES.indexOf(event.role)).raw(event.publicKey);
+      checkMemberKey(event);
+      writer.u8(enumCode(ROLES, event.role, 'role')).raw(event.publicKey);
       writeTextRest(writer, event.alias, ALIAS_MIN_BYTES, ALIAS_MAX_BYTES, 'alias');
       return;
     case 'position':
       writePoint(writer, event);
-      writer
-        .u16(measurement(event.accuracy, 1))
-        .u16(event.heading === null ? UNKNOWN_U16 : Math.round(event.heading) % 360)
-        .u16(measurement(event.speed, 100));
+      writeMeasurement(writer, event.accuracy, 1);
+      writer.u16(event.heading === null ? UNKNOWN_U16 : Math.round(event.heading) % 360);
+      writeMeasurement(writer, event.speed, 100);
       return;
     case 'position-hidden':
       return;
@@ -167,16 +174,16 @@ function writePayload(writer: ByteWriter, event: MallaEvent): void {
       writeRef(writer, event.object);
       return;
     case 'sos':
-      writer.u8(SOS_KINDS.indexOf(event.kind));
+      writer.u8(enumCode(SOS_KINDS, event.kind, 'SOS kind'));
       writePoint(writer, event);
-      writer.u16(measurement(event.accuracy, 1));
+      writeMeasurement(writer, event.accuracy, 1);
       writeTextRest(writer, event.text, 0, SOS_TEXT_MAX_BYTES, 'SOS text');
       return;
     case 'sos-cancel':
       writeRef(writer, event.sos);
       return;
     case 'alert':
-      writer.u8(ALERT_LEVELS.indexOf(event.level));
+      writer.u8(enumCode(ALERT_LEVELS, event.level, 'alert level'));
       writeTextRest(writer, event.text, 1, ALERT_TEXT_MAX_BYTES, 'alert text');
       return;
     case 'ack':
@@ -188,10 +195,12 @@ function writePayload(writer: ByteWriter, event: MallaEvent): void {
 function readPayload(reader: ByteReader, typeCode: number, header: EventHeader): MallaEvent {
   switch (typeCode) {
     case EventTypeCode.MEMBER_INFO: {
-      const role = valueAt(ROLES, reader.u8(), 'role');
+      const role = enumValue(ROLES, reader.u8(), 'member');
       const publicKey = reader.raw(PUBLIC_KEY_SIZE);
       const alias = reader.textRest(ALIAS_MIN_BYTES, ALIAS_MAX_BYTES, 'alias');
-      return { ...header, type: 'member-info', role, publicKey, alias };
+      const event: MemberInfoEvent = { ...header, type: 'member-info', role, publicKey, alias };
+      checkMemberKey(event);
+      return event;
     }
     case EventTypeCode.POSITION: {
       const point = readPoint(reader);
@@ -226,8 +235,7 @@ function readPayload(reader: ByteReader, typeCode: number, header: EventHeader):
     case EventTypeCode.OBJECT_DELETE:
       return { ...header, type: 'object-delete', object: readRef(reader) };
     case EventTypeCode.SOS: {
-      // §3.8: reserved kinds are shown as general.
-      const kind = SOS_KINDS[reader.u8()] ?? 'general';
+      const kind = enumValue(SOS_KINDS, reader.u8(), 'general');
       const point = readPoint(reader);
       const accuracy = readMeasurement(reader, 1);
       const text = reader.textRest(0, SOS_TEXT_MAX_BYTES, 'SOS text');
@@ -236,7 +244,7 @@ function readPayload(reader: ByteReader, typeCode: number, header: EventHeader):
     case EventTypeCode.SOS_CANCEL:
       return { ...header, type: 'sos-cancel', sos: readRef(reader) };
     case EventTypeCode.ALERT: {
-      const level = valueAt(ALERT_LEVELS, reader.u8(), 'alert level');
+      const level = enumValue(ALERT_LEVELS, reader.u8(), 'warning');
       const text = reader.textRest(1, ALERT_TEXT_MAX_BYTES, 'alert text');
       return { ...header, type: 'alert', level, text };
     }
@@ -247,118 +255,12 @@ function readPayload(reader: ByteReader, typeCode: number, header: EventHeader):
   }
 }
 
-// --- Field helpers -----------------------------------------------------------------------
-
-function writeRef(writer: ByteWriter, ref: EventRef): void {
-  if (ref.seq < 1) throw new ProtocolFailure('invalid-value', 'reference seq must be at least 1');
-  writer.raw(nodeIdToBytes(ref.origin)).u32(ref.seq);
-}
-
-function readRef(reader: ByteReader): EventRef {
-  const origin = nodeIdFromBytes(reader.raw(NODE_ID_SIZE));
-  const seq = reader.u32();
-  if (seq < 1) throw new ProtocolFailure('invalid-value', 'reference seq must be at least 1');
-  return { origin, seq };
-}
-
-function writeTextRest(
-  writer: ByteWriter,
-  text: string,
-  minBytes: number,
-  maxBytes: number,
-  field: string,
-): void {
-  const before = writer.length;
-  writer.raw(encodeUtf8(text));
-  const length = writer.length - before;
-  if (length < minBytes || length > maxBytes) {
-    throw new ProtocolFailure(
-      length > maxBytes ? 'too-large' : 'invalid-value',
-      `${field} must be ${minBytes}-${maxBytes} bytes, got ${length}`,
-    );
+/** §3.3: the public key must hash to the origin's node ID. */
+function checkMemberKey(event: MemberInfoEvent): void {
+  if (event.publicKey.length !== PUBLIC_KEY_SIZE) {
+    throw new ProtocolFailure('invalid-value', 'public key must be 32 bytes');
   }
-}
-
-/**
- * A non-negative measurement stored as u16 in `1/scale` of its unit, saturating just below the
- * "unknown" marker so that a huge value is never mistaken for an unknown one.
- */
-function measurement(value: number | null, scale: number): number {
-  if (value === null) return UNKNOWN_U16;
-  if (!Number.isFinite(value) || value < 0) {
-    throw new ProtocolFailure('invalid-value', `measurement ${String(value)}`);
+  if (nodeIdFromPublicKey(event.publicKey) !== event.origin) {
+    throw new ProtocolFailure('invalid-value', 'public key does not match the origin node ID');
   }
-  return Math.min(Math.round(value * scale), UNKNOWN_U16 - 1);
-}
-
-function readMeasurement(reader: ByteReader, scale: number): number | null {
-  const raw = reader.u16();
-  return raw === UNKNOWN_U16 ? null : raw / scale;
-}
-
-function shapeKindCode(geometry: ShapeGeometry): number {
-  switch (geometry.kind) {
-    case 'polyline':
-      return ShapeKindCode.POLYLINE;
-    case 'polygon':
-      return ShapeKindCode.POLYGON;
-    case 'circle':
-      return ShapeKindCode.CIRCLE;
-  }
-}
-
-function writeGeometry(writer: ByteWriter, geometry: ShapeGeometry): void {
-  switch (geometry.kind) {
-    case 'polyline':
-      requireCount(geometry.points.length, 2, 'polyline');
-      writePointList(writer, geometry.points);
-      return;
-    case 'polygon': {
-      requireCount(geometry.points.length, 3, 'polygon');
-      const first = geometry.points[0];
-      const last = geometry.points[geometry.points.length - 1];
-      if (first?.lat === last?.lat && first?.lon === last?.lon) {
-        throw new ProtocolFailure(
-          'invalid-value',
-          'polygons are implicitly closed; drop the last point',
-        );
-      }
-      writePointList(writer, geometry.points);
-      return;
-    }
-    case 'circle':
-      if (!Number.isFinite(geometry.radius) || geometry.radius < 1) {
-        throw new ProtocolFailure('invalid-value', 'circle radius must be at least 1 m');
-      }
-      writePoint(writer, geometry.center);
-      writer.u32(Math.round(geometry.radius));
-      return;
-  }
-}
-
-function readGeometry(reader: ByteReader, kindCode: number): ShapeGeometry {
-  switch (kindCode) {
-    case ShapeKindCode.POLYLINE:
-      return { kind: 'polyline', points: readPointList(reader, 2) };
-    case ShapeKindCode.POLYGON:
-      return { kind: 'polygon', points: readPointList(reader, 3) };
-    case ShapeKindCode.CIRCLE: {
-      const center = readPoint(reader);
-      const radius = reader.u32();
-      if (radius < 1) throw new ProtocolFailure('invalid-value', 'circle radius is 0');
-      return { kind: 'circle', center, radius };
-    }
-    default:
-      throw new ProtocolFailure('invalid-value', `shape kind ${kindCode}`);
-  }
-}
-
-function requireCount(count: number, min: number, kind: string): void {
-  if (count < min) throw new ProtocolFailure('invalid-value', `${kind} needs ${min}+ points`);
-}
-
-function valueAt<T>(values: readonly T[], index: number, field: string): T {
-  const value = values[index];
-  if (value === undefined) throw new ProtocolFailure('invalid-value', `${field} ${index}`);
-  return value;
 }

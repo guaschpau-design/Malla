@@ -4,6 +4,8 @@ import type { MallaEvent, NodeId } from './events.ts';
 
 export const ALICE = 'a1b2c3d4' as NodeId;
 export const BOB = '0f1e2d3c' as NodeId;
+/** Node ID of the public key 00 01 … 1f, so MEMBER_INFO samples pass the key check. */
+export const CAROL = '630dcd29' as NodeId;
 export const T0 = 1_761_350_400; // 2025-10-25T00:00:00Z
 
 export function hex(text: string): Uint8Array {
@@ -33,7 +35,7 @@ export function seededRandom(seed: number): (length: number) => Uint8Array {
 export const SAMPLE_EVENTS: readonly MallaEvent[] = [
   {
     type: 'member-info',
-    origin: ALICE,
+    origin: CAROL,
     seq: 1,
     time: T0,
     role: 'coordinator',

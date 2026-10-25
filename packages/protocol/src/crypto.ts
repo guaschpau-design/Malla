@@ -12,6 +12,7 @@ import {
   CONTENT_KEY_SIZE,
   ENVELOPE_NONCE_SIZE,
   ENVELOPE_TAG_SIZE,
+  EVENT_KEY_MAC_KEY_SIZE,
   EVENT_KEY_SIZE,
   GROUP_ID_SIZE,
   GROUP_SECRET_SIZE,
@@ -20,8 +21,10 @@ import {
   KDF_INFO_GROUP_ID,
   KDF_SALT,
   MAX_ENVELOPE_SIZE,
+  MAX_EVENT_SIZE,
   NODE_ID_SIZE,
   PUBLIC_KEY_SIZE,
+  SECRET_KEY_SIZE,
 } from './constants.ts';
 import type { EventRef, NodeId } from './events.ts';
 import { nodeIdFromBytes, nodeIdToBytes } from './node-id.ts';
@@ -41,7 +44,7 @@ export interface Identity {
 }
 
 export function generateIdentity(random: RandomSource = secureRandom): Identity {
-  const secretKey = random(32);
+  const secretKey = random(SECRET_KEY_SIZE);
   const publicKey = ed25519.getPublicKey(secretKey);
   return { nodeId: nodeIdFromPublicKey(publicKey), publicKey, secretKey };
 }
@@ -81,7 +84,7 @@ export function deriveGroupKeys(secret: Uint8Array): GroupKeys {
     secret: secret.slice(),
     groupId: derive(KDF_INFO_GROUP_ID, GROUP_ID_SIZE),
     contentKey: derive(KDF_INFO_CONTENT_KEY, CONTENT_KEY_SIZE),
-    eventKeyMacKey: derive(KDF_INFO_EVENT_KEY, 32),
+    eventKeyMacKey: derive(KDF_INFO_EVENT_KEY, EVENT_KEY_MAC_KEY_SIZE),
   };
 }
 
@@ -93,12 +96,18 @@ export function eventKey(keys: GroupKeys, ref: EventRef): Uint8Array {
 
 // --- Envelopes ---------------------------------------------------------------------------
 
-/** §5.1 Encrypts an encoded event for the internet transport. */
+/**
+ * §5.1 Encrypts an encoded event for the internet transport. Nonces are random, so a group
+ * should stay well below 2^32 envelopes under one secret; key rotation is future work.
+ */
 export function sealEnvelope(
   keys: GroupKeys,
   event: Uint8Array,
   random: RandomSource = secureRandom,
 ): Uint8Array {
+  if (event.length > MAX_EVENT_SIZE) {
+    throw new RangeError(`events are at most ${MAX_EVENT_SIZE} bytes; encode with encodeEvent`);
+  }
   const nonce = random(ENVELOPE_NONCE_SIZE);
   const ciphertext = gcm(keys.contentKey, nonce, keys.groupId).encrypt(event);
   const envelope = new Uint8Array(nonce.length + ciphertext.length);

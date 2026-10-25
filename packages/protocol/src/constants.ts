@@ -39,8 +39,12 @@ export const EventTypeCode = {
   ACK: 0x0b,
 } as const;
 
-/** §3.3 Ed25519 public key size. */
+/** §3.3 Ed25519 key sizes. */
 export const PUBLIC_KEY_SIZE = 32;
+export const SECRET_KEY_SIZE = 32;
+
+/** §1 A coordinate pair (lat, lon) on the wire. */
+export const POINT_SIZE = 8;
 
 /** §3.3 Alias length in bytes. */
 export const ALIAS_MIN_BYTES = 1;
@@ -59,6 +63,7 @@ export const GROUP_SECRET_SIZE = 16;
 export const GROUP_ID_SIZE = 16;
 export const CONTENT_KEY_SIZE = 32;
 export const EVENT_KEY_SIZE = 16;
+export const EVENT_KEY_MAC_KEY_SIZE = 32;
 
 /** §5 HKDF salt and info strings. */
 export const KDF_SALT = 'malla/v1';

@@ -1,5 +1,5 @@
 export * from './base64url.ts';
-export { decodeEvent, encodeEvent } from './codec.ts';
+export { decodeEvent, encodeEvent, peekHeader, type RawHeader } from './codec.ts';
 export * from './constants.ts';
 export * from './crypto.ts';
 export type * from './events.ts';

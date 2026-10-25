@@ -36,9 +36,11 @@ Every event starts with a 14-byte header:
 
 The payload follows, up to 151 bytes.
 
-- A device MUST persist its last `seq` and MUST NOT reuse a value. `seq` `0` is invalid.
+- A device MUST persist its last `seq` and MUST NOT reuse a value. It SHOULD increase `seq` by exactly one per event, so receivers can detect gaps. `seq` `0` is invalid.
 - `(origin, seq)` identifies an event globally within a group. Receivers MUST treat a second copy as a duplicate, whatever transport it came from.
 - Receivers MUST ignore events whose `version` they do not support, and events whose `type` they do not know. They MUST NOT treat these as errors that affect other events.
+- Bridges and servers MUST forward events of unknown type unchanged, using the header alone for de-duplication. This lets newer clients use new types through older infrastructure.
+- **Reserved values.** When an enumerated field holds a reserved value, decoders MUST use the default given for that field below, so that newer senders never make older receivers drop information. The one exception is `SHAPE.kind`, whose geometry cannot be parsed without it; an event with a reserved shape kind is ignored.
 
 ### 3.2 Types
 
@@ -64,7 +66,7 @@ Announces who is behind a node ID. Sent on joining a group, when alias or role c
 
 | Size | Field       | Notes                                                                     |
 | ---- | ----------- | ------------------------------------------------------------------------- |
-| 1    | `role`      | `0` member, `1` coordinator; other values reserved                        |
+| 1    | `role`      | `0` member, `1` coordinator; reserved values read as member               |
 | 32   | `publicKey` | Ed25519 public key; receivers MUST check that its node ID equals `origin` |
 | 1–32 | `alias`     | text-rest                                                                 |
 
@@ -106,13 +108,13 @@ Creates or replaces a point object.
 
 Creates or replaces a line, polygon or circle.
 
-| Size | Field      | Notes                                 |
-| ---- | ---------- | ------------------------------------- |
-| 8    | `object`   | Object reference, see §3.10           |
-| 1    | `kind`     | `1` polyline, `2` polygon, `3` circle |
-| 2    | `style`    | `u16`, see §4.2                       |
-| 1+n  | `label`    | text-u8, 0–32 bytes                   |
-| …    | `geometry` | Depends on `kind`                     |
+| Size | Field      | Notes                                                                    |
+| ---- | ---------- | ------------------------------------------------------------------------ |
+| 8    | `object`   | Object reference, see §3.10                                              |
+| 1    | `kind`     | `1` polyline, `2` polygon, `3` circle; reserved values: ignore the event |
+| 2    | `style`    | `u16`, see §4.2                                                          |
+| 1+n  | `label`    | text-u8, 0–32 bytes                                                      |
+| …    | `geometry` | Depends on `kind`                                                        |
 
 **Polyline and polygon geometry:**
 
@@ -147,12 +149,14 @@ With an empty label, a shape holds up to 33 points.
 
 An `SOS` stays active until a `SOS_CANCEL` referencing it is received. Any member MAY cancel an SOS; the interface SHOULD show who cancelled it. Senders SHOULD repeat an `SOS` over LoRa with back-off until at least one `ACK` for it is received. Repeats are byte-identical copies, so receivers de-duplicate them.
 
+**Acknowledging over LoRa.** To keep acknowledgements from flooding the air, a receiver SHOULD send at most one `ACK` per `SOS` or critical `ALERT`, after a random delay of 2–30 seconds, and SHOULD NOT send it if it has meanwhile heard another member's `ACK` for the same event. Over the internet, every receiver MAY acknowledge immediately.
+
 ### 3.9 `ALERT`
 
-| Size  | Field   | Notes                                      |
-| ----- | ------- | ------------------------------------------ |
-| 1     | `level` | `0` information, `1` warning, `2` critical |
-| 1–150 | `text`  | text-rest                                  |
+| Size  | Field   | Notes                                                                       |
+| ----- | ------- | --------------------------------------------------------------------------- |
+| 1     | `level` | `0` information, `1` warning, `2` critical; reserved values read as warning |
+| 1–150 | `text`  | text-rest                                                                   |
 
 ### 3.10 Objects
 
@@ -162,6 +166,7 @@ Map objects (`MARKER`, `SHAPE`) are identified by an **object reference**: the e
 - To change an object, any member sends a new `MARKER` or `SHAPE` with the same `object`. A change MAY switch between `MARKER` and `SHAPE`.
 - To delete it, a member sends `OBJECT_DELETE` with the same `object`.
 - The current state of an object is given by the event with the greatest `(time, origin, seq)` among all events with that `object`, compared in that order, with `origin` compared as 4 unsigned bytes. If that event is an `OBJECT_DELETE`, the object does not exist.
+- Deletion is ordinary last-writer-wins: an edit newer than the delete brings the object back, and an older edit arriving late does not. This is intended; receivers MUST keep `OBJECT_DELETE` events so late edits can be compared against them.
 
 ## 4. Symbol and style codes
 
@@ -227,6 +232,8 @@ envelope = nonce (12 bytes, random) ‖ AES-256-GCM(contentKey, nonce, event, aa
 
 The ciphertext includes the 16-byte GCM tag, so an envelope is at most 12 + 165 + 16 = 193 bytes. A receiver that fails to open an envelope MUST discard it silently.
 
+Nonces are random, so a group SHOULD stay well below 2³² envelopes under one secret (the AES-GCM bound for random nonces). Key rotation is future work.
+
 ## 6. Invitations
 
 An invitation is a URL:
@@ -246,13 +253,14 @@ The token sits in the fragment so it is never sent to any server. It is the base
 | 1+n  | `name`    | text-u8, group name, 1–32 bytes                                                               |
 | 1+n  | `server`  | text-u8, server base URL, 0–200 bytes; empty if none. MUST start with `https://` when present |
 
-Anyone holding an invitation can join the group. Interfaces MUST make clear that sharing an invitation shares the group.
+Decoders MUST accept only `https:` URLs whose path is exactly `/join`. A reserved `role` value grants member. Anyone holding an invitation can join the group. Interfaces MUST make clear that sharing an invitation shares the group.
 
 ## 7. Transport: MeshCore
 
 - The group secret is written to a channel slot of the companion radio with `CMD_SET_CHANNEL`. The channel name is the group name, truncated to 31 bytes at a code-point boundary.
 - Each event is sent with `CMD_SEND_CHANNEL_DATA` on that channel, flood routing (`path_len = 0xFF`), `data_type = 0xFF4D`, payload = the event bytes. The radio encrypts it with the channel key.
 - Inbound `RESP_CODE_CHANNEL_DATA_RECV` frames on that channel with `data_type = 0xFF4D` are decoded as events. Other `data_type` values are ignored.
+- The radio encrypts channel traffic with AES-128 in ECB mode and authenticates it with a 2-byte truncated HMAC. That protects against casual listening, not against a determined attacker; see [ADR-0010](decisions/0010-lora-link-security.md).
 - `0xFF4D` is in MeshCore's development range. A permanent value will be registered before the first public release; implementations SHOULD accept both during the transition.
 
 ## 8. Transport: internet
@@ -268,13 +276,14 @@ Clients connect to `wss://{server}/v1/ws`. Frames are JSON text messages; binary
 
 **Server to client**
 
-| Message                                      | Meaning                                                        |
-| -------------------------------------------- | -------------------------------------------------------------- |
-| `{"t": "env", "cursor": N, "env": ENVELOPE}` | A stored envelope; `cursor` increases per group                |
-| `{"t": "synced", "cursor": N}`               | The backlog after `after` has been sent; live envelopes follow |
-| `{"t": "error", "code": CODE}`               | `bad-request`, `too-large`, `rate-limited` or `not-joined`     |
+| Message                                          | Meaning                                                                                                     |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `{"t": "env", "cursor": N, "env": ENVELOPE}`     | A stored envelope; `cursor` increases per group                                                             |
+| `{"t": "synced", "cursor": N}`                   | The backlog after `after` has been sent; live envelopes follow                                              |
+| `{"t": "stored", "key": EVENT_KEY}`              | The pushed envelope is stored, now or already before                                                        |
+| `{"t": "error", "code": CODE, "key": EVENT_KEY}` | `bad-request`, `too-large`, `rate-limited` or `not-joined`; `key` is present when the error concerns a push |
 
-- The server MUST store at most one envelope per `(group, key)`; a repeated push with a known key is acknowledged as already stored and not relayed again.
+- The server MUST store at most one envelope per `(group, key)`; a repeated push with a known key is answered with `stored` and not relayed again. Clients keep an envelope in their outbox until they receive `stored` for its key.
 - The server MUST reject envelopes larger than 193 bytes.
 - The server SHOULD rate-limit pushes per connection and per group, and MAY delete envelopes older than a configured retention period.
 - The server never receives the group secret, the content key or plaintext events.

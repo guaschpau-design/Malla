@@ -10,6 +10,7 @@ import {
   SERVER_URL_MAX_BYTES,
 } from './constants.ts';
 import type { NodeId, Role } from './events.ts';
+import { enumCode, enumValue, ROLES } from './fields.ts';
 import { nodeIdFromBytes, nodeIdToBytes } from './node-id.ts';
 import { err, ok, type ProtocolError, type Result } from './result.ts';
 
@@ -22,7 +23,6 @@ export interface Invitation {
   readonly server: string | null;
 }
 
-const ROLES: readonly Role[] = ['member', 'coordinator'];
 const JOIN_PATH = '/join';
 
 export function encodeInvitationToken(invitation: Invitation): Result<string, ProtocolError> {
@@ -30,12 +30,12 @@ export function encodeInvitationToken(invitation: Invitation): Result<string, Pr
     if (invitation.secret.length !== GROUP_SECRET_SIZE) {
       throw new ProtocolFailure('invalid-value', 'group secret must be 16 bytes');
     }
-    if (invitation.server !== null && !invitation.server.startsWith('https://')) {
-      throw new ProtocolFailure('invalid-value', 'server URL must use https://');
+    if (invitation.server !== null && !isHttpsUrl(invitation.server)) {
+      throw new ProtocolFailure('invalid-value', 'server must be an https:// URL');
     }
     const token = new ByteWriter()
       .u8(INVITATION_VERSION)
-      .u8(ROLES.indexOf(invitation.role))
+      .u8(enumCode(ROLES, invitation.role, 'role'))
       .raw(invitation.secret)
       .raw(nodeIdToBytes(invitation.issuer))
       .textU8(invitation.groupName, 1, GROUP_NAME_MAX_BYTES, 'group name')
@@ -57,15 +57,14 @@ export function decodeInvitationToken(token: string): Result<Invitation, Protoco
     if (version !== INVITATION_VERSION) {
       return err({ code: 'unsupported-version', detail: `invitation version ${version}` });
     }
-    const role = ROLES[reader.u8()];
-    if (role === undefined) throw new ProtocolFailure('invalid-value', 'unknown role');
+    const role = enumValue(ROLES, reader.u8(), 'member'); // §3.1 reserved values: safest default
     const secret = reader.raw(GROUP_SECRET_SIZE);
     const issuer = nodeIdFromBytes(reader.raw(NODE_ID_SIZE));
     const groupName = reader.textU8(1, GROUP_NAME_MAX_BYTES, 'group name');
     const serverText = reader.textU8(0, SERVER_URL_MAX_BYTES, 'server URL');
     reader.end();
-    if (serverText !== '' && !serverText.startsWith('https://')) {
-      throw new ProtocolFailure('invalid-value', 'server URL must use https://');
+    if (serverText !== '' && !isHttpsUrl(serverText)) {
+      throw new ProtocolFailure('invalid-value', 'server must be an https:// URL');
     }
     return ok({ role, secret, issuer, groupName, server: serverText === '' ? null : serverText });
   } catch (failure) {
@@ -84,7 +83,7 @@ export function buildInvitationUrl(
   return ok(`${appOrigin.replace(/\/+$/, '')}${JOIN_PATH}#${token.value}`);
 }
 
-/** Extracts the invitation from a join URL; any origin is accepted, the path must be /join. */
+/** Extracts the invitation from `https://{any-host}/join#{token}`. */
 export function parseInvitationUrl(url: string): Result<Invitation, ProtocolError> {
   let parsed: URL;
   try {
@@ -92,8 +91,16 @@ export function parseInvitationUrl(url: string): Result<Invitation, ProtocolErro
   } catch {
     return err({ code: 'invalid-value', detail: 'not a URL' });
   }
-  if (!parsed.pathname.endsWith(JOIN_PATH) || parsed.hash.length < 2) {
+  if (parsed.protocol !== 'https:' || parsed.pathname !== JOIN_PATH || parsed.hash.length < 2) {
     return err({ code: 'invalid-value', detail: 'not an invitation link' });
   }
   return decodeInvitationToken(parsed.hash.slice(1));
+}
+
+function isHttpsUrl(text: string): boolean {
+  try {
+    return new URL(text).protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
