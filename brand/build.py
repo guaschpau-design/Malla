@@ -2,85 +2,100 @@
 #
 #   python3 brand/build.py
 #
-# The mark is a T of five tesserae, the pieces of a mosaic: many small ones that only together
-# form the picture, which is also what a map and a group are. One tessera is lit. The wordmark
-# is Geologica at weight 620, the typeface of the site, converted to outlines so it needs no
-# font. Needs fonttools, brotli and uharfbuzz (pip install fonttools brotli uharfbuzz).
+# The mark is three hexagonal tiles: a tessellation, the cells of a map grid and the nodes of a
+# mesh at once. One tile is lit, in signal orange. The wordmark is Archivo, expanded (width 118)
+# at weight 640, converted to outlines so it needs no font. Needs fonttools, brotli and uharfbuzz
+# (pip install fonttools brotli uharfbuzz).
+import io
+import math
 import os
-from fontTools.ttLib import TTFont
-from fontTools.varLib.instancer import instantiateVariableFont
+
+import uharfbuzz as hb
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
-import uharfbuzz as hb
+from fontTools.ttLib import TTFont
+from fontTools.varLib.instancer import instantiateVariableFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-FONT = os.path.join(HERE, '..', 'apps', 'site', 'fonts', 'geologica-latin-wght-normal.woff2')
+FONT = os.path.join(HERE, '..', 'apps', 'site', 'fonts', 'archivo-latin-standard-normal.woff2')
 INK, PALE, SIGNAL = '#10202c', '#e6ebe8', '#f26a2e'
+WIDTH, WEIGHT, TRACKING = 118, 640, -0.01
 
-JITTER = [  # per tile: dx,dy for each of the four corners, so no two tesserae are alike
-    [(0,1),(-1,0),(1,-1),(0,1)], [(1,0),(0,1),(-1,0),(1,-1)], [(-1,-1),(1,0),(0,1),(-1,0)],
-    [(0,-1),(1,1),(-1,0),(1,0)], [(1,0),(-1,-1),(0,1),(-1,1)],
-]
+# The mark, in a 100 x 100 box: three pointy-top hexagons in a triangle, with grout between them.
+HEX_RADIUS = 22
+GROUT = 5.5
+CORNER = 2.5  # rounding of the tiles' corners, as a stroke of the same colour
 
-def tile(cx, cy, size, jitter, fill):
-    h = size / 2
-    corners = [(cx-h, cy-h), (cx+h, cy-h), (cx+h, cy+h), (cx-h, cy+h)]
-    pts = [(x+dx*1.6, y+dy*1.6) for (x, y), (dx, dy) in zip(corners, jitter)]
-    d = 'M' + ' L'.join(f'{x:.1f} {y:.1f}' for x, y in pts) + ' Z'
-    # The stroke rounds the corners, like a cut stone, without changing the size much.
-    return f'<path d="{d}" fill="{fill}" stroke="{fill}" stroke-width="4" stroke-linejoin="round"/>'
 
-def mark(pale='currentColor', signal=SIGNAL, variant='top'):
-    # A T of five tesserae in a 100x100 box: three across, two down.
-    s, g = 26, 5
-    xs = [50 - s - g, 50, 50 + s + g]
-    top_y = 50 - s - g
-    pos = [(xs[0], top_y), (xs[1], top_y), (xs[2], top_y), (50, 50), (50, 50 + s + g)]
-    hot = 1 if variant == 'top' else 4
-    return '\n'.join(tile(x, y, s - 4, JITTER[i], signal if i == hot else pale) for i, (x, y) in enumerate(pos))
+def hexagon(cx, cy):
+    r = HEX_RADIUS - CORNER / 2
+    return [(cx + r * math.cos(math.radians(60 * k - 30)), cy + r * math.sin(math.radians(60 * k - 30))) for k in range(6)]
 
-def wordmark(text='Teselia', wght=620):
-    vf = TTFont(FONT)
-    font = instantiateVariableFont(vf, {'wght': wght})
+
+def tile(points, fill):
+    d = 'M' + ' L'.join(f'{x:.2f} {y:.2f}' for x, y in points) + ' Z'
+    return f'<path d="{d}" fill="{fill}" stroke="{fill}" stroke-width="{CORNER}" stroke-linejoin="round"/>'
+
+
+def mark():
+    dx = HEX_RADIUS * math.sqrt(3) + GROUT
+    dy = dx * math.sqrt(3) / 2
+    top = 50 - dy / 2
+    return ''.join([
+        tile(hexagon(50 - dx / 2, top), 'currentColor'),
+        tile(hexagon(50 + dx / 2, top), SIGNAL),
+        tile(hexagon(50, top + dy), 'currentColor'),
+    ])
+
+
+def wordmark(text='Teselia'):
+    font = instantiateVariableFont(TTFont(FONT), {'wght': WEIGHT, 'wdth': WIDTH})
+    font.flavor = None
     upem = font['head'].unitsPerEm
-    glyphset = font.getGlyphSet()
-    # Shape with HarfBuzz for kerning.
-    import io
-    font.flavor = None; buf = io.BytesIO(); font.save(buf); data = buf.getvalue()
-    face = hb.Face(data); hbfont = hb.Font(face); hbfont.scale = (upem, upem)
-    hbbuf = hb.Buffer(); hbbuf.add_str(text); hbbuf.guess_segment_properties()
-    hb.shape(hbfont, hbbuf, {'kern': True, 'liga': True})
-    order = font.getGlyphOrder()
-    x = 0; paths = []
-    tracking = -0.025 * upem
-    for info, posn in zip(hbbuf.glyph_infos, hbbuf.glyph_positions):
-        name = order[info.codepoint]
+    buffer = io.BytesIO()
+    font.save(buffer)
+    shaper = hb.Font(hb.Face(buffer.getvalue()))
+    glyphs = hb.Buffer()
+    glyphs.add_str(text)
+    glyphs.guess_segment_properties()
+    hb.shape(shaper, glyphs, {'kern': True, 'liga': True})
+    order, glyphset = font.getGlyphOrder(), font.getGlyphSet()
+    x, paths = 0, []
+    for info, pos in zip(glyphs.glyph_infos, glyphs.glyph_positions):
         pen = SVGPathPen(glyphset)
-        tpen = TransformPen(pen, (1, 0, 0, -1, x + posn.x_offset, 0))
-        glyphset[name].draw(tpen)
-        d = pen.getCommands()
-        if d: paths.append(d)
-        x += posn.x_advance + tracking
-    width = x - tracking
-    asc = font['hhea'].ascent; desc = -font['hhea'].descent
-    # Trim: cap height box
-    cap = font['OS/2'].sCapHeight if hasattr(font['OS/2'], 'sCapHeight') else 0.7*upem
-    return paths, width, upem, cap, desc
+        glyphset[order[info.codepoint]].draw(TransformPen(pen, (1, 0, 0, -1, x + pos.x_offset, 0)))
+        if pen.getCommands():
+            paths.append(pen.getCommands())
+        x += pos.x_advance + TRACKING * upem
+    width = x - TRACKING * upem
+    cap = font['OS/2'].sCapHeight
+    return ' '.join(paths), width, cap
 
-paths, w, upem, cap, desc = wordmark()
-# scale so cap height = 100 units
-k = 100 / cap
-d = ' '.join(paths)
-W = w * k
-H = (cap + desc) * k
-word_svg = f'<g transform="translate(0 {cap*k:.2f}) scale({k:.6f})"><path d="{d}"/></g>'
-open(os.path.join(HERE, 'wordmark.svg'), 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W:.1f} {H:.1f}" fill="{INK}">{word_svg}</svg>')
-open(os.path.join(HERE, 'mark.svg'), 'w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" color="{PALE}">{mark()}</svg>')
-# Lockup: mark height = cap height * 1.15, gap 0.35 of mark
-mh = 115; gap = 36
-lock_h = max(H, mh)
-lock = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {mh+gap+W:.1f} {lock_h:.1f}" color="{INK}">'
-        f'<g transform="translate(0 {(lock_h-mh)/2:.2f}) scale({mh/100:.4f})">{mark()}</g>'
-        f'<g transform="translate({mh+gap:.1f} {(lock_h-H)/2:.2f})" fill="currentColor">{word_svg}</g></svg>')
-open(os.path.join(HERE, 'lockup.svg'), 'w').write(lock)
-print('mark.svg, wordmark.svg and lockup.svg written')
+
+def main():
+    d, width, cap = wordmark()
+    k = 100 / cap  # cap height = 100 units
+    word_w, word_h = width * k, 100.0
+    word = f'<g transform="scale({k:.6f})"><path d="{d}" transform="translate(0 {cap})"/></g>'
+    write('wordmark.svg', f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {word_w:.1f} {word_h:.1f}" fill="{INK}">{word}</svg>')
+    write('mark.svg', f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" color="{PALE}">{mark()}</svg>')
+    # Lockup: the mark a little taller than the capitals, centred on them.
+    mark_h, gap = 150, 42
+    height = mark_h
+    lockup = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {mark_h + gap + word_w:.1f} {height:.1f}" color="{INK}">'
+        f'<g transform="scale({mark_h / 100:.4f})">{mark()}</g>'
+        f'<g transform="translate({mark_h + gap:.1f} {(height - word_h) / 2:.2f})" fill="currentColor">{word}</g></svg>'
+    )
+    write('lockup.svg', lockup)
+    # The site's header is always ink, so it takes a pale copy as an image (no inline SVG to keep in sync).
+    write(os.path.join('..', 'apps', 'site', 'img', 'lockup-pale.svg'), lockup.replace(f'color="{INK}"', f'color="{PALE}"'))
+    print('mark.svg, wordmark.svg, lockup.svg and the site\'s lockup-pale.svg written')
+
+
+def write(name, svg):
+    with open(os.path.join(HERE, name), 'w') as out:
+        out.write(svg + '\n')
+
+
+main()

@@ -28,11 +28,11 @@ function page(size, scale, radius) {
 }
 
 const icons = [
-  { file: 'icon-192.png', size: 192, scale: 0.72, radius: 0 },
-  { file: 'icon-512.png', size: 512, scale: 0.72, radius: 0 },
-  { file: 'maskable-512.png', size: 512, scale: 0.56, radius: 0 },
-  { file: 'apple-touch-icon.png', size: 180, scale: 0.72, radius: 0 },
-  { file: 'favicon-64.png', size: 64, scale: 0.78, radius: 12 },
+  { file: 'icon-192.png', size: 192, scale: 0.82, radius: 0 },
+  { file: 'icon-512.png', size: 512, scale: 0.82, radius: 0 },
+  { file: 'maskable-512.png', size: 512, scale: 0.64, radius: 0 },
+  { file: 'apple-touch-icon.png', size: 180, scale: 0.82, radius: 0 },
+  { file: 'favicon-64.png', size: 64, scale: 0.9, radius: 12 },
 ];
 
 await (async () => {
@@ -48,7 +48,7 @@ await (async () => {
   // The SVG favicon: the mark on a rounded ink square, crisp at any size.
   writeFileSync(
     join(out, 'favicon.svg'),
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="${INK}"/><g transform="translate(11 11) scale(0.78)" color="#e6ebe8">${mark.replace(/<svg[^>]*>|<\/svg>/g, '')}</g></svg>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="${INK}"/><g transform="translate(5 5) scale(0.9)" color="#e6ebe8">${mark.replace(/<svg[^>]*>|<\/svg>/g, '')}</g></svg>`,
   );
   console.warn(`${icons.length} icons and favicon.svg written to ${out}`);
 })();
