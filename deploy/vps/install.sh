@@ -126,9 +126,10 @@ systemctl enable --now docker >/dev/null
 
 step "Installing Teselia in $INSTALL_DIR"
 install -m 0755 -d "$INSTALL_DIR"
-for file in compose.yaml Caddyfile; do
+for file in compose.yaml Caddyfile maps.sh; do
   curl -fsSL "$REPO_RAW/$REF/deploy/vps/$file" -o "$INSTALL_DIR/$file"
 done
+chmod 0755 "$INSTALL_DIR/maps.sh"
 # A command post set by an earlier run is kept unless a new one is given.
 if [[ -z "$COMMAND_POST" && -f "$INSTALL_DIR/.env" ]]; then
   COMMAND_POST="$(sed -n 's/^TESELIA_COMMAND_POST=//p' "$INSTALL_DIR/.env")"
@@ -163,8 +164,38 @@ RandomizedDelaySec=2min
 [Install]
 WantedBy=timers.target
 CONF
+cat > /etc/systemd/system/teselia-maps.service <<'CONF'
+[Unit]
+Description=Rebuild the Teselia base map from the latest OpenStreetMap data
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/teselia/maps.sh /opt/teselia/maps
+CONF
+cat > /etc/systemd/system/teselia-maps.timer <<'CONF'
+[Unit]
+Description=Rebuild the Teselia base map every month
+
+[Timer]
+OnCalendar=monthly
+RandomizedDelaySec=1d
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+CONF
 systemctl daemon-reload
 systemctl enable --now teselia-update.timer >/dev/null
+
+if [[ ! -f "$INSTALL_DIR/maps/basemap.pmtiles" ]]; then
+  step "Building the base map (only the first time; it can take half an hour)"
+  "$INSTALL_DIR/maps.sh" "$INSTALL_DIR/maps" ||
+    echo "The base map could not be built now; teselia-maps.timer will try again."
+fi
+# Enabled only now, so its first run cannot overlap the build above.
+systemctl enable --now teselia-maps.timer >/dev/null
 
 step "Starting Teselia"
 cd "$INSTALL_DIR"

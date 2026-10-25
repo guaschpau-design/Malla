@@ -2,6 +2,8 @@
 
 ## What the server publishes
 
+Caddy serves the base map at `/maps/basemap.pmtiles` ([ADR-0007](../docs/decisions/0007-self-hosted-vector-maps.md)): Spain, Portugal and the islands by default; set `TESELIA_MAP_BBOX` (west,south,east,north) in the environment of `maps.sh` for another area.
+
 The server image carries the landing page ([`apps/site`](../apps/site)) at `/`, its English version at `/en/`, the web app at `/app/` and the relay at `/v1/ws` ([ADR-0017](../docs/decisions/0017-server-serves-site-and-app.md)). The app built into the image proposes its own server for new groups.
 
 GitHub Pages, where the app used to live, now only redirects to `https://teselia.eu/app/` ([`pages/`](pages)).
@@ -24,14 +26,15 @@ The server runs on any Debian or Ubuntu VPS with a domain pointing to it ([ADR-0
 
 What [`vps/install.sh`](vps/install.sh) sets up:
 
-| Layer      | What                                                                                                                |
-| ---------- | ------------------------------------------------------------------------------------------------------------------- |
-| System     | Updates, then automatic security updates with a nightly reboot when the kernel needs it                             |
-| Firewall   | `ufw`: only SSH (22) and the web (80, 443) are reachable                                                            |
-| SSH        | `fail2ban` bans repeated failed logins; password logins are turned off if an SSH key is installed                   |
-| Containers | Docker with [`vps/compose.yaml`](vps/compose.yaml): the server (read-only, no capabilities, unprivileged) and Caddy |
-| HTTPS      | Caddy gets and renews a Let's Encrypt certificate ([`vps/Caddyfile`](vps/Caddyfile)); no access logs are kept       |
-| Updates    | A systemd timer pulls `ghcr.io/guaschpau-design/teselia-server:latest` every 15 minutes and restarts what changed   |
+| Layer      | What                                                                                                                                                |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| System     | Updates, then automatic security updates with a nightly reboot when the kernel needs it                                                             |
+| Firewall   | `ufw`: only SSH (22) and the web (80, 443) are reachable                                                                                            |
+| SSH        | `fail2ban` bans repeated failed logins; password logins are turned off if an SSH key is installed                                                   |
+| Containers | Docker with [`vps/compose.yaml`](vps/compose.yaml): the server (read-only, no capabilities, unprivileged) and Caddy                                 |
+| HTTPS      | Caddy gets and renews a Let's Encrypt certificate ([`vps/Caddyfile`](vps/Caddyfile)); no access logs are kept                                       |
+| Updates    | A systemd timer pulls `ghcr.io/guaschpau-design/teselia-server:latest` every 15 minutes and restarts what changed                                   |
+| Base map   | [`vps/maps.sh`](vps/maps.sh) extracts the area from the latest Protomaps build of OpenStreetMap, served at `/maps/basemap.pmtiles`; rebuilt monthly |
 
 CI publishes that image after every green push to `main` (job `image`), for amd64 and arm64. Running the script again applies changes to `compose.yaml` or `Caddyfile` and is otherwise harmless.
 

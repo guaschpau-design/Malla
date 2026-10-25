@@ -1,8 +1,6 @@
-# HTTPS for the Teselia server. Caddy gets a Let's Encrypt certificate for TESELIA_DOMAIN and passes
-# WebSocket connections through unchanged.
+# HTTPS for the Teselia server. Caddy gets a Let's Encrypt certificate for TESELIA_DOMAIN, serves
+# the base map built by maps.sh and passes everything else, WebSockets included, to the server.
 {$TESELIA_DOMAIN} {
-	encode zstd gzip
-
 	header {
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options "nosniff"
@@ -10,6 +8,17 @@
 		-Server
 	}
 
+	# The base map: one PMTiles file read by HTTP range requests, from apps on any origin.
+	handle_path /maps/* {
+		root * /srv/maps
+		header Access-Control-Allow-Origin "*"
+		header Cache-Control "public, max-age=3600"
+		file_server
+	}
+
 	# The server keeps no access logs: who connects when is nobody's business.
-	reverse_proxy teselia:8080
+	handle {
+		encode zstd gzip
+		reverse_proxy teselia:8080
+	}
 }

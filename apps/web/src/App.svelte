@@ -3,7 +3,7 @@
   import type { Map as MapLibreMap } from 'maplibre-gl';
   import { onMount, untrack } from 'svelte';
 
-  import { BASEMAP_URL } from './lib/config.ts';
+  import { basemapUrl } from './lib/config.ts';
   import { connection, watchConnection } from './lib/connection.svelte.ts';
   import type { JoinOutcome } from './lib/groups/group.ts';
   import GroupsPanel from './lib/groups/GroupsPanel.svelte';
@@ -39,7 +39,7 @@
   if (fromAddress !== null) window.history.replaceState(null, '', import.meta.env.BASE_URL);
   let incoming: Result<Invitation, ProtocolError> | null = $state.raw(fromAddress);
 
-  const archive = pmtilesArchive(BASEMAP_URL);
+  const archive = pmtilesArchive(basemapUrl());
   let store: TileStore | undefined = $state();
   let db: AppDb | undefined;
   let session: Session | undefined = $state();

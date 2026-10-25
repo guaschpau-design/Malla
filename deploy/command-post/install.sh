@@ -102,7 +102,7 @@ fi
 systemctl enable --now docker >/dev/null
 
 step "Installing the command post in $INSTALL_DIR"
-install -m 0755 -d "$INSTALL_DIR" "$INSTALL_DIR/certs"
+install -m 0755 -d "$INSTALL_DIR" "$INSTALL_DIR/certs" "$INSTALL_DIR/maps"
 for file in compose.yaml Caddyfile; do
   curl -fsSL "$REPO_RAW/$REF/deploy/command-post/$file" -o "$INSTALL_DIR/$file"
 done
@@ -137,6 +137,11 @@ else
 fi
 docker compose pull --quiet && docker compose up --detach --remove-orphans
 docker image prune --force >/dev/null
+# The upstream's base map, so phones on the post's Wi-Fi see the whole area; only when it changed.
+mkdir -p maps
+curl -fsS -z maps/basemap.pmtiles -o maps/basemap.pmtiles.new "\${TESELIA_UPSTREAM%/}/maps/basemap.pmtiles" &&
+  [[ -s maps/basemap.pmtiles.new ]] && mv maps/basemap.pmtiles.new maps/basemap.pmtiles
+rm -f maps/basemap.pmtiles.new
 SCRIPT
 chmod 0700 "$INSTALL_DIR/refresh.sh"
 

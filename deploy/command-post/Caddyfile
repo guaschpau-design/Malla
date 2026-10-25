@@ -3,7 +3,6 @@
 # and Caddy only serves it.
 {$TESELIA_DOMAIN} {
 	tls /certs/certificates/{$TESELIA_DOMAIN}.crt /certs/certificates/{$TESELIA_DOMAIN}.key
-	encode zstd gzip
 
 	header {
 		Strict-Transport-Security "max-age=31536000"
@@ -12,5 +11,16 @@
 		-Server
 	}
 
-	reverse_proxy teselia:8080
+	# The base map, copied from the upstream while there is internet (refresh.sh).
+	handle_path /maps/* {
+		root * /srv/maps
+		header Access-Control-Allow-Origin "*"
+		header Cache-Control "public, max-age=3600"
+		file_server
+	}
+
+	handle {
+		encode zstd gzip
+		reverse_proxy teselia:8080
+	}
 }

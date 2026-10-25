@@ -1,12 +1,15 @@
 // Build-time configuration, from Vite environment variables.
 
 /**
- * Base map in PMTiles format. Until our own server is up (day 3), development uses the
- * Protomaps demo archive, which is meant for testing only and must not be used in production.
+ * Base map in PMTiles format, absolute or relative to the app. The server image uses the map its
+ * server publishes (deploy/vps/maps.sh); without one, development uses the Protomaps demo
+ * archive, which is meant for testing only and must not be used in production.
  */
-export const BASEMAP_URL: string =
-  (import.meta.env['VITE_BASEMAP_URL'] as string | undefined) ??
-  'https://demo-bucket.protomaps.com/v4.pmtiles';
+export function basemapUrl(): string {
+  const configured = import.meta.env['VITE_BASEMAP_URL'] as string | undefined;
+  return new URL(configured || 'https://demo-bucket.protomaps.com/v4.pmtiles', window.location.href)
+    .href;
+}
 
 /** Absolute URL of the vendored glyphs and sprites (public/map-assets). */
 export function mapAssetsUrl(): string {

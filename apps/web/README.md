@@ -25,11 +25,11 @@ The Teselia progressive web app: map and offline areas, identity and groups, the
 | `public/map-assets/`        | Vendored glyphs and sprites, see its README for licences                                                                                     |
 | `e2e/`                      | End-to-end tests in a real browser                                                                                                           |
 
-| Variable           | Meaning                                                                         |
-| ------------------ | ------------------------------------------------------------------------------- |
-| `VITE_BASEMAP_URL` | PMTiles base map. Defaults to the Protomaps demo archive, for development only  |
-| `VITE_SERVER_URL`  | Server proposed for new groups, absolute or relative to the app; empty for none |
-| `TESELIA_BASE`     | Base path when served from a sub-folder, e.g. `/Teselia/` on GitHub Pages       |
+| Variable           | Meaning                                                                                                         |
+| ------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `VITE_BASEMAP_URL` | PMTiles base map, absolute or relative to the app. Defaults to the Protomaps demo archive, for development only |
+| `VITE_SERVER_URL`  | Server proposed for new groups, absolute or relative to the app; empty for none                                 |
+| `TESELIA_BASE`     | Base path when served from a sub-folder, e.g. `/Teselia/` on GitHub Pages                                       |
 
 ```sh
 pnpm dev        # development server
