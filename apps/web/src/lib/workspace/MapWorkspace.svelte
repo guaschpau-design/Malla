@@ -27,6 +27,7 @@
   import ObjectForm from '../objects/ObjectForm.svelte';
   import ObjectLayer from '../objects/ObjectLayer.svelte';
   import PositionControl from '../position/PositionControl.svelte';
+  import type { RadioSession } from '../radio/radio.svelte.ts';
   import type { PositionSharing } from '../position/position-sharing.svelte.ts';
   import type { GroupFeed } from '../sync/group-feed.svelte.ts';
   import Toast from '../ui/Toast.svelte';
@@ -38,9 +39,10 @@
     map: MapLibreMap;
     /** The active group's feed and this device's place in it, when there is an active group. */
     group: { feed: GroupFeed; self: NodeId; role: Role; sharing: PositionSharing } | null;
+    radio: RadioSession;
   }
 
-  let { t, locale, map, group }: Props = $props();
+  let { t, locale, map, group, radio }: Props = $props();
 
   // Drawing: tapping points (`draft`), then describing the object (`describing`).
   let draft: Draft | null = $state.raw(null);
@@ -179,6 +181,8 @@
       canAlert={role === 'coordinator'}
       onsend={sendChat}
       onalert={sendAlert}
+      radioTexts={radio.texts}
+      showRadioTab={radio.state !== 'disconnected' || radio.texts.length > 0}
       onclose={closePanel}
     />
   {/if}

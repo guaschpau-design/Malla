@@ -1,8 +1,17 @@
 import { encodeEvent, type NodeId, type TeseliaEvent } from '@teselia/protocol';
-import type { RadioLink, RadioLinkState, ReceivedFrame, SendOutcome } from '@teselia/meshcore';
+import 'fake-indexeddb/auto';
+
+import type {
+  RadioLink,
+  RadioLinkState,
+  RadioText,
+  ReceivedFrame,
+  SendOutcome,
+} from '@teselia/meshcore';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { LoraSink } from '../sync/group-feed.svelte.ts';
+import { openAppDb } from '../storage/app-db.ts';
 import { RadioSession, type RadioFeed } from './radio.svelte.ts';
 
 class FakeLink implements RadioLink {
@@ -12,6 +21,7 @@ class FakeLink implements RadioLink {
   readonly sent: Uint8Array[] = [];
   #receive: ((frame: ReceivedFrame) => void) | null = null;
   #stateChange: ((state: RadioLinkState) => void) | null = null;
+  #text: ((message: RadioText) => void) | null = null;
 
   connect(): Promise<void> {
     this.state = 'ready';
@@ -38,6 +48,15 @@ class FakeLink implements RadioLink {
   onStateChange(listener: (state: RadioLinkState) => void): () => void {
     this.#stateChange = listener;
     return () => undefined;
+  }
+
+  onText(listener: (message: RadioText) => void): () => void {
+    this.#text = listener;
+    return () => undefined;
+  }
+
+  say(message: RadioText): void {
+    this.#text?.(message);
   }
 
   disconnect(): Promise<void> {
@@ -111,6 +130,22 @@ describe('radio session', () => {
     link.hear(bytes);
     expect(feed.received).toEqual([bytes]);
     expect(radio.lastSnr).toBe(7.5);
+  });
+
+  it('keeps MeshCore text messages across restarts', async () => {
+    vi.useRealTimers();
+    const db = await openAppDb('radio-session-texts');
+    const link = new FakeLink();
+    const radio = new RadioSession(link);
+    await radio.useStorage(db);
+    link.say({ kind: 'channel', channel: 'Public', sender: 'Marta', text: 'Hola', time: 1 });
+    expect(radio.texts.map((text) => text.text)).toEqual(['Hola']);
+
+    await vi.waitFor(async () => {
+      const restarted = new RadioSession(new FakeLink());
+      await restarted.useStorage(db);
+      expect(restarted.texts.map((text) => text.text)).toEqual(['Hola']);
+    });
   });
 
   it('unlinks the feed when the radio goes away', async () => {

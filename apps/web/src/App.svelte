@@ -75,6 +75,7 @@
     void openAppDb().then(async (opened) => {
       db = opened;
       sharing = new PositionSharing(opened);
+      void radio.useStorage(opened);
       session = await Session.load(opened);
     });
 
@@ -220,7 +221,7 @@
     {/if}
 
     {#if map}
-      <MapWorkspace {t} {locale} {map} group={workspaceGroup} />
+      <MapWorkspace {t} {locale} {map} group={workspaceGroup} {radio} />
     {/if}
 
     {#if map && store && panels.open === 'offline'}

@@ -12,4 +12,4 @@ The rest of the code depends only on the `RadioLink` interface in `src/radio-lin
 | `companion.ts`      | The typed subset of the companion connection used here                                            |
 | `web-ble.ts`        | Connecting over Web Bluetooth with the MIT-licensed `@liamcottle/meshcore.js`                     |
 
-While Teselia is connected it reads every message the radio holds, so text messages meant for the MeshCore app are not shown there.
+While Teselia is connected it reads every message the radio holds. Text messages of other MeshCore apps are passed to `onText` so the app can keep and show them.

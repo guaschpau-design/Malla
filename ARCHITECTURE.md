@@ -119,7 +119,7 @@ LoRa is slow and legally limited to 10 % airtime in the EU 869.4–869.65 MHz su
 4. Repeats an own `SOS` with back-off (30 s, doubling to 5 minutes) until an `ACK` or a `SOS_CANCEL` arrives over any transport.
 5. Applies the protocol's ACK rule: an own `ACK` waits 2–30 s and is dropped if another member's `ACK` is heard first.
 
-When a radio is linked to a group, the device also queues its own latest `MEMBER_INFO`, so members who only hear the radio learn its alias. While connected, Teselia reads every message the radio holds; text messages meant for the MeshCore app are not shown there.
+When a radio is linked to a group, the device also queues its own latest `MEMBER_INFO`, so members who only hear the radio learn its alias. While connected, Teselia reads every message the radio holds. Text messages of other MeshCore apps are kept on the device and shown, read-only, in a MeshCore tab of the chat, so they are not lost.
 
 ### 4.3 Bridging
 

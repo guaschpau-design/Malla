@@ -10,7 +10,9 @@ import {
   type RadioLinkState,
 } from '@teselia/meshcore';
 
+import type { AppDb } from '../storage/app-db.ts';
 import type { GroupFeed, LoraSink } from '../sync/group-feed.svelte.ts';
+import { loadRadioTexts, saveRadioText, type StoredRadioText } from './radio-texts.ts';
 
 /** What the radio needs from the active group's feed. */
 export type RadioFeed = Pick<GroupFeed, 'attachRadio' | 'receiveFromRadio' | 'radioChannel'>;
@@ -30,10 +32,13 @@ export class RadioSession {
   lastSnr: number | null = $state(null);
   /** Share of the legal airtime (10 % of an hour) used in the last hour, 0 to 1. */
   airtimeUsed = $state(0);
+  /** Text messages of other MeshCore apps, oldest first. */
+  texts: readonly StoredRadioText[] = $state.raw([]);
 
   readonly #link: RadioLink;
   readonly #scheduler: LoraScheduler;
   #feed: RadioFeed | null = null;
+  #db: AppDb | null = null;
   #pump: ReturnType<typeof setInterval> | null = null;
   #sending = false;
   readonly #sink: LoraSink = {
@@ -57,6 +62,17 @@ export class RadioSession {
       this.lastSnr = frame.snr;
       void this.#feed?.receiveFromRadio(frame.bytes);
     });
+    link.onText((text) => {
+      const stored = { ...text, receivedAt: Date.now() };
+      this.texts = [...this.texts, stored];
+      if (this.#db) void saveRadioText(this.#db, stored);
+    });
+  }
+
+  /** Where heard MeshCore text messages are kept; loads those kept before. */
+  async useStorage(db: AppDb): Promise<void> {
+    this.#db = db;
+    this.texts = [...(await loadRadioTexts(db)), ...this.texts];
   }
 
   /** Asks the user to pick a radio, connects and links it to the active group. */

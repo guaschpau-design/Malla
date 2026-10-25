@@ -14,6 +14,7 @@
   import type { Locale, Translate } from '../i18n/index.ts';
   import { aliasOf } from '../incidents/incidents.ts';
   import { ALERT_LEVELS } from '../incidents/sos-kinds.ts';
+  import type { StoredRadioText } from '../radio/radio-texts.ts';
   import Panel from '../ui/Panel.svelte';
   import { timeline } from './timeline.ts';
 
@@ -26,10 +27,26 @@
     canAlert: boolean;
     onsend: (text: string) => Promise<void>;
     onalert: (level: AlertLevel, text: string) => Promise<void>;
+    /** Text messages of other MeshCore apps heard by the radio; shown in their own tab. */
+    radioTexts: readonly StoredRadioText[];
+    showRadioTab: boolean;
     onclose: () => void;
   }
 
-  let { t, locale, groupState, self, canAlert, onsend, onalert, onclose }: Props = $props();
+  let {
+    t,
+    locale,
+    groupState,
+    self,
+    canAlert,
+    onsend,
+    onalert,
+    radioTexts,
+    showRadioTab,
+    onclose,
+  }: Props = $props();
+
+  let tab: 'group' | 'meshcore' = $state('group');
 
   let text = $state('');
   let sendAs: 'message' | AlertLevel = $state('message');
@@ -57,57 +74,117 @@
 </script>
 
 <Panel title={t('chat')} closeLabel={t('close')} {onclose}>
-  {#if entries.length === 0}
-    <p class="hint section">{t('noMessages')}</p>
-  {:else}
-    <ol class="messages section" bind:this={list}>
-      {#each entries as entry (entry.key)}
-        <li
-          class:own={entry.event.origin === self}
-          class="{entry.kind} {entry.kind === 'alert' ? entry.event.level : ''}"
-        >
-          <span class="meta">
-            {#if entry.kind === 'alert'}{t(ALERT_LEVELS[entry.event.level])} ·{/if}
-            {aliasOf(groupState, entry.event.origin)} · {formatTime(
-              entry.event.time * 1000,
-              locale,
-            )}
-          </span>
-          <span class="text">{entry.event.text}</span>
-        </li>
-      {/each}
-    </ol>
+  {#if showRadioTab}
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected={tab === 'group'} onclick={() => (tab = 'group')}>
+        {t('chatGroup')}
+      </button>
+      <button role="tab" aria-selected={tab === 'meshcore'} onclick={() => (tab = 'meshcore')}>
+        {t('chatMeshcore')}
+        {#if radioTexts.length > 0}<span class="count">{radioTexts.length}</span>{/if}
+      </button>
+    </div>
   {/if}
 
-  <form
-    class="compose section"
-    onsubmit={(event) => {
-      event.preventDefault();
-      void send();
-    }}
-  >
-    {#if canAlert}
-      <select bind:value={sendAs} aria-label={t('sendAs')}>
-        <option value="message">{t('message')}</option>
-        {#each Object.entries(ALERT_LEVELS) as [level, label] (level)}
-          <option value={level}>{t('alert')}: {t(label)}</option>
+  {#if tab === 'meshcore' && showRadioTab}
+    <p class="hint section">{t('meshcoreIntro')}</p>
+    {#if radioTexts.length === 0}
+      <p class="hint">{t('noMeshcoreMessages')}</p>
+    {:else}
+      <ol class="messages section">
+        {#each radioTexts as message, index (index)}
+          <li>
+            <span class="meta">
+              {message.kind === 'direct'
+                ? t('meshcoreDirect')
+                : t('meshcoreChannel', { name: message.channel ?? t('meshcoreUnknownChannel') })}
+              {#if message.sender}· {message.sender}{/if}
+              · {formatTime(message.receivedAt, locale)}
+            </span>
+            <span class="text">{message.text}</span>
+          </li>
         {/each}
-      </select>
+      </ol>
     {/if}
-    <div class="line">
-      <input
-        bind:value={text}
-        aria-label={t('message')}
-        placeholder={t('message')}
-        autocomplete="off"
-      />
-      <button type="submit" class="primary" disabled={!canSend}>{t('send')}</button>
-    </div>
-  </form>
-  {#if size > maxBytes}<p class="warning">{t('messageTooLong')}</p>{/if}
+  {:else}
+    {#if entries.length === 0}
+      <p class="hint section">{t('noMessages')}</p>
+    {:else}
+      <ol class="messages section" bind:this={list}>
+        {#each entries as entry (entry.key)}
+          <li
+            class:own={entry.event.origin === self}
+            class="{entry.kind} {entry.kind === 'alert' ? entry.event.level : ''}"
+          >
+            <span class="meta">
+              {#if entry.kind === 'alert'}{t(ALERT_LEVELS[entry.event.level])} ·{/if}
+              {aliasOf(groupState, entry.event.origin)} · {formatTime(
+                entry.event.time * 1000,
+                locale,
+              )}
+            </span>
+            <span class="text">{entry.event.text}</span>
+          </li>
+        {/each}
+      </ol>
+    {/if}
+
+    <form
+      class="compose section"
+      onsubmit={(event) => {
+        event.preventDefault();
+        void send();
+      }}
+    >
+      {#if canAlert}
+        <select bind:value={sendAs} aria-label={t('sendAs')}>
+          <option value="message">{t('message')}</option>
+          {#each Object.entries(ALERT_LEVELS) as [level, label] (level)}
+            <option value={level}>{t('alert')}: {t(label)}</option>
+          {/each}
+        </select>
+      {/if}
+      <div class="line">
+        <input
+          bind:value={text}
+          aria-label={t('message')}
+          placeholder={t('message')}
+          autocomplete="off"
+        />
+        <button type="submit" class="primary" disabled={!canSend}>{t('send')}</button>
+      </div>
+    </form>
+    {#if size > maxBytes}<p class="warning">{t('messageTooLong')}</p>{/if}
+  {/if}
 </Panel>
 
 <style>
+  .tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tabs button {
+    border: none;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+  }
+
+  .tabs button[aria-selected='true'] {
+    font-weight: 600;
+    border-bottom-color: var(--accent);
+  }
+
+  .count {
+    margin-left: 0.35rem;
+    padding: 0 0.4rem;
+    font-size: 0.75rem;
+    border: 1px solid currentcolor;
+    border-radius: 999px;
+  }
+
   .messages {
     display: grid;
     gap: 0.5rem;

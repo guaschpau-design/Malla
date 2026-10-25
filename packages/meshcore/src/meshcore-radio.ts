@@ -9,10 +9,19 @@ import {
   FLOOD,
   PUSH_MSG_WAITING,
   type ChannelInfo,
+  type ChannelMessage,
   type CompanionConnection,
+  type ContactMessage,
+  type SyncedMessage,
 } from './companion.ts';
 import { ACCEPTED_DATA_TYPES, SEND_DATA_TYPE } from './data-type.ts';
-import type { RadioLink, RadioLinkState, ReceivedFrame, SendOutcome } from './radio-link.ts';
+import type {
+  RadioLink,
+  RadioLinkState,
+  RadioText,
+  ReceivedFrame,
+  SendOutcome,
+} from './radio-link.ts';
 
 /** Opens a connection; for Web Bluetooth this asks the user to pick a radio. */
 export type Connector = () => Promise<{ connection: CompanionConnection; name: string | null }>;
@@ -40,6 +49,9 @@ export class MeshCoreRadio implements RadioLink {
   #draining = false;
   #drainRequested = false;
   readonly #receivers = new Set<(frame: ReceivedFrame) => void>();
+  readonly #textListeners = new Set<(message: RadioText) => void>();
+  /** Channel names by slot, learnt when configuring the group channel. */
+  #channelNames = new Map<number, string>();
   readonly #stateListeners = new Set<(state: RadioLinkState) => void>();
   readonly #onMessageWaiting = () => void this.#drain();
   readonly #onDisconnected = () => {
@@ -77,6 +89,7 @@ export class MeshCoreRadio implements RadioLink {
   async configureGroupChannel(groupName: string, secret: Uint8Array): Promise<void> {
     const connection = this.#ready();
     const channels = await this.#listChannels(connection);
+    this.#channelNames = new Map(channels.map((channel) => [channel.channelIdx, channel.name]));
     const choice = chooseChannelSlot(channels, secret);
     if (choice.kind === 'full') {
       throw new RadioError('no-free-channel', 'every channel slot of the radio is in use');
@@ -110,6 +123,11 @@ export class MeshCoreRadio implements RadioLink {
   onReceive(listener: (frame: ReceivedFrame) => void): () => void {
     this.#receivers.add(listener);
     return () => this.#receivers.delete(listener);
+  }
+
+  onText(listener: (message: RadioText) => void): () => void {
+    this.#textListeners.add(listener);
+    return () => this.#textListeners.delete(listener);
   }
 
   onStateChange(listener: (state: RadioLinkState) => void): () => void {
@@ -163,11 +181,22 @@ export class MeshCoreRadio implements RadioLink {
     for (;;) {
       const message = await this.#command(() => connection.syncNextMessage());
       if (message === null) return;
-      if (!('channelData' in message)) continue; // Text messages for other MeshCore apps.
-      const { channelIdx, dataType, data, snr } = message.channelData;
-      if (channelIdx !== this.#channel || !ACCEPTED_DATA_TYPES.includes(dataType)) continue;
-      for (const receiver of this.#receivers) receiver({ bytes: data, snr });
+      this.#deliver(message);
     }
+  }
+
+  #deliver(message: NonNullable<SyncedMessage>): void {
+    if ('channelData' in message) {
+      const { channelIdx, dataType, data, snr } = message.channelData;
+      if (channelIdx !== this.#channel || !ACCEPTED_DATA_TYPES.includes(dataType)) return;
+      for (const receiver of this.#receivers) receiver({ bytes: data, snr });
+      return;
+    }
+    const text =
+      'channelMessage' in message
+        ? channelText(message.channelMessage, this.#channelNames)
+        : directText(message.contactMessage);
+    for (const listener of this.#textListeners) listener(text);
   }
 
   /** Runs one command after the previous one has finished, with a timeout. */
@@ -218,4 +247,28 @@ async function withTimeout<T>(promise: Promise<T>): Promise<T> {
 function rethrowAsRefused(error: unknown): never {
   if (error instanceof Error) throw error;
   throw new RadioError('refused', 'the radio refused the command');
+}
+
+/** MeshCore puts the sender's name at the start of channel messages: "Name: text". */
+function channelText(message: ChannelMessage, names: ReadonlyMap<number, string>): RadioText {
+  const separator = message.text.indexOf(': ');
+  const named = separator > 0 && separator <= 32;
+  return {
+    kind: 'channel',
+    channel: names.get(message.channelIdx) ?? null,
+    sender: named ? message.text.slice(0, separator) : null,
+    text: named ? message.text.slice(separator + 2) : message.text,
+    time: message.senderTimestamp,
+  };
+}
+
+function directText(message: ContactMessage): RadioText {
+  const hex = [...message.pubKeyPrefix].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  return {
+    kind: 'direct',
+    channel: null,
+    sender: hex,
+    text: message.text,
+    time: message.senderTimestamp,
+  };
 }

@@ -34,4 +34,4 @@ Web Bluetooth is available in Chrome and Edge on Android, Windows, macOS and Lin
 2. Tap **LoRa** in the top bar, then **Connect radio**, and pick the radio in the browser's list.
 3. Teselia stores the group secret in a free channel slot of the radio (it never overwrites another channel) and starts sending and receiving. The panel shows the last signal-to-noise ratio and the airtime used in the last hour.
 
-While connected, Teselia reads every message the radio holds, so text messages for the MeshCore app do not reach it. Disconnect in the panel to use the radio with the MeshCore app again.
+While connected, Teselia reads every message the radio holds. Text messages of other MeshCore apps appear in the chat's MeshCore tab, read-only; disconnect in the panel to reply from the MeshCore app.

@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { openAppDb } from './app-db.ts';
 
 describe('app database', () => {
-  it('upgrades a version 1 database without losing its groups', async () => {
+  it('upgrades a version 1 database to the current one without losing its groups', async () => {
     const v1 = await openDB('upgrade-test', 1, {
       upgrade(database) {
         database.createObjectStore('identity');
@@ -25,6 +25,7 @@ describe('app database', () => {
       'groups',
       'identity',
       'outbox',
+      'radioTexts',
       'sequence',
       'settings',
     ]);

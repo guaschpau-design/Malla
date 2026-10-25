@@ -208,4 +208,12 @@ export const es: Messages = {
   radioNoAnswer:
     'La radio no responde. Comprueba que lleva el firmware MeshCore Companion Bluetooth v1.18 o posterior.',
   radioFailed: 'No se pudo conectar con la radio. Inténtalo de nuevo.',
+  chatGroup: 'Grupo',
+  chatMeshcore: 'MeshCore',
+  meshcoreIntro:
+    'Mensajes de personas cercanas que usan la app MeshCore con sus radios. Teselia los guarda aquí para que no se pierdan. Para responder, usa la app MeshCore.',
+  noMeshcoreMessages: 'Todavía no ha llegado ningún mensaje de MeshCore.',
+  meshcoreChannel: 'Canal {name}',
+  meshcoreUnknownChannel: 'de radio',
+  meshcoreDirect: 'Mensaje privado',
 };

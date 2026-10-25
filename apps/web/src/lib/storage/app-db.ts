@@ -7,6 +7,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 
 import type { StoredGroup } from '../groups/group.ts';
 import type { LocalIdentity } from '../identity/identity.ts';
+import type { StoredRadioText } from '../radio/radio-texts.ts';
 
 /** An event of a group as received or created: its encoded bytes, keyed by group and ref. */
 export interface StoredEvent extends OutboxEntry {
@@ -39,12 +40,14 @@ export interface AppSchema extends DBSchema {
   events: { key: EventKey; value: StoredEvent; indexes: { byGroup: string } };
   outbox: { key: EventKey; value: OutboxEntry; indexes: { byGroup: string } };
   cursors: { key: string; value: SyncCursor };
+  /** Text messages of other MeshCore apps heard by the radio, oldest first. */
+  radioTexts: { key: number; value: StoredRadioText };
 }
 
 export type AppDb = IDBPDatabase<AppSchema>;
 
 const DB_NAME = 'teselia';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 export function openAppDb(name: string = DB_NAME): Promise<AppDb> {
   return openDB<AppSchema>(name, DB_VERSION, {
@@ -66,6 +69,9 @@ export function openAppDb(name: string = DB_NAME): Promise<AppDb> {
         });
         outbox.createIndex('byGroup', 'groupId');
         database.createObjectStore('cursors');
+      }
+      if (oldVersion < 3) {
+        database.createObjectStore('radioTexts', { autoIncrement: true });
       }
     },
   });
