@@ -150,8 +150,8 @@ El día 5 es el de más riesgo: la integración con la radio solo se valida con 
 
 ## 11. Lo que necesito de Pau
 
-- [ ] Repositorio vacío en GitHub (nombre provisional) conectado a la sesión con permiso de escritura.
-- [ ] VPS europeo (Hetzner, OVH o Scaleway) y un dominio.
+- [x] Repositorio en GitHub conectado a la sesión con permiso de escritura (`guaschpau-design/Malla`), con publicación automática en GitHub Pages.
+- [ ] VPS europeo (recomendado: OVHcloud VPS-1, Debian) y un dominio; instalación con un solo comando (`deploy/README.md`).
 - [ ] Modelos de las radios MeshCore y Meshtastic disponibles; radios MeshCore con firmware Companion BLE v1.18 o superior.
 - [ ] Unos 30 minutos diarios de pruebas con un Android con Chrome, un PC y, si es posible, un iPhone.
 - [ ] Opcional: Raspberry Pi 4 o 5 para el día 6.
