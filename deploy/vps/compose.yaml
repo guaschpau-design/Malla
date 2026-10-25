@@ -1,0 +1,46 @@
+# Malla on a VPS: the relay server behind Caddy, which obtains and renews the HTTPS certificate.
+# Installed by install.sh into /opt/malla, with MALLA_DOMAIN set in /opt/malla/.env.
+
+name: malla
+
+services:
+  malla:
+    image: ${MALLA_IMAGE:-ghcr.io/guaschpau-design/malla-server:latest}
+    restart: unless-stopped
+    environment:
+      MALLA_RETENTION_DAYS: ${MALLA_RETENTION_DAYS:-30}
+    volumes:
+      - malla-data:/data
+    # Locked down: read-only system, no Linux capabilities, no privilege escalation. The server
+    # only needs to write its database and talk to Caddy on the internal network.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks: [internal]
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      MALLA_DOMAIN: ${MALLA_DOMAIN:?set MALLA_DOMAIN in .env}
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    security_opt: [no-new-privileges:true]
+    networks: [internal]
+    depends_on: [malla]
+
+volumes:
+  malla-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  internal:

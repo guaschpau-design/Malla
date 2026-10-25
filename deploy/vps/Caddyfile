@@ -1,0 +1,15 @@
+# HTTPS for the Malla server. Caddy gets a Let's Encrypt certificate for MALLA_DOMAIN and passes
+# WebSocket connections through unchanged.
+{$MALLA_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+
+	# The server keeps no access logs: who connects when is nobody's business.
+	reverse_proxy malla:8080
+}

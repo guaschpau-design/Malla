@@ -18,3 +18,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0010](0010-lora-link-security.md)                 | Rely on MeshCore channel encryption for LoRa in v0.1, knowing its limits | Accepted                  |
 | [0011](0011-client-side-area-download.md)          | Download offline areas tile by tile in the browser                       | Accepted                  |
 | [0012](0012-invitation-links-under-a-base-path.md) | Invitation links work under a base path                                  | Accepted                  |
+| [0013](0013-self-updating-vps.md)                  | A self-updating VPS behind Caddy, installed by one script                | Accepted                  |

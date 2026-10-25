@@ -1,0 +1,9 @@
+**/node_modules
+**/dist
+**/*.test.ts
+**/test-results
+**/playwright-report
+.git
+.github
+docs
+apps/web
