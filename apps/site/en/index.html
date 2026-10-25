@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Teselia · A shared map for your group, with or without coverage</title>
+    <meta
+      name="description"
+      content="Teselia is a free, open-source app that lets a group see where everyone is on a map, message each other and call for help. It works over the internet and, without coverage, over LoRa radio."
+    />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="icon" href="../app/icons/favicon-64.png" />
+    <link rel="apple-touch-icon" href="../app/icons/apple-touch-icon.png" />
+    <link rel="alternate" hreflang="es" href="../" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script src="../site.js" defer></script>
+  </head>
+  <body>
+    <header class="top">
+      <div class="wrap">
+        <a class="brand" href="./"><img src="../app/icons/icon-192.png" alt="" />Teselia</a>
+        <nav aria-label="Sections">
+          <a class="optional" href="#how-it-works">How it works</a>
+          <a class="optional" href="#devices">Devices</a>
+          <a class="optional" href="#questions">Questions</a>
+          <a href="../" hreflang="es" lang="es">Español</a>
+        </nav>
+        <a class="button small" href="../app/">Open the app</a>
+      </div>
+    </header>
+
+    <main>
+      <div class="hero">
+        <div class="mosaic" aria-hidden="true"></div>
+        <div class="wrap">
+          <h1>Your group, on the map. With coverage or without.</h1>
+          <p class="lead">
+            Teselia is a free app that lets a group of people see where everyone is, message each
+            other, mark what matters on the map and call for help. It works over the internet and,
+            when there is no coverage, through small pocket radios.
+          </p>
+          <div class="actions">
+            <a class="button" href="../app/">Open Teselia</a>
+            <a class="button secondary" href="#how-it-works">See how it works</a>
+          </div>
+          <ul class="pills">
+            <li>Free, no ads</li>
+            <li>No accounts, no phone number</li>
+            <li>End-to-end encrypted</li>
+            <li>European open source</li>
+          </ul>
+        </div>
+      </div>
+
+      <section id="who">
+        <div class="wrap">
+          <h2>Who is it for?</h2>
+          <p class="intro">
+            For any group that needs to coordinate on the ground, especially when things get hard: a
+            blackout, a flood, a wildfire or just an area without coverage.
+          </p>
+          <div class="grid">
+            <div class="card">
+              <div class="icon" aria-hidden="true">🏘️</div>
+              <h3>Neighbours and associations</h3>
+              <p>Organise the neighbourhood during an emergency and know who needs help.</p>
+            </div>
+            <div class="card">
+              <div class="icon" aria-hidden="true">🦺</div>
+              <h3>Volunteers and civil protection</h3>
+              <p>Split up areas, mark meeting points and warn of hazards as they happen.</p>
+            </div>
+            <div class="card">
+              <div class="icon" aria-hidden="true">⛰️</div>
+              <h3>Mountains and the outdoors</h3>
+              <p>Lose nobody where phones have no signal.</p>
+            </div>
+            <div class="card">
+              <div class="icon" aria-hidden="true">👨‍👩‍👧</div>
+              <h3>Families and friends</h3>
+              <p>A simple plan to find each other if communications ever fail.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="features">
+        <div class="wrap">
+          <h2>What you can do</h2>
+          <p class="intro">Everything on one screen: the map. No complicated menus.</p>
+          <div class="grid">
+            <div class="card">
+              <div class="icon" aria-hidden="true">📍</div>
+              <h3>See where your people are</h3>
+              <p>
+                Everyone in the group appears on the map. You decide when to share your position,
+                and you can pause or hide it.
+              </p>
+            </div>
+            <div class="card">
+              <div class="icon" aria-hidden="true">💬</div>
+              <h3>Talk to the group</h3>
+              <p>
+                One chat for the whole group, which also travels by radio when there is no internet.
+              </p>
+            </div>
+            <div class="card sos">
+              <div class="icon" aria-hidden="true">🆘</div>
+              <h3>Call for help</h3>
+              <p>
+                An SOS button alerts the whole group with your position. Over radio, it repeats
+                until someone answers.
+              </p>
+            </div>
+            <div class="card">
+              <div class="icon" aria-hidden="true">🗺️</div>
+              <h3>Mark the map</h3>
+              <p>Meeting points, hazards, areas and routes that the whole group sees at once.</p>
+            </div>
+            <div class="card">
+              <div class="icon" aria-hidden="true">📥</div>
+              <h3>Offline maps</h3>
+              <p>Download your area before you go and the map keeps working without internet.</p>
+            </div>
+            <div class="card">
+              <div class="icon" aria-hidden="true">📣</div>
+              <h3>Coordinator alerts</h3>
+              <p>Coordinators can send important alerts and see who has confirmed them.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="how-it-works" class="modes">
+        <div class="wrap">
+          <h2>How it works</h2>
+          <p class="intro">
+            Teselia uses the best path available at every moment. You do not have to choose: the app
+            switches on its own.
+          </p>
+          <div class="grid">
+            <div class="card">
+              <div class="icon" aria-hidden="true">🌐</div>
+              <h3>1. With internet</h3>
+              <div class="diagram">📱 ⇄ ☁️ ⇄ 📱</div>
+              <p>
+                Like any messaging app. Messages pass, encrypted, through our server in Spain, which
+                cannot read them.
+              </p>
+            </div>
+            <div class="card">
+              <div class="icon" aria-hidden="true">📻</div>
+              <h3>2. Without internet, by radio</h3>
+              <div class="diagram">📱 ⇢ 📻 · · · 📻 ⇢ 📱</div>
+              <p>
+                Connect your phone by Bluetooth to a pocket LoRa radio. The radios pass messages to
+                each other over several kilometres, with no phone masts.
+              </p>
+            </div>
+            <div class="card">
+              <div class="icon" aria-hidden="true">🏕️</div>
+              <h3>3. Command post</h3>
+              <span class="soon">In development</span>
+              <div class="diagram">📱📱 ⇄ 💻 ⇄ 📻</div>
+              <p>
+                A laptop or a Raspberry Pi creates its own Wi-Fi at the scene. Phones join it, even
+                without a radio, and the post sends everything by radio and, once internet is back,
+                to the rest of the group.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="get" class="download">
+        <div class="wrap">
+          <h2>Get Teselia</h2>
+          <p class="intro">
+            Today it runs straight from the browser, with nothing to install from a store. Add it to
+            your home screen and it behaves like an app. Store apps will come later.
+          </p>
+          <div class="grid">
+            <div class="card">
+              <div class="icon" aria-hidden="true">🌐</div>
+              <h3>Web app</h3>
+              <p>For Android, iPhone, tablets and computers. Always up to date.</p>
+              <a class="button small" href="../app/">Open teselia.eu/app</a>
+            </div>
+            <div class="card">
+              <div class="icon" aria-hidden="true">🤖</div>
+              <h3>Android</h3>
+              <span class="soon">Coming soon</span>
+              <p>On Google Play and F-Droid. Until then, the web app does the same.</p>
+            </div>
+            <div class="card">
+              <div class="icon" aria-hidden="true">🍏</div>
+              <h3>iPhone and iPad</h3>
+              <span class="soon">Coming soon</span>
+              <p>
+                On the App Store. It will let iPhones use the radio, which Safari does not allow.
+              </p>
+            </div>
+          </div>
+          <h3>Add it to your home screen</h3>
+          <ul>
+            <li><strong>Android (Chrome):</strong> menu ⋮ → “Add to Home screen”.</li>
+            <li><strong>iPhone (Safari):</strong> Share button → “Add to Home Screen”.</li>
+            <li><strong>Computer (Chrome or Edge):</strong> install icon in the address bar.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="devices">
+        <div class="wrap">
+          <h2>Does it work on my device?</h2>
+          <p class="intro">
+            Over the internet, Teselia works on any phone, tablet or computer with a current
+            browser. The radio needs Bluetooth in the browser, which for now only Chrome and Edge
+            have.
+          </p>
+          <div class="table">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Device</th>
+                  <th scope="col">Over the internet</th>
+                  <th scope="col">With LoRa radio</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Android phone or tablet, with Chrome</td>
+                  <td class="yes">Yes</td>
+                  <td class="yes">Yes</td>
+                </tr>
+                <tr>
+                  <td>iPhone or iPad</td>
+                  <td class="yes">Yes</td>
+                  <td>
+                    <span class="partial">Not yet</span> with Safari. It will come with the App
+                    Store app. Meanwhile, it can be tried with the Bluefy browser.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Windows, Mac or Linux computer, with Chrome or Edge</td>
+                  <td class="yes">Yes</td>
+                  <td class="yes">Yes</td>
+                </tr>
+                <tr>
+                  <td>Computer with Firefox or Safari</td>
+                  <td class="yes">Yes</td>
+                  <td>No. Use Chrome or Edge for the radio.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 id="radios">Supported radios</h3>
+          <p>
+            Teselia uses <strong>MeshCore</strong> radios running the “Companion Bluetooth”
+            firmware. These are the ones we test:
+          </p>
+          <div class="table">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Radio</th>
+                  <th scope="col">What it is like</th>
+                  <th scope="col">Best for</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>SenseCAP T1000-E</strong></td>
+                  <td>Card-sized, water-resistant, battery lasts for days.</td>
+                  <td>The one we recommend to start with.</td>
+                </tr>
+                <tr>
+                  <td><strong>SenseCAP MeshTracker X1</strong></td>
+                  <td>Compact, with the newest radio chip.</td>
+                  <td>An alternative to the T1000-E.</td>
+                </tr>
+                <tr>
+                  <td><strong>LilyGO T-Deck Plus</strong></td>
+                  <td>Screen, keyboard and GPS.</td>
+                  <td>Anyone who also wants to use it on its own, with other firmware.</td>
+                </tr>
+                <tr>
+                  <td><strong>Elecrow ThinkNode M9</strong></td>
+                  <td>Screen, keyboard and GPS.</td>
+                  <td>Like the T-Deck. Its factory firmware must be replaced.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Radios are set up once from a computer with the official MeshCore flasher. The
+            <a href="https://github.com/guaschpau-design/Malla/blob/main/docs/hardware.md"
+              >radio guide</a
+            >
+            explains it step by step. In Europe they use the licence-free 868 MHz band.
+          </p>
+        </div>
+      </section>
+
+      <section id="prepare">
+        <div class="wrap">
+          <h2>Get ready in five steps</h2>
+          <p class="intro">
+            An emergency is no time to learn an app. Spend half an hour on a quiet day.
+          </p>
+          <ol class="steps">
+            <li>
+              <strong>Open Teselia and choose your name.</strong>
+              <span>No email, phone number or password needed.</span>
+            </li>
+            <li>
+              <strong>Create a group and invite your people.</strong>
+              <span>Share the link or the QR code through whatever channel you already use.</span>
+            </li>
+            <li>
+              <strong>Download the map of your area.</strong>
+              <span>In “Offline maps”, so it works even without internet.</span>
+            </li>
+            <li>
+              <strong>If you can, get a few radios.</strong>
+              <span>One per person or per household is enough to talk without coverage.</span>
+            </li>
+            <li>
+              <strong>Run a test together.</strong>
+              <span
+                >Send a message in airplane mode with Bluetooth on and check that it arrives by
+                radio.</span
+              >
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section id="privacy">
+        <div class="wrap">
+          <h2>Your privacy comes first</h2>
+          <div class="grid">
+            <div class="card">
+              <h3>🔒 Nobody else can read it</h3>
+              <p>
+                Everything is encrypted with the group key, which only its members have. Our server
+                stores packets it cannot open.
+              </p>
+            </div>
+            <div class="card">
+              <h3>🙈 No accounts, no tracking</h3>
+              <p>We ask for no personal data, show no ads and keep no access logs.</p>
+            </div>
+            <div class="card">
+              <h3>🇪🇺 Made in Europe</h3>
+              <p>
+                Server in Spain. Stored messages are deleted after 30 days. Anyone can run their own
+                server.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="questions">
+        <div class="wrap">
+          <h2>Frequently asked questions</h2>
+          <details>
+            <summary>Does it cost anything?</summary>
+            <p>
+              No. Teselia is free and will stay free. You only pay for radios, if you want to use
+              them.
+            </p>
+          </details>
+          <details>
+            <summary>Do I need a radio to use Teselia?</summary>
+            <p>
+              No. With internet it works without one. The radio keeps you in touch when there is no
+              coverage.
+            </p>
+          </details>
+          <details>
+            <summary>How far does the radio reach?</summary>
+            <p>
+              It depends on the terrain: from about a kilometre in a city to tens of kilometres
+              between high places with a clear view. Radios repeat each other's messages, so the
+              more there are, the further messages travel.
+            </p>
+          </details>
+          <details>
+            <summary>Why are radio messages short and slower?</summary>
+            <p>
+              LoRa radio reaches very far in exchange for sending very little data. Teselia puts
+              urgent things first: an SOS goes out before a position or a chat message.
+            </p>
+          </details>
+          <details>
+            <summary>Can I talk to people using the MeshCore app?</summary>
+            <p>
+              You can read their messages in the chat's MeshCore tab. Your Teselia group's messages
+              are seen only by the people in the group.
+            </p>
+          </details>
+          <details>
+            <summary>Does it replace emergency services?</summary>
+            <p>
+              No. If you can, always call 112. Teselia helps your group coordinate; it does not
+              alert emergency services.
+            </p>
+          </details>
+          <details>
+            <summary>Who is behind it?</summary>
+            <p>
+              A citizen-led open-source project under the European EUPL licence. Anyone can review
+              the code, suggest improvements or run their own server.
+            </p>
+          </details>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <p><strong>Teselia</strong> · Free software under the EUPL-1.2 licence</p>
+        <p>
+          <a href="https://github.com/guaschpau-design/Malla">Code on GitHub</a> ·
+          <a href="../" hreflang="es" lang="es">Español</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

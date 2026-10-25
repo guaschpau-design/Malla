@@ -1,0 +1,451 @@
+/* Teselia landing page. Plain CSS, no build step, light and dark. */
+
+:root {
+  color-scheme: light dark;
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --fg: #0f172a;
+  --muted: #475569;
+  --border: #e2e8f0;
+  --navy: #0f172a;
+  --accent: #ea580c;
+  --accent-soft: #ffedd5;
+  --blue: #2563eb;
+  --danger: #dc2626;
+  --ok: #16a34a;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  line-height: 1.55;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b1220;
+    --surface: #111a2e;
+    --fg: #e2e8f0;
+    --muted: #94a3b8;
+    --border: #1e293b;
+    --accent-soft: #2a1d17;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  color: var(--fg);
+  background: var(--bg);
+}
+
+a {
+  color: inherit;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+.wrap {
+  width: min(70rem, 100% - 2rem);
+  margin: 0 auto;
+}
+
+/* Top bar */
+
+.top {
+  position: sticky;
+  z-index: 10;
+  top: 0;
+  color: #f8fafc;
+  background: var(--navy);
+}
+
+.top .wrap {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  min-height: 3.5rem;
+}
+
+.brand {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-right: auto;
+  font-size: 1.2rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.brand img {
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 0.4rem;
+}
+
+.top nav {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.95rem;
+}
+
+.top nav a {
+  text-decoration: none;
+  opacity: 0.85;
+}
+
+.top nav a:hover {
+  opacity: 1;
+}
+
+@media (max-width: 52rem) {
+  .top nav .optional {
+    display: none;
+  }
+}
+
+/* Buttons */
+
+.button {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 1.3rem;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  background: var(--accent);
+  border: 2px solid var(--accent);
+  border-radius: 999px;
+}
+
+.button.secondary {
+  color: inherit;
+  background: transparent;
+  border-color: currentcolor;
+}
+
+.button.small {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.9rem;
+}
+
+/* Hero, with a mosaic of tesserae behind it */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  color: #f8fafc;
+  background: var(--navy);
+}
+
+.hero .wrap {
+  position: relative;
+  padding: 4rem 0 4.5rem;
+}
+
+.mosaic {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.6rem, 1fr));
+  gap: 4px;
+  padding: 4px;
+  opacity: 0.3;
+  pointer-events: none;
+  mask-image: linear-gradient(100deg, transparent 35%, #000 85%);
+}
+
+.mosaic span {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: #1e3a8a;
+}
+
+.mosaic span:nth-child(7n + 1) {
+  background: #ea580c;
+}
+
+.mosaic span:nth-child(5n + 2) {
+  background: #2563eb;
+}
+
+.mosaic span:nth-child(11n + 3) {
+  background: #0d9488;
+}
+
+.hero h1 {
+  max-width: 40rem;
+  margin: 0 0 1rem;
+  font-size: clamp(2.1rem, 5vw, 3.4rem);
+  line-height: 1.1;
+}
+
+.hero p.lead {
+  max-width: 38rem;
+  margin: 0 0 2rem;
+  font-size: 1.2rem;
+  color: #cbd5e1;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pills li {
+  padding: 0.3rem 0.8rem;
+  font-size: 0.9rem;
+  background: rgb(255 255 255 / 10%);
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 999px;
+}
+
+/* Sections */
+
+section {
+  padding: 4rem 0;
+}
+
+section:nth-of-type(even) {
+  background: var(--surface);
+}
+
+h2 {
+  margin: 0 0 1rem;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  line-height: 1.2;
+}
+
+.intro {
+  max-width: 44rem;
+  margin: -0.5rem 0 2rem;
+  color: var(--muted);
+  font-size: 1.1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  padding: 1.3rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+}
+
+section:nth-of-type(even) .card {
+  background: var(--surface);
+}
+
+.card h3 {
+  margin: 0.4rem 0 0.4rem;
+  font-size: 1.1rem;
+}
+
+.card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.icon {
+  font-size: 1.8rem;
+}
+
+.card.sos {
+  border-color: var(--danger);
+}
+
+/* Modes */
+
+.modes .card {
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+}
+
+.diagram {
+  margin: 0.3rem 0;
+  padding: 0.6rem;
+  font-size: 0.95rem;
+  text-align: center;
+  background: var(--accent-soft);
+  border-radius: 0.6rem;
+}
+
+/* Download */
+
+.download .card {
+  display: grid;
+  gap: 0.6rem;
+  align-content: start;
+}
+
+.soon {
+  justify-self: start;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+}
+
+/* Tables */
+
+.table {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+th,
+td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+.yes {
+  color: var(--ok);
+  font-weight: 700;
+}
+
+.partial {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Steps */
+
+.steps {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.steps li {
+  position: relative;
+  padding: 1rem 1rem 1rem 4rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  counter-increment: step;
+}
+
+.steps li::before {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  font-weight: 800;
+  color: #fff;
+  content: counter(step);
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+.steps strong {
+  display: block;
+}
+
+.steps span {
+  color: var(--muted);
+}
+
+/* Questions */
+
+details {
+  padding: 1rem 1.2rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+}
+
+details + details {
+  margin-top: 0.6rem;
+}
+
+summary {
+  font-weight: 700;
+  cursor: pointer;
+}
+
+details p {
+  margin: 0.6rem 0 0;
+  color: var(--muted);
+}
+
+/* Footer */
+
+footer {
+  padding: 2.5rem 0;
+  font-size: 0.9rem;
+  color: #cbd5e1;
+  background: var(--navy);
+}
+
+footer .wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  justify-content: space-between;
+}
+
+footer p {
+  margin: 0;
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
