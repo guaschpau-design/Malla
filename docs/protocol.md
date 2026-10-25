@@ -239,8 +239,10 @@ Nonces are random, so a group SHOULD stay well below 2³² envelopes under one s
 An invitation is a URL:
 
 ```
-https://{app-host}/join#{token}
+{app-base-url}join#{token}
 ```
+
+`{app-base-url}` is the `https:` URL the web app is served from, ending in `/`: `https://app.example/` or, for an app served from a sub-path, `https://example.github.io/malla/`.
 
 The token sits in the fragment so it is never sent to any server. It is the base64url encoding of:
 
@@ -253,7 +255,7 @@ The token sits in the fragment so it is never sent to any server. It is the base
 | 1+n  | `name`    | text-u8, group name, 1–32 bytes                                                               |
 | 1+n  | `server`  | text-u8, server base URL, 0–200 bytes; empty if none. MUST start with `https://` when present |
 
-Decoders MUST accept only `https:` URLs whose path is exactly `/join`. A reserved `role` value grants member. Anyone holding an invitation can join the group. Interfaces MUST make clear that sharing an invitation shares the group.
+Decoders MUST accept only `https:` URLs with no query whose last path segment is exactly `join` (the path is `/join` or ends in `/join`). Servers and static hosts MUST answer that path with the web app (see [ADR-0012](decisions/0012-invitation-links-under-a-base-path.md)). A reserved `role` value grants member. Anyone holding an invitation can join the group. Interfaces MUST make clear that sharing an invitation shares the group.
 
 ## 7. Transport: MeshCore
 

@@ -23,7 +23,7 @@ export interface Invitation {
   readonly server: string | null;
 }
 
-const JOIN_PATH = '/join';
+const JOIN_SEGMENT = 'join';
 
 export function encodeInvitationToken(invitation: Invitation): Result<string, ProtocolError> {
   try {
@@ -73,17 +73,23 @@ export function decodeInvitationToken(token: string): Result<Invitation, Protoco
   }
 }
 
-/** Builds `https://{appOrigin}/join#{token}`. */
+/**
+ * Builds `{appBaseUrl}join#{token}`. The base URL is where the app is served, ending in a slash:
+ * `https://app.example/` or `https://example.github.io/malla/`.
+ */
 export function buildInvitationUrl(
-  appOrigin: string,
+  appBaseUrl: string,
   invitation: Invitation,
 ): Result<string, ProtocolError> {
+  if (!isHttpsUrl(appBaseUrl) || !appBaseUrl.endsWith('/')) {
+    return err({ code: 'invalid-value', detail: 'app base URL must be https and end in /' });
+  }
   const token = encodeInvitationToken(invitation);
   if (!token.ok) return token;
-  return ok(`${appOrigin.replace(/\/+$/, '')}${JOIN_PATH}#${token.value}`);
+  return ok(`${appBaseUrl}${JOIN_SEGMENT}#${token.value}`);
 }
 
-/** Extracts the invitation from `https://{any-host}/join#{token}`. */
+/** Extracts the invitation from an https link whose last path segment is `join`. */
 export function parseInvitationUrl(url: string): Result<Invitation, ProtocolError> {
   let parsed: URL;
   try {
@@ -91,10 +97,20 @@ export function parseInvitationUrl(url: string): Result<Invitation, ProtocolErro
   } catch {
     return err({ code: 'invalid-value', detail: 'not a URL' });
   }
-  if (parsed.protocol !== 'https:' || parsed.pathname !== JOIN_PATH || parsed.hash.length < 2) {
+  if (
+    parsed.protocol !== 'https:' ||
+    !isJoinPath(parsed.pathname) ||
+    parsed.search !== '' ||
+    parsed.hash.length < 2
+  ) {
     return err({ code: 'invalid-value', detail: 'not an invitation link' });
   }
   return decodeInvitationToken(parsed.hash.slice(1));
+}
+
+/** True for `/join` and `/{base path}/join`: the path an invitation link opens. */
+export function isJoinPath(pathname: string): boolean {
+  return pathname.endsWith(`/${JOIN_SEGMENT}`);
 }
 
 function isHttpsUrl(text: string): boolean {

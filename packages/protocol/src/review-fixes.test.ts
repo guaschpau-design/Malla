@@ -164,10 +164,13 @@ describe('invitation links', () => {
   const token = encodeInvitationToken(invitation);
   const tokenText = token.ok ? token.value : '';
 
-  it('accepts only https links whose path is exactly /join', () => {
+  it('accepts only https links whose last path segment is join', () => {
     expect(parseInvitationUrl(`https://app.example/join#${tokenText}`).ok).toBe(true);
+    expect(parseInvitationUrl(`https://app.example/malla/join#${tokenText}`).ok).toBe(true);
     expect(parseInvitationUrl(`http://app.example/join#${tokenText}`).ok).toBe(false);
-    expect(parseInvitationUrl(`https://app.example/x/join#${tokenText}`).ok).toBe(false);
+    expect(parseInvitationUrl(`https://app.example/xjoin#${tokenText}`).ok).toBe(false);
+    expect(parseInvitationUrl(`https://app.example/join/#${tokenText}`).ok).toBe(false);
+    expect(parseInvitationUrl(`https://app.example/join?x=1#${tokenText}`).ok).toBe(false);
   });
 
   it('refuses a server value that only looks like an https URL', () => {

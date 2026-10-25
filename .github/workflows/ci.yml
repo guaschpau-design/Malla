@@ -35,3 +35,37 @@ jobs:
         with:
           name: playwright-results
           path: apps/web/test-results
+
+  # Publishes the web app on GitHub Pages after every green push to main (ADR-0012).
+  # Repository settings → Pages → Source must be "GitHub Actions".
+  pages:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [check, e2e]
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @malla/web build
+        env:
+          MALLA_BASE: /${{ github.event.repository.name }}/
+      # Static hosts cannot route /{base}/join to the app; GitHub Pages serves 404.html instead.
+      - run: cp apps/web/dist/index.html apps/web/dist/404.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+      - id: deployment
+        uses: actions/deploy-pages@v4

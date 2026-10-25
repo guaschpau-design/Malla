@@ -66,6 +66,17 @@ describe('invitations', () => {
     expect(parseInvitationUrl(url.value)).toEqual({ ok: true, value: invitation });
   });
 
+  it('builds the link under the base path of an app served from a sub-path', () => {
+    const url = buildInvitationUrl('https://example.github.io/malla/', invitation);
+    expect(url.ok && new URL(url.value).pathname).toBe('/malla/join');
+    expect(url.ok && parseInvitationUrl(url.value)).toEqual({ ok: true, value: invitation });
+  });
+
+  it('refuses an app base URL that is not https or does not end in a slash', () => {
+    expect(buildInvitationUrl('http://app.malla.eu/', invitation).ok).toBe(false);
+    expect(buildInvitationUrl('https://example.github.io/malla', invitation).ok).toBe(false);
+  });
+
   it('refuses a server that is not https', () => {
     expect(encodeInvitationToken({ ...invitation, server: 'http://insecure.example' }).ok).toBe(
       false,
