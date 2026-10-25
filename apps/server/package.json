@@ -1,0 +1,17 @@
+{
+  "name": "@malla/server",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Malla relay and storage server. Runs on a VPS or as a local command post.",
+  "license": "EUPL-1.2",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/main.ts",
+    "start": "node src/main.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@malla/protocol": "workspace:*",
+    "fastify": "^5.12.7"
+  }
+}

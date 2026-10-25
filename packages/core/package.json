@@ -1,0 +1,17 @@
+{
+  "name": "@malla/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Malla application logic: event log, state reducer, outbox, LoRa scheduler and bridge. Pure TypeScript, no I/O.",
+  "license": "EUPL-1.2",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@malla/protocol": "workspace:*"
+  }
+}
