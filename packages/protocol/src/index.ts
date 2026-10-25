@@ -7,3 +7,4 @@ export type * from './events.ts';
 export * from './invitation.ts';
 export * from './node-id.ts';
 export type { ProtocolError, ProtocolErrorCode, Result } from './result.ts';
+export * from './relay.ts';

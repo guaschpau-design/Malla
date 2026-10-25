@@ -269,7 +269,7 @@ Decoders MUST accept only secure URLs with no query whose last path segment is e
 
 ## 8. Transport: internet
 
-Clients connect to `wss://{server}/v1/ws`. Frames are JSON text messages; binary values are base64url strings. One connection carries one group.
+Clients connect to `v1/ws` relative to the server base URL, with the scheme changed to `wss:` (`ws:` for a loopback development server): `https://relay.example/` becomes `wss://relay.example/v1/ws`. Frames are JSON text messages; binary values are base64url strings. One connection carries one group.
 
 **Client to server**
 
@@ -287,8 +287,9 @@ Clients connect to `wss://{server}/v1/ws`. Frames are JSON text messages; binary
 | `{"t": "stored", "key": EVENT_KEY}`              | The pushed envelope is stored, now or already before                                                        |
 | `{"t": "error", "code": CODE, "key": EVENT_KEY}` | `bad-request`, `too-large`, `rate-limited` or `not-joined`; `key` is present when the error concerns a push |
 
+- If `after` is greater than the group's last cursor, for instance because the server lost data, the server answers `synced` with its last cursor. Clients always adopt the cursor of `synced`.
 - The server MUST store at most one envelope per `(group, key)`; a repeated push with a known key is answered with `stored` and not relayed again. Clients keep an envelope in their outbox until they receive `stored` for its key.
-- The server MUST reject envelopes larger than 193 bytes.
+- The server MUST reject envelopes larger than 193 bytes with `too-large`, and envelopes smaller than 42 bytes (nonce, event header and tag) with `bad-request`.
 - The server SHOULD rate-limit pushes per connection and per group, and MAY delete envelopes older than a configured retention period.
 - The server never receives the group secret, the content key or plaintext events.
 

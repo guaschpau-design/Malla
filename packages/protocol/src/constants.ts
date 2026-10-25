@@ -75,11 +75,16 @@ export const KDF_INFO_EVENT_KEY = 'event-key';
 export const ENVELOPE_NONCE_SIZE = 12;
 export const ENVELOPE_TAG_SIZE = 16;
 export const MAX_ENVELOPE_SIZE = ENVELOPE_NONCE_SIZE + MAX_EVENT_SIZE + ENVELOPE_TAG_SIZE;
+/** §5.1 The smallest envelope: an event with an empty payload. */
+export const MIN_ENVELOPE_SIZE = ENVELOPE_NONCE_SIZE + HEADER_SIZE + ENVELOPE_TAG_SIZE;
 
 /** §6 Invitation token. */
 export const INVITATION_VERSION = 1;
 export const GROUP_NAME_MAX_BYTES = 32;
 export const SERVER_URL_MAX_BYTES = 200;
+
+/** §8 WebSocket endpoint, relative to the server base URL. */
+export const RELAY_PATH = 'v1/ws';
 
 /** §7 MeshCore application identifier, in MeshCore's development range until registered. */
 export const MESHCORE_DATA_TYPE = 0xff4d;
