@@ -178,6 +178,7 @@ The base map is OpenStreetMap data rendered as vector tiles from a single PMTile
 apps/web/            PWA: UI, map, storage, transport wiring
 apps/server/         Relay and storage server, serves site and app; replication for command posts
 apps/site/           Landing page (static)
+brand/               Mark, wordmark and lockup (SVG) and the script that builds them
 packages/protocol/   Wire format, crypto, invitations (pure TS)
 packages/core/       Reducer, scheduler, bridge rules (pure TS)
 packages/meshcore/   MeshCore radio adapter

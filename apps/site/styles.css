@@ -158,10 +158,10 @@ h3 {
   text-decoration: none;
 }
 
-.brand img {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 0.35rem;
+.brand .lockup {
+  display: block;
+  height: 1.7rem;
+  width: auto;
 }
 
 .top nav {
