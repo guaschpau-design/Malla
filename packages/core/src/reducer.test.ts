@@ -62,6 +62,69 @@ const EVENTS: readonly TeseliaEvent[] = [
   chat(ALICE, 6, T0 + 40, 'Hola'),
   chat(BOB, 3, T0 + 40, 'Recibido'),
   chat(BOB, 4, T0 + 41, '¿Dónde?'),
+  {
+    type: 'marker',
+    origin: ALICE,
+    seq: 7,
+    time: T0 + 60,
+    object: { origin: ALICE, seq: 7 },
+    symbol: 3,
+    lat: 39.47,
+    lon: -0.37,
+    label: 'Fuego',
+  },
+  {
+    type: 'object-delete',
+    origin: ALICE,
+    seq: 8,
+    time: T0 + 65,
+    object: { origin: ALICE, seq: 7 },
+  },
+  {
+    type: 'marker',
+    origin: BOB,
+    seq: 6,
+    time: T0 + 70,
+    object: { origin: ALICE, seq: 7 },
+    symbol: 3,
+    lat: 39.47,
+    lon: -0.37,
+    label: 'Fuego activo',
+  },
+  {
+    type: 'shape',
+    origin: BOB,
+    seq: 7,
+    time: T0 + 72,
+    object: { origin: BOB, seq: 7 },
+    style: 1,
+    label: 'Zona',
+    geometry: { kind: 'circle', center: { lat: 39.47, lon: -0.37 }, radius: 200 },
+  },
+  { type: 'object-delete', origin: ALICE, seq: 9, time: T0 + 75, object: { origin: BOB, seq: 7 } },
+  {
+    type: 'sos',
+    origin: BOB,
+    seq: 8,
+    time: T0 + 80,
+    kind: 'medical',
+    lat: 39.46,
+    lon: -0.37,
+    accuracy: 8,
+    text: 'Tobillo roto',
+  },
+  { type: 'ack', origin: ALICE, seq: 10, time: T0 + 82, target: { origin: BOB, seq: 8 } },
+  { type: 'ack', origin: ALICE, seq: 11, time: T0 + 83, target: { origin: BOB, seq: 8 } },
+  { type: 'sos-cancel', origin: BOB, seq: 9, time: T0 + 90, sos: { origin: BOB, seq: 8 } },
+  { type: 'sos-cancel', origin: ALICE, seq: 12, time: T0 + 95, sos: { origin: BOB, seq: 8 } },
+  {
+    type: 'alert',
+    origin: ALICE,
+    seq: 13,
+    time: T0 + 100,
+    level: 'critical',
+    text: 'Evacuad la zona norte',
+  },
 ];
 
 /** Every ordering of a few events, plus a few shuffles of all of them. */
@@ -107,6 +170,26 @@ describe('group state', () => {
 
   it('orders chat by time, then origin, then sequence', () => {
     expect(stateOf(EVENTS).chat.map((line) => line.text)).toEqual(['Recibido', 'Hola', '¿Dónde?']);
+  });
+
+  it('keeps the newest edit of an object, even against an older deletion that arrives late', () => {
+    const { objects } = stateOf(EVENTS);
+    const fire = objects.get(`${ALICE}:7`);
+    expect(fire?.type === 'marker' && fire.label).toBe('Fuego activo');
+    expect(objects.get(`${BOB}:7`)?.type).toBe('object-delete');
+  });
+
+  it('records who cancelled an SOS first and who acknowledged it once', () => {
+    const state = stateOf(EVENTS);
+    expect(state.sos.get(`${BOB}:8`)?.kind).toBe('medical');
+    expect(state.sosCancels.get(`${BOB}:8`)?.origin).toBe(BOB);
+    const acks = state.acks.get(`${BOB}:8`);
+    expect([...(acks?.keys() ?? [])]).toEqual([ALICE]);
+    expect(acks?.get(ALICE)?.seq).toBe(10);
+  });
+
+  it('lists alerts in order', () => {
+    expect(stateOf(EVENTS).alerts.map((alert) => alert.text)).toEqual(['Evacuad la zona norte']);
   });
 
   it('starts empty', () => {

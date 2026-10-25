@@ -4,16 +4,27 @@
 // number of times, gives the same state. Events arrive late, twice or out of order through
 // several transports, and this property is what makes that harmless.
 
-import type {
-  ChatEvent,
-  TeseliaEvent,
-  MemberInfoEvent,
-  NodeId,
-  PositionEvent,
-  PositionHiddenEvent,
+import {
+  eventRefKey,
+  type AckEvent,
+  type AlertEvent,
+  type ChatEvent,
+  type MarkerEvent,
+  type MemberInfoEvent,
+  type NodeId,
+  type ObjectDeleteEvent,
+  type PositionEvent,
+  type PositionHiddenEvent,
+  type ShapeEvent,
+  type SosCancelEvent,
+  type SosEvent,
+  type TeseliaEvent,
 } from '@teselia/protocol';
 
-import { compareEvents, newerOf } from './ordering.ts';
+import { insertOrdered, keepNewest, keepOldest } from './collections.ts';
+
+/** The latest event about a map object; OBJECT_DELETE means the object is gone (§3.10). */
+export type ObjectRecord = MarkerEvent | ShapeEvent | ObjectDeleteEvent;
 
 export interface GroupState {
   /** Latest MEMBER_INFO of each member. */
@@ -22,35 +33,55 @@ export interface GroupState {
   readonly positions: ReadonlyMap<NodeId, PositionEvent | PositionHiddenEvent>;
   /** Chat lines in (time, origin, seq) order, without duplicates. */
   readonly chat: readonly ChatEvent[];
+  /** Latest event of each map object, by object reference key. Deletions are kept (§3.10). */
+  readonly objects: ReadonlyMap<string, ObjectRecord>;
+  /** Every SOS, by event reference key. */
+  readonly sos: ReadonlyMap<string, SosEvent>;
+  /** The first cancellation of each SOS, by the SOS's reference key. */
+  readonly sosCancels: ReadonlyMap<string, SosCancelEvent>;
+  /** Alerts in (time, origin, seq) order. */
+  readonly alerts: readonly AlertEvent[];
+  /** Acknowledgements: target reference key → member → their first ACK. */
+  readonly acks: ReadonlyMap<string, ReadonlyMap<NodeId, AckEvent>>;
 }
 
-export const EMPTY_STATE: GroupState = { members: new Map(), positions: new Map(), chat: [] };
+export const EMPTY_STATE: GroupState = {
+  members: new Map(),
+  positions: new Map(),
+  chat: [],
+  objects: new Map(),
+  sos: new Map(),
+  sosCancels: new Map(),
+  alerts: [],
+  acks: new Map(),
+};
 
 /** The state after one more event. Returns `state` itself when nothing changes. */
 export function reduce(state: GroupState, event: TeseliaEvent): GroupState {
   switch (event.type) {
-    case 'member-info': {
-      const members = latestPerOrigin(state.members, event);
-      return members === state.members ? state : { ...state, members };
-    }
+    case 'member-info':
+      return update(state, 'members', keepNewest(state.members, event.origin, event));
     case 'position':
-    case 'position-hidden': {
-      const positions = latestPerOrigin(state.positions, event);
-      return positions === state.positions ? state : { ...state, positions };
-    }
-    case 'chat': {
-      const chat = insertOrdered(state.chat, event);
-      return chat === state.chat ? state : { ...state, chat };
-    }
-    // Map objects, SOS, alerts and acknowledgements are not part of the picture yet.
+    case 'position-hidden':
+      return update(state, 'positions', keepNewest(state.positions, event.origin, event));
+    case 'chat':
+      return update(state, 'chat', insertOrdered(state.chat, event));
     case 'marker':
     case 'shape':
     case 'object-delete':
+      return update(state, 'objects', keepNewest(state.objects, eventRefKey(event.object), event));
     case 'sos':
+      return update(state, 'sos', keepOldest(state.sos, eventRefKey(event), event));
     case 'sos-cancel':
+      return update(
+        state,
+        'sosCancels',
+        keepOldest(state.sosCancels, eventRefKey(event.sos), event),
+      );
     case 'alert':
+      return update(state, 'alerts', insertOrdered(state.alerts, event));
     case 'ack':
-      return state;
+      return update(state, 'acks', addAck(state.acks, event));
   }
 }
 
@@ -61,30 +92,17 @@ export function stateOf(events: Iterable<TeseliaEvent>): GroupState {
   return state;
 }
 
-function latestPerOrigin<T extends TeseliaEvent>(
-  current: ReadonlyMap<NodeId, T>,
-  event: T,
-): ReadonlyMap<NodeId, T> {
-  const known = current.get(event.origin);
-  if (known !== undefined && newerOf(known, event) === known) return current;
-  return new Map(current).set(event.origin, event);
+function update<K extends keyof GroupState>(
+  state: GroupState,
+  key: K,
+  value: GroupState[K],
+): GroupState {
+  return value === state[key] ? state : { ...state, [key]: value };
 }
 
-/** Inserts keeping order; an event already present (same origin and seq) changes nothing. */
-function insertOrdered<T extends TeseliaEvent>(list: readonly T[], event: T): readonly T[] {
-  let low = 0;
-  let high = list.length;
-  while (low < high) {
-    const middle = (low + high) >>> 1;
-    const item = list[middle];
-    if (item === undefined || compareEvents(item, event) >= 0) high = middle;
-    else low = middle + 1;
-  }
-  const atPosition = list[low];
-  if (atPosition !== undefined && isSameEvent(atPosition, event)) return list;
-  return [...list.slice(0, low), event, ...list.slice(low)];
-}
-
-function isSameEvent(a: TeseliaEvent, b: TeseliaEvent): boolean {
-  return a.origin === b.origin && a.seq === b.seq;
+function addAck(acks: GroupState['acks'], event: AckEvent): GroupState['acks'] {
+  const target = eventRefKey(event.target);
+  const current = acks.get(target) ?? new Map<NodeId, AckEvent>();
+  const updated = keepOldest(current, event.origin, event);
+  return updated === current ? acks : new Map(acks).set(target, updated);
 }

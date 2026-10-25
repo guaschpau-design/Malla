@@ -4,11 +4,11 @@ Application logic shared by every client, independent of the UI and of any trans
 
 Pure TypeScript. Time and randomness are passed in, never read globally, so every behaviour can be tested deterministically.
 
-| File                | Responsibility                                                                                        | Planned |
-| ------------------- | ----------------------------------------------------------------------------------------------------- | ------- |
-| `ordering.ts`       | Last-writer-wins ordering of events (protocol §3.10)                                                  | Day 0   |
-| `reducer.ts`        | Current state from a set of events: members, positions and chat; map objects, SOS and alerts on day 4 | Day 3–4 |
-| `lora-scheduler.ts` | Priorities, airtime budget, position thinning                                                         | Day 5   |
-| `bridge.ts`         | Forwarding between internet and LoRa                                                                  | Day 5–6 |
+| File                | Responsibility                                                                                              | Planned |
+| ------------------- | ----------------------------------------------------------------------------------------------------------- | ------- |
+| `ordering.ts`       | Last-writer-wins ordering of events (protocol §3.10)                                                        | Day 0   |
+| `reducer.ts`        | Current state from a set of events: members, positions, chat, map objects, SOS, alerts and acknowledgements | Day 3–4 |
+| `lora-scheduler.ts` | Priorities, airtime budget, position thinning                                                               | Day 5   |
+| `bridge.ts`         | Forwarding between internet and LoRa                                                                        | Day 5–6 |
 
 The event log and the outbox are persistence, so they live with the storage of each app (`apps/web/src/lib/events/`).
