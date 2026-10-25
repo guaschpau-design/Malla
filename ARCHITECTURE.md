@@ -55,7 +55,7 @@ A group is defined by a random 16-byte **group secret**. Everything else is deri
 | Content key (32 bytes) | AES-256-GCM encryption of events sent over the internet                |
 | Event key (HMAC)       | Lets the server de-duplicate envelopes without learning who sent them  |
 
-People join by scanning an **invitation** (QR code or link) that carries the group name, the secret, the role being granted and, optionally, a server URL. The secret travels in the URL fragment, which browsers never send to servers, and the app removes it from the address bar as soon as it has read it ([ADR-0012](docs/decisions/0012-invitation-links-under-a-base-path.md)). A QR code can be scanned with the phone's camera app, which opens the link, or from inside the app where the browser supports barcode detection.
+People join by scanning an **invitation** (QR code or link) that carries the group name, the secret, the role being granted and, optionally, a server URL. The secret travels in the URL fragment, which browsers never send to servers, and the app removes it from the address bar as soon as it has read it ([ADR-0012](docs/decisions/0012-invitation-links-under-a-base-path.md)). A QR code can be scanned with the phone's camera app, which opens the link, or from inside the app. On iPhone only the second works for an installed app, whose storage is separate from Safari's.
 
 A device can belong to several groups; one is **active** at a time. Joining a group the device already belongs to never demotes it: a coordinator invitation promotes a member, a member invitation changes nothing.
 

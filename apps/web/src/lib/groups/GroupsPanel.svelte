@@ -1,7 +1,6 @@
 <!-- Who this device is, its groups, and the ways to create, join, invite and leave. -->
 <script lang="ts">
   import { GROUP_NAME_MAX_BYTES, parseInvitationUrl, type Invitation } from '@malla/protocol';
-  import { onMount } from 'svelte';
 
   import type { Translate } from '../i18n/index.ts';
   import type { Session } from '../session.svelte.ts';
@@ -31,11 +30,7 @@
 
   let pasted = $state('');
   let pastedInvalid = $state(false);
-  let scanAvailable = $state(false);
-
-  onMount(() => {
-    void canScanQr().then((available) => (scanAvailable = available));
-  });
+  const scanAvailable = canScanQr();
 
   async function create(): Promise<void> {
     if (groupName === null) return;

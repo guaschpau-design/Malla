@@ -73,7 +73,8 @@ export const es: Messages = {
   scanQr: 'Escanear código QR',
   inviteTitle: 'Invitar a «{group}»',
   inviteRole: 'Se une como',
-  inviteHowTo: 'La persona invitada escanea este código con la cámara del móvil o desde Malla.',
+  inviteHowTo:
+    'La persona invitada lo escanea desde Malla (Grupos → Escanear código QR) o con la cámara del móvil. En iPhone, mejor desde Malla.',
   inviteWarning:
     'Quien tenga este código o este enlace entra en el grupo. Compártelo en persona o por un canal de confianza.',
   invitationNeedsHttps:

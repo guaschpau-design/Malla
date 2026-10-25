@@ -16,6 +16,7 @@
     "@malla/protocol": "workspace:*",
     "@protomaps/basemaps": "^5.7.2",
     "idb": "^8.0.4",
+    "jsqr": "1.4.0",
     "maplibre-gl": "^6.15.0",
     "pmtiles": "^4.5.0",
     "uqr": "0.1.3"

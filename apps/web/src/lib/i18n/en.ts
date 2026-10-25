@@ -72,7 +72,8 @@ export const en = {
   scanQr: 'Scan QR code',
   inviteTitle: 'Invite to “{group}”',
   inviteRole: 'They join as',
-  inviteHowTo: 'The person you invite scans this code with the phone camera or from Malla.',
+  inviteHowTo:
+    'The person you invite scans this code from Malla (Groups → Scan QR code) or with the phone camera. On iPhone, scan it from Malla.',
   inviteWarning:
     'Whoever has this code or link joins the group. Share it in person or through a channel you trust.',
   invitationNeedsHttps:
