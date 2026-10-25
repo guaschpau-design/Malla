@@ -10,8 +10,14 @@ import {
   relayUrl,
   sealEnvelope,
   toBase64url,
+  type AlertLevel,
   type EventHeader,
+  type EventRef,
   type GroupKeys,
+  type LatLon,
+  type ObjectRef,
+  type ShapeGeometry,
+  type SosKind,
   type TeseliaEvent,
 } from '@teselia/protocol';
 
@@ -112,6 +118,49 @@ export class GroupFeed {
 
   async hidePosition(): Promise<void> {
     await this.#publish((header) => ({ ...header, type: 'position-hidden' }));
+  }
+
+  /** Creates a marker; the event's own reference becomes the object's (protocol §3.10). */
+  async placeMarker(at: LatLon, symbol: number, label: string): Promise<void> {
+    await this.#publish((header) => ({
+      ...header,
+      type: 'marker',
+      object: { origin: header.origin, seq: header.seq },
+      symbol,
+      ...at,
+      label,
+    }));
+  }
+
+  async drawShape(geometry: ShapeGeometry, style: number, label: string): Promise<void> {
+    await this.#publish((header) => ({
+      ...header,
+      type: 'shape',
+      object: { origin: header.origin, seq: header.seq },
+      style,
+      label,
+      geometry,
+    }));
+  }
+
+  async deleteObject(object: ObjectRef): Promise<void> {
+    await this.#publish((header) => ({ ...header, type: 'object-delete', object }));
+  }
+
+  async sendSos(kind: SosKind, at: LatLon, accuracy: number | null, text: string): Promise<void> {
+    await this.#publish((header) => ({ ...header, type: 'sos', kind, ...at, accuracy, text }));
+  }
+
+  async cancelSos(sos: EventRef): Promise<void> {
+    await this.#publish((header) => ({ ...header, type: 'sos-cancel', sos }));
+  }
+
+  async acknowledge(target: EventRef): Promise<void> {
+    await this.#publish((header) => ({ ...header, type: 'ack', target }));
+  }
+
+  async sendAlert(level: AlertLevel, text: string): Promise<void> {
+    await this.#publish((header) => ({ ...header, type: 'alert', level, text }));
   }
 
   /** Publishes MEMBER_INFO if the group does not know this device's current alias and role. */

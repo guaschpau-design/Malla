@@ -59,7 +59,19 @@ People join by scanning an **invitation** (QR code or link) that carries the gro
 
 A device can belong to several groups; one is **active** at a time. Joining a group the device already belongs to never demotes it: a coordinator invitation promotes a member, a member invitation changes nothing.
 
-Roles (coordinator, member) are carried in invitations and shown in the UI. In v0.1 they are **advisory**: anyone holding the secret is technically able to send any event. The UI lets only coordinators create invitations, choosing whether each one grants member or coordinator. See [ADR-0005](docs/decisions/0005-group-secret-trust-boundary.md).
+Roles (coordinator, member) are carried in invitations and shown in the UI. In v0.1 they are **advisory**: anyone holding the secret is technically able to send any event. The UI applies these rules, which the protocol does not enforce:
+
+| Action                                     | Who, in the UI              |
+| ------------------------------------------ | --------------------------- |
+| Create invitations (member or coordinator) | Coordinators                |
+| Send alerts                                | Coordinators                |
+| Cancel an SOS                              | Its sender and coordinators |
+| Draw, edit and delete map objects          | Everyone                    |
+| Send an SOS, chat, acknowledge             | Everyone                    |
+
+#### Position privacy
+
+Each device chooses how it shares its position, and remembers the choice: **sharing** (positions are published as the device moves), **paused** (nothing new is published; the group keeps the last position, which turns stale) or **hidden** (a `POSITION_HIDDEN` removes the device from the group's map). See [ADR-0005](docs/decisions/0005-group-secret-trust-boundary.md).
 
 ### 3.3 Events
 
@@ -83,7 +95,9 @@ The current picture is a pure function of the event log, computed by the reducer
 
 - **Positions:** latest `POSITION` or `POSITION_HIDDEN` per origin.
 - **Map objects:** identified by the `(origin, seq)` of the event that created them. Later `MARKER`/`SHAPE` events for the same object replace it; `OBJECT_DELETE` removes it. Conflicts resolve by **last writer wins**, ordering by `(timestamp, origin, seq)`.
-- **Chat, SOS, alerts:** append-only, ordered by `(timestamp, origin, seq)` so every device shows the same order.
+- **Chat and alerts:** append-only, ordered by `(timestamp, origin, seq)` so every device shows the same order.
+- **SOS:** every `SOS` is kept; one is active until a `SOS_CANCEL` for it arrives, and the first cancellation (by the same order) says who cancelled it.
+- **Acknowledgements:** per acknowledged event, the first `ACK` of each member.
 
 Events can arrive late, twice or out of order — through LoRa, a bridge and the server at once. The reducer is idempotent and order-independent, so this never matters. This is the property the tests protect most. See [ADR-0003](docs/decisions/0003-event-log-last-writer-wins.md).
 

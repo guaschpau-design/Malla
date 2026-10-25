@@ -32,7 +32,8 @@ export interface AppSchema extends DBSchema {
   /** A single record under the key `self`. */
   identity: { key: 'self'; value: LocalIdentity };
   groups: { key: string; value: StoredGroup };
-  settings: { key: 'activeGroupId'; value: string };
+  /** Small preferences of this device: the active group and how it shares its position. */
+  settings: { key: 'activeGroupId' | 'positionMode'; value: string };
   /** The next sequence number this device will use (ARCHITECTURE.md §3.3). */
   sequence: { key: 'next'; value: number };
   events: { key: EventKey; value: StoredEvent; indexes: { byGroup: string } };

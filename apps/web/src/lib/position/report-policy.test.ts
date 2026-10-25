@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { distanceMeters, shouldReport } from './report-policy.ts';
+import { distanceMeters } from '../map/geometry.ts';
+import { shouldReport } from './report-policy.ts';
 
 const VALENCIA = { lat: 39.4699, lon: -0.3763 };
 const NEARBY = { lat: 39.47, lon: -0.3763 }; // about 11 m north

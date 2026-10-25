@@ -6,6 +6,7 @@
   import { onMount } from 'svelte';
 
   import { memberFeatures } from './member-features.ts';
+  import { keepInstalled } from './overlay.ts';
 
   interface Props {
     map: MapLibreMap;
@@ -59,12 +60,11 @@
 
   onMount(() => {
     // A new style removes our layers; put them back whenever the style changes.
-    map.on('styledata', install);
-    if (map.isStyleLoaded()) install();
+    const stopInstalling = keepInstalled(map, install);
     const timer = setInterval(() => (now = Date.now() / 1000), REFRESH_MS);
     return () => {
       clearInterval(timer);
-      map.off('styledata', install);
+      stopInstalling();
       for (const id of [`${SOURCE}-label`, `${SOURCE}-dot`]) {
         if (map.getLayer(id)) map.removeLayer(id);
       }
@@ -72,7 +72,10 @@
     };
   });
 
+  // Read `data` before the source: if the source is missing, optional chaining would skip it and
+  // the effect would never run again.
   $effect(() => {
-    void map.getSource<GeoJSONSource>(SOURCE)?.setData(data);
+    const current = data;
+    void map.getSource<GeoJSONSource>(SOURCE)?.setData(current);
   });
 </script>

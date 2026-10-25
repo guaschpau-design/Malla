@@ -3,7 +3,6 @@
   import type { Map as MapLibreMap } from 'maplibre-gl';
   import { onMount, untrack } from 'svelte';
 
-  import ChatPanel from './lib/chat/ChatPanel.svelte';
   import { BASEMAP_URL } from './lib/config.ts';
   import { connection, watchConnection } from './lib/connection.svelte.ts';
   import type { JoinOutcome } from './lib/groups/group.ts';
@@ -13,17 +12,18 @@
   import { detectLocale, translator, type Locale, type MessageKey } from './lib/i18n/index.ts';
   import Onboarding from './lib/identity/Onboarding.svelte';
   import MapView from './lib/map/MapView.svelte';
-  import MemberLayer from './lib/map/MemberLayer.svelte';
   import type { MapTheme } from './lib/map/style.ts';
   import { pmtilesArchive, registerTileProtocol } from './lib/map/tile-source.ts';
   import { openTileStore, type TileStore } from './lib/map/tile-store.ts';
   import OfflineAreasPanel from './lib/offline/OfflineAreasPanel.svelte';
-  import { PositionSharing } from './lib/position/position-sharing.svelte.ts';
+  import { loadPositionMode, PositionSharing } from './lib/position/position-sharing.svelte.ts';
   import UpdatePrompt from './lib/pwa/UpdatePrompt.svelte';
   import { Session } from './lib/session.svelte.ts';
   import { openAppDb, type AppDb } from './lib/storage/app-db.ts';
   import { GroupFeed, type FeedStatus } from './lib/sync/group-feed.svelte.ts';
+  import { closePanel, panels, togglePanel } from './lib/ui/panels.svelte.ts';
   import Toast from './lib/ui/Toast.svelte';
+  import MapWorkspace from './lib/workspace/MapWorkspace.svelte';
 
   let locale: Locale = $state(detectLocale(navigator.languages));
   const t = $derived(translator(locale));
@@ -41,11 +41,9 @@
   let store: TileStore | undefined = $state();
   let db: AppDb | undefined;
   let session: Session | undefined = $state();
+  let sharing: PositionSharing | undefined;
   let feed: GroupFeed | undefined = $state.raw();
-  const sharing = new PositionSharing();
   let map: MapLibreMap | undefined = $state();
-  type PanelName = 'offline' | 'groups' | 'chat';
-  let openPanel: PanelName | null = $state(null);
   let notice: string | null = $state(null);
 
   const SYNC_LABELS: Readonly<Record<FeedStatus, MessageKey>> = {
@@ -73,6 +71,7 @@
     });
     void openAppDb().then(async (opened) => {
       db = opened;
+      sharing = new PositionSharing(opened);
       session = await Session.load(opened);
     });
 
@@ -99,37 +98,34 @@
     if (feedKey === null) return;
     const group = untrack(() => session?.activeGroup);
     const identity = untrack(() => session?.identity);
-    if (!db || !group || !identity) return;
+    if (!db || !sharing || !group || !identity) return;
+    const database = db;
+    const positions = sharing;
     let opened: GroupFeed | undefined;
     let cancelled = false;
-    void GroupFeed.open(db, group, identity).then((created) => {
+    void GroupFeed.open(database, group, identity).then(async (created) => {
+      const mode = await loadPositionMode(database);
       if (cancelled) {
         created.close();
         return;
       }
       opened = created;
       feed = created;
+      positions.attach(created, mode);
     });
     return () => {
       cancelled = true;
-      sharing.stop();
+      positions.detach();
       opened?.close();
       feed = undefined;
     };
   });
 
-  async function sendChat(text: string): Promise<void> {
-    await feed?.sendChat(text);
-  }
-
-  function toggleSharing(current: GroupFeed): void {
-    if (sharing.active) sharing.stop();
-    else sharing.start(current);
-  }
-
-  function toggle(panel: PanelName): void {
-    openPanel = openPanel === panel ? null : panel;
-  }
+  const workspaceGroup = $derived(
+    feed && sharing && session?.identity && session.activeGroup
+      ? { feed, sharing, self: session.identity.nodeId, role: session.activeGroup.role }
+      : null,
+  );
 
   function showNotice(text: string): void {
     notice = text;
@@ -148,7 +144,7 @@
   }
 
   function received(invitation: Invitation): void {
-    openPanel = null;
+    closePanel();
     incoming = { ok: true, value: invitation };
   }
 
@@ -169,9 +165,9 @@
       <button
         class="group"
         onclick={() => {
-          toggle('groups');
+          togglePanel('groups');
         }}
-        aria-expanded={openPanel === 'groups'}
+        aria-expanded={panels.open === 'groups'}
         aria-label="{t('groups')}: {groupLabel}"
         title={feed ? t(SYNC_LABELS[feed.status]) : undefined}
       >
@@ -194,79 +190,21 @@
       <MapView {theme} lang={locale} onready={onMapReady} />
     {/if}
 
-    {#if map && session?.identity && feed}
-      <MemberLayer {map} groupState={feed.state} self={session.identity.nodeId} />
+    {#if map}
+      <MapWorkspace {t} {locale} {map} group={workspaceGroup} />
     {/if}
 
-    {#if map && store}
-      <div class="actions">
-        {#if feed}
-          {@const current = feed}
-          <button
-            class="fab"
-            class:on={sharing.active}
-            aria-pressed={sharing.active}
-            onclick={() => {
-              toggleSharing(current);
-            }}
-          >
-            {sharing.active ? t('sharingPosition') : t('sharePosition')}
-          </button>
-          <button
-            class="fab"
-            onclick={() => {
-              toggle('chat');
-            }}
-            aria-expanded={openPanel === 'chat'}
-          >
-            {t('chat')}
-          </button>
-        {/if}
-        <button
-          class="fab"
-          onclick={() => {
-            toggle('offline');
-          }}
-          aria-expanded={openPanel === 'offline'}
-        >
-          {t('offlineAreas')}
-        </button>
-      </div>
-      {#if sharing.problem}
-        <Toast>
-          {sharing.problem === 'denied' ? t('locationDenied') : t('locationUnavailable')}
-        </Toast>
-      {/if}
-      {#if openPanel === 'offline'}
-        <OfflineAreasPanel
-          {t}
-          {locale}
-          {map}
-          {store}
-          {archive}
-          onclose={() => (openPanel = null)}
-        />
-      {/if}
+    {#if map && store && panels.open === 'offline'}
+      <OfflineAreasPanel {t} {locale} {map} {store} {archive} onclose={closePanel} />
     {/if}
 
-    {#if openPanel === 'chat' && feed && session?.identity}
-      <ChatPanel
-        {t}
-        {locale}
-        groupState={feed.state}
-        self={session.identity.nodeId}
-        onsend={sendChat}
-        onclose={() => (openPanel = null)}
-      />
-    {/if}
-
-    {#if session && openPanel === 'groups'}
+    {#if session && panels.open === 'groups'}
       <GroupsPanel
         {t}
         {session}
         activeState={feed?.state}
         oninvitation={received}
-        onclose={() => (openPanel = null)}
+        onclose={closePanel}
       />
     {/if}
 
@@ -370,34 +308,5 @@
 
   .sync.disconnected {
     background: var(--danger);
-  }
-
-  .actions {
-    position: absolute;
-    z-index: 1;
-    right: 1rem;
-    bottom: calc(2.5rem + env(safe-area-inset-bottom));
-    left: 1rem;
-    display: flex;
-    flex-wrap: wrap-reverse;
-    gap: 0.5rem;
-    justify-content: flex-end;
-    pointer-events: none;
-  }
-
-  .fab {
-    padding: 0.7rem 1rem;
-    font-weight: 600;
-    color: var(--surface);
-    pointer-events: auto;
-    background: var(--fg);
-    border: none;
-    border-radius: 999px;
-    box-shadow: 0 4px 16px rgb(0 0 0 / 30%);
-  }
-
-  .fab.on {
-    color: #fff;
-    background: var(--accent);
   }
 </style>

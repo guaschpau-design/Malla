@@ -1,25 +1,64 @@
-// Sharing this device's live position with the active group, while the user wants it.
+// How this device shares its position with the active group (briefing §4): sharing, paused
+// (the group keeps the last position, now out of date) or hidden (the group stops seeing it).
+// The choice is remembered on the device, so sharing resumes after the app restarts.
 
+import type { AppDb } from '../storage/app-db.ts';
 import type { GroupFeed } from '../sync/group-feed.svelte.ts';
 import { shouldReport, type Report } from './report-policy.ts';
 
+export type PositionMode = 'sharing' | 'paused' | 'hidden';
 export type SharingProblem = 'denied' | 'unavailable';
 
+const MODES: readonly PositionMode[] = ['sharing', 'paused', 'hidden'];
+
+export async function loadPositionMode(db: AppDb): Promise<PositionMode> {
+  const stored = await db.get('settings', 'positionMode');
+  return MODES.find((mode) => mode === stored) ?? 'hidden';
+}
+
 export class PositionSharing {
-  active = $state(false);
+  mode: PositionMode = $state('hidden');
   problem: SharingProblem | null = $state(null);
 
+  readonly #db: AppDb;
   #feed: GroupFeed | null = null;
   #watch: number | null = null;
   #last: Report | null = null;
 
-  /** Starts watching the device's position and reporting it to `feed`. */
-  start(feed: GroupFeed): void {
-    this.stop();
+  constructor(db: AppDb) {
+    this.#db = db;
+  }
+
+  /** Starts serving a group's feed with the remembered mode. Publishes nothing by itself. */
+  attach(feed: GroupFeed, mode: PositionMode): void {
+    this.detach();
     this.#feed = feed;
+    this.mode = mode;
+    if (mode === 'sharing') this.#startWatching();
+  }
+
+  /** Stops watching the position, for instance when the active group changes. */
+  detach(): void {
+    this.#stopWatching();
+    this.#feed = null;
+  }
+
+  async setMode(mode: PositionMode): Promise<void> {
+    // Stored first, so what the screen shows is what the app will resume with.
+    await this.#db.put('settings', mode, 'positionMode');
+    this.mode = mode;
+    if (mode === 'sharing') {
+      this.#startWatching();
+      return;
+    }
+    this.#stopWatching();
+    if (mode === 'hidden') await this.#feed?.hidePosition();
+  }
+
+  #startWatching(): void {
+    if (this.#watch !== null) return;
     this.#last = null;
     this.problem = null;
-    this.active = true;
     this.#watch = navigator.geolocation.watchPosition(
       (position) => {
         this.problem = null;
@@ -32,13 +71,9 @@ export class PositionSharing {
     );
   }
 
-  /** Stops reporting and tells the group, so this device disappears from their map. */
-  stop(): void {
+  #stopWatching(): void {
     if (this.#watch !== null) navigator.geolocation.clearWatch(this.#watch);
     this.#watch = null;
-    if (this.active) void this.#feed?.hidePosition();
-    this.#feed = null;
-    this.active = false;
   }
 
   async #report(position: GeolocationPosition): Promise<void> {

@@ -1,57 +1,79 @@
-<!-- The active group's chat. -->
+<!-- The active group's chat, with alerts in the same timeline. Coordinators can send alerts. -->
 <script lang="ts">
   import type { GroupState } from '@teselia/core';
-  import { CHAT_MAX_BYTES, utf8ByteLength, type NodeId } from '@teselia/protocol';
+  import {
+    ALERT_TEXT_MAX_BYTES,
+    CHAT_MAX_BYTES,
+    utf8ByteLength,
+    type AlertLevel,
+    type NodeId,
+  } from '@teselia/protocol';
   import { tick } from 'svelte';
 
   import { formatTime } from '../format.ts';
   import type { Locale, Translate } from '../i18n/index.ts';
+  import { aliasOf } from '../incidents/incidents.ts';
+  import { ALERT_LEVELS } from '../incidents/sos-kinds.ts';
   import Panel from '../ui/Panel.svelte';
+  import { timeline } from './timeline.ts';
 
   interface Props {
     t: Translate;
     locale: Locale;
     groupState: GroupState;
     self: NodeId;
+    /** Coordinators can send alerts as well as messages (a UI rule, see ADR-0005). */
+    canAlert: boolean;
     onsend: (text: string) => Promise<void>;
+    onalert: (level: AlertLevel, text: string) => Promise<void>;
     onclose: () => void;
   }
 
-  let { t, locale, groupState, self, onsend, onclose }: Props = $props();
+  let { t, locale, groupState, self, canAlert, onsend, onalert, onclose }: Props = $props();
 
   let text = $state('');
+  let sendAs: 'message' | AlertLevel = $state('message');
   let list: HTMLOListElement | undefined = $state();
+  const entries = $derived(timeline(groupState));
   const size = $derived(utf8ByteLength(text.trim()));
-  const canSend = $derived(size > 0 && size <= CHAT_MAX_BYTES);
+  const maxBytes = $derived(sendAs === 'message' ? CHAT_MAX_BYTES : ALERT_TEXT_MAX_BYTES);
+  const canSend = $derived(size > 0 && size <= maxBytes);
 
   async function send(): Promise<void> {
     if (!canSend) return;
     const message = text.trim();
+    const kind = sendAs;
     text = '';
-    await onsend(message);
+    sendAs = 'message';
+    if (kind === 'message') await onsend(message);
+    else await onalert(kind, message);
   }
 
-  // Keep the newest message in view.
+  // Keep the newest entry in view.
   $effect(() => {
-    if (groupState.chat.at(-1) === undefined) return;
+    if (entries.at(-1) === undefined) return;
     void tick().then(() => list?.lastElementChild?.scrollIntoView({ block: 'end' }));
   });
 </script>
 
 <Panel title={t('chat')} closeLabel={t('close')} {onclose}>
-  {#if groupState.chat.length === 0}
+  {#if entries.length === 0}
     <p class="hint section">{t('noMessages')}</p>
   {:else}
     <ol class="messages section" bind:this={list}>
-      {#each groupState.chat as line (`${line.origin}/${String(line.seq)}`)}
-        <li class:own={line.origin === self}>
+      {#each entries as entry (entry.key)}
+        <li
+          class:own={entry.event.origin === self}
+          class="{entry.kind} {entry.kind === 'alert' ? entry.event.level : ''}"
+        >
           <span class="meta">
-            {groupState.members.get(line.origin)?.alias ?? line.origin} · {formatTime(
-              line.time * 1000,
+            {#if entry.kind === 'alert'}{t(ALERT_LEVELS[entry.event.level])} ·{/if}
+            {aliasOf(groupState, entry.event.origin)} · {formatTime(
+              entry.event.time * 1000,
               locale,
             )}
           </span>
-          <span class="text">{line.text}</span>
+          <span class="text">{entry.event.text}</span>
         </li>
       {/each}
     </ol>
@@ -64,15 +86,25 @@
       void send();
     }}
   >
-    <input
-      bind:value={text}
-      aria-label={t('message')}
-      placeholder={t('message')}
-      autocomplete="off"
-    />
-    <button type="submit" class="primary" disabled={!canSend}>{t('send')}</button>
+    {#if canAlert}
+      <select bind:value={sendAs} aria-label={t('sendAs')}>
+        <option value="message">{t('message')}</option>
+        {#each Object.entries(ALERT_LEVELS) as [level, label] (level)}
+          <option value={level}>{t('alert')}: {t(label)}</option>
+        {/each}
+      </select>
+    {/if}
+    <div class="line">
+      <input
+        bind:value={text}
+        aria-label={t('message')}
+        placeholder={t('message')}
+        autocomplete="off"
+      />
+      <button type="submit" class="primary" disabled={!canSend}>{t('send')}</button>
+    </div>
   </form>
-  {#if size > CHAT_MAX_BYTES}<p class="warning">{t('messageTooLong')}</p>{/if}
+  {#if size > maxBytes}<p class="warning">{t('messageTooLong')}</p>{/if}
 </Panel>
 
 <style>
@@ -101,6 +133,20 @@
     border-color: var(--accent);
   }
 
+  li.alert {
+    justify-self: stretch;
+    max-width: none;
+    border-left: 6px solid #2563eb;
+  }
+
+  li.alert.warning {
+    border-left-color: #f59e0b;
+  }
+
+  li.alert.critical {
+    border-left-color: var(--danger);
+  }
+
   .meta {
     color: var(--muted);
     font-size: 0.75rem;
@@ -112,11 +158,16 @@
   }
 
   .compose {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .line {
     display: flex;
     gap: 0.5rem;
   }
 
-  .compose input {
+  .line input {
     flex: 1;
     min-width: 0;
   }

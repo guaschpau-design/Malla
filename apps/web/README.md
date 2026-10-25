@@ -1,6 +1,6 @@
 # @teselia/web
 
-The Teselia progressive web app: map and offline areas, identity and groups, the event log and its sync with the group's server, live positions and chat.
+The Teselia progressive web app: map and offline areas, identity and groups, the event log and its sync with the group's server, live positions, chat, map objects, SOS and alerts.
 
 | Path                        | Content                                                                                                                                      |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -12,8 +12,11 @@ The Teselia progressive web app: map and offline areas, identity and groups, the
 | `src/lib/storage/`          | The app's IndexedDB database (identity, groups, settings)                                                                                    |
 | `src/lib/events/`           | Each group's event log, own sequence numbers and the outbox                                                                                  |
 | `src/lib/sync/`             | Relay client (protocol §8) and the live feed of the active group                                                                             |
-| `src/lib/position/`         | Sharing this device's position, and when to report it                                                                                        |
+| `src/lib/position/`         | Sharing, pausing or hiding this device's position, and when to report it                                                                     |
 | `src/lib/chat/`             | Group chat panel                                                                                                                             |
+| `src/lib/objects/`          | Markers, lines, areas and circles: drawing, map layers, details                                                                              |
+| `src/lib/incidents/`        | SOS calls, alerts and acknowledgements                                                                                                       |
+| `src/lib/workspace/`        | Everything on top of the map, wired to the active group                                                                                      |
 | `src/lib/session.svelte.ts` | Reactive state of identity and groups that components read                                                                                   |
 | `src/lib/ui/`               | Shared building blocks: panel, dialog, toast, QR code                                                                                        |
 | `src/lib/pwa/`              | Service worker registration and update prompt                                                                                                |

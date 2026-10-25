@@ -60,6 +60,13 @@ button.primary {
   border-color: var(--accent);
 }
 
+button.danger {
+  font-weight: 700;
+  color: #fff;
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
 button.ghost {
   border-color: transparent;
 }
@@ -165,4 +172,21 @@ select {
   padding: 0.75rem;
   border: 1px solid var(--border);
   border-radius: 0.75rem;
+}
+
+/* Floating buttons on the map. */
+.fab {
+  padding: 0.7rem 1rem;
+  font-weight: 600;
+  color: var(--surface);
+  pointer-events: auto;
+  background: var(--fg);
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 30%);
+}
+
+.fab.on {
+  color: #fff;
+  background: var(--accent);
 }
