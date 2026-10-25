@@ -3,6 +3,7 @@
   import { registerSW } from 'virtual:pwa-register';
 
   import type { Translate } from '../i18n/index.ts';
+  import Toast from '../ui/Toast.svelte';
 
   let { t }: { t: Translate } = $props();
 
@@ -24,28 +25,10 @@
 </script>
 
 {#if needRefresh}
-  <div class="toast" role="status">
+  <Toast>
     <span>{t('updateAvailable')}</span>
     <button class="primary" onclick={() => updateServiceWorker?.(true)}>{t('update')}</button>
-  </div>
+  </Toast>
 {:else if offlineReady}
-  <div class="toast" role="status">{t('readyOffline')}</div>
+  <Toast>{t('readyOffline')}</Toast>
 {/if}
-
-<style>
-  .toast {
-    position: absolute;
-    z-index: 3;
-    top: 4rem;
-    left: 50%;
-    display: flex;
-    gap: 0.75rem;
-    align-items: center;
-    padding: 0.6rem 0.9rem;
-    color: var(--fg);
-    background: var(--surface);
-    border-radius: 0.75rem;
-    box-shadow: 0 4px 16px rgb(0 0 0 / 25%);
-    transform: translateX(-50%);
-  }
-</style>

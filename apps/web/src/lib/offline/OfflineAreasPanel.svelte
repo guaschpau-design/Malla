@@ -8,6 +8,7 @@
   import { BASEMAP_MAX_ZOOM } from '../map/style.ts';
   import { countTiles, type Bounds } from '../map/tile-math.ts';
   import type { OfflineArea, TileStore } from '../map/tile-store.ts';
+  import Panel from '../ui/Panel.svelte';
 
   interface Props {
     t: Translate;
@@ -102,12 +103,7 @@
   });
 </script>
 
-<section class="panel" aria-labelledby="offline-title">
-  <header>
-    <h2 id="offline-title">{t('offlineAreas')}</h2>
-    <button class="icon" onclick={onclose} aria-label={t('close')}>✕</button>
-  </header>
-
+<Panel title={t('offlineAreas')} closeLabel={t('close')} {onclose}>
   <p class="intro">{t('areasIntro')}</p>
 
   <form
@@ -157,17 +153,17 @@
   {#if areas.length === 0}
     <p class="hint">{t('noAreas')}</p>
   {:else}
-    <ul class="areas">
+    <ul class="cards areas">
       {#each areas as area (area.id)}
         <li>
           <div>
             <strong>{area.name}</strong>
-            {#if !area.complete}<span class="badge">{t('incomplete')}</span>{/if}
+            {#if !area.complete}<span class="badge danger">{t('incomplete')}</span>{/if}
             <span class="hint">
               {formatBytes(area.bytes, locale)} · {formatDateTime(area.createdAt, locale)}
             </span>
           </div>
-          <div class="actions">
+          <div class="row">
             <button
               onclick={() => {
                 show(area);
@@ -188,60 +184,9 @@
       })}
     </p>
   {/if}
-</section>
+</Panel>
 
 <style>
-  .panel {
-    position: absolute;
-    z-index: 2;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    max-height: 75dvh;
-    overflow-y: auto;
-    padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
-    background: var(--surface);
-    color: var(--fg);
-    border-radius: 1rem 1rem 0 0;
-    box-shadow: 0 -4px 24px rgb(0 0 0 / 25%);
-  }
-
-  @media (min-width: 48rem) {
-    .panel {
-      top: 4rem;
-      right: 1rem;
-      bottom: auto;
-      left: auto;
-      width: 24rem;
-      border-radius: 1rem;
-    }
-  }
-
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  h2,
-  h3 {
-    margin: 0;
-  }
-
-  h2 {
-    font-size: 1.15rem;
-  }
-
-  h3 {
-    font-size: 1rem;
-  }
-
-  .intro,
-  .hint {
-    color: var(--muted);
-    font-size: 0.9rem;
-  }
-
   .download {
     display: grid;
     gap: 0.6rem;
@@ -251,62 +196,11 @@
     border-radius: 0.75rem;
   }
 
-  label {
-    display: grid;
-    gap: 0.25rem;
-    font-size: 0.9rem;
-  }
-
-  input,
-  select {
-    padding: 0.55rem;
-    font: inherit;
-    color: inherit;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 0.5rem;
-  }
-
   progress {
     width: 100%;
   }
 
-  .warning {
-    color: var(--danger);
-    font-size: 0.9rem;
-  }
-
-  .areas {
-    display: grid;
-    gap: 0.5rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .areas li {
-    display: grid;
-    gap: 0.4rem;
-    padding: 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: 0.75rem;
-  }
-
   .areas li .hint {
     display: block;
-  }
-
-  .actions {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .badge {
-    margin-left: 0.4rem;
-    padding: 0.05rem 0.45rem;
-    font-size: 0.75rem;
-    color: var(--danger);
-    border: 1px solid var(--danger);
-    border-radius: 999px;
   }
 </style>

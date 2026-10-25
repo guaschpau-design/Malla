@@ -8,6 +8,8 @@
 >
 > _Malla_ es un nombre provisional. · _Malla_ is a provisional name.
 
+**Pruébala · Try it:** <https://guaschpau-design.github.io/Malla/> — se publica sola con cada cambio que pasa las pruebas · published automatically on every change that passes CI.
+
 ## Principios · Principles
 
 - **Nadie lo controla.** Libre (EUPL-1.2), gratuito y sin cuentas. · **Nobody controls it.** Free software (EUPL-1.2), no cost, no accounts.

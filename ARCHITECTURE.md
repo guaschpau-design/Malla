@@ -42,7 +42,7 @@ The dependency direction is strictly downwards in the diagram. `protocol` and `c
 
 ### 3.1 Identity
 
-Each device generates an Ed25519 key pair on first launch and never sends the private key anywhere. Its **node ID** is the first 4 bytes of `SHA-256(publicKey)`, shown as 8 hex characters. The user picks an alias. There are no accounts.
+Each device generates an Ed25519 key pair on first launch, when the user picks an alias, and never sends the private key anywhere. Its **node ID** is the first 4 bytes of `SHA-256(publicKey)`, shown as 8 hex characters. There are no accounts.
 
 ### 3.2 Group
 
@@ -55,9 +55,11 @@ A group is defined by a random 16-byte **group secret**. Everything else is deri
 | Content key (32 bytes) | AES-256-GCM encryption of events sent over the internet                |
 | Event key (HMAC)       | Lets the server de-duplicate envelopes without learning who sent them  |
 
-People join by scanning an **invitation** (QR code or link) that carries the group name, the secret, the role being granted and, optionally, a server URL. The secret travels in the URL fragment, which browsers never send to servers.
+People join by scanning an **invitation** (QR code or link) that carries the group name, the secret, the role being granted and, optionally, a server URL. The secret travels in the URL fragment, which browsers never send to servers, and the app removes it from the address bar as soon as it has read it ([ADR-0012](docs/decisions/0012-invitation-links-under-a-base-path.md)). A QR code can be scanned with the phone's camera app, which opens the link, or from inside the app where the browser supports barcode detection.
 
-Roles (coordinator, member) are carried in invitations and shown in the UI. In v0.1 they are **advisory**: anyone holding the secret is technically able to send any event. See [ADR-0005](docs/decisions/0005-group-secret-trust-boundary.md).
+A device can belong to several groups; one is **active** at a time. Joining a group the device already belongs to never demotes it: a coordinator invitation promotes a member, a member invitation changes nothing.
+
+Roles (coordinator, member) are carried in invitations and shown in the UI. In v0.1 they are **advisory**: anyone holding the secret is technically able to send any event. The UI lets only coordinators create invitations, choosing whether each one grants member or coordinator. See [ADR-0005](docs/decisions/0005-group-secret-trust-boundary.md).
 
 ### 3.3 Events
 
@@ -125,12 +127,12 @@ Command-post mode needs HTTPS on a local network, because browsers require a sec
 
 ## 6. Persistence
 
-| Where   | What                                                | Technology                                                    |
-| ------- | --------------------------------------------------- | ------------------------------------------------------------- |
-| Browser | Event log, outbox, settings, identity keys          | IndexedDB                                                     |
-| Browser | Offline map tiles, with the areas they belong to    | IndexedDB                                                     |
-| Server  | Encrypted envelopes per group, with retention limit | SQLite through `node:sqlite`                                  |
-| Server  | Base map                                            | One PMTiles file, served as a static file with range requests |
+| Where   | What                                                             | Technology                                                               |
+| ------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Browser | Identity keys, groups, settings; event log and outbox from day 3 | IndexedDB database `malla`                                               |
+| Browser | Offline map tiles, with the areas they belong to                 | IndexedDB database `malla-map`, separate so it can be cleared on its own |
+| Server  | Encrypted envelopes per group, with retention limit              | SQLite through `node:sqlite`                                             |
+| Server  | Base map                                                         | One PMTiles file, served as a static file with range requests            |
 
 ## 7. Maps
 
@@ -144,6 +146,7 @@ The base map is OpenStreetMap data rendered as vector tiles from a single PMTile
 | Eavesdropper on LoRa                   | MeshCore encrypts channel traffic with the group secret, but with AES-128-ECB and a 2-byte MAC: enough against casual listening, weak against a determined attacker (see [ADR-0010](docs/decisions/0010-lora-link-security.md)) |
 | Outsider joins the group               | Requires the secret, which only travels inside invitations                                                                                                                                                                      |
 | Member impersonates another member     | **Not prevented in v0.1** — anyone with the secret can forge any origin. Signatures do not fit LoRa's 165-byte budget; planned for internet traffic later                                                                       |
+| Lost or seized phone                   | Group secrets and the device key sit unencrypted in the browser's storage, protected only by the phone's own lock. Leaving a group deletes its secret from the device                                                           |
 | Leaked secret                          | Coordinator creates a new group and re-invites; key rotation is future work                                                                                                                                                     |
 | Server flooded with junk               | Rate limits per connection and per group. The group ID is enough to push envelopes; a membership token derived from the secret is future work                                                                                   |
 

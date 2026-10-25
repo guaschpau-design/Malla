@@ -2,11 +2,14 @@
 
 import { expect, test } from '@playwright/test';
 
+import { chooseAlias } from './helpers.ts';
+
 test('a downloaded area keeps working after going offline and reloading', async ({
   page,
   context,
 }) => {
   await page.goto('/#map=13/39.47/-0.36');
+  await chooseAlias(page, 'Ana');
   await expect(page.getByRole('status').filter({ hasText: 'En línea' })).toBeVisible();
 
   // The service worker must be active before we go offline.

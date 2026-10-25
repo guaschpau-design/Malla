@@ -1,0 +1,51 @@
+<!-- Confirms joining the group of an invitation the app was opened with or that was scanned. -->
+<script lang="ts">
+  import type { Invitation } from '@malla/protocol';
+
+  import type { Translate } from '../i18n/index.ts';
+  import Dialog from '../ui/Dialog.svelte';
+  import { ROLE_LABELS } from './role-label.ts';
+
+  interface Props {
+    t: Translate;
+    /** The invitation, or null if the link was damaged. */
+    invitation: Invitation | null;
+    onjoin: (invitation: Invitation) => Promise<void>;
+    ondismiss: () => void;
+  }
+
+  let { t, invitation, onjoin, ondismiss }: Props = $props();
+
+  let busy = $state(false);
+
+  async function join(accepted: Invitation): Promise<void> {
+    busy = true;
+    try {
+      await onjoin(accepted);
+    } finally {
+      busy = false;
+    }
+  }
+</script>
+
+<Dialog title={t('joinTitle')}>
+  <div class="stack">
+    {#if invitation}
+      <p>
+        {t('joinQuestion', { group: invitation.groupName, role: t(ROLE_LABELS[invitation.role]) })}
+      </p>
+      <p class="hint">{t('invitedBy', { node: invitation.issuer })}</p>
+      <p class="hint">{t('joinWarning')}</p>
+      <div class="row">
+        <button class="primary" disabled={busy} onclick={() => join(invitation)}>{t('join')}</button
+        >
+        <button onclick={ondismiss}>{t('notNow')}</button>
+      </div>
+    {:else}
+      <p class="warning">{t('invitationDamaged')}</p>
+      <div class="row">
+        <button onclick={ondismiss}>{t('close')}</button>
+      </div>
+    {/if}
+  </div>
+</Dialog>
