@@ -6,17 +6,27 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import type WebSocket from 'ws';
 
 import type { Relay } from './relay.ts';
+import { serveWeb } from './web.ts';
 
 /** Largest frame accepted: a push of the largest envelope is about 320 bytes of JSON. */
 const MAX_FRAME_BYTES = 1024;
 /** Connections that do not answer a ping within this time are closed. */
 const HEARTBEAT_MS = 30_000;
 
-export async function buildApp(relay: Relay): Promise<FastifyInstance> {
+export interface AppOptions {
+  /** Directory to serve the landing page and the web app from, or null. */
+  readonly webRoot: string | null;
+}
+
+export async function buildApp(
+  relay: Relay,
+  options: AppOptions = { webRoot: null },
+): Promise<FastifyInstance> {
   const app = Fastify({ logger: false });
   await app.register(fastifyWebsocket, { options: { maxPayload: MAX_FRAME_BYTES } });
 
   app.get('/healthz', () => ({ status: 'ok', protocolVersion: PROTOCOL_VERSION }));
+  if (options.webRoot !== null) await serveWeb(app, options.webRoot);
 
   const alive = new WeakSet<WebSocket>();
   app.get(`/${RELAY_PATH}`, { websocket: true }, (socket) => {

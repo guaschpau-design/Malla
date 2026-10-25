@@ -7,6 +7,8 @@ export interface ServerConfig {
   readonly databasePath: string;
   /** Envelopes older than this are deleted. */
   readonly retentionDays: number;
+  /** Directory with the landing page and the built web app under app/, or null to serve none. */
+  readonly webRoot: string | null;
 }
 
 export function readConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
@@ -15,6 +17,7 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     port: integer(env, 'TESELIA_PORT', 8080, 1, 65535),
     databasePath: env['TESELIA_DB'] ?? 'data/teselia.db',
     retentionDays: integer(env, 'TESELIA_RETENTION_DAYS', 30, 1, 3650),
+    webRoot: env['TESELIA_WEB_ROOT'] || null,
   };
 }
 

@@ -9,6 +9,7 @@ describe('configuration', () => {
       port: 8080,
       databasePath: 'data/teselia.db',
       retentionDays: 30,
+      webRoot: null,
     });
   });
 

@@ -13,7 +13,7 @@ const config = readConfig();
 if (config.databasePath !== ':memory:')
   mkdirSync(dirname(config.databasePath), { recursive: true });
 const store = new EnvelopeStore(config.databasePath);
-const app = await buildApp(new Relay(store, Date.now));
+const app = await buildApp(new Relay(store, Date.now), { webRoot: config.webRoot });
 
 const sweep = () => store.deleteReceivedBefore(Date.now() - config.retentionDays * DAY_MS);
 sweep();
