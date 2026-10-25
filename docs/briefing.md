@@ -40,7 +40,7 @@ Para toda la sociedad civil, sin excluir a nadie:
 | Licencia                  | EUPL-1.2 (licencia libre oficial de la UE)                                                                                                                      |
 | Gobernanza                | Proyecto personal de Pau, que se abre a la comunidad al publicarse                                                                                              |
 | Desarrollo                | Pau dirige, Claude programa                                                                                                                                     |
-| Plataforma                | Aplicación web instalable (PWA) para móvil y ordenador, que funciona sin conexión                                                                               |
+| Plataforma                | Aplicación web (principal) y apps de Android e iPhone hechas con el mismo código, a partir de la v0.1 (ADR-0016)                                                |
 | Comunicaciones v0.1       | Internet + LoRa MeshCore (Bluetooth desde Chrome/Edge)                                                                                                          |
 | Radios soportadas v0.1    | Elecrow ThinkNode M9, SenseCAP MeshTracker X1, LilyGO T-Deck Plus y SenseCAP T1000-E, con firmware MeshCore Companion Bluetooth (detalle en `docs/hardware.md`) |
 | Comunicaciones después    | LoRa Meshtastic; compatibilidad con ATAK (protocolo CoT)                                                                                                        |
@@ -70,6 +70,7 @@ Para toda la sociedad civil, sin excluir a nadie:
 
 ### Después de la v0.1, por orden
 
+0. Apps de Android e iPhone (Google Play, App Store y F-Droid) con el mismo código: segundo plano, radio en iPhone y avisos con la app cerrada.
 1. Fotos adjuntas (solo por internet; LoRa no da para imágenes).
 2. Tareas asignadas a personas o equipos.
 3. Rutas y tracks.
@@ -83,8 +84,6 @@ Para toda la sociedad civil, sin excluir a nadie:
 
 - Voz y vídeo.
 - Mensajes privados de persona a persona con cifrado extremo a extremo.
-- Apps nativas para tiendas de aplicaciones.
-- LoRa en iPhone (Safari no permite Bluetooth desde la web).
 
 ## 6. Los tres modos de funcionamiento
 
