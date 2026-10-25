@@ -9,6 +9,8 @@ services:
     restart: unless-stopped
     environment:
       TESELIA_RETENTION_DAYS: ${TESELIA_RETENTION_DAYS:-30}
+      # Name shared by this server's command posts, announced to apps (protocol §8.3).
+      TESELIA_COMMAND_POST: ${TESELIA_COMMAND_POST:-}
     volumes:
       - teselia-data:/data
     # Locked down: read-only system, no Linux capabilities, no privilege escalation. The server

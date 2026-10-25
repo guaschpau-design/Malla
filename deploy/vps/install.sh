@@ -12,17 +12,19 @@ set -euo pipefail
 REPO_RAW="https://raw.githubusercontent.com/guaschpau-design/Malla"
 REF="main"
 DOMAIN=""
+COMMAND_POST=""
 SKIP_DNS_CHECK=false
 INSTALL_DIR="/opt/teselia"
 
 usage() {
-  echo "Usage: install.sh --domain DOMAIN [--ref GIT_REF] [--skip-dns-check]" >&2
+  echo "Usage: install.sh --domain DOMAIN [--command-post URL] [--ref GIT_REF] [--skip-dns-check]" >&2
   exit 2
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --domain) DOMAIN="${2:-}"; shift 2 ;;
+    --command-post) COMMAND_POST="${2:-}"; shift 2 ;;
     --ref) REF="${2:-}"; shift 2 ;;
     --skip-dns-check) SKIP_DNS_CHECK=true; shift ;;
     *) usage ;;
@@ -34,6 +36,8 @@ fail() { printf '\n\033[31mError:\033[0m %s\n' "$*" >&2; exit 1; }
 
 [[ -n "$DOMAIN" ]] || usage
 [[ "$DOMAIN" =~ ^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]] || fail "\"$DOMAIN\" is not a domain name."
+[[ -z "$COMMAND_POST" || "$COMMAND_POST" =~ ^https://[A-Za-z0-9.-]+/?$ ]] ||
+  fail "--command-post must be https://host"
 [[ $EUID -eq 0 ]] || fail "run as root (with sudo)."
 # shellcheck source=/dev/null
 . /etc/os-release
@@ -125,8 +129,13 @@ install -m 0755 -d "$INSTALL_DIR"
 for file in compose.yaml Caddyfile; do
   curl -fsSL "$REPO_RAW/$REF/deploy/vps/$file" -o "$INSTALL_DIR/$file"
 done
+# A command post set by an earlier run is kept unless a new one is given.
+if [[ -z "$COMMAND_POST" && -f "$INSTALL_DIR/.env" ]]; then
+  COMMAND_POST="$(sed -n 's/^TESELIA_COMMAND_POST=//p' "$INSTALL_DIR/.env")"
+fi
 cat > "$INSTALL_DIR/.env" <<CONF
 TESELIA_DOMAIN=$DOMAIN
+TESELIA_COMMAND_POST=$COMMAND_POST
 CONF
 
 cat > /etc/systemd/system/teselia-update.service <<'CONF'
@@ -169,7 +178,7 @@ step "Waiting for https://$DOMAIN"
 for _ in $(seq 1 60); do
   if curl -fsS "https://$DOMAIN/healthz" >/dev/null 2>&1; then
     printf '\n\033[32mTeselia is running at https://%s\033[0m\n' "$DOMAIN"
-    echo "Use https://$DOMAIN as the server when creating a group."
+    echo "The app is at https://$DOMAIN/app/ and creates its groups on this server."
     exit 0
   fi
   sleep 5

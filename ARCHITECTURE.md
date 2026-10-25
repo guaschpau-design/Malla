@@ -135,13 +135,17 @@ A device connected to both the server and a radio is a **bridge**, with no confi
 
 The code is the same in every mode; what differs is what is reachable.
 
-| Mode         | Reachable            | Behaviour                                                                                                                                                                                                                         |
-| ------------ | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Connected    | Server               | Sync through the VPS; LoRa as fallback if paired                                                                                                                                                                                  |
-| Mesh         | Radio only           | Events flow radio to radio; each device keeps its own log                                                                                                                                                                         |
-| Command post | Radio + local server | A laptop or Raspberry Pi runs `apps/server` in command-post mode with a radio bridge and its own Wi-Fi; phones without a radio (including iPhones) join over Wi-Fi; the command post syncs with the VPS when the internet returns |
+| Mode         | Reachable            | Behaviour                                                                                                                                                                                                                                      |
+| ------------ | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Connected    | Server               | Sync through the VPS; LoRa as fallback if paired                                                                                                                                                                                               |
+| Mesh         | Radio only           | Events flow radio to radio; each device keeps its own log                                                                                                                                                                                      |
+| Command post | Post's Wi-Fi + radio | A laptop or Raspberry Pi runs `apps/server` with `TESELIA_UPSTREAM` and its own Wi-Fi; phones without a radio (including iPhones) sync through it; a browser on the post bridges to LoRa; the post replicates the VPS whenever it has internet |
 
-Command-post mode needs HTTPS on a local network, because browsers require a secure context for installing a PWA and using Bluetooth. The certificate procedure is designed on day 6 and recorded as an ADR.
+A command post is found by name and replicates by protocol ([ADR-0018](docs/decisions/0018-command-post.md), protocol §8.2–8.3):
+
+- All posts of a server share one name, which each post resolves to itself on its own Wi-Fi, with a certificate obtained beforehand by DNS challenge.
+- The server announces that name in `healthz`. Apps try the group's server first and the post next, keeping one cursor per relay, so moving between them loses nothing.
+- The post keeps one upstream connection per group: it stores what the upstream has and pushes what its clients pushed. It moves envelopes only, like any server.
 
 ## 6. Persistence
 
@@ -172,11 +176,11 @@ The base map is OpenStreetMap data rendered as vector tiles from a single PMTile
 
 ```
 apps/web/            PWA: UI, map, storage, transport wiring
-apps/server/         Relay and storage server, serves site and app; command-post mode
+apps/server/         Relay and storage server, serves site and app; replication for command posts
 apps/site/           Landing page (static)
 packages/protocol/   Wire format, crypto, invitations (pure TS)
 packages/core/       Reducer, scheduler, bridge rules (pure TS)
 packages/meshcore/   MeshCore radio adapter
 docs/                Briefing, protocol spec, decisions
-deploy/              Deployment to the VPS; GitHub Pages redirect
+deploy/              VPS, command post kit, GitHub Pages redirect
 ```

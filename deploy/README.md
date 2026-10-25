@@ -44,4 +44,8 @@ docker compose logs --tail 100      # recent logs
 systemctl list-timers teselia-update  # when the next update check runs
 ```
 
-The same image runs a local command post on a laptop or Raspberry Pi (see ADR-0008); that setup arrives on day 6.
+To announce a command post (below), run the script again with `--command-post https://puesto.example.eu`; the setting is kept on later runs.
+
+## Command post
+
+The same image runs a command post on a laptop or Raspberry Pi with its own Wi-Fi, replicating the VPS: see [`command-post/`](command-post/README.md).
