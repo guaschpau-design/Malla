@@ -113,10 +113,10 @@ describe('relay client', () => {
     if (!socket) throw new Error('no socket');
     socket.open();
     await flush();
-    expect(client.push(new Uint8Array(16), new Uint8Array(50))).toBe(false);
+    expect(client.push(new Uint8Array(16), new Uint8Array(50), 'chat')).toBe(false);
     socket.receive({ t: 'synced', cursor: 0 });
     await flush();
-    expect(client.push(new Uint8Array(16), new Uint8Array(50))).toBe(true);
+    expect(client.push(new Uint8Array(16), new Uint8Array(50), 'chat')).toBe(true);
   });
 
   it('reconnects with growing delays after the link drops', async () => {

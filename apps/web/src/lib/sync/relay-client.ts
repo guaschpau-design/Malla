@@ -7,8 +7,11 @@ import {
   encodeRelayMessage,
   parseServerMessage,
   relayUrl,
+  type EventType,
   type ServerMessage,
 } from '@teselia/protocol';
+
+import { PushQueue } from './push-queue.ts';
 
 /** The part of the browser's WebSocket the client uses, so tests can provide a fake. */
 export interface SocketLike {
@@ -61,6 +64,9 @@ export class RelayClient {
   #stopped = true;
   /** Messages are handled one at a time, in arrival order, so cursors only move forward. */
   #queue: Promise<void> = Promise.resolve();
+  readonly #pushes = new PushQueue((key, env) => {
+    this.#socket?.send(encodeRelayMessage({ t: 'push', key, env }));
+  });
 
   constructor(options: RelayClientOptions) {
     this.#options = options;
@@ -85,6 +91,7 @@ export class RelayClient {
   stop(): void {
     this.#stopped = true;
     this.#round += 1;
+    this.#pushes.clear();
     this.#clearTimers();
     this.#socket?.close();
     this.#socket = null;
@@ -98,10 +105,13 @@ export class RelayClient {
     void this.#newRound();
   }
 
-  /** Sends an envelope. Returns false if the link is not synced; the caller keeps it queued. */
-  push(key: Uint8Array, env: Uint8Array): boolean {
+  /**
+   * Queues an envelope for the relay, most urgent first. Returns false if the link is not synced;
+   * the caller keeps it in its outbox and offers it again after the next sync.
+   */
+  push(key: Uint8Array, env: Uint8Array, type: EventType | null): boolean {
     if (this.#status !== 'synced' || this.#socket === null) return false;
-    this.#socket.send(encodeRelayMessage({ t: 'push', key, env }));
+    this.#pushes.add(key, env, type);
     return true;
   }
 
@@ -158,6 +168,7 @@ export class RelayClient {
 
   /** A link that had synced starts a new round; one that never did gives way to the next relay. */
   #lost(hadSynced: boolean): void {
+    this.#pushes.clear();
     if (this.#stopped) return;
     if (hadSynced) {
       this.#setStatus('disconnected');
@@ -180,10 +191,15 @@ export class RelayClient {
         await handlers.onSynced(message.cursor, relay);
         return;
       case 'stored':
+        this.#pushes.stored(message.key);
         await handlers.onStored(message.key);
         return;
       case 'error':
-        // Refused pushes stay in the outbox and go again after the next sync.
+        if (message.code === 'rate-limited' && message.key !== null) {
+          this.#pushes.rateLimited(message.key);
+          return;
+        }
+        // Anything else refused stays in the outbox and goes again after the next sync.
         console.warn('Relay refused a message', message.code);
         return;
     }
