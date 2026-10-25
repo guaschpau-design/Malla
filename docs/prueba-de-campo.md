@@ -4,7 +4,6 @@ Lista para probar Teselia en condiciones reales antes de publicar la v0.1. Las p
 
 ## Antes de salir
 
-- [ ] Mapa propio en el servidor: ejecuta una vez en el VPS el comando de instalación (sección «Lo que necesito de Pau» de [`briefing.md`](briefing.md)) y comprueba que `https://teselia.eu/maps/basemap.pmtiles` descarga algo.
 - [ ] Radios preparadas con MeshCore Companion Bluetooth v1.18 o superior, región EU/UK Narrow ([`hardware.md`](hardware.md)), y cargadas.
 - [ ] En cada móvil: Teselia abierta desde `https://teselia.eu/app/`, añadida a la pantalla de inicio, con nombre elegido.
 - [ ] Mapa de la zona de la prueba descargado en cada móvil («Mapas sin conexión»).

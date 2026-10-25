@@ -153,7 +153,7 @@ El día 5 es el de más riesgo: la integración con la radio solo se valida con 
 - [x] VPS europeo (IONOS, plan M, Debian 13, centro de datos en España) y dominio `teselia.eu`; servidor en marcha en `https://teselia.eu`.
 - [ ] Modelos de las radios MeshCore y Meshtastic disponibles; radios MeshCore con firmware Companion BLE v1.18 o superior.
 - [ ] Unos 30 minutos diarios de pruebas con un Android con Chrome, un PC y, si es posible, un iPhone.
-- [ ] Mapa propio en el VPS: volver a ejecutar una vez el comando de instalación (prepara el mapa de España, Portugal y las islas; tarda hasta media hora):
+- [x] Mapa propio en el VPS: volver a ejecutar una vez el comando de instalación (prepara el mapa de España, Portugal y las islas; tarda hasta media hora):
 
   ```sh
   ssh -t root@31.70.148.92 "curl -fsSL https://raw.githubusercontent.com/guaschpau-design/Malla/main/deploy/vps/install.sh | bash -s -- --domain teselia.eu"

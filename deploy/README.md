@@ -4,7 +4,7 @@
 
 Caddy serves the base map at `/maps/basemap.pmtiles` ([ADR-0007](../docs/decisions/0007-self-hosted-vector-maps.md)): Spain, Portugal and the islands by default; set `TESELIA_MAP_BBOX` (west,south,east,north) in the environment of `maps.sh` for another area.
 
-The server image carries the landing page ([`apps/site`](../apps/site)) at `/`, its English version at `/en/`, the web app at `/app/` and the relay at `/v1/ws` ([ADR-0017](../docs/decisions/0017-server-serves-site-and-app.md)). The app built into the image proposes its own server for new groups.
+The server image carries the landing page ([`apps/site`](../apps/site)) at `/`, its English version at `/en/`, the web app at `/app/` and the relay at `/v1/ws` ([ADR-0017](../docs/decisions/0017-server-serves-site-and-app.md)). The app built into the image proposes its own server for new groups and uses the base map its server publishes.
 
 GitHub Pages, where the app used to live, now only redirects to `https://teselia.eu/app/` ([`pages/`](pages)).
 

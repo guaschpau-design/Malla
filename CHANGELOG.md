@@ -10,7 +10,7 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 
 - OpenStreetMap vector base map, installable as an app and usable offline.
 - Areas downloaded tile by tile for offline use ([ADR-0011](docs/decisions/0011-client-side-area-download.md)).
-- The base map is built from OpenStreetMap by our own server and served by it and by command posts.
+- The base map (Spain, Portugal and the islands) is built from OpenStreetMap by our own server and served by it and by command posts.
 
 ### Groups
 

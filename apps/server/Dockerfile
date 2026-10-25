@@ -11,8 +11,10 @@ RUN npm install --global pnpm@10.28.0
 WORKDIR /src
 COPY . .
 RUN pnpm install --frozen-lockfile --filter @teselia/web...
-# VITE_SERVER_URL "/" makes every server propose itself for new groups.
-RUN TESELIA_BASE=/app/ VITE_SERVER_URL=/ pnpm --filter @teselia/web build
+# VITE_SERVER_URL "/" makes every server propose itself for new groups, and the base map is the
+# one Caddy serves next to it (deploy/vps/maps.sh).
+RUN TESELIA_BASE=/app/ VITE_SERVER_URL=/ VITE_BASEMAP_URL=/maps/basemap.pmtiles \
+    pnpm --filter @teselia/web build
 
 FROM node:24-slim AS install
 RUN npm install --global pnpm@10.28.0
