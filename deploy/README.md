@@ -8,6 +8,8 @@ The Pages build uses the Protomaps demo base map, which is for testing only. Inv
 
 ## Server on a VPS
 
+The project's server runs at `https://teselia.eu`, on an IONOS VPS in Spain, and the GitHub Pages build proposes it for new groups.
+
 The server runs on any Debian or Ubuntu VPS with a domain pointing to it ([ADR-0013](../docs/decisions/0013-self-updating-vps.md)).
 
 1. Create an `A` record for the domain with the VPS's IPv4 address.

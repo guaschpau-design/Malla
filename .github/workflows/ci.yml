@@ -62,6 +62,8 @@ jobs:
       - run: pnpm --filter @teselia/web build
         env:
           TESELIA_BASE: /${{ github.event.repository.name }}/
+          # Server proposed for new groups: the project's VPS (deploy/README.md).
+          VITE_SERVER_URL: https://teselia.eu
       # Static hosts cannot route /{base}/join to the app; GitHub Pages serves 404.html instead.
       - run: cp apps/web/dist/index.html apps/web/dist/404.html
       - uses: actions/upload-pages-artifact@v5
