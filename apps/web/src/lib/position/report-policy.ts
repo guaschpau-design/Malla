@@ -3,7 +3,7 @@
 
 import type { LatLon } from '@teselia/protocol';
 
-import { distanceMeters } from '../map/geometry.ts';
+import { distanceMeters } from '@teselia/core';
 
 /** Never more often than this, however fast the device moves. */
 export const MIN_INTERVAL_S = 5;

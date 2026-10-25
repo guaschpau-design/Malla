@@ -1,8 +1,9 @@
 // The object being drawn, as GeoJSON for its preview on the map.
 
+import { distanceMeters } from '@teselia/core';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 
-import { circleRing, distanceMeters, toPosition } from '../map/geometry.ts';
+import { circleRing, toPosition } from '../map/geometry.ts';
 import type { Draft } from './draft.ts';
 
 export function draftFeatures(draft: Draft): FeatureCollection {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { distanceMeters } from '../map/geometry.ts';
+import { distanceMeters } from '@teselia/core';
 import { shouldReport } from './report-policy.ts';
 
 const VALENCIA = { lat: 39.4699, lon: -0.3763 };

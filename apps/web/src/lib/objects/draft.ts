@@ -2,7 +2,7 @@
 
 import type { LatLon, ShapeGeometry } from '@teselia/protocol';
 
-import { distanceMeters } from '../map/geometry.ts';
+import { distanceMeters } from '@teselia/core';
 
 export type DraftKind = 'marker' | 'line' | 'area' | 'circle';
 
