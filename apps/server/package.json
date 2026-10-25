@@ -13,6 +13,7 @@
   "dependencies": {
     "@fastify/static": "10.1.7",
     "@fastify/websocket": "11.3.4",
+    "@teselia/core": "workspace:*",
     "@teselia/protocol": "workspace:*",
     "fastify": "^5.12.7",
     "ws": "^8.22.0"

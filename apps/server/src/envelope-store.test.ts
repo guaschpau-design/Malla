@@ -55,7 +55,7 @@ describe('envelope store', () => {
   });
 
   it('keeps what clients pushed pending for the upstream until it confirms, oldest first', () => {
-    const store = new EnvelopeStore(':memory:');
+    const store = new EnvelopeStore(':memory:', { upstream: true });
     store.append(GROUP_A, key(1), env(1), 0);
     store.append(GROUP_A, key(2), env(2), 0, 'upstream');
     store.append(GROUP_A, key(3), env(3), 0);
@@ -65,6 +65,20 @@ describe('envelope store', () => {
     store.markUpstreamStored(GROUP_A, key(3));
     expect(store.nextPendingUpstream(GROUP_A)).toBeNull();
     expect(store.groups()).toEqual([GROUP_A]);
+  });
+
+  it('keeps nothing pending on a server without an upstream', () => {
+    const store = new EnvelopeStore(':memory:');
+    store.append(GROUP_A, key(1), env(1), 0);
+    expect(store.nextPendingUpstream(GROUP_A)).toBeNull();
+  });
+
+  it('keeps what the upstream lacks past the retention period', () => {
+    const store = new EnvelopeStore(':memory:', { upstream: true });
+    store.append(GROUP_A, key(1), env(1), 1000);
+    store.append(GROUP_A, key(2), env(2), 1000, 'upstream');
+    expect(store.deleteReceivedBefore(2000)).toBe(1);
+    expect(store.nextPendingUpstream(GROUP_A)?.key).toEqual(key(1));
   });
 
   it('remembers how far each group was read from the upstream', () => {

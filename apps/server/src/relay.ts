@@ -2,6 +2,7 @@
 // other connections of the same group. One connection carries one group. On a command post the
 // replicator (replicator.ts) hands in what the upstream has and learns what clients push.
 
+import { TokenBucket } from '@teselia/core';
 import {
   encodeRelayMessage,
   parseClientMessage,
@@ -11,7 +12,6 @@ import {
 import WebSocket from 'ws';
 
 import type { EnvelopeSource, EnvelopeStore, StoredEnvelope } from './envelope-store.ts';
-import { TokenBucket } from './token-bucket.ts';
 import { frameText } from './ws-text.ts';
 
 export interface RelayLimits {

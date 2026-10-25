@@ -13,7 +13,7 @@ const RETENTION_SWEEP_MS = 60 * 60 * 1000;
 const config = readConfig();
 if (config.databasePath !== ':memory:')
   mkdirSync(dirname(config.databasePath), { recursive: true });
-const store = new EnvelopeStore(config.databasePath);
+const store = new EnvelopeStore(config.databasePath, { upstream: config.upstream !== null });
 const relay = new Relay(store, Date.now);
 const app = await buildApp(relay, config);
 const replicator =

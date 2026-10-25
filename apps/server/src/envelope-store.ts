@@ -33,8 +33,15 @@ export class EnvelopeStore {
   readonly #upstreamCursor: StatementSync;
   readonly #setUpstreamCursor: StatementSync;
 
-  /** `path` is a file, or `:memory:` for tests. */
-  constructor(path: string) {
+  readonly #tracksUpstream: boolean;
+
+  /**
+   * `path` is a file, or `:memory:` for tests. A server with an upstream (a command post) keeps
+   * what its clients push pending until the upstream confirms it; one without keeps nothing
+   * pending, so turning a server into a command post later uploads only what arrives from then on.
+   */
+  constructor(path: string, options: { readonly upstream: boolean } = { upstream: false }) {
+    this.#tracksUpstream = options.upstream;
     this.#db = new DatabaseSync(path);
     this.#db.exec(`
       PRAGMA journal_mode = WAL;
@@ -44,6 +51,8 @@ export class EnvelopeStore {
         event_key   BLOB    NOT NULL,
         envelope    BLOB    NOT NULL,
         received_at INTEGER NOT NULL,
+        -- 1 while the upstream of a command post lacks it (protocol §8.2).
+        pending_up  INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY (group_id, cursor),
         UNIQUE (group_id, event_key)
       ) WITHOUT ROWID;
@@ -58,6 +67,8 @@ export class EnvelopeStore {
       ) WITHOUT ROWID;
     `);
     this.#migrate();
+    if (!this.#tracksUpstream)
+      this.#db.exec('UPDATE envelopes SET pending_up = 0 WHERE pending_up = 1');
     this.#findKey = this.#db.prepare(
       'SELECT cursor FROM envelopes WHERE group_id = ? AND event_key = ?',
     );
@@ -71,7 +82,10 @@ export class EnvelopeStore {
     this.#after = this.#db.prepare(
       'SELECT cursor, event_key, envelope FROM envelopes WHERE group_id = ? AND cursor > ? ORDER BY cursor LIMIT ?',
     );
-    this.#deleteBefore = this.#db.prepare('DELETE FROM envelopes WHERE received_at < ?');
+    // What the upstream still lacks is kept however old: a command post may be offline for long.
+    this.#deleteBefore = this.#db.prepare(
+      'DELETE FROM envelopes WHERE received_at < ? AND pending_up = 0',
+    );
     this.#groups = this.#db.prepare('SELECT group_id FROM group_cursors');
     this.#pendingUp = this.#db.prepare(
       'SELECT cursor, event_key, envelope FROM envelopes WHERE group_id = ? AND pending_up = 1 ORDER BY cursor LIMIT 1',
@@ -88,8 +102,8 @@ export class EnvelopeStore {
   }
 
   /**
-   * Stores an envelope unless the group already has one with this key. Envelopes from clients
-   * are pending for the upstream until `markUpstreamStored`; a server without one never asks.
+   * Stores an envelope unless the group already has one with this key. On a server with an
+   * upstream, envelopes from clients are pending until `markUpstreamStored`.
    */
   append(
     group: Uint8Array,
@@ -103,7 +117,14 @@ export class EnvelopeStore {
     const cursor = this.lastCursor(group) + 1;
     this.#db.exec('BEGIN');
     try {
-      this.#insert.run(group, cursor, key, env, now, source === 'client' ? 1 : 0);
+      this.#insert.run(
+        group,
+        cursor,
+        key,
+        env,
+        now,
+        source === 'client' && this.#tracksUpstream ? 1 : 0,
+      );
       this.#setLastCursor.run(group, cursor);
       this.#db.exec('COMMIT');
     } catch (error) {
@@ -150,7 +171,7 @@ export class EnvelopeStore {
     this.#setUpstreamCursor.run(group, cursor);
   }
 
-  /** Deletes envelopes received before `time`; returns how many. */
+  /** Deletes envelopes received before `time`, except those the upstream lacks; returns how many. */
   deleteReceivedBefore(time: number): number {
     return Number(this.#deleteBefore.run(time).changes);
   }

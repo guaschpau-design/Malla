@@ -19,6 +19,7 @@ RUN npm install --global pnpm@10.28.0
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/protocol/package.json packages/protocol/
+COPY packages/core/package.json packages/core/
 COPY apps/server/package.json apps/server/
 RUN pnpm install --prod --frozen-lockfile --filter @teselia/server...
 
@@ -33,6 +34,7 @@ ENV NODE_ENV=production \
 WORKDIR /app
 COPY --from=install /app ./
 COPY packages/protocol/src packages/protocol/src
+COPY packages/core/src packages/core/src
 COPY apps/server/src apps/server/src
 COPY apps/site web
 COPY --from=web /src/apps/web/dist web/app

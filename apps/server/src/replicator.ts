@@ -3,6 +3,7 @@
 // stored and relayed to the post's clients, and what the post's clients pushed goes up, one
 // envelope at a time and under the upstream's rate limits, until the upstream confirms it.
 
+import { TokenBucket } from '@teselia/core';
 import {
   encodeRelayMessage,
   parseServerMessage,
@@ -14,7 +15,6 @@ import WebSocket from 'ws';
 
 import type { EnvelopeStore } from './envelope-store.ts';
 import type { Relay } from './relay.ts';
-import { TokenBucket } from './token-bucket.ts';
 import { frameText } from './ws-text.ts';
 
 export interface ReplicatorOptions {
@@ -26,7 +26,15 @@ export interface ReplicatorOptions {
   /** Pushes per second, burst and sustained; below the upstream's per-connection limits. */
   readonly pushBurst?: number;
   readonly pushesPerSecond?: number;
+  /** Upstream connections at most; groups beyond them wait for a restart. */
+  readonly maxLinks?: number;
 }
+
+/**
+ * Anyone on a command post's Wi-Fi can join any group ID, and each group costs one connection
+ * to the upstream: a command post serves a handful of groups, so this is plenty.
+ */
+const MAX_LINKS = 100;
 
 const FIRST_RETRY_MS = 1000;
 const MAX_RETRY_MS = 60_000;
@@ -46,7 +54,7 @@ export class Replicator {
   start(): void {
     for (const group of this.#options.store.groups()) this.#link(group);
     this.#options.relay.onGroupActivity((group) => {
-      if (!this.#stopped) this.#link(group).pump();
+      if (!this.#stopped) this.#link(group)?.pump();
     });
   }
 
@@ -56,10 +64,14 @@ export class Replicator {
     this.#links.clear();
   }
 
-  #link(group: Uint8Array): UpstreamLink {
+  #link(group: Uint8Array): UpstreamLink | null {
     const id = toBase64url(group);
     let link = this.#links.get(id);
     if (link === undefined) {
+      if (this.#links.size >= (this.#options.maxLinks ?? MAX_LINKS)) {
+        console.warn('Too many groups to replicate; this one waits for a restart');
+        return null;
+      }
       link = new UpstreamLink(group, this.#options);
       this.#links.set(id, link);
       link.start();
