@@ -98,6 +98,7 @@ export class RadioSession {
   /** Follows the active group: its channel goes into the radio and its events through it. */
   async useFeed(feed: RadioFeed | null): Promise<void> {
     this.#unlink();
+    if (feed !== this.#feed) this.#scheduler.changeGroup();
     this.#feed = feed;
     await this.#linkFeed();
   }
@@ -134,7 +135,11 @@ export class RadioSession {
     this.#sending = true;
     try {
       const outcome = await this.#link.send(packet.bytes);
-      if (outcome.status === 'failed') this.#scheduler.retry(packet, Date.now());
+      if (outcome.status === 'sent') this.#scheduler.sent(Date.now());
+      else this.#scheduler.retry(Date.now());
+    } catch (error) {
+      console.warn('Radio send failed', error);
+      this.#scheduler.retry(Date.now());
     } finally {
       this.#sending = false;
     }

@@ -24,11 +24,13 @@ const sos = () =>
 const scheduler = (random = 0) =>
   new LoraScheduler({ random: () => random, airtimeMs: () => 1000 });
 
-/** Calls `next` until it returns nothing, collecting the event types sent. */
-function drain(lora: LoraScheduler, now: number): string[] {
-  const sent: string[] = [];
-  for (let packet = lora.next(now); packet !== null; packet = lora.next(now))
+/** Sends with `next` and `sent` until nothing is left, collecting the event types sent. */
+function drain(lora: LoraScheduler, now: number): (string | null)[] {
+  const sent: (string | null)[] = [];
+  for (let packet = lora.next(now); packet !== null; packet = lora.next(now)) {
+    lora.sent(now);
     sent.push(packet.event.type);
+  }
   return sent;
 }
 
@@ -159,11 +161,49 @@ describe('LoRa scheduler', () => {
   it('retries a packet the radio refused, without charging its airtime', () => {
     const lora = scheduler();
     lora.offer(chat(), 'own', 0);
-    const sent = lora.next(0);
-    if (sent === null) throw new Error('nothing sent');
-    lora.retry(sent, 0);
+    expect(lora.next(0)?.event.type).toBe('chat');
+    lora.retry(0);
     expect(lora.spentMs(0)).toBe(0);
     expect(drain(lora, LIMITS.retryMs - 1)).toEqual([]);
     expect(drain(lora, LIMITS.retryMs)).toEqual(['chat']);
+  });
+
+  it('judges the next own position against the last one that went on the air, not a refused one', () => {
+    const lora = scheduler();
+    lora.offer(position(), 'own', 0);
+    expect(lora.next(0)?.event.type).toBe('position');
+    lora.retry(0);
+    expect(drain(lora, LIMITS.retryMs)).toEqual(['position']);
+  });
+
+  it('hands out one packet at a time until told how sending went', () => {
+    const lora = scheduler();
+    lora.offer(chat(), 'own', 0);
+    lora.offer(chat(), 'own', 0);
+    expect(lora.next(0)).not.toBeNull();
+    expect(lora.next(0)).toBeNull();
+    lora.sent(0);
+    expect(lora.next(0)).not.toBeNull();
+  });
+
+  it('drops everything queued for a group when the radio changes group, but keeps the airtime spent', () => {
+    const lora = scheduler();
+    lora.offer(sos(), 'own', 0);
+    expect(drain(lora, 0)).toEqual(['sos']);
+    lora.offer(chat(), 'own', 0);
+    lora.changeGroup();
+    expect(drain(lora, 60 * 60_000 - 1)).toEqual([]);
+    expect(lora.spentMs(1)).toBe(1000);
+  });
+
+  it('carries events of types it does not know, after every known one', () => {
+    const lora = scheduler();
+    lora.offer(
+      { event: { type: null, origin: OTHER, seq: 77, time: T0 }, bytes: new Uint8Array(30) },
+      'own',
+      0,
+    );
+    lora.offer(position(), 'own', 0);
+    expect(drain(lora, 0)).toEqual(['position', null]);
   });
 });

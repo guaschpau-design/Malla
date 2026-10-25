@@ -20,13 +20,17 @@ export const EU_NARROW: LoraPreset = {
   preambleSymbols: 16,
 };
 
-/**
- * Bytes MeshCore adds around a channel datagram: header, path length, channel hash and MAC,
- * plus the data type and padding of the encrypted part to 16-byte AES blocks.
- */
+/** MeshCore packet bytes outside the encryption: header 1, path length 1, channel hash 1, MAC 2. */
+const MESHCORE_CLEAR_BYTES = 5;
+/** The datagram's data type, encrypted with the event. */
+const DATA_TYPE_BYTES = 2;
+/** MeshCore encrypts with AES, padding to whole blocks. */
+const AES_BLOCK_BYTES = 16;
+
+/** Size on the air of a channel datagram carrying `eventBytes`, in a flood (no path yet). */
 export function meshcorePacketSize(eventBytes: number): number {
-  const encrypted = Math.ceil((eventBytes + 2) / 16) * 16;
-  return 5 + encrypted;
+  const encrypted = Math.ceil((eventBytes + DATA_TYPE_BYTES) / AES_BLOCK_BYTES) * AES_BLOCK_BYTES;
+  return MESHCORE_CLEAR_BYTES + encrypted;
 }
 
 /** Time on air of a packet with `payloadBytes` bytes, in milliseconds. */

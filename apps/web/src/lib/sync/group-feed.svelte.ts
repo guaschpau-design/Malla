@@ -5,6 +5,7 @@ import {
   EMPTY_STATE,
   reduce,
   type GroupState,
+  type LoraEvent,
   type LoraPacket,
   type LoraSource,
 } from '@teselia/core';
@@ -14,12 +15,14 @@ import {
   encodeEvent,
   eventKey,
   openEnvelope,
+  peekHeader,
   sameServer,
   sealEnvelope,
   toBase64url,
   type AlertLevel,
   type EventHeader,
   type EventRef,
+  type EventType,
   type GroupKeys,
   type LatLon,
   type ObjectRef,
@@ -49,7 +52,7 @@ export type FeedStatus = RelayStatus | 'local-only';
 /** Where the feed hands events for the radio: the LoRa scheduler of a connected radio. */
 export interface LoraSink {
   offer(packet: LoraPacket, source: LoraSource): void;
-  heard(event: TeseliaEvent): void;
+  heard(event: LoraEvent): void;
 }
 
 /** A position as the device reports it, in protocol units. */
@@ -146,8 +149,8 @@ export class GroupFeed {
 
   /** An event heard over the radio. New ones are applied and, with a server, forwarded to it. */
   async receiveFromRadio(bytes: Uint8Array): Promise<void> {
-    const decoded = decodeEvent(bytes);
-    if (decoded.ok) this.#lora?.heard(decoded.value);
+    const heard = loraEventOf(bytes);
+    if (heard) this.#lora?.heard(heard);
     const entry = await receiveEvent(this.#db, this.#group.id, bytes, this.#client !== null);
     if (entry === null) return;
     this.#apply(bytes);
@@ -240,7 +243,9 @@ export class GroupFeed {
     // An envelope that does not open was not sealed with this group's key: skip it.
     const bytes = openEnvelope(this.#keys, env);
     if (bytes !== null && (await receiveEvent(this.#db, this.#group.id, bytes)) !== null) {
-      const event = this.#apply(bytes);
+      this.#apply(bytes);
+      // Types this version does not know are bridged too (protocol §3.1).
+      const event = loraEventOf(bytes);
       if (event) this.#lora?.offer({ event, bytes }, 'bridged');
     }
     await saveCursor(this.#db, this.#group.id, relay, cursor);
@@ -255,7 +260,8 @@ export class GroupFeed {
   #push(entry: OutboxEntry, bytes: Uint8Array): void {
     if (this.#client === null) return;
     const key = eventKey(this.#keys, entry);
-    if (this.#client.push(key, sealEnvelope(this.#keys, bytes))) {
+    const type = peekType(bytes);
+    if (this.#client.push(key, sealEnvelope(this.#keys, bytes), type)) {
       this.#pushed.set(toBase64url(key), entry);
     }
   }
@@ -275,4 +281,19 @@ export class GroupFeed {
     this.state = reduce(this.state, event.value);
     return event.value;
   }
+}
+
+/** An encoded event as the radio sees it: decoded, or only its header if its type is unknown. */
+function loraEventOf(bytes: Uint8Array): LoraEvent | null {
+  const event = decodeEvent(bytes);
+  if (event.ok) return event.value;
+  const header = peekHeader(bytes);
+  if (!header.ok) return null;
+  const { origin, seq, time } = header.value;
+  return { type: null, origin, seq, time };
+}
+
+/** The type of an encoded event, or null if this version does not know it. */
+function peekType(bytes: Uint8Array): EventType | null {
+  return loraEventOf(bytes)?.type ?? null;
 }

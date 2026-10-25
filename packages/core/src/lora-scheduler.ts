@@ -4,11 +4,12 @@
 // sub-band. The scheduler queues events, sends the most urgent first, keeps a rolling one-hour
 // airtime budget, thins positions, repeats an own SOS until someone acknowledges it, and applies
 // the bridging rules to events that came from the server. It is pure: time and randomness are
-// passed in, and the caller does the sending.
+// passed in, and the caller does the sending: it takes one packet with `next`, then reports
+// `sent` or `retry`.
 
 import {
   eventRefKey,
-  type EventType,
+  type EventHeader,
   type LatLon,
   type NodeId,
   type TeseliaEvent,
@@ -16,12 +17,23 @@ import {
 
 import { eventAirtimeMs } from './airtime.ts';
 import { distanceMeters } from './geo.ts';
+import { URGENCY, urgencyOf } from './urgency.ts';
 
 /** Where an event came from: this device, or the server (this device is bridging it). */
 export type LoraSource = 'own' | 'bridged';
 
+/**
+ * An event of a type this version does not know: only its header can be read. Bridges still
+ * carry it, de-duplicated by the header (protocol §3.1).
+ */
+export interface OpaqueEvent extends EventHeader {
+  readonly type: null;
+}
+
+export type LoraEvent = TeseliaEvent | OpaqueEvent;
+
 export interface LoraPacket {
-  readonly event: TeseliaEvent;
+  readonly event: LoraEvent;
   readonly bytes: Uint8Array;
 }
 
@@ -47,7 +59,7 @@ export const LIMITS = {
   /** An ACK over LoRa waits 2–30 s and is dropped if another member's ACK is heard first. */
   ackDelayMinMs: 2_000,
   ackDelayMaxMs: 30_000,
-  /** Own SOS repeats: first after 30 s, doubling up to 5 minutes, at most this many times. */
+  /** Own SOS repeats: first after 30 s, doubling up to 5 minutes, this many after the first send. */
   sosFirstRepeatMs: 30_000,
   sosMaxRepeatMs: 5 * MINUTE,
   sosMaxRepeats: 12,
@@ -55,23 +67,8 @@ export const LIMITS = {
   retryMs: 10_000,
 } as const;
 
-/** Lower is more urgent. `POSITION_HIDDEN` is high so hiding is never delayed by positions. */
-const PRIORITY: Readonly<Record<EventType, number>> = {
-  sos: 0,
-  'sos-cancel': 1,
-  alert: 2,
-  'position-hidden': 3,
-  ack: 4,
-  chat: 5,
-  marker: 6,
-  shape: 6,
-  'object-delete': 6,
-  'member-info': 7,
-  position: 8,
-};
-
 /** Events urgent enough to use the full legal budget. */
-const URGENT = PRIORITY.alert;
+const URGENT = URGENCY.alert;
 
 interface Pending {
   readonly key: string;
@@ -93,6 +90,8 @@ export class LoraScheduler {
   readonly #spent: { readonly at: number; readonly ms: number }[] = [];
   #lastOwnPosition: { readonly at: LatLon; readonly time: number } | null = null;
   readonly #lastBridgedPosition = new Map<NodeId, number>();
+  /** The packet handed out by `next`, until the caller reports how sending it went. */
+  #inFlight: { readonly pending: Pending; readonly cost: number } | null = null;
 
   constructor(options: { random: () => number; airtimeMs?: (bytes: number) => number }) {
     this.#random = options.random;
@@ -125,7 +124,7 @@ export class LoraScheduler {
   }
 
   /** An event arrived over LoRa: it is on the air already, so it is not sent again. */
-  heard(event: TeseliaEvent, now: number): void {
+  heard(event: LoraEvent, now: number): void {
     const key = eventRefKey(event);
     this.#onAir.set(key, now);
     this.#pending.delete(key);
@@ -143,47 +142,70 @@ export class LoraScheduler {
   }
 
   /** An event arrived over any transport: acknowledgements and cancellations end SOS repeats. */
-  observe(event: TeseliaEvent): void {
+  observe(event: LoraEvent): void {
     if (event.type === 'ack') this.#closeSos(eventRefKey(event.target));
     if (event.type === 'sos-cancel') this.#closeSos(eventRefKey(event.sos));
   }
 
-  /** The next packet to send now, if any fits the airtime budget. Marks it as sent. */
+  /**
+   * Forgets the traffic of the group the radio carried until now, when it changes to another
+   * group's channel: nothing queued for one group may go out on another's. The airtime spent
+   * stays, since the budget belongs to the radio.
+   */
+  changeGroup(): void {
+    this.#pending.clear();
+    this.#onAir.clear();
+    this.#openSos.clear();
+    this.#lastOwnPosition = null;
+    this.#lastBridgedPosition.clear();
+    this.#inFlight = null;
+  }
+
+  /**
+   * The next packet to send now, if any fits the airtime budget. One packet at a time: the
+   * caller reports `sent` or `retry` before asking again.
+   */
   next(now: number): LoraPacket | null {
+    if (this.#inFlight !== null) return null;
     this.#forgetBefore(now - LIMITS.windowMs);
     const due = [...this.#pending.values()]
       .filter((pending) => pending.dueAt <= now && this.#eligible(pending, now))
       .sort(
         (a, b) =>
-          PRIORITY[a.packet.event.type] - PRIORITY[b.packet.event.type] || a.dueAt - b.dueAt,
+          urgencyOf(a.packet.event.type) - urgencyOf(b.packet.event.type) || a.dueAt - b.dueAt,
       );
     const spent = this.#spent.reduce((total, entry) => total + entry.ms, 0);
     for (const pending of due) {
       const cost = this.#airtimeMs(pending.packet.bytes.length);
       const budget =
-        PRIORITY[pending.packet.event.type] <= URGENT
+        urgencyOf(pending.packet.event.type) <= URGENT
           ? LIMITS.urgentBudgetMs
           : LIMITS.normalBudgetMs;
       if (spent + cost > budget) continue;
-      this.#markSent(pending, cost, now);
+      this.#pending.delete(pending.key);
+      this.#inFlight = { pending, cost };
       return pending.packet;
     }
     return null;
   }
 
-  /** The radio refused a packet returned by `next`: try it again a little later. */
-  retry(packet: LoraPacket, now: number): void {
-    const key = eventRefKey(packet.event);
-    this.#onAir.delete(key);
-    this.#spent.pop();
-    const existing = this.#pending.get(key);
-    this.#pending.set(key, {
-      key,
-      packet,
-      source: existing?.source ?? 'own',
-      dueAt: now + LIMITS.retryMs,
-      sends: existing?.sends ?? 0,
-    });
+  /** The packet from `next` went on the air. */
+  sent(now: number): void {
+    const inFlight = this.#inFlight;
+    if (inFlight === null) return;
+    this.#inFlight = null;
+    this.#markSent(inFlight.pending, inFlight.cost, now);
+  }
+
+  /** The radio refused the packet from `next`: try it again a little later. */
+  retry(now: number): void {
+    const inFlight = this.#inFlight;
+    if (inFlight === null) return;
+    this.#inFlight = null;
+    const { pending } = inFlight;
+    // Heard from someone else meanwhile, or superseded by a newer position: let it go.
+    if (this.#onAir.has(pending.key) || this.#pending.has(pending.key)) return;
+    this.#pending.set(pending.key, { ...pending, dueAt: now + LIMITS.retryMs });
   }
 
   /** Airtime used in the current window, in milliseconds. */
@@ -192,7 +214,7 @@ export class LoraScheduler {
     return this.#spent.reduce((total, entry) => total + entry.ms, 0);
   }
 
-  #delay(event: TeseliaEvent, source: LoraSource): number {
+  #delay(event: LoraEvent, source: LoraSource): number {
     if (source === 'bridged') return this.#random() * LIMITS.bridgeDelayMs;
     if (event.type === 'ack') {
       return LIMITS.ackDelayMinMs + this.#random() * (LIMITS.ackDelayMaxMs - LIMITS.ackDelayMinMs);
@@ -219,7 +241,6 @@ export class LoraScheduler {
 
   #markSent(pending: Pending, cost: number, now: number): void {
     const { event } = pending.packet;
-    this.#pending.delete(pending.key);
     this.#spent.push({ at: now, ms: cost });
     this.#onAir.set(pending.key, now);
     if (event.type === 'position') {

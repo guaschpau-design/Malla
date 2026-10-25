@@ -121,6 +121,19 @@ describe('radio session', () => {
     expect(link.sent).toEqual([bytes]);
   });
 
+  it('never sends what was queued for one group on another group’s channel', async () => {
+    const link = new FakeLink();
+    const radio = new RadioSession(link, () => 0);
+    const first = new FakeFeed();
+    await radio.connect();
+    await radio.useFeed(first);
+    // Queued, but the 1 s pump has not run yet when the user switches groups.
+    first.sink?.offer({ event: chat, bytes }, 'own');
+    await radio.useFeed(new FakeFeed());
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(link.sent).toEqual([]);
+  });
+
   it('hands what it hears to the feed', async () => {
     const link = new FakeLink();
     const radio = new RadioSession(link);
