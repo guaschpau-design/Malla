@@ -22,6 +22,11 @@ export function encodeUtf8(text: string): Uint8Array {
   return utf8Encoder.encode(text);
 }
 
+/** Size of a text in UTF-8, which is what the protocol's text limits count. */
+export function utf8ByteLength(text: string): number {
+  return utf8Encoder.encode(text).length;
+}
+
 export function decodeUtf8(bytes: Uint8Array): string {
   try {
     return utf8Decoder.decode(bytes);

@@ -1,4 +1,5 @@
 export * from './base64url.ts';
+export { utf8ByteLength } from './bytes.ts';
 export { decodeEvent, encodeEvent, peekHeader, type RawHeader } from './codec.ts';
 export * from './constants.ts';
 export * from './crypto.ts';

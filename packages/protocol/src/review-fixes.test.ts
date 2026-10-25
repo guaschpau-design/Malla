@@ -173,6 +173,14 @@ describe('invitation links', () => {
     expect(parseInvitationUrl(`https://app.example/join?x=1#${tokenText}`).ok).toBe(false);
   });
 
+  it('accepts plain http only on a loopback host, for development', () => {
+    expect(parseInvitationUrl(`http://localhost:5173/join#${tokenText}`).ok).toBe(true);
+    expect(parseInvitationUrl(`http://127.0.0.1/join#${tokenText}`).ok).toBe(true);
+    expect(parseInvitationUrl(`http://localhost.example/join#${tokenText}`).ok).toBe(false);
+    expect(encodeInvitationToken({ ...invitation, server: 'http://localhost:8080' }).ok).toBe(true);
+    expect(encodeInvitationToken({ ...invitation, server: 'http://192.168.1.10' }).ok).toBe(false);
+  });
+
   it('refuses a server value that only looks like an https URL', () => {
     expect(encodeInvitationToken({ ...invitation, server: 'https://' }).ok).toBe(false);
   });

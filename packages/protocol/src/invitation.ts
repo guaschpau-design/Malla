@@ -30,8 +30,8 @@ export function encodeInvitationToken(invitation: Invitation): Result<string, Pr
     if (invitation.secret.length !== GROUP_SECRET_SIZE) {
       throw new ProtocolFailure('invalid-value', 'group secret must be 16 bytes');
     }
-    if (invitation.server !== null && !isHttpsUrl(invitation.server)) {
-      throw new ProtocolFailure('invalid-value', 'server must be an https:// URL');
+    if (invitation.server !== null && !isSecureUrl(invitation.server)) {
+      throw new ProtocolFailure('invalid-value', 'server must be a secure URL');
     }
     const token = new ByteWriter()
       .u8(INVITATION_VERSION)
@@ -63,8 +63,8 @@ export function decodeInvitationToken(token: string): Result<Invitation, Protoco
     const groupName = reader.textU8(1, GROUP_NAME_MAX_BYTES, 'group name');
     const serverText = reader.textU8(0, SERVER_URL_MAX_BYTES, 'server URL');
     reader.end();
-    if (serverText !== '' && !isHttpsUrl(serverText)) {
-      throw new ProtocolFailure('invalid-value', 'server must be an https:// URL');
+    if (serverText !== '' && !isSecureUrl(serverText)) {
+      throw new ProtocolFailure('invalid-value', 'server must be a secure URL');
     }
     return ok({ role, secret, issuer, groupName, server: serverText === '' ? null : serverText });
   } catch (failure) {
@@ -81,15 +81,15 @@ export function buildInvitationUrl(
   appBaseUrl: string,
   invitation: Invitation,
 ): Result<string, ProtocolError> {
-  if (!isHttpsUrl(appBaseUrl) || !appBaseUrl.endsWith('/')) {
-    return err({ code: 'invalid-value', detail: 'app base URL must be https and end in /' });
+  if (!isSecureUrl(appBaseUrl) || !appBaseUrl.endsWith('/')) {
+    return err({ code: 'invalid-value', detail: 'app base URL must be a secure URL ending in /' });
   }
   const token = encodeInvitationToken(invitation);
   if (!token.ok) return token;
   return ok(`${appBaseUrl}${JOIN_SEGMENT}#${token.value}`);
 }
 
-/** Extracts the invitation from an https link whose last path segment is `join`. */
+/** Extracts the invitation from a secure link (§6) whose last path segment is `join`. */
 export function parseInvitationUrl(url: string): Result<Invitation, ProtocolError> {
   let parsed: URL;
   try {
@@ -98,7 +98,7 @@ export function parseInvitationUrl(url: string): Result<Invitation, ProtocolErro
     return err({ code: 'invalid-value', detail: 'not a URL' });
   }
   if (
-    parsed.protocol !== 'https:' ||
+    !isSecureUrl(url) ||
     !isJoinPath(parsed.pathname) ||
     parsed.search !== '' ||
     parsed.hash.length < 2
@@ -113,10 +113,21 @@ export function isJoinPath(pathname: string): boolean {
   return pathname.endsWith(`/${JOIN_SEGMENT}`);
 }
 
-function isHttpsUrl(text: string): boolean {
+const LOOPBACK_HOSTS: ReadonlySet<string> = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+/**
+ * §6 `https:`, or `http:` on a loopback host for development: the same origins browsers treat as
+ * a secure context.
+ */
+function isSecureUrl(text: string): boolean {
+  let url: URL;
   try {
-    return new URL(text).protocol === 'https:';
+    url = new URL(text);
   } catch {
     return false;
   }
+  if (url.hostname === '') return false;
+  return (
+    url.protocol === 'https:' || (url.protocol === 'http:' && LOOPBACK_HOSTS.has(url.hostname))
+  );
 }

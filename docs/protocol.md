@@ -242,20 +242,22 @@ An invitation is a URL:
 {app-base-url}join#{token}
 ```
 
-`{app-base-url}` is the `https:` URL the web app is served from, ending in `/`: `https://app.example/` or, for an app served from a sub-path, `https://example.github.io/malla/`.
+`{app-base-url}` is the URL the web app is served from, ending in `/`: `https://app.example/` or, for an app served from a sub-path, `https://example.github.io/malla/`.
+
+In this section a **secure URL** is an `https:` URL, or an `http:` URL whose host is `localhost`, `127.0.0.1` or `[::1]` (development only; these are the origins browsers treat as secure contexts).
 
 The token sits in the fragment so it is never sent to any server. It is the base64url encoding of:
 
-| Size | Field     | Notes                                                                                         |
-| ---- | --------- | --------------------------------------------------------------------------------------------- |
-| 1    | `version` | `1`                                                                                           |
-| 1    | `role`    | Role granted: `0` member, `1` coordinator                                                     |
-| 16   | `secret`  | Group secret                                                                                  |
-| 4    | `issuer`  | Node ID of whoever created the invitation                                                     |
-| 1+n  | `name`    | text-u8, group name, 1–32 bytes                                                               |
-| 1+n  | `server`  | text-u8, server base URL, 0–200 bytes; empty if none. MUST start with `https://` when present |
+| Size | Field     | Notes                                                                                   |
+| ---- | --------- | --------------------------------------------------------------------------------------- |
+| 1    | `version` | `1`                                                                                     |
+| 1    | `role`    | Role granted: `0` member, `1` coordinator                                               |
+| 16   | `secret`  | Group secret                                                                            |
+| 4    | `issuer`  | Node ID of whoever created the invitation                                               |
+| 1+n  | `name`    | text-u8, group name, 1–32 bytes                                                         |
+| 1+n  | `server`  | text-u8, server base URL, 0–200 bytes; empty if none. MUST be a secure URL when present |
 
-Decoders MUST accept only `https:` URLs with no query whose last path segment is exactly `join` (the path is `/join` or ends in `/join`). Servers and static hosts MUST answer that path with the web app (see [ADR-0012](decisions/0012-invitation-links-under-a-base-path.md)). A reserved `role` value grants member. Anyone holding an invitation can join the group. Interfaces MUST make clear that sharing an invitation shares the group.
+Decoders MUST accept only secure URLs with no query whose last path segment is exactly `join` (the path is `/join` or ends in `/join`). Servers and static hosts MUST answer that path with the web app (see [ADR-0012](decisions/0012-invitation-links-under-a-base-path.md)). A reserved `role` value grants member. Anyone holding an invitation can join the group. Interfaces MUST make clear that sharing an invitation shares the group.
 
 ## 7. Transport: MeshCore
 
