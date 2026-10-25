@@ -28,13 +28,14 @@ A group shares a map. Every change to that map — a position, a chat line, a ma
    local command post)                  ⇄ LoRa mesh ⇄ other radios
 ```
 
-| Path                | Owns                                                                                               | Must not depend on                                   |
-| ------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `packages/protocol` | Binary event format, key derivation, envelope encryption, invitation links                         | Anything else in the repo; the DOM; Node APIs        |
-| `packages/core`     | State reducer, LoRa airtime scheduler, bridge rules                                                | The DOM, Svelte, BLE, network APIs                   |
-| `packages/meshcore` | Talking to a MeshCore companion radio: connect, configure channel, send and receive datagrams      | `packages/core`, the UI                              |
-| `apps/web`          | UI, map, persistence in IndexedDB (event log, outbox, cursors), wiring transports to `core`        | Server code                                          |
-| `apps/server`       | Storing and relaying encrypted envelopes; serving map tiles and, in command-post mode, the web app | Plaintext event contents (it can never decrypt them) |
+| Path                | Owns                                                                                          | Must not depend on                                   |
+| ------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `packages/protocol` | Binary event format, key derivation, envelope encryption, invitation links                    | Anything else in the repo; the DOM; Node APIs        |
+| `packages/core`     | State reducer, LoRa airtime scheduler, bridge rules                                           | The DOM, Svelte, BLE, network APIs                   |
+| `packages/meshcore` | Talking to a MeshCore companion radio: connect, configure channel, send and receive datagrams | `packages/core`, the UI                              |
+| `apps/web`          | UI, map, persistence in IndexedDB (event log, outbox, cursors), wiring transports to `core`   | Server code                                          |
+| `apps/server`       | Storing and relaying encrypted envelopes; serving the landing page and the web app (ADR-0017) | Plaintext event contents (it can never decrypt them) |
+| `apps/site`         | The landing page at teselia.eu: static HTML and CSS, Spanish and English                      | Any build step or third-party request                |
 
 The dependency direction is strictly downwards in the diagram. `protocol` and `core` are pure TypeScript with no I/O, so they run unchanged in the browser, in Node and in tests. This is what keeps the hard parts testable.
 
@@ -171,10 +172,11 @@ The base map is OpenStreetMap data rendered as vector tiles from a single PMTile
 
 ```
 apps/web/            PWA: UI, map, storage, transport wiring
-apps/server/         Relay and storage server; command-post mode
+apps/server/         Relay and storage server, serves site and app; command-post mode
+apps/site/           Landing page (static)
 packages/protocol/   Wire format, crypto, invitations (pure TS)
 packages/core/       Reducer, scheduler, bridge rules (pure TS)
 packages/meshcore/   MeshCore radio adapter
 docs/                Briefing, protocol spec, decisions
-deploy/              Deployment to the VPS
+deploy/              Deployment to the VPS; GitHub Pages redirect
 ```

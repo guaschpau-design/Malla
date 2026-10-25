@@ -1,14 +1,14 @@
 # Deployment
 
-## Web app on GitHub Pages
+## What the server publishes
 
-Every push to `main` that passes CI publishes the web app at `https://{owner}.github.io/{repository}/` (job `pages` in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)). One-time setup: repository **Settings → Pages → Source: GitHub Actions**.
+The server image carries the landing page ([`apps/site`](../apps/site)) at `/`, its English version at `/en/`, the web app at `/app/` and the relay at `/v1/ws` ([ADR-0017](../docs/decisions/0017-server-serves-site-and-app.md)). The app built into the image proposes its own server for new groups.
 
-The Pages build uses the Protomaps demo base map, which is for testing only. Invitation links work under the sub-path thanks to a `404.html` fallback ([ADR-0012](../docs/decisions/0012-invitation-links-under-a-base-path.md)).
+GitHub Pages, where the app used to live, now only redirects to `https://teselia.eu/app/` ([`pages/`](pages)).
 
 ## Server on a VPS
 
-The project's server runs at `https://teselia.eu`, on an IONOS VPS in Spain, and the GitHub Pages build proposes it for new groups.
+The project's server runs at `https://teselia.eu`, on an IONOS VPS in Spain.
 
 The server runs on any Debian or Ubuntu VPS with a domain pointing to it ([ADR-0013](../docs/decisions/0013-self-updating-vps.md)).
 
@@ -20,7 +20,7 @@ The server runs on any Debian or Ubuntu VPS with a domain pointing to it ([ADR-0
      | sudo bash -s -- --domain teselia.example.eu
    ```
 
-3. Use `https://teselia.example.eu` as the server when creating groups.
+3. Open `https://teselia.example.eu`: the landing page is at the root and the app at `/app/`. Groups created there use that server.
 
 What [`vps/install.sh`](vps/install.sh) sets up:
 

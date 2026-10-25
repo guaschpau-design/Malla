@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Teselia se ha mudado · Teselia has moved</title>
+    <meta name="robots" content="noindex" />
+    <script>
+      // Keeps the rest of the address, so old invitation links (/{repo}/join#token) still work.
+      const rest = location.pathname.replace(/^\/[^/]+\/?/, '');
+      location.replace(`https://teselia.eu/app/${rest}${location.search}${location.hash}`);
+    </script>
+  </head>
+  <body>
+    <p>
+      Teselia está ahora en <a href="https://teselia.eu/app/">teselia.eu/app</a> · Teselia now lives
+      at <a href="https://teselia.eu/app/">teselia.eu/app</a>
+    </p>
+  </body>
+</html>

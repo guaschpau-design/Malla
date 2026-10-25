@@ -242,7 +242,7 @@ An invitation is a URL:
 {app-base-url}join#{token}
 ```
 
-`{app-base-url}` is the URL the web app is served from, ending in `/`: `https://app.example/` or, for an app served from a sub-path, `https://example.github.io/teselia/`.
+`{app-base-url}` is the URL the web app is served from, ending in `/`: `https://app.example/` or, for an app served from a sub-path, `https://teselia.eu/app/`.
 
 In this section a **secure URL** is an `https:` URL, or an `http:` URL whose host is `localhost`, `127.0.0.1` or `[::1]` (development only; these are the origins browsers treat as secure contexts).
 
