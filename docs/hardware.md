@@ -29,3 +29,9 @@ Using these devices as standalone Teselia terminals would need Teselia firmware 
 ## Connecting
 
 Web Bluetooth is available in Chrome and Edge on Android, Windows, macOS and Linux. It is not available in Safari, so iPhones cannot pair with a radio from the web app (see ADR-0002).
+
+1. Join or create the group first: the radio carries the active group.
+2. Tap **LoRa** in the top bar, then **Connect radio**, and pick the radio in the browser's list.
+3. Teselia stores the group secret in a free channel slot of the radio (it never overwrites another channel) and starts sending and receiving. The panel shows the last signal-to-noise ratio and the airtime used in the last hour.
+
+While connected, Teselia reads every message the radio holds, so text messages for the MeshCore app do not reach it. Disconnect in the panel to use the radio with the MeshCore app again.

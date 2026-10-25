@@ -188,4 +188,24 @@ export const es: Messages = {
   positionStateSharing: 'Compartiendo posición',
   positionStatePaused: 'Posición en pausa',
   positionStateHidden: 'Posición oculta',
+  radio: 'Radio',
+  radioTitle: 'Radio LoRa',
+  radioIntro:
+    'Empareja una radio MeshCore (firmware Companion Bluetooth, v1.18 o posterior) para seguir en contacto sin internet.',
+  radioConnect: 'Conectar radio',
+  radioConnecting: 'Conectando…',
+  radioDisconnect: 'Desconectar',
+  radioConnected: 'Conectada a {name}',
+  radioUnnamed: 'radio sin nombre',
+  radioChannel: 'Canal del grupo: {group}',
+  radioNoGroup: 'Elige un grupo para usar la radio.',
+  radioSnr: 'Última señal: {snr} dB SNR',
+  radioAirtime: 'Tiempo de emisión en la última hora: {percent} % del límite legal',
+  radioUnsupported:
+    'Este navegador no puede usar Bluetooth. Usa Chrome o Edge en Android o en un ordenador. En iPhone, Teselia funciona por internet o a través de un puesto de mando.',
+  radioNoFreeChannel:
+    'La radio no tiene ningún canal libre. Borra uno en la app de MeshCore y vuelve a intentarlo.',
+  radioNoAnswer:
+    'La radio no responde. Comprueba que lleva el firmware MeshCore Companion Bluetooth v1.18 o posterior.',
+  radioFailed: 'No se pudo conectar con la radio. Inténtalo de nuevo.',
 };

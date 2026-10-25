@@ -40,6 +40,8 @@ export const LIMITS = {
   ownPositionMaxMs: 10 * MINUTE,
   /** Positions from the server: at most one every 5 minutes per member. */
   bridgedPositionMs: 5 * MINUTE,
+  /** Events from the server older than this are history, not news: they are not bridged. */
+  bridgeMaxAgeMs: 10 * MINUTE,
   /** Bridged events wait up to this long, so several bridges do not all repeat them. */
   bridgeDelayMs: 10_000,
   /** An ACK over LoRa waits 2–30 s and is dropped if another member's ACK is heard first. */
@@ -103,6 +105,7 @@ export class LoraScheduler {
     const key = eventRefKey(event);
     this.observe(event);
     if (this.#onAir.has(key) || this.#pending.has(key)) return;
+    if (source === 'bridged' && now - event.time * 1000 > LIMITS.bridgeMaxAgeMs) return;
     if (event.type === 'position' || event.type === 'position-hidden') {
       // Only the newest position of a member is worth sending, and none once it is hidden.
       for (const [otherKey, other] of this.#pending) {

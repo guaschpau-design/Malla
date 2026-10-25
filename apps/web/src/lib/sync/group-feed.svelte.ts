@@ -1,10 +1,17 @@
 // The live picture of one group: its event log on this device, kept in sync with the group's
 // server, and the actions that add events to it. Components read `state` and `status`.
 
-import { EMPTY_STATE, reduce, type GroupState } from '@teselia/core';
+import {
+  EMPTY_STATE,
+  reduce,
+  type GroupState,
+  type LoraPacket,
+  type LoraSource,
+} from '@teselia/core';
 import {
   decodeEvent,
   deriveGroupKeys,
+  encodeEvent,
   eventKey,
   openEnvelope,
   relayUrl,
@@ -37,6 +44,12 @@ import { RelayClient, type RelayStatus } from './relay-client.ts';
 /** `local-only` when the group has no server: events stay on this device (and LoRa, later). */
 export type FeedStatus = RelayStatus | 'local-only';
 
+/** Where the feed hands events for the radio: the LoRa scheduler of a connected radio. */
+export interface LoraSink {
+  offer(packet: LoraPacket, source: LoraSource): void;
+  heard(event: TeseliaEvent): void;
+}
+
 /** A position as the device reports it, in protocol units. */
 export interface Fix {
   readonly lat: number;
@@ -59,6 +72,7 @@ export class GroupFeed {
   // eslint-disable-next-line svelte/prefer-svelte-reactivity -- bookkeeping, never rendered
   readonly #pushed = new Map<string, OutboxEntry>();
   readonly #retry = () => this.#client?.retryNow();
+  #lora: LoraSink | null = null;
 
   private constructor(db: AppDb, group: StoredGroup, identity: LocalIdentity) {
     this.#db = db;
@@ -100,6 +114,35 @@ export class GroupFeed {
 
   get groupId(): string {
     return this.#group.id;
+  }
+
+  /** The radio channel of the group: its name and secret (protocol §7). */
+  get radioChannel(): { readonly name: string; readonly secret: Uint8Array } {
+    return { name: this.#group.name, secret: this.#group.secret };
+  }
+
+  /**
+   * Connects the feed to a radio, or disconnects it with null. While connected, own events go
+   * on the air too, and so do events from the server: this device bridges them (ARCHITECTURE.md
+   * §4.3).
+   */
+  attachRadio(sink: LoraSink | null): void {
+    this.#lora = sink;
+    // Members who only hear the radio learn this device's alias from its announcement.
+    const announcement = this.state.members.get(this.#identity.nodeId);
+    if (sink === null || announcement === undefined) return;
+    const bytes = encodeEvent(announcement);
+    if (bytes.ok) sink.offer({ event: announcement, bytes: bytes.value }, 'own');
+  }
+
+  /** An event heard over the radio. New ones are applied and, with a server, forwarded to it. */
+  async receiveFromRadio(bytes: Uint8Array): Promise<void> {
+    const decoded = decodeEvent(bytes);
+    if (decoded.ok) this.#lora?.heard(decoded.value);
+    const entry = await receiveEvent(this.#db, this.#group.id, bytes, this.#client !== null);
+    if (entry === null) return;
+    this.#apply(bytes);
+    this.#push(entry, bytes);
   }
 
   close(): void {
@@ -179,14 +222,18 @@ export class GroupFeed {
   async #publish(build: (header: EventHeader) => TeseliaEvent): Promise<void> {
     const header = { origin: this.#identity.nodeId, time: Math.floor(Date.now() / 1000) };
     const { entry, bytes } = await publishEvent(this.#db, this.#group.id, build, header);
-    this.#apply(bytes);
+    const event = this.#apply(bytes);
     this.#push(entry, bytes);
+    if (event) this.#lora?.offer({ event, bytes }, 'own');
   }
 
   async #receive(env: Uint8Array, server: string, cursor: number): Promise<void> {
     // An envelope that does not open was not sealed with this group's key: skip it.
     const bytes = openEnvelope(this.#keys, env);
-    if (bytes !== null && (await receiveEvent(this.#db, this.#group.id, bytes))) this.#apply(bytes);
+    if (bytes !== null && (await receiveEvent(this.#db, this.#group.id, bytes)) !== null) {
+      const event = this.#apply(bytes);
+      if (event) this.#lora?.offer({ event, bytes }, 'bridged');
+    }
     await saveCursor(this.#db, this.#group.id, server, cursor);
   }
 
@@ -213,8 +260,10 @@ export class GroupFeed {
   }
 
   /** Adds an event to the picture; events of unknown types are kept in the log only. */
-  #apply(bytes: Uint8Array): void {
+  #apply(bytes: Uint8Array): TeseliaEvent | null {
     const event = decodeEvent(bytes);
-    if (event.ok) this.state = reduce(this.state, event.value);
+    if (!event.ok) return null;
+    this.state = reduce(this.state, event.value);
+    return event.value;
   }
 }

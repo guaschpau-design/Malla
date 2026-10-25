@@ -18,6 +18,8 @@
   import OfflineAreasPanel from './lib/offline/OfflineAreasPanel.svelte';
   import { loadPositionMode, PositionSharing } from './lib/position/position-sharing.svelte.ts';
   import UpdatePrompt from './lib/pwa/UpdatePrompt.svelte';
+  import RadioPanel from './lib/radio/RadioPanel.svelte';
+  import { RadioSession } from './lib/radio/radio.svelte.ts';
   import { Session } from './lib/session.svelte.ts';
   import { openAppDb, type AppDb } from './lib/storage/app-db.ts';
   import { GroupFeed, type FeedStatus } from './lib/sync/group-feed.svelte.ts';
@@ -44,6 +46,7 @@
   let sharing: PositionSharing | undefined;
   let feed: GroupFeed | undefined = $state.raw();
   let map: MapLibreMap | undefined = $state();
+  const radio = new RadioSession();
   let notice: string | null = $state(null);
 
   const SYNC_LABELS: Readonly<Record<FeedStatus, MessageKey>> = {
@@ -121,6 +124,11 @@
     };
   });
 
+  // The radio follows the active group: its channel, its events.
+  $effect(() => {
+    void radio.useFeed(feed ?? null);
+  });
+
   const workspaceGroup = $derived(
     feed && sharing && session?.identity && session.activeGroup
       ? { feed, sharing, self: session.identity.nodeId, role: session.activeGroup.role }
@@ -158,7 +166,7 @@
     <span class="brand">Teselia</span>
     <span class="status" class:offline={!connection.online} role="status">
       <span class="dot" aria-hidden="true"></span>
-      {connection.online ? t('online') : t('offline')}
+      <span class="status-text">{connection.online ? t('online') : t('offline')}</span>
     </span>
     {#if session?.identity}
       {@const groupLabel = session.activeGroup?.name ?? t('noGroup')}
@@ -173,6 +181,27 @@
       >
         {#if feed}<span class="sync {feed.status}" aria-hidden="true"></span>{/if}
         {groupLabel}
+      </button>
+    {/if}
+    {#if session?.identity}
+      <button
+        class="radio"
+        onclick={() => {
+          togglePanel('radio');
+        }}
+        aria-expanded={panels.open === 'radio'}
+        aria-label="{t('radio')}: {radio.linked
+          ? t('radioConnected', { name: radio.name ?? t('radioUnnamed') })
+          : t('radioConnect')}"
+      >
+        <span
+          class="sync"
+          class:synced={radio.linked}
+          class:connecting={radio.state === 'connecting' ||
+            (radio.state === 'ready' && !radio.linked)}
+          aria-hidden="true"
+        ></span>
+        LoRa
       </button>
     {/if}
     <button
@@ -196,6 +225,10 @@
 
     {#if map && store && panels.open === 'offline'}
       <OfflineAreasPanel {t} {locale} {map} {store} {archive} onclose={closePanel} />
+    {/if}
+
+    {#if panels.open === 'radio'}
+      <RadioPanel {t} {radio} groupName={session?.activeGroup?.name ?? null} onclose={closePanel} />
     {/if}
 
     {#if session && panels.open === 'groups'}
@@ -233,6 +266,8 @@
 <style>
   .app {
     display: grid;
+    /* minmax(0, …) lets the bar shrink to the screen; long group names are cut, not overflowed. */
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto 1fr;
     height: 100dvh;
   }
@@ -275,6 +310,24 @@
   main {
     position: relative;
     overflow: hidden;
+  }
+
+  .radio {
+    flex-shrink: 0;
+    color: inherit;
+    white-space: nowrap;
+    border-color: rgb(248 250 252 / 35%);
+  }
+
+  /* On narrow screens the dot says it all. */
+  @media (max-width: 30rem) {
+    .status-text {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
   }
 
   .group {

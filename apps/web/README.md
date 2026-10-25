@@ -16,6 +16,7 @@ The Teselia progressive web app: map and offline areas, identity and groups, the
 | `src/lib/chat/`             | Group chat panel                                                                                                                             |
 | `src/lib/objects/`          | Markers, lines, areas and circles: drawing, map layers, details                                                                              |
 | `src/lib/incidents/`        | SOS calls, alerts and acknowledgements                                                                                                       |
+| `src/lib/radio/`            | The LoRa radio: pairing, the active group's channel, the airtime scheduler                                                                   |
 | `src/lib/workspace/`        | Everything on top of the map, wired to the active group                                                                                      |
 | `src/lib/session.svelte.ts` | Reactive state of identity and groups that components read                                                                                   |
 | `src/lib/ui/`               | Shared building blocks: panel, dialog, toast, QR code                                                                                        |

@@ -106,6 +106,15 @@ describe('LoRa scheduler', () => {
     expect(drain(lora, 5_000)).toEqual(['chat']);
   });
 
+  it('does not bridge history: events from the server older than 10 minutes', () => {
+    const lora = scheduler();
+    const old = chat(OTHER); // sent at T0
+    lora.offer(old, 'bridged', (T0 + 11 * 60) * 1000);
+    expect(drain(lora, (T0 + 12 * 60) * 1000)).toEqual([]);
+    lora.offer(chat(OTHER), 'bridged', (T0 + 9 * 60) * 1000);
+    expect(drain(lora, (T0 + 10 * 60) * 1000)).toEqual(['chat']);
+  });
+
   it('sends bridged positions of a member at most every 5 minutes', () => {
     const lora = scheduler();
     lora.offer(position(VALENCIA, OTHER), 'bridged', 0);

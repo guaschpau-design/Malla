@@ -57,10 +57,22 @@ describe('event log', () => {
   it('stores a received event once, whichever transport brings it again', async () => {
     const db = await freshDb();
     const bytes = chatBytes(OTHER, 4, 'hola');
-    expect(await receiveEvent(db, 'group', bytes)).toBe(true);
-    expect(await receiveEvent(db, 'group', bytes)).toBe(false);
-    expect(await receiveEvent(db, 'group', new Uint8Array([1, 2, 3]))).toBe(false);
+    expect(await receiveEvent(db, 'group', bytes)).toEqual({
+      groupId: 'group',
+      origin: OTHER,
+      seq: 4,
+    });
+    expect(await receiveEvent(db, 'group', bytes)).toBeNull();
+    expect(await receiveEvent(db, 'group', new Uint8Array([1, 2, 3]))).toBeNull();
     expect(await loadEvents(db, 'group')).toEqual([bytes]);
+    expect(await pendingEvents(db, 'group')).toEqual([]);
+  });
+
+  it('queues an event heard over the radio for the server when bridging', async () => {
+    const db = await freshDb();
+    const bytes = chatBytes(OTHER, 7, 'por radio');
+    const entry = await receiveEvent(db, 'group', bytes, true);
+    expect(await pendingEvents(db, 'group')).toEqual([{ entry, bytes }]);
   });
 
   it('refuses an event that does not fit the protocol, without using a sequence number', async () => {

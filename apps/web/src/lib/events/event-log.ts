@@ -9,25 +9,30 @@ import type { AppDb, EventKey, OutboxEntry } from '../storage/app-db.ts';
 const MAX_SEQ = 0xffff_ffff;
 
 /**
- * Stores a received event. Returns false if it was already in the log or is not an event at
- * all. Events of types this version does not know are kept: they are still valid to forward.
+ * Stores a received event. Returns the entry if it is new, null if it was already in the log or
+ * is not an event at all. Events of types this version does not know are kept: they are still
+ * valid to forward. With `forward`, the event also goes into the outbox, for the server: this
+ * device is bridging an event it heard over the radio.
  */
 export async function receiveEvent(
   db: AppDb,
   groupId: string,
   bytes: Uint8Array,
-): Promise<boolean> {
+  forward = false,
+): Promise<OutboxEntry | null> {
   const header = peekHeader(bytes);
-  if (!header.ok) return false;
-  const key: EventKey = [groupId, header.value.origin, header.value.seq];
-  const tx = db.transaction('events', 'readwrite');
-  if ((await tx.store.getKey(key)) !== undefined) {
+  if (!header.ok) return null;
+  const entry: OutboxEntry = { groupId, origin: header.value.origin, seq: header.value.seq };
+  const key: EventKey = [groupId, entry.origin, entry.seq];
+  const tx = db.transaction(['events', 'outbox'], 'readwrite');
+  if ((await tx.objectStore('events').getKey(key)) !== undefined) {
     await tx.done;
-    return false;
+    return null;
   }
-  await tx.store.put({ groupId, origin: header.value.origin, seq: header.value.seq, bytes });
+  await tx.objectStore('events').put({ ...entry, bytes });
+  if (forward) await tx.objectStore('outbox').put(entry);
   await tx.done;
-  return true;
+  return entry;
 }
 
 export async function loadEvents(db: AppDb, groupId: string): Promise<Uint8Array[]> {

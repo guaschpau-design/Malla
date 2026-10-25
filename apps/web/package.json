@@ -13,9 +13,10 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@teselia/core": "workspace:*",
-    "@teselia/protocol": "workspace:*",
     "@protomaps/basemaps": "^5.7.2",
+    "@teselia/core": "workspace:*",
+    "@teselia/meshcore": "workspace:*",
+    "@teselia/protocol": "workspace:*",
     "idb": "^8.0.4",
     "jsqr": "1.4.0",
     "maplibre-gl": "^6.15.0",

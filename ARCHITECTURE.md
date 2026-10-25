@@ -111,19 +111,22 @@ The web app keeps a WebSocket to the active group's server; groups that are not 
 
 The web app connects to a MeshCore companion radio over Web Bluetooth (Chrome and Edge only), stores the group secret in one of the radio's channel slots, and sends each event's raw bytes as a **channel data datagram** with Teselia's `data_type`. The radio floods it through the mesh and encrypts it with the channel key; other radios on the same channel deliver it to their apps. See [ADR-0006](docs/decisions/0006-meshcore-first-channel-datagrams.md).
 
-LoRa is slow and legally limited to 10 % airtime in the EU 869.4–869.65 MHz sub-band, so outgoing LoRa traffic goes through a **scheduler** in `packages/core` that:
+LoRa is slow and legally limited to 10 % airtime in the EU 869.4–869.65 MHz sub-band, so outgoing LoRa traffic goes through a **scheduler** in `packages/core` ([ADR-0015](docs/decisions/0015-lora-airtime-policy.md)) that:
 
-1. Orders events by priority: `SOS` > `SOS_CANCEL` > `ALERT` > `POSITION_HIDDEN` > `ACK` > `CHAT` > map objects (`MARKER`, `SHAPE`, `OBJECT_DELETE`) > `MEMBER_INFO` > `POSITION`. `POSITION_HIDDEN` is never thinned or delayed: a user who stops sharing must disappear from the map promptly.
-2. Estimates each packet's airtime from the radio preset and keeps a rolling one-hour budget.
-3. Thins positions: at most one every 2 minutes, and only after moving 50 m or 10 minutes passing.
-4. Repeats `SOS` with back-off until an `ACK` arrives.
+1. Orders events by priority: `SOS` > `SOS_CANCEL` > `ALERT` > `POSITION_HIDDEN` > `ACK` > `CHAT` > map objects (`MARKER`, `SHAPE`, `OBJECT_DELETE`) > `MEMBER_INFO` > `POSITION`. `POSITION_HIDDEN` is never thinned or delayed, and it drops any position still queued: a user who stops sharing must disappear from the map promptly.
+2. Estimates each packet's airtime from the radio preset and keeps a rolling one-hour budget: 5 % of the hour for ordinary traffic, the legal 10 % for `SOS`, `SOS_CANCEL` and alerts.
+3. Thins own positions: at most one every 2 minutes, and only after moving 50 m or 10 minutes passing.
+4. Repeats an own `SOS` with back-off (30 s, doubling to 5 minutes) until an `ACK` or a `SOS_CANCEL` arrives over any transport.
+5. Applies the protocol's ACK rule: an own `ACK` waits 2–30 s and is dropped if another member's `ACK` is heard first.
+
+When a radio is linked to a group, the device also queues its own latest `MEMBER_INFO`, so members who only hear the radio learn its alias. While connected, Teselia reads every message the radio holds; text messages meant for the MeshCore app are not shown there.
 
 ### 4.3 Bridging
 
 A device connected to both the server and a radio is a **bridge**, with no configuration:
 
 - Every event heard on LoRa is pushed to the server.
-- Events from the server are sent to LoRa through the scheduler, except positions, which are forwarded at most once every 5 minutes per origin.
+- Events from the server are sent to LoRa through the scheduler, except positions, which are forwarded at most once every 5 minutes per origin, and events older than 10 minutes, which are history rather than news.
 - To avoid several bridges repeating the same event over the air, a bridge waits a random 0–10 seconds before forwarding to LoRa and skips the event if it has meanwhile heard it on LoRa.
 - An event already seen on a transport is never sent back to that transport.
 
