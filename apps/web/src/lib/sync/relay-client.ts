@@ -1,7 +1,14 @@
-// Keeps one group's WebSocket to its server open (protocol §8): joins with the last cursor,
-// passes envelopes on in order and reconnects with back-off when the link drops.
+// Keeps one group's WebSocket to a relay open (protocol §8): joins with the last cursor, passes
+// envelopes on in order and reconnects with back-off when the link drops. Each round of attempts
+// tries the group's relays in order, the group's server and its command posts (§8.3), and keeps
+// the first that answers.
 
-import { encodeRelayMessage, parseServerMessage, type ServerMessage } from '@teselia/protocol';
+import {
+  encodeRelayMessage,
+  parseServerMessage,
+  relayUrl,
+  type ServerMessage,
+} from '@teselia/protocol';
 
 /** The part of the browser's WebSocket the client uses, so tests can provide a fake. */
 export interface SocketLike {
@@ -14,18 +21,20 @@ export interface SocketLike {
 
 export type RelayStatus = 'connecting' | 'syncing' | 'synced' | 'disconnected';
 
+/** Handlers that receive `relay`, the server base URL of the connection, get its own cursors. */
 export interface RelayHandlers {
-  /** The cursor to join with: the last one this device stored for the group and server. */
-  readonly cursor: () => Promise<number>;
-  readonly onEnvelope: (env: Uint8Array, cursor: number) => Promise<void>;
+  /** The cursor to join with: the last one this device stored for the group and relay. */
+  readonly cursor: (relay: string) => Promise<number>;
+  readonly onEnvelope: (env: Uint8Array, cursor: number, relay: string) => Promise<void>;
   /** The backlog is in; from now on pushes are possible. */
-  readonly onSynced: (cursor: number) => Promise<void>;
+  readonly onSynced: (cursor: number, relay: string) => Promise<void>;
   readonly onStored: (key: Uint8Array) => Promise<void>;
   readonly onStatus: (status: RelayStatus) => void;
 }
 
 export interface RelayClientOptions {
-  readonly url: string;
+  /** Server base URLs to try, in order; asked again before every round of attempts. */
+  readonly relays: () => Promise<readonly string[]>;
   readonly group: Uint8Array;
   readonly handlers: RelayHandlers;
   readonly createSocket?: (url: string) => SocketLike;
@@ -34,15 +43,21 @@ export interface RelayClientOptions {
 
 const FIRST_RETRY_MS = 1000;
 const MAX_RETRY_MS = 30_000;
+/** A relay that has not opened by then is given up for the next one. */
+const CONNECT_TIMEOUT_MS = 5000;
 
 export class RelayClient {
   readonly #options: RelayClientOptions;
   readonly #createSocket: (url: string) => SocketLike;
   readonly #random: () => number;
   #socket: SocketLike | null = null;
+  #relays: readonly string[] = [];
+  #index = 0;
+  #round = 0;
   #status: RelayStatus = 'disconnected';
   #retryMs = FIRST_RETRY_MS;
   #retryTimer: ReturnType<typeof setTimeout> | null = null;
+  #connectTimer: ReturnType<typeof setTimeout> | null = null;
   #stopped = true;
   /** Messages are handled one at a time, in arrival order, so cursors only move forward. */
   #queue: Promise<void> = Promise.resolve();
@@ -57,14 +72,20 @@ export class RelayClient {
     return this.#status;
   }
 
+  /** The relay connected to or being tried, or null between rounds. */
+  get relay(): string | null {
+    return this.#socket === null ? null : (this.#relays[this.#index] ?? null);
+  }
+
   start(): void {
     this.#stopped = false;
-    this.#connect();
+    void this.#newRound();
   }
 
   stop(): void {
     this.#stopped = true;
-    this.#clearRetry();
+    this.#round += 1;
+    this.#clearTimers();
     this.#socket?.close();
     this.#socket = null;
     this.#setStatus('disconnected');
@@ -72,9 +93,9 @@ export class RelayClient {
 
   /** Reconnects now if the link is down, for instance when the browser comes back online. */
   retryNow(): void {
-    if (this.#stopped || this.#socket !== null) return;
-    this.#clearRetry();
-    this.#connect();
+    if (this.#stopped || this.#socket !== null || this.#retryTimer === null) return;
+    this.#clearTimers();
+    void this.#newRound();
   }
 
   /** Sends an envelope. Returns false if the link is not synced; the caller keeps it queued. */
@@ -84,13 +105,40 @@ export class RelayClient {
     return true;
   }
 
-  #connect(): void {
+  async #newRound(): Promise<void> {
+    const round = ++this.#round;
     this.#setStatus('connecting');
-    const socket = this.#createSocket(this.#options.url);
+    let relays: readonly string[] = [];
+    try {
+      relays = await this.#options.relays();
+    } catch (error) {
+      console.warn('No relays to try', error);
+    }
+    if (this.#stopped || round !== this.#round) return;
+    this.#relays = relays;
+    this.#index = 0;
+    this.#connect();
+  }
+
+  #connect(): void {
+    const relay = this.#relays[this.#index];
+    if (relay === undefined) {
+      this.#setStatus('disconnected');
+      this.#scheduleRetry();
+      return;
+    }
+    const socket = this.#createSocket(relayUrl(relay));
     this.#socket = socket;
+    this.#connectTimer = setTimeout(() => {
+      this.#connectTimer = null;
+      this.#socket = null;
+      socket.close();
+      this.#lost(false);
+    }, CONNECT_TIMEOUT_MS);
     socket.onopen = () => {
+      this.#clearConnectTimer();
       this.#enqueue(async () => {
-        const after = await this.#options.handlers.cursor();
+        const after = await this.#options.handlers.cursor(relay);
         if (this.#socket !== socket) return;
         socket.send(encodeRelayMessage({ t: 'join', group: this.#options.group, after }));
         this.#setStatus('syncing');
@@ -98,26 +146,38 @@ export class RelayClient {
     };
     socket.onmessage = (event) => {
       const message = typeof event.data === 'string' ? parseServerMessage(event.data) : null;
-      if (message !== null) this.#enqueue(() => this.#handle(message));
+      if (message !== null) this.#enqueue(() => this.#handle(message, relay));
     };
     socket.onclose = () => {
       if (this.#socket !== socket) return;
       this.#socket = null;
-      this.#setStatus('disconnected');
-      this.#scheduleRetry();
+      this.#clearConnectTimer();
+      this.#lost(this.#status === 'synced');
     };
   }
 
-  async #handle(message: ServerMessage): Promise<void> {
+  /** A link that had synced starts a new round; one that never did gives way to the next relay. */
+  #lost(hadSynced: boolean): void {
+    if (this.#stopped) return;
+    if (hadSynced) {
+      this.#setStatus('disconnected');
+      this.#scheduleRetry();
+      return;
+    }
+    this.#index += 1;
+    this.#connect();
+  }
+
+  async #handle(message: ServerMessage, relay: string): Promise<void> {
     const { handlers } = this.#options;
     switch (message.t) {
       case 'env':
-        await handlers.onEnvelope(message.env, message.cursor);
+        await handlers.onEnvelope(message.env, message.cursor, relay);
         return;
       case 'synced':
         this.#retryMs = FIRST_RETRY_MS;
         this.#setStatus('synced');
-        await handlers.onSynced(message.cursor);
+        await handlers.onSynced(message.cursor, relay);
         return;
       case 'stored':
         await handlers.onStored(message.key);
@@ -142,13 +202,19 @@ export class RelayClient {
     this.#retryMs = Math.min(this.#retryMs * 2, MAX_RETRY_MS);
     this.#retryTimer = setTimeout(() => {
       this.#retryTimer = null;
-      this.#connect();
+      void this.#newRound();
     }, delay);
   }
 
-  #clearRetry(): void {
+  #clearTimers(): void {
     if (this.#retryTimer !== null) clearTimeout(this.#retryTimer);
     this.#retryTimer = null;
+    this.#clearConnectTimer();
+  }
+
+  #clearConnectTimer(): void {
+    if (this.#connectTimer !== null) clearTimeout(this.#connectTimer);
+    this.#connectTimer = null;
   }
 
   #setStatus(status: RelayStatus): void {

@@ -2,6 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 const PORT = 4173;
 const SERVER_PORT = 8787;
+/** A command post replicating the test server (ADR-0018). */
+const POST_PORT = 8788;
 
 export default defineConfig({
   testDir: 'e2e',
@@ -28,8 +30,18 @@ export default defineConfig({
     },
     {
       // The relay server, with its database in memory so every run starts empty.
-      command: `TESELIA_PORT=${SERVER_PORT} TESELIA_DB=:memory: node ../server/src/main.ts`,
+      command:
+        `TESELIA_PORT=${SERVER_PORT} TESELIA_DB=:memory: ` +
+        `TESELIA_COMMAND_POST=http://localhost:${POST_PORT} node ../server/src/main.ts`,
       url: `http://localhost:${SERVER_PORT}/healthz`,
+      reuseExistingServer: false,
+      timeout: 30_000,
+    },
+    {
+      command:
+        `TESELIA_PORT=${POST_PORT} TESELIA_DB=:memory: ` +
+        `TESELIA_UPSTREAM=http://localhost:${SERVER_PORT} node ../server/src/main.ts`,
+      url: `http://localhost:${POST_PORT}/healthz`,
       reuseExistingServer: false,
       timeout: 30_000,
     },

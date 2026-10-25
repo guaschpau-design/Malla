@@ -2,7 +2,7 @@
 // Map tiles live in a separate database (map/tile-store.ts) so they can be cleared without
 // touching anything else.
 
-import type { NodeId } from '@teselia/protocol';
+import type { NodeId, ServerInfo } from '@teselia/protocol';
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 
 import type { StoredGroup } from '../groups/group.ts';
@@ -21,13 +21,10 @@ export interface OutboxEntry {
   readonly seq: number;
 }
 
-/** How far this device has read a group's envelopes on its server. */
-export interface SyncCursor {
-  readonly server: string;
-  readonly cursor: number;
-}
-
 export type EventKey = [groupId: string, origin: NodeId, seq: number];
+
+/** A group and a relay it syncs through: the group's server or a command post (protocol §8.3). */
+export type CursorKey = [groupId: string, relay: string];
 
 export interface AppSchema extends DBSchema {
   /** A single record under the key `self`. */
@@ -39,7 +36,10 @@ export interface AppSchema extends DBSchema {
   sequence: { key: 'next'; value: number };
   events: { key: EventKey; value: StoredEvent; indexes: { byGroup: string } };
   outbox: { key: EventKey; value: OutboxEntry; indexes: { byGroup: string } };
-  cursors: { key: string; value: SyncCursor };
+  /** How far this device has read each group's envelopes on each relay. */
+  cursors: { key: CursorKey; value: number };
+  /** What each server last said about itself, by server base URL (protocol §8.1). */
+  servers: { key: string; value: ServerInfo };
   /** Text messages of other MeshCore apps heard by the radio, oldest first. */
   radioTexts: { key: number; value: StoredRadioText };
 }
@@ -47,7 +47,7 @@ export interface AppSchema extends DBSchema {
 export type AppDb = IDBPDatabase<AppSchema>;
 
 const DB_NAME = 'teselia';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 export function openAppDb(name: string = DB_NAME): Promise<AppDb> {
   return openDB<AppSchema>(name, DB_VERSION, {
@@ -72,6 +72,12 @@ export function openAppDb(name: string = DB_NAME): Promise<AppDb> {
       }
       if (oldVersion < 3) {
         database.createObjectStore('radioTexts', { autoIncrement: true });
+      }
+      if (oldVersion < 4) {
+        // Cursors are now kept per relay; old ones are dropped and the backlog fetched again.
+        database.deleteObjectStore('cursors');
+        database.createObjectStore('cursors');
+        database.createObjectStore('servers');
       }
     },
   });

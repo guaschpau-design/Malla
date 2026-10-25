@@ -3,9 +3,10 @@
   import type { GroupState } from '@teselia/core';
   import { GROUP_NAME_MAX_BYTES, parseInvitationUrl, type Invitation } from '@teselia/protocol';
 
-  import { defaultServerUrl } from '../config.ts';
+  import { defaultServerUrl, guideUrl } from '../config.ts';
   import type { Translate } from '../i18n/index.ts';
   import type { Session } from '../session.svelte.ts';
+  import { proposedServer } from '../sync/relays.ts';
   import Panel from '../ui/Panel.svelte';
   import { canInvite, normalizeGroupName, normalizeServerUrl, type StoredGroup } from './group.ts';
   import InviteView from './InviteView.svelte';
@@ -32,8 +33,14 @@
   let newName = $state('');
   const groupName = $derived(normalizeGroupName(newName));
   const nameTooLong = $derived(newName.trim() !== '' && groupName === null);
-  let serverText = $state(defaultServerUrl() ?? '');
+  const homeServer = defaultServerUrl();
+  let serverText = $state(homeServer ?? '');
   const server = $derived(normalizeServerUrl(serverText));
+
+  // Opened from a command post, new groups belong to the server the post replicates.
+  void proposedServer(homeServer).then((proposed) => {
+    if (proposed !== null && serverText === (homeServer ?? '')) serverText = proposed;
+  });
 
   let pasted = $state('');
   let pastedInvalid = $state(false);
@@ -87,6 +94,7 @@
           <strong>{session.identity.alias}</strong><br />
           <span class="hint">{t('deviceId', { node: session.identity.nodeId })}</span>
         </p>
+        <a href={guideUrl(t('guidePath'))} target="_blank" rel="noopener">{t('guide')}</a>
       </section>
     {/if}
 

@@ -27,6 +27,7 @@ describe('app database', () => {
       'outbox',
       'radioTexts',
       'sequence',
+      'servers',
       'settings',
     ]);
   });

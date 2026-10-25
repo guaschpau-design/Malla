@@ -14,7 +14,7 @@ import {
   encodeEvent,
   eventKey,
   openEnvelope,
-  relayUrl,
+  sameServer,
   sealEnvelope,
   toBase64url,
   type AlertLevel,
@@ -38,8 +38,10 @@ import {
 import type { StoredGroup } from '../groups/group.ts';
 import type { LocalIdentity } from '../identity/identity.ts';
 import type { AppDb, OutboxEntry } from '../storage/app-db.ts';
+import { defaultServerUrl } from '../config.ts';
 import { loadCursor, saveCursor } from './cursor-store.ts';
 import { RelayClient, type RelayStatus } from './relay-client.ts';
+import { relaysFor } from './relays.ts';
 
 /** `local-only` when the group has no server: events stay on this device (and LoRa, later). */
 export type FeedStatus = RelayStatus | 'local-only';
@@ -62,6 +64,8 @@ export interface Fix {
 export class GroupFeed {
   state: GroupState = $state.raw(EMPTY_STATE);
   status: FeedStatus = $state('local-only');
+  /** True while synced through a command post instead of the group's server (protocol §8.3). */
+  viaCommandPost = $state(false);
 
   readonly #db: AppDb;
   readonly #group: StoredGroup;
@@ -84,17 +88,22 @@ export class GroupFeed {
       server === null
         ? null
         : new RelayClient({
-            url: relayUrl(server),
+            relays: () => relaysFor(db, server, defaultServerUrl()),
             group: this.#keys.groupId,
             handlers: {
-              cursor: () => loadCursor(db, group.id, server),
-              onEnvelope: (env, cursor) => this.#receive(env, server, cursor),
-              onSynced: async (cursor) => {
-                await saveCursor(db, group.id, server, cursor);
+              cursor: (relay) => loadCursor(db, group.id, relay),
+              onEnvelope: (env, cursor, relay) => this.#receive(env, relay, cursor),
+              onSynced: async (cursor, relay) => {
+                await saveCursor(db, group.id, relay, cursor);
                 await this.#flushOutbox();
               },
               onStored: (key) => this.#confirm(key),
-              onStatus: (status) => (this.status = status),
+              onStatus: (status) => {
+                this.status = status;
+                const relay = this.#client?.relay ?? null;
+                this.viaCommandPost =
+                  status === 'synced' && relay !== null && !sameServer(relay, server);
+              },
             },
           });
   }
@@ -227,14 +236,14 @@ export class GroupFeed {
     if (event) this.#lora?.offer({ event, bytes }, 'own');
   }
 
-  async #receive(env: Uint8Array, server: string, cursor: number): Promise<void> {
+  async #receive(env: Uint8Array, relay: string, cursor: number): Promise<void> {
     // An envelope that does not open was not sealed with this group's key: skip it.
     const bytes = openEnvelope(this.#keys, env);
     if (bytes !== null && (await receiveEvent(this.#db, this.#group.id, bytes)) !== null) {
       const event = this.#apply(bytes);
       if (event) this.#lora?.offer({ event, bytes }, 'bridged');
     }
-    await saveCursor(this.#db, this.#group.id, server, cursor);
+    await saveCursor(this.#db, this.#group.id, relay, cursor);
   }
 
   async #flushOutbox(): Promise<void> {

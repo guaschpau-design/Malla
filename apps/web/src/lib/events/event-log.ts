@@ -4,6 +4,7 @@
 import { encodeEvent, peekHeader, type EventHeader, type TeseliaEvent } from '@teselia/protocol';
 
 import type { AppDb, EventKey, OutboxEntry } from '../storage/app-db.ts';
+import { groupCursors } from '../sync/cursor-store.ts';
 
 /** Largest sequence number: the field is an unsigned 32-bit integer (protocol §2). */
 const MAX_SEQ = 0xffff_ffff;
@@ -97,6 +98,6 @@ export async function deleteGroupEvents(db: AppDb, groupId: string): Promise<voi
     const store = tx.objectStore(name);
     for (const key of await store.index('byGroup').getAllKeys(groupId)) await store.delete(key);
   }
-  await tx.objectStore('cursors').delete(groupId);
+  await tx.objectStore('cursors').delete(groupCursors(groupId));
   await tx.done;
 }

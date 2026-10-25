@@ -165,9 +165,18 @@
 <div class="app">
   <header class="bar">
     <span class="brand">Teselia</span>
-    <span class="status" class:offline={!connection.online} role="status">
+    <span
+      class="status"
+      class:offline={!connection.online}
+      class:post={feed?.viaCommandPost}
+      role="status"
+    >
       <span class="dot" aria-hidden="true"></span>
-      <span class="status-text">{connection.online ? t('online') : t('offline')}</span>
+      <span class="status-text">
+        {#if feed?.viaCommandPost}{t('commandPost')}{:else if connection.online}{t(
+            'online',
+          )}{:else}{t('offline')}{/if}
+      </span>
     </span>
     {#if session?.identity}
       {@const groupLabel = session.activeGroup?.name ?? t('noGroup')}
@@ -178,7 +187,9 @@
         }}
         aria-expanded={panels.open === 'groups'}
         aria-label="{t('groups')}: {groupLabel}"
-        title={feed ? t(SYNC_LABELS[feed.status]) : undefined}
+        title={feed
+          ? t(feed.viaCommandPost ? 'syncViaCommandPost' : SYNC_LABELS[feed.status])
+          : undefined}
       >
         {#if feed}<span class="sync {feed.status}" aria-hidden="true"></span>{/if}
         {groupLabel}
@@ -306,6 +317,11 @@
 
   .status.offline .dot {
     background: var(--danger);
+  }
+
+  /* Connected, but only as far as the command post: online for the group, not for the world. */
+  .status.post .dot {
+    background: var(--accent);
   }
 
   main {

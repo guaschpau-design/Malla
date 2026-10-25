@@ -22,3 +22,11 @@ export function defaultServerUrl(): string | null {
   const configured = import.meta.env['VITE_SERVER_URL'] as string | undefined;
   return configured ? new URL(configured, window.location.href).href : null;
 }
+
+/**
+ * The user guide on the site served with the app (apps/site), given its path there. The app
+ * lives under /app/, so the site is one level up.
+ */
+export function guideUrl(path: string): string {
+  return new URL(`${import.meta.env.BASE_URL}../${path}`, window.location.href).href;
+}
