@@ -1,7 +1,7 @@
 // Builds the HTTP application. Kept separate from main.ts so tests can run it in memory.
 
 import fastifyWebsocket from '@fastify/websocket';
-import { PROTOCOL_VERSION, RELAY_PATH } from '@teselia/protocol';
+import { PROTOCOL_VERSION, RELAY_PATH, SERVER_INFO_PATH } from '@teselia/protocol';
 import Fastify, { type FastifyInstance } from 'fastify';
 import type WebSocket from 'ws';
 
@@ -16,16 +16,30 @@ const HEARTBEAT_MS = 30_000;
 export interface AppOptions {
   /** Directory to serve the landing page and the web app from, or null. */
   readonly webRoot: string | null;
+  /** What `healthz` tells clients (protocol §8.1). */
+  readonly upstream: string | null;
+  readonly commandPost: string | null;
 }
+
+const NO_OPTIONS: AppOptions = { webRoot: null, upstream: null, commandPost: null };
 
 export async function buildApp(
   relay: Relay,
-  options: AppOptions = { webRoot: null },
+  options: AppOptions = NO_OPTIONS,
 ): Promise<FastifyInstance> {
   const app = Fastify({ logger: false });
   await app.register(fastifyWebsocket, { options: { maxPayload: MAX_FRAME_BYTES } });
 
-  app.get('/healthz', () => ({ status: 'ok', protocolVersion: PROTOCOL_VERSION }));
+  // Apps served from another origin read this too (protocol §8.3).
+  app.get(`/${SERVER_INFO_PATH}`, (_request, reply) => {
+    void reply.header('Access-Control-Allow-Origin', '*');
+    return {
+      status: 'ok',
+      protocolVersion: PROTOCOL_VERSION,
+      upstream: options.upstream,
+      commandPost: options.commandPost,
+    };
+  });
   if (options.webRoot !== null) await serveWeb(app, options.webRoot);
 
   const alive = new WeakSet<WebSocket>();

@@ -5,8 +5,11 @@ import { MAX_ENVELOPE_SIZE, MIN_ENVELOPE_SIZE } from './constants.ts';
 import {
   encodeRelayMessage,
   parseClientMessage,
+  parseServerInfo,
   parseServerMessage,
   relayUrl,
+  sameServer,
+  serverInfoUrl,
   type ServerMessage,
 } from './relay.ts';
 
@@ -26,7 +29,7 @@ describe('relay messages', () => {
 
   it('round-trips every server message', () => {
     const messages: ServerMessage[] = [
-      { t: 'env', cursor: 7, env: ENV },
+      { t: 'env', cursor: 7, key: KEY, env: ENV },
       { t: 'synced', cursor: 7 },
       { t: 'stored', key: KEY },
       { t: 'error', code: 'rate-limited', key: KEY },
@@ -82,5 +85,46 @@ describe('relay messages', () => {
     expect(relayUrl('https://teselia.example')).toBe('wss://teselia.example/v1/ws');
     expect(relayUrl('https://example.org/relay/')).toBe('wss://example.org/relay/v1/ws');
     expect(relayUrl('http://localhost:8787')).toBe('ws://localhost:8787/v1/ws');
+  });
+});
+
+describe('server information', () => {
+  it('reads what a command post says about itself', () => {
+    const text = JSON.stringify({
+      status: 'ok',
+      protocolVersion: 1,
+      upstream: 'https://teselia.example',
+      commandPost: null,
+      extra: true,
+    });
+    expect(parseServerInfo(text)).toEqual({
+      protocolVersion: 1,
+      upstream: 'https://teselia.example/',
+      commandPost: null,
+    });
+  });
+
+  it('treats missing fields as none and refuses insecure or broken ones', () => {
+    expect(parseServerInfo('{"status":"ok","protocolVersion":1}')).toEqual({
+      protocolVersion: 1,
+      upstream: null,
+      commandPost: null,
+    });
+    expect(
+      parseServerInfo('{"status":"ok","protocolVersion":1,"upstream":"http://evil.example/"}'),
+    ).toBeNull();
+    expect(parseServerInfo('{"status":"down","protocolVersion":1}')).toBeNull();
+    expect(parseServerInfo('<html>')).toBeNull();
+  });
+
+  it('compares server URLs regardless of the trailing slash', () => {
+    expect(sameServer('https://teselia.example', 'https://teselia.example/')).toBe(true);
+    expect(sameServer('https://Teselia.example/', 'https://teselia.example')).toBe(true);
+    expect(sameServer('https://teselia.example', 'https://post.teselia.example')).toBe(false);
+    expect(sameServer('not a url', 'not a url')).toBe(false);
+  });
+
+  it('finds the information next to the relay', () => {
+    expect(serverInfoUrl('https://example.org/relay')).toBe('https://example.org/relay/healthz');
   });
 });

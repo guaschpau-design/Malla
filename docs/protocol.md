@@ -280,18 +280,53 @@ Clients connect to `v1/ws` relative to the server base URL, with the scheme chan
 
 **Server to client**
 
-| Message                                          | Meaning                                                                                                     |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| `{"t": "env", "cursor": N, "env": ENVELOPE}`     | A stored envelope; `cursor` increases per group                                                             |
-| `{"t": "synced", "cursor": N}`                   | The backlog after `after` has been sent; live envelopes follow                                              |
-| `{"t": "stored", "key": EVENT_KEY}`              | The pushed envelope is stored, now or already before                                                        |
-| `{"t": "error", "code": CODE, "key": EVENT_KEY}` | `bad-request`, `too-large`, `rate-limited` or `not-joined`; `key` is present when the error concerns a push |
+| Message                                                        | Meaning                                                                                                     |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `{"t": "env", "cursor": N, "key": EVENT_KEY, "env": ENVELOPE}` | A stored envelope; `cursor` increases per group                                                             |
+| `{"t": "synced", "cursor": N}`                                 | The backlog after `after` has been sent; live envelopes follow                                              |
+| `{"t": "stored", "key": EVENT_KEY}`                            | The pushed envelope is stored, now or already before                                                        |
+| `{"t": "error", "code": CODE, "key": EVENT_KEY}`               | `bad-request`, `too-large`, `rate-limited` or `not-joined`; `key` is present when the error concerns a push |
 
-- If `after` is greater than the group's last cursor, for instance because the server lost data, the server answers `synced` with its last cursor. Clients always adopt the cursor of `synced`.
+- If `after` is greater than the group's last cursor, for instance because the server lost data or deleted a quiet group's envelopes, the server sends every envelope it has, then `synced` with its last cursor. Clients always adopt the cursor of `synced`.
 - The server MUST store at most one envelope per `(group, key)`; a repeated push with a known key is answered with `stored` and not relayed again. Clients keep an envelope in their outbox until they receive `stored` for its key.
 - The server MUST reject envelopes larger than 193 bytes with `too-large`, and envelopes smaller than 42 bytes (nonce, event header and tag) with `bad-request`.
 - The server SHOULD rate-limit pushes per connection and per group, and MAY delete envelopes older than a configured retention period.
 - The server never receives the group secret, the content key or plaintext events.
+
+### 8.1 Server information
+
+`GET healthz`, relative to the server base URL, answers a JSON object:
+
+```json
+{ "status": "ok", "protocolVersion": 1, "upstream": null, "commandPost": "https://post.example/" }
+```
+
+| Field         | Meaning                                                                                        |
+| ------------- | ---------------------------------------------------------------------------------------------- |
+| `upstream`    | Base URL of the server this one replicates (§8.2), or `null`. Set on command posts             |
+| `commandPost` | Base URL shared by the command posts of this server (§8.3), or `null`. Set on internet servers |
+
+Both are secure URLs ending in `/` when present. Clients ignore unknown fields. The response allows any origin (`Access-Control-Allow-Origin: *`), since apps served elsewhere read it. Two server URLs are the same server when they are equal after adding a missing trailing `/` to the path.
+
+### 8.2 Replication
+
+A server with an `upstream` (a command post) keeps, for every group it stores, a connection to the upstream as a client of that group:
+
+- It joins with its own cursor for the upstream, stores every `env` it receives under the message's `key` and relays it to its own clients.
+- It pushes every envelope its own clients pushed, oldest first, until the upstream answers `stored`, and SHOULD stay under the upstream's rate limits.
+- Storage by `(group, key)` makes replication idempotent: an envelope that comes back is not stored or relayed twice.
+
+The command post never needs the group secret: it moves envelopes, as any server does.
+
+### 8.3 Choosing a relay
+
+All command posts of a server share one base URL, whose name each post resolves to itself on its own Wi-Fi. A client tries these relays for a group, in order, and moves to the next one when a connection fails before `synced`:
+
+1. The app's own server (the one that served it), if its `upstream` is the group's server.
+2. The group's server.
+3. The `commandPost` of the group's server, as last learnt from its `healthz`.
+
+Cursors belong to one relay: a client keeps one cursor per group and relay URL. Its outbox is satisfied by `stored` from any of them, since a command post replicates what it stores.
 
 ## 9. Versioning
 

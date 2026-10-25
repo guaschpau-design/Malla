@@ -10,7 +10,21 @@ describe('configuration', () => {
       databasePath: 'data/teselia.db',
       retentionDays: 30,
       webRoot: null,
+      upstream: null,
+      commandPost: null,
     });
+  });
+
+  it('reads the command post settings as server base URLs', () => {
+    const config = readConfig({
+      TESELIA_UPSTREAM: 'https://teselia.example',
+      TESELIA_COMMAND_POST: 'https://post.teselia.example/',
+    });
+    expect(config.upstream).toBe('https://teselia.example/');
+    expect(config.commandPost).toBe('https://post.teselia.example/');
+    expect(() => readConfig({ TESELIA_UPSTREAM: 'http://teselia.example' })).toThrow(
+      /TESELIA_UPSTREAM/,
+    );
   });
 
   it('rejects an invalid port or retention', () => {

@@ -1,86 +1,17 @@
 // The relay over real WebSockets, with the server listening on a random local port.
 
-import {
-  encodeRelayMessage,
-  parseServerMessage,
-  type ClientMessage,
-  type ServerMessage,
-} from '@teselia/protocol';
 import type { FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it } from 'vitest';
-import WebSocket from 'ws';
 
 import { buildApp } from './app.ts';
 import { EnvelopeStore } from './envelope-store.ts';
 import { DEFAULT_LIMITS, Relay, type RelayLimits } from './relay.ts';
+import { TestClient as Client } from './test-client.ts';
 
 const GROUP = new Uint8Array(16).fill(7);
 const OTHER_GROUP = new Uint8Array(16).fill(8);
 const key = (n: number) => new Uint8Array(16).fill(n);
 const env = (n: number) => new Uint8Array(60).fill(n);
-
-/** A test client that queues every message the server sends. */
-class Client {
-  readonly #socket: WebSocket;
-  readonly #queue: ServerMessage[] = [];
-  #waiting: ((message: ServerMessage) => void) | null = null;
-
-  private constructor(socket: WebSocket) {
-    this.#socket = socket;
-    socket.on('message', (data) => {
-      const text = Buffer.isBuffer(data) ? data.toString('utf8') : '';
-      const message = parseServerMessage(text);
-      if (message === null) throw new Error(`unparseable frame ${text}`);
-      if (this.#waiting) {
-        this.#waiting(message);
-        this.#waiting = null;
-      } else {
-        this.#queue.push(message);
-      }
-    });
-  }
-
-  static async connect(url: string): Promise<Client> {
-    const socket = new WebSocket(url);
-    await new Promise((resolve, reject) => {
-      socket.once('open', resolve);
-      socket.once('error', reject);
-    });
-    return new Client(socket);
-  }
-
-  send(message: ClientMessage): void {
-    this.#socket.send(encodeRelayMessage(message));
-  }
-
-  sendRaw(text: string): void {
-    this.#socket.send(text);
-  }
-
-  next(): Promise<ServerMessage> {
-    const queued = this.#queue.shift();
-    if (queued) return Promise.resolve(queued);
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        reject(new Error('no message'));
-      }, 2000);
-      this.#waiting = (message) => {
-        clearTimeout(timer);
-        resolve(message);
-      };
-    });
-  }
-
-  /** True if nothing arrives for a short while. */
-  async isQuiet(): Promise<boolean> {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    return this.#queue.length === 0;
-  }
-
-  close(): void {
-    this.#socket.close();
-  }
-}
 
 let app: FastifyInstance | null = null;
 const clients: Client[] = [];
@@ -121,7 +52,7 @@ describe('relay', () => {
 
     alice.send({ t: 'push', key: key(1), env: env(1) });
     expect(await alice.next()).toEqual({ t: 'stored', key: key(1) });
-    expect(await bob.next()).toEqual({ t: 'env', cursor: 1, env: env(1) });
+    expect(await bob.next()).toEqual({ t: 'env', cursor: 1, key: key(1), env: env(1) });
     expect(await alice.isQuiet()).toBe(true);
     expect(await stranger.isQuiet()).toBe(true);
   });
@@ -151,15 +82,21 @@ describe('relay', () => {
     }
 
     const bob = await joined(connect, 1);
-    expect(await bob.next()).toEqual({ t: 'env', cursor: 2, env: env(2) });
-    expect(await bob.next()).toEqual({ t: 'env', cursor: 3, env: env(3) });
+    expect(await bob.next()).toEqual({ t: 'env', cursor: 2, key: key(2), env: env(2) });
+    expect(await bob.next()).toEqual({ t: 'env', cursor: 3, key: key(3), env: env(3) });
     expect(await bob.next()).toEqual({ t: 'synced', cursor: 3 });
   });
 
-  it('hands a client that remembers a cursor the server never reached the real last cursor', async () => {
+  it('sends everything to a client that remembers a cursor the server never reached', async () => {
     const connect = await start();
-    const client = await joined(connect, 50);
-    expect(await client.next()).toEqual({ t: 'synced', cursor: 0 });
+    const alice = await joined(connect);
+    await alice.next();
+    alice.send({ t: 'push', key: key(1), env: env(1) });
+    await alice.next();
+
+    const bob = await joined(connect, 50);
+    expect(await bob.next()).toEqual({ t: 'env', cursor: 1, key: key(1), env: env(1) });
+    expect(await bob.next()).toEqual({ t: 'synced', cursor: 1 });
   });
 
   it('refuses pushes before joining and a second join', async () => {

@@ -8,7 +8,9 @@ import {
   MAX_ENVELOPE_SIZE,
   MIN_ENVELOPE_SIZE,
   RELAY_PATH,
+  SERVER_INFO_PATH,
 } from './constants.ts';
+import { isSecureUrl } from './invitation.ts';
 import { err, ok, type Result } from './result.ts';
 
 export type ClientMessage =
@@ -18,7 +20,12 @@ export type ClientMessage =
 export type RelayErrorCode = 'bad-request' | 'too-large' | 'rate-limited' | 'not-joined';
 
 export type ServerMessage =
-  | { readonly t: 'env'; readonly cursor: number; readonly env: Uint8Array }
+  | {
+      readonly t: 'env';
+      readonly cursor: number;
+      readonly key: Uint8Array;
+      readonly env: Uint8Array;
+    }
   | { readonly t: 'synced'; readonly cursor: number }
   | { readonly t: 'stored'; readonly key: Uint8Array }
   | { readonly t: 'error'; readonly code: RelayErrorCode; readonly key: Uint8Array | null };
@@ -29,14 +36,58 @@ export interface RelayRefusal {
   readonly key: Uint8Array | null;
 }
 
+/** §8.1 What a server says about itself at `healthz`. */
+export interface ServerInfo {
+  readonly protocolVersion: number;
+  /** The server a command post replicates (§8.2), or null. */
+  readonly upstream: string | null;
+  /** The base URL shared by this server's command posts (§8.3), or null. */
+  readonly commandPost: string | null;
+}
+
+/** §8.1 A server base URL in its comparable form: parsed, with the path ending in `/`. */
+export function serverBaseUrl(url: string): string {
+  return new URL(url.endsWith('/') ? url : `${url}/`).href;
+}
+
+/** §8.1 Whether two server URLs name the same server. Unparseable URLs name none. */
+export function sameServer(a: string, b: string): boolean {
+  try {
+    return serverBaseUrl(a) === serverBaseUrl(b);
+  } catch {
+    return false;
+  }
+}
+
 /** §8 The WebSocket URL of a server: `https://host/` becomes `wss://host/v1/ws`. */
-export function relayUrl(serverBaseUrl: string): string {
-  const url = new URL(
-    RELAY_PATH,
-    serverBaseUrl.endsWith('/') ? serverBaseUrl : `${serverBaseUrl}/`,
-  );
+export function relayUrl(server: string): string {
+  const url = new URL(RELAY_PATH, serverBaseUrl(server));
   url.protocol = url.protocol === 'http:' ? 'ws:' : 'wss:';
   return url.href;
+}
+
+/** §8.1 The URL of a server's information. */
+export function serverInfoUrl(server: string): string {
+  return new URL(SERVER_INFO_PATH, serverBaseUrl(server)).href;
+}
+
+/** §8.1 Parses a server's information, or returns null if it is not valid. Never throws. */
+export function parseServerInfo(text: string): ServerInfo | null {
+  const object = parseObject(text);
+  if (object?.['status'] !== 'ok') return null;
+  const protocolVersion = object['protocolVersion'];
+  const upstream = optionalServerUrl(object['upstream']);
+  const commandPost = optionalServerUrl(object['commandPost']);
+  if (typeof protocolVersion !== 'number' || upstream === undefined || commandPost === undefined) {
+    return null;
+  }
+  return { protocolVersion, upstream, commandPost };
+}
+
+/** A secure server URL in comparable form, null for none, undefined if invalid. */
+function optionalServerUrl(value: unknown): string | null | undefined {
+  if (value === null || value === undefined) return null;
+  return typeof value === 'string' && isSecureUrl(value) ? serverBaseUrl(value) : undefined;
 }
 
 export function encodeRelayMessage(message: ClientMessage | ServerMessage): string {
@@ -50,7 +101,12 @@ export function encodeRelayMessage(message: ClientMessage | ServerMessage): stri
         env: toBase64url(message.env),
       });
     case 'env':
-      return JSON.stringify({ t: 'env', cursor: message.cursor, env: toBase64url(message.env) });
+      return JSON.stringify({
+        t: 'env',
+        cursor: message.cursor,
+        key: toBase64url(message.key),
+        env: toBase64url(message.env),
+      });
     case 'synced':
       return JSON.stringify({ t: 'synced', cursor: message.cursor });
     case 'stored':
@@ -97,8 +153,11 @@ export function parseServerMessage(text: string): ServerMessage | null {
   switch (object['t']) {
     case 'env': {
       const cursor = object['cursor'];
+      const key = bytesField(object, 'key');
       const env = bytesField(object, 'env');
-      return isCursor(cursor) && env !== null ? { t: 'env', cursor, env } : null;
+      return isCursor(cursor) && key?.length === EVENT_KEY_SIZE && env !== null
+        ? { t: 'env', cursor, key, env }
+        : null;
     }
     case 'synced': {
       const cursor = object['cursor'];

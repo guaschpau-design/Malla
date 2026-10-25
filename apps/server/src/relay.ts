@@ -1,5 +1,6 @@
 // The internet transport (docs/protocol.md §8): stores pushed envelopes and fans them out to the
-// other connections of the same group. One connection carries one group.
+// other connections of the same group. One connection carries one group. On a command post the
+// replicator (replicator.ts) hands in what the upstream has and learns what clients push.
 
 import {
   encodeRelayMessage,
@@ -9,8 +10,9 @@ import {
 } from '@teselia/protocol';
 import WebSocket from 'ws';
 
-import type { EnvelopeStore, StoredEnvelope } from './envelope-store.ts';
+import type { EnvelopeSource, EnvelopeStore, StoredEnvelope } from './envelope-store.ts';
 import { TokenBucket } from './token-bucket.ts';
+import { frameText } from './ws-text.ts';
 
 export interface RelayLimits {
   /** Burst and sustained pushes per second allowed to one connection. */
@@ -36,11 +38,15 @@ interface GroupRoom {
   readonly bucket: TokenBucket;
 }
 
+/** Called when a client joins a group or pushes a new envelope to it. */
+export type GroupActivityListener = (group: Uint8Array) => void;
+
 export class Relay {
   readonly #store: EnvelopeStore;
   readonly #now: () => number;
   readonly #limits: RelayLimits;
   readonly #rooms = new Map<string, GroupRoom>();
+  readonly #listeners: GroupActivityListener[] = [];
 
   constructor(store: EnvelopeStore, now: () => number, limits: RelayLimits = DEFAULT_LIMITS) {
     this.#store = store;
@@ -55,6 +61,15 @@ export class Relay {
     return total;
   }
 
+  onGroupActivity(listener: GroupActivityListener): void {
+    this.#listeners.push(listener);
+  }
+
+  /** Stores an envelope received from the upstream and relays it to every client of the group. */
+  ingest(group: Uint8Array, key: Uint8Array, env: Uint8Array): void {
+    this.#append(group, key, env, 'upstream', null);
+  }
+
   accept(socket: WebSocket): void {
     const bucket = new TokenBucket(
       this.#limits.connectionBurst,
@@ -66,7 +81,7 @@ export class Relay {
     socket.on('message', (data, isBinary) => {
       const parsed = isBinary
         ? ({ ok: false, error: { code: 'bad-request', key: null } } as const)
-        : parseClientMessage(rawText(data));
+        : parseClientMessage(frameText(data));
       if (!parsed.ok) {
         send(socket, { t: 'error', code: parsed.error.code, key: parsed.error.key });
         return;
@@ -79,6 +94,7 @@ export class Relay {
             return;
           }
           joined = { group: message.group, room: this.#join(socket, message.group, message.after) };
+          this.#notify(message.group);
           return;
         case 'push': {
           if (joined === null) {
@@ -89,18 +105,9 @@ export class Relay {
             send(socket, { t: 'error', code: 'rate-limited', key: message.key });
             return;
           }
-          const { cursor, isNew } = this.#store.append(
-            joined.group,
-            message.key,
-            message.env,
-            this.#now(),
-          );
+          const isNew = this.#append(joined.group, message.key, message.env, 'client', socket);
           send(socket, { t: 'stored', key: message.key });
-          if (isNew) {
-            for (const other of joined.room.sockets) {
-              if (other !== socket) send(other, { t: 'env', cursor, env: message.env });
-            }
-          }
+          if (isNew) this.#notify(joined.group);
           return;
         }
       }
@@ -111,23 +118,44 @@ export class Relay {
     });
   }
 
+  /** Stores an envelope and relays it to the group's clients but its sender; false if known. */
+  #append(
+    group: Uint8Array,
+    key: Uint8Array,
+    env: Uint8Array,
+    source: EnvelopeSource,
+    sender: WebSocket | null,
+  ): boolean {
+    const { cursor, isNew } = this.#store.append(group, key, env, this.#now(), source);
+    if (!isNew) return false;
+    for (const other of this.#rooms.get(toBase64url(group))?.sockets ?? []) {
+      if (other !== sender) send(other, { t: 'env', cursor, key, env });
+    }
+    return true;
+  }
+
+  #notify(group: Uint8Array): void {
+    for (const listener of this.#listeners) listener(group);
+  }
+
   /**
    * Sends the backlog and `synced`, then adds the socket to the group's room. Everything here is
    * synchronous, so no live envelope can slip in between the backlog and the room.
    */
   #join(socket: WebSocket, group: Uint8Array, after: number): GroupRoom {
-    let cursor = after;
+    const last = this.#store.lastCursor(group);
+    // A cursor beyond the last one comes from before a data loss: the client gets everything
+    // there is and adopts the store's cursor (protocol §8).
+    let cursor = after > last ? 0 : after;
     let page: StoredEnvelope[];
     do {
       page = this.#store.after(group, cursor, BACKLOG_PAGE);
       for (const stored of page) {
-        send(socket, { t: 'env', cursor: stored.cursor, env: stored.env });
+        send(socket, { t: 'env', cursor: stored.cursor, key: stored.key, env: stored.env });
         cursor = stored.cursor;
       }
     } while (page.length === BACKLOG_PAGE);
-    // The store's last cursor, even if lower than `after`: a client that remembers cursors from
-    // before a data loss adopts it and receives new envelopes again (protocol §8).
-    send(socket, { t: 'synced', cursor: this.#store.lastCursor(group) });
+    send(socket, { t: 'synced', cursor: last });
 
     const id = toBase64url(group);
     let room = this.#rooms.get(id);
@@ -157,9 +185,4 @@ export class Relay {
 
 function send(socket: WebSocket, message: ServerMessage): void {
   if (socket.readyState === WebSocket.OPEN) socket.send(encodeRelayMessage(message));
-}
-
-function rawText(data: WebSocket.RawData): string {
-  if (Array.isArray(data)) return Buffer.concat(data).toString('utf8');
-  return Buffer.from(data instanceof ArrayBuffer ? new Uint8Array(data) : data).toString('utf8');
 }

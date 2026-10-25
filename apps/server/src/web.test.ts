@@ -17,7 +17,12 @@ function site(): string {
   return root;
 }
 
-const app = () => buildApp(new Relay(new EnvelopeStore(':memory:'), Date.now), { webRoot: site() });
+const app = () =>
+  buildApp(new Relay(new EnvelopeStore(':memory:'), Date.now), {
+    webRoot: site(),
+    upstream: null,
+    commandPost: null,
+  });
 
 describe('web serving', () => {
   it('serves the landing page at the root and the app under /app/', async () => {
