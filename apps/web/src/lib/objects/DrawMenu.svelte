@@ -45,6 +45,7 @@
 
   .menu {
     position: absolute;
+    z-index: 3; /* above the neighbouring buttons, which are positioned too */
     right: 0;
     bottom: calc(100% + 0.5rem);
     display: grid;
