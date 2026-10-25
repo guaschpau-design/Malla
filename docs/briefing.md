@@ -35,24 +35,25 @@ Para toda la sociedad civil, sin excluir a nadie:
 
 ## 4. Decisiones tomadas en el briefing
 
-| Bloque                    | Decisión                                                                                   |
-| ------------------------- | ------------------------------------------------------------------------------------------ |
-| Licencia                  | EUPL-1.2 (licencia libre oficial de la UE)                                                 |
-| Gobernanza                | Proyecto personal de Pau, que se abre a la comunidad al publicarse                         |
-| Desarrollo                | Pau dirige, Claude programa                                                                |
-| Plataforma                | Aplicación web instalable (PWA) para móvil y ordenador, que funciona sin conexión          |
-| Comunicaciones v0.1       | Internet + LoRa MeshCore (Bluetooth desde Chrome/Edge)                                     |
-| Comunicaciones después    | LoRa Meshtastic; compatibilidad con ATAK (protocolo CoT)                                   |
-| Infraestructura           | Funciona sin servidor; si hay servidor, sincroniza con él                                  |
-| Servidor de pruebas       | VPS en un proveedor europeo                                                                |
-| Código                    | GitHub                                                                                     |
-| Idiomas                   | Español e inglés                                                                           |
-| Grupos                    | Coordinador y miembros                                                                     |
-| Identidad                 | Sin cuenta: alias y clave generados en el dispositivo; unión al grupo por código QR        |
-| Cifrado                   | Por canal: cada grupo comparte una clave secreta                                           |
-| Privacidad de la posición | La decide cada usuario: compartir, pausar u ocultar                                        |
-| Simbología                | Civil por defecto; OTAN APP-6 seleccionable más adelante                                   |
-| Mapas                     | OpenStreetMap con descarga para usar sin conexión; después satélite, topográfico y náutico |
+| Bloque                    | Decisión                                                                                                                                                        |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Licencia                  | EUPL-1.2 (licencia libre oficial de la UE)                                                                                                                      |
+| Gobernanza                | Proyecto personal de Pau, que se abre a la comunidad al publicarse                                                                                              |
+| Desarrollo                | Pau dirige, Claude programa                                                                                                                                     |
+| Plataforma                | Aplicación web instalable (PWA) para móvil y ordenador, que funciona sin conexión                                                                               |
+| Comunicaciones v0.1       | Internet + LoRa MeshCore (Bluetooth desde Chrome/Edge)                                                                                                          |
+| Radios soportadas v0.1    | Elecrow ThinkNode M9, SenseCAP MeshTracker X1, LilyGO T-Deck Plus y SenseCAP T1000-E, con firmware MeshCore Companion Bluetooth (detalle en `docs/hardware.md`) |
+| Comunicaciones después    | LoRa Meshtastic; compatibilidad con ATAK (protocolo CoT)                                                                                                        |
+| Infraestructura           | Funciona sin servidor; si hay servidor, sincroniza con él                                                                                                       |
+| Servidor de pruebas       | VPS en un proveedor europeo                                                                                                                                     |
+| Código                    | GitHub                                                                                                                                                          |
+| Idiomas                   | Español e inglés                                                                                                                                                |
+| Grupos                    | Coordinador y miembros                                                                                                                                          |
+| Identidad                 | Sin cuenta: alias y clave generados en el dispositivo; unión al grupo por código QR                                                                             |
+| Cifrado                   | Por canal: cada grupo comparte una clave secreta                                                                                                                |
+| Privacidad de la posición | La decide cada usuario: compartir, pausar u ocultar                                                                                                             |
+| Simbología                | Civil por defecto; OTAN APP-6 seleccionable más adelante                                                                                                        |
+| Mapas                     | OpenStreetMap con descarga para usar sin conexión; después satélite, topográfico y náutico                                                                      |
 
 ## 5. Alcance de la v0.1
 
