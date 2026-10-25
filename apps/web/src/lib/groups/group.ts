@@ -5,6 +5,8 @@ import {
   deriveGroupKeys,
   generateGroupSecret,
   GROUP_NAME_MAX_BYTES,
+  isSecureUrl,
+  SERVER_URL_MAX_BYTES,
   toBase64url,
   utf8ByteLength,
   type Invitation,
@@ -38,19 +40,34 @@ export function normalizeGroupName(text: string): string | null {
   return size >= 1 && size <= GROUP_NAME_MAX_BYTES ? name : null;
 }
 
+/**
+ * Validates a server address typed by a coordinator: empty means "no server", anything else
+ * must be a secure URL (protocol §6). Returns undefined if invalid.
+ */
+export function normalizeServerUrl(text: string): string | null | undefined {
+  const url = text.trim();
+  if (url === '') return null;
+  return isSecureUrl(url) && utf8ByteLength(url) <= SERVER_URL_MAX_BYTES ? url : undefined;
+}
+
 export function groupId(secret: Uint8Array): string {
   return toBase64url(deriveGroupKeys(secret).groupId);
 }
 
 /** A new group, created by this device, which becomes its coordinator. */
-export function createGroup(name: string, now: number, random?: RandomSource): StoredGroup {
+export function createGroup(
+  name: string,
+  server: string | null,
+  now: number,
+  random?: RandomSource,
+): StoredGroup {
   const secret = generateGroupSecret(random);
   return {
     id: groupId(secret),
     name,
     secret,
     role: 'coordinator',
-    server: null,
+    server,
     invitedBy: null,
     joinedAt: now,
   };

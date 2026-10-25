@@ -6,7 +6,7 @@ import { appBaseUrl, invitationInAddress, invitationLink } from './join-link.ts'
 
 const ISSUER = 'a1b2c3d4' as NodeId;
 
-const invitation = invitationFor(createGroup('Grupo', 0), 'member', ISSUER);
+const invitation = invitationFor(createGroup('Grupo', null, 0), 'member', ISSUER);
 
 describe('join links', () => {
   it('builds the link under the base path the app is served from', () => {

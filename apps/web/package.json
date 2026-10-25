@@ -13,6 +13,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@malla/core": "workspace:*",
     "@malla/protocol": "workspace:*",
     "@protomaps/basemaps": "^5.7.2",
     "idb": "^8.0.4",
@@ -24,6 +25,7 @@
   "devDependencies": {
     "@playwright/test": "1.63.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@types/geojson": "^7946.0.16",
     "fake-indexeddb": "^6.2.6",
     "svelte": "^5.57.2",
     "svelte-check": "^4.7.7",

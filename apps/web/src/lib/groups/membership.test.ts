@@ -16,13 +16,13 @@ const freshDb = () => openAppDb(`membership-test-${String(dbCounter++)}`);
 describe('membership', () => {
   it('makes a newly created group the active one', async () => {
     const db = await freshDb();
-    const group = await startGroup(db, 'Rescate', 1000);
+    const group = await startGroup(db, 'Rescate', null, 1000);
     expect(await getActiveGroupId(db)).toBe(group.id);
   });
 
   it('joins a group once even if the same invitation is opened twice', async () => {
     const coordinatorDb = await freshDb();
-    const group = await startGroup(coordinatorDb, 'Rescate', 1000);
+    const group = await startGroup(coordinatorDb, 'Rescate', null, 1000);
     const invitation = invitationFor(group, 'member', ISSUER);
 
     const memberDb = await freshDb();

@@ -15,7 +15,7 @@ A group shares a map. Every change to that map — a position, a chat line, a ma
 │  UI (Svelte) ── map (MapLibre + PMTiles)                              │
 │        │                                                              │
 │        ▼                                                              │
-│  packages/core: event log · state reducer · outbox · LoRa scheduler   │
+│  packages/core: state reducer · LoRa scheduler · bridge rules         │
 │        │                 · bridge                                     │
 │        ▼                                                              │
 │  packages/protocol: event codec · crypto · invitations                │
@@ -31,9 +31,9 @@ A group shares a map. Every change to that map — a position, a chat line, a ma
 | Path                | Owns                                                                                               | Must not depend on                                   |
 | ------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
 | `packages/protocol` | Binary event format, key derivation, envelope encryption, invitation links                         | Anything else in the repo; the DOM; Node APIs        |
-| `packages/core`     | Event log interface, state reducer, outbox, LoRa airtime scheduler, bridge rules                   | The DOM, Svelte, BLE, network APIs                   |
+| `packages/core`     | State reducer, LoRa airtime scheduler, bridge rules                                                | The DOM, Svelte, BLE, network APIs                   |
 | `packages/meshcore` | Talking to a MeshCore companion radio: connect, configure channel, send and receive datagrams      | `packages/core`, the UI                              |
-| `apps/web`          | UI, map, persistence (IndexedDB), wiring transports to `core`                                      | Server code                                          |
+| `apps/web`          | UI, map, persistence in IndexedDB (event log, outbox, cursors), wiring transports to `core`        | Server code                                          |
 | `apps/server`       | Storing and relaying encrypted envelopes; serving map tiles and, in command-post mode, the web app | Plaintext event contents (it can never decrypt them) |
 
 The dependency direction is strictly downwards in the diagram. `protocol` and `core` are pure TypeScript with no I/O, so they run unchanged in the browser, in Node and in tests. This is what keeps the hard parts testable.
@@ -91,7 +91,7 @@ Events can arrive late, twice or out of order — through LoRa, a bridge and the
 
 ### 4.1 Internet
 
-The web app keeps a WebSocket to the group's server. Each event is sealed into an **envelope** — AES-256-GCM ciphertext plus an opaque event key — and pushed. The server assigns each envelope a per-group **cursor** (an increasing integer), stores it, and fans it out to the group's other connections. On reconnect a client asks for everything after the last cursor it saw. The server cannot read, forge or alter events; it can only drop them.
+The web app keeps a WebSocket to the active group's server; groups that are not active sync when they are opened. Each event is sealed into an **envelope** — AES-256-GCM ciphertext plus an opaque event key — and pushed. The server assigns each envelope a per-group **cursor** (an increasing integer), stores it, and fans it out to the group's other connections. On reconnect a client asks for everything after the last cursor it saw. The server cannot read, forge or alter events; it can only drop them.
 
 ### 4.2 LoRa (MeshCore)
 
@@ -127,12 +127,12 @@ Command-post mode needs HTTPS on a local network, because browsers require a sec
 
 ## 6. Persistence
 
-| Where   | What                                                             | Technology                                                               |
-| ------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Browser | Identity keys, groups, settings; event log and outbox from day 3 | IndexedDB database `malla`                                               |
-| Browser | Offline map tiles, with the areas they belong to                 | IndexedDB database `malla-map`, separate so it can be cleared on its own |
-| Server  | Encrypted envelopes per group, with retention limit              | SQLite through `node:sqlite`                                             |
-| Server  | Base map                                                         | One PMTiles file, served as a static file with range requests            |
+| Where   | What                                                                                 | Technology                                                               |
+| ------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| Browser | Identity keys, groups, settings, each group's event log, the outbox and sync cursors | IndexedDB database `malla`                                               |
+| Browser | Offline map tiles, with the areas they belong to                                     | IndexedDB database `malla-map`, separate so it can be cleared on its own |
+| Server  | Encrypted envelopes per group, with retention limit                                  | SQLite through `node:sqlite`                                             |
+| Server  | Base map                                                                             | One PMTiles file, served as a static file with range requests            |
 
 ## 7. Maps
 
@@ -156,7 +156,7 @@ The base map is OpenStreetMap data rendered as vector tiles from a single PMTile
 apps/web/            PWA: UI, map, storage, transport wiring
 apps/server/         Relay and storage server; command-post mode
 packages/protocol/   Wire format, crypto, invitations (pure TS)
-packages/core/       Reducer, outbox, scheduler, bridge (pure TS)
+packages/core/       Reducer, scheduler, bridge rules (pure TS)
 packages/meshcore/   MeshCore radio adapter
 docs/                Briefing, protocol spec, decisions
 deploy/              Deployment to the VPS

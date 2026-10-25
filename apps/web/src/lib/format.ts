@@ -16,3 +16,11 @@ export function formatBytes(bytes: number, locale: string): string {
 export function formatDateTime(time: number, locale: string): string {
   return new Date(time).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' });
 }
+
+/** Time of day for today's moments, date and time for older ones. */
+export function formatTime(time: number, locale: string, now: number = Date.now()): string {
+  const date = new Date(time);
+  return date.toDateString() === new Date(now).toDateString()
+    ? date.toLocaleTimeString(locale, { timeStyle: 'short' })
+    : formatDateTime(time, locale);
+}

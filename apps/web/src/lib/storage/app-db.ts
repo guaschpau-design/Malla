@@ -1,29 +1,71 @@
-// The app's own IndexedDB database: identity, groups and settings. Map tiles live in a separate
-// database (map/tile-store.ts) so they can be cleared without touching anything else.
+// The app's own IndexedDB database: identity, groups, settings and each group's event log.
+// Map tiles live in a separate database (map/tile-store.ts) so they can be cleared without
+// touching anything else.
 
+import type { NodeId } from '@malla/protocol';
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 
 import type { StoredGroup } from '../groups/group.ts';
 import type { LocalIdentity } from '../identity/identity.ts';
+
+/** An event of a group as received or created: its encoded bytes, keyed by group and ref. */
+export interface StoredEvent extends OutboxEntry {
+  readonly bytes: Uint8Array;
+}
+
+/** An own event the group's server has not confirmed storing yet (protocol §8). */
+export interface OutboxEntry {
+  readonly groupId: string;
+  readonly origin: NodeId;
+  readonly seq: number;
+}
+
+/** How far this device has read a group's envelopes on its server. */
+export interface SyncCursor {
+  readonly server: string;
+  readonly cursor: number;
+}
+
+export type EventKey = [groupId: string, origin: NodeId, seq: number];
 
 export interface AppSchema extends DBSchema {
   /** A single record under the key `self`. */
   identity: { key: 'self'; value: LocalIdentity };
   groups: { key: string; value: StoredGroup };
   settings: { key: 'activeGroupId'; value: string };
+  /** The next sequence number this device will use (ARCHITECTURE.md §3.3). */
+  sequence: { key: 'next'; value: number };
+  events: { key: EventKey; value: StoredEvent; indexes: { byGroup: string } };
+  outbox: { key: EventKey; value: OutboxEntry; indexes: { byGroup: string } };
+  cursors: { key: string; value: SyncCursor };
 }
 
 export type AppDb = IDBPDatabase<AppSchema>;
 
 const DB_NAME = 'malla';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export function openAppDb(name: string = DB_NAME): Promise<AppDb> {
   return openDB<AppSchema>(name, DB_VERSION, {
-    upgrade(database) {
-      database.createObjectStore('identity');
-      database.createObjectStore('groups', { keyPath: 'id' });
-      database.createObjectStore('settings');
+    upgrade(database, oldVersion) {
+      // Each step upgrades from the previous version; a new install runs all of them.
+      if (oldVersion < 1) {
+        database.createObjectStore('identity');
+        database.createObjectStore('groups', { keyPath: 'id' });
+        database.createObjectStore('settings');
+      }
+      if (oldVersion < 2) {
+        database.createObjectStore('sequence');
+        const events = database.createObjectStore('events', {
+          keyPath: ['groupId', 'origin', 'seq'],
+        });
+        events.createIndex('byGroup', 'groupId');
+        const outbox = database.createObjectStore('outbox', {
+          keyPath: ['groupId', 'origin', 'seq'],
+        });
+        outbox.createIndex('byGroup', 'groupId');
+        database.createObjectStore('cursors');
+      }
     },
   });
 }

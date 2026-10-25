@@ -1,7 +1,8 @@
-// Joining and creating groups: the steps that touch more than one record.
+// Joining, creating and leaving groups: the steps that touch more than one record.
 
 import type { Invitation } from '@malla/protocol';
 
+import { deleteGroupEvents } from '../events/event-log.ts';
 import type { AppDb } from '../storage/app-db.ts';
 import {
   applyInvitation,
@@ -10,7 +11,7 @@ import {
   type JoinOutcome,
   type StoredGroup,
 } from './group.ts';
-import { getGroup, saveGroup, setActiveGroupId } from './group-store.ts';
+import { deleteGroup, getGroup, saveGroup, setActiveGroupId } from './group-store.ts';
 
 /** Joins (or re-joins) the group of an invitation and makes it the active group. */
 export async function joinGroup(
@@ -26,9 +27,20 @@ export async function joinGroup(
 }
 
 /** Creates a group coordinated by this device and makes it the active group. */
-export async function startGroup(db: AppDb, name: string, now: number): Promise<StoredGroup> {
-  const group = createGroup(name, now);
+export async function startGroup(
+  db: AppDb,
+  name: string,
+  server: string | null,
+  now: number,
+): Promise<StoredGroup> {
+  const group = createGroup(name, server, now);
   await saveGroup(db, group);
   await setActiveGroupId(db, group.id);
   return group;
+}
+
+/** Forgets a group and everything it left on this device, including its secret. */
+export async function leaveGroup(db: AppDb, id: string): Promise<void> {
+  await deleteGroupEvents(db, id);
+  await deleteGroup(db, id);
 }

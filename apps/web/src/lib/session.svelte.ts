@@ -4,13 +4,8 @@
 import type { Invitation } from '@malla/protocol';
 
 import type { JoinOutcome, StoredGroup } from './groups/group.ts';
-import {
-  deleteGroup,
-  getActiveGroupId,
-  listGroups,
-  setActiveGroupId,
-} from './groups/group-store.ts';
-import { joinGroup, startGroup } from './groups/membership.ts';
+import { getActiveGroupId, listGroups, setActiveGroupId } from './groups/group-store.ts';
+import { joinGroup, leaveGroup, startGroup } from './groups/membership.ts';
 import {
   createLocalIdentity,
   loadIdentity,
@@ -48,8 +43,8 @@ export class Session {
     this.identity = identity;
   }
 
-  async createGroup(name: string): Promise<StoredGroup> {
-    const group = await startGroup(this.#db, name, Date.now());
+  async createGroup(name: string, server: string | null): Promise<StoredGroup> {
+    const group = await startGroup(this.#db, name, server, Date.now());
     await this.#refreshGroups();
     return group;
   }
@@ -66,7 +61,7 @@ export class Session {
   }
 
   async leave(id: string): Promise<void> {
-    await deleteGroup(this.#db, id);
+    await leaveGroup(this.#db, id);
     await this.#refreshGroups();
   }
 

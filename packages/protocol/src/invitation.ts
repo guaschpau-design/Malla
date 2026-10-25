@@ -119,7 +119,7 @@ const LOOPBACK_HOSTS: ReadonlySet<string> = new Set(['localhost', '127.0.0.1', '
  * §6 `https:`, or `http:` on a loopback host for development: the same origins browsers treat as
  * a secure context.
  */
-function isSecureUrl(text: string): boolean {
+export function isSecureUrl(text: string): boolean {
   let url: URL;
   try {
     url = new URL(text);

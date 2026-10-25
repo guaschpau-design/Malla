@@ -1,6 +1,6 @@
 # @malla/web
 
-The Malla progressive web app: map, offline areas, identity and groups; events and transports from day 3 onwards.
+The Malla progressive web app: map and offline areas, identity and groups, the event log and its sync with the group's server, live positions and chat.
 
 | Path                        | Content                                                                                                                                      |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -10,6 +10,10 @@ The Malla progressive web app: map, offline areas, identity and groups; events a
 | `src/lib/identity/`         | This device's key pair and alias; first-launch dialog                                                                                        |
 | `src/lib/groups/`           | Groups, roles, invitations (QR, link, camera scan) and joining ([ADR-0012](../../docs/decisions/0012-invitation-links-under-a-base-path.md)) |
 | `src/lib/storage/`          | The app's IndexedDB database (identity, groups, settings)                                                                                    |
+| `src/lib/events/`           | Each group's event log, own sequence numbers and the outbox                                                                                  |
+| `src/lib/sync/`             | Relay client (protocol §8) and the live feed of the active group                                                                             |
+| `src/lib/position/`         | Sharing this device's position, and when to report it                                                                                        |
+| `src/lib/chat/`             | Group chat panel                                                                                                                             |
 | `src/lib/session.svelte.ts` | Reactive state of identity and groups that components read                                                                                   |
 | `src/lib/ui/`               | Shared building blocks: panel, dialog, toast, QR code                                                                                        |
 | `src/lib/pwa/`              | Service worker registration and update prompt                                                                                                |
@@ -20,6 +24,7 @@ The Malla progressive web app: map, offline areas, identity and groups; events a
 | Variable           | Meaning                                                                        |
 | ------------------ | ------------------------------------------------------------------------------ |
 | `VITE_BASEMAP_URL` | PMTiles base map. Defaults to the Protomaps demo archive, for development only |
+| `VITE_SERVER_URL`  | Server proposed for new groups; empty for none                                 |
 | `MALLA_BASE`       | Base path when served from a sub-folder, e.g. `/Malla/` on GitHub Pages        |
 
 ```sh

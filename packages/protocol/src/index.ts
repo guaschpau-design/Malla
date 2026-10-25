@@ -4,6 +4,12 @@ export { decodeEvent, encodeEvent, peekHeader, type RawHeader } from './codec.ts
 export * from './constants.ts';
 export * from './crypto.ts';
 export type * from './events.ts';
+export {
+  ALERT_TEXT_MAX_BYTES,
+  CHAT_MAX_BYTES,
+  MARKER_LABEL_MAX_BYTES,
+  SOS_TEXT_MAX_BYTES,
+} from './fields.ts';
 export * from './invitation.ts';
 export * from './node-id.ts';
 export type { ProtocolError, ProtocolErrorCode, Result } from './result.ts';

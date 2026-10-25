@@ -12,3 +12,10 @@ export const BASEMAP_URL: string =
 export function mapAssetsUrl(): string {
   return new URL(`${import.meta.env.BASE_URL}map-assets/`, window.location.href).href;
 }
+
+/**
+ * Server proposed for new groups (protocol §8), or null if this build has none. Coordinators can
+ * change it when they create a group.
+ */
+export const DEFAULT_SERVER_URL: string | null =
+  (import.meta.env['VITE_SERVER_URL'] as string | undefined) || null;
