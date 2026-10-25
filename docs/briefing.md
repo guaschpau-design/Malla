@@ -89,11 +89,11 @@ Para toda la sociedad civil, sin excluir a nadie:
 
 La app es la misma en los tres modos; cambia lo que hay disponible alrededor.
 
-| Modo                | Situación                     | Cómo funciona                                                                                                                                                                                       |
-| ------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Conectado**       | Hay internet                  | Los móviles sincronizan con el servidor (VPS). LoRa, si está emparejada, actúa de respaldo.                                                                                                         |
-| **Malla**           | Solo LoRa                     | Cada móvil, emparejado con su radio MeshCore, habla con los demás de radio en radio. Sin servidor.                                                                                                  |
-| **Puesto de mando** | Solo LoRa + un servidor local | Un portátil o una Raspberry Pi con radio y wifi propio guarda el estado del incidente, da servicio por wifi a quien no tiene radio (también iPhone) y sincroniza con el VPS cuando vuelve internet. |
+| Modo                | Situación                     | Cómo funciona                                                                                                                                                                                                                                                                    |
+| ------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Conectado**       | Hay internet                  | Los móviles sincronizan con el servidor (VPS). LoRa, si está emparejada, actúa de respaldo.                                                                                                                                                                                      |
+| **Malla**           | Solo LoRa                     | Cada móvil, emparejado con su radio MeshCore, habla con los demás de radio en radio. Sin servidor.                                                                                                                                                                               |
+| **Puesto de mando** | Solo LoRa + un servidor local | Un portátil o una Raspberry Pi con wifi propio (y una radio conectada en su navegador) guarda el estado del incidente, da servicio por wifi a quien no tiene radio (también iPhone) y sincroniza con el VPS cuando vuelve internet ([ADR-0018](decisions/0018-command-post.md)). |
 
 Una regla los une: **cualquier dispositivo que tenga a la vez radio e internet actúa de puente**, reenviando lo que llega por LoRa al servidor y al revés. No hace falta configurarlo.
 
@@ -149,12 +149,18 @@ El día 5 es el de más riesgo: la integración con la radio solo se valida con 
 
 ## 11. Lo que necesito de Pau
 
-- [x] Repositorio en GitHub conectado a la sesión con permiso de escritura (`guaschpau-design/Malla`), con publicación automática en GitHub Pages.
+- [x] Repositorio en GitHub conectado a la sesión con permiso de escritura (`guaschpau-design/Malla`), con publicación automática en `https://teselia.eu`.
 - [x] VPS europeo (IONOS, plan M, Debian 13, centro de datos en España) y dominio `teselia.eu`; servidor en marcha en `https://teselia.eu`.
 - [ ] Modelos de las radios MeshCore y Meshtastic disponibles; radios MeshCore con firmware Companion BLE v1.18 o superior.
 - [ ] Unos 30 minutos diarios de pruebas con un Android con Chrome, un PC y, si es posible, un iPhone.
-- [ ] Opcional: Raspberry Pi 4 o 5 para el día 6.
-- [ ] Día 7: dos o tres personas con radio para la prueba de campo.
+- [ ] Mapa propio en el VPS: volver a ejecutar una vez el comando de instalación (prepara el mapa de España, Portugal y las islas; tarda hasta media hora):
+
+  ```sh
+  ssh -t root@31.70.148.92 "curl -fsSL https://raw.githubusercontent.com/guaschpau-design/Malla/main/deploy/vps/install.sh | bash -s -- --domain teselia.eu"
+  ```
+
+- [ ] Opcional, para el puesto de mando: un portátil con Linux o una Raspberry Pi 4 o 5, una clave de la API de DNS de IONOS y seguir [`deploy/command-post/README.md`](../deploy/command-post/README.md).
+- [ ] Día 7: dos o tres personas con radio para la [prueba de campo](prueba-de-campo.md).
 
 ## 12. Cuestiones abiertas
 
@@ -162,4 +168,3 @@ El día 5 es el de más riesgo: la integración con la radio solo se valida con 
 | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
 | Registro de un identificador de aplicación (`data_type`) en MeshCore; mientras tanto usamos el rango de desarrollo | Al tener la v0.1 funcionando (MeshCore exige demostrar el proyecto antes de asignarlo) |
 | Fuente de mapas satélite para toda Europa con licencia libre                                                       | Al abordar mapas satélite                                                              |
-| Procedimiento de certificado HTTPS del puesto de mando                                                             | Día 6                                                                                  |
