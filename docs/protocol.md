@@ -330,4 +330,4 @@ Cursors belong to one relay: a client keeps one cursor per group and relay URL. 
 
 ## 9. Versioning
 
-This document describes protocol version 1. Adding event types, symbol codes or style codes does not change the version. Changing any existing layout, derivation or transport rule requires version 2, a new ADR and a migration plan.
+This document describes protocol version 1. Adding event types, symbol codes or style codes does not change the version. Version 1 is frozen with the first release, v0.1.0; until then it still changed in place (the `env` message gained `key`, and §8.1–8.3 were added, for command posts). Changing any existing layout, derivation or transport rule requires version 2, a new ADR and a migration plan.
