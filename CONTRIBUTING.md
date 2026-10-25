@@ -67,7 +67,8 @@ Before every release:
 ```sh
 pnpm install        # install dependencies
 pnpm dev            # run the web app and the server locally
-pnpm test           # run all tests
+pnpm test           # run unit tests
+pnpm test:e2e       # run end-to-end tests in a real browser (needs Playwright's Chromium)
 pnpm lint           # lint
 pnpm typecheck      # type-check every package
 pnpm format         # format everything

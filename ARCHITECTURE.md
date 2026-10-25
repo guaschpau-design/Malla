@@ -33,7 +33,7 @@ A group shares a map. Every change to that map — a position, a chat line, a ma
 | `packages/protocol` | Binary event format, key derivation, envelope encryption, invitation links                         | Anything else in the repo; the DOM; Node APIs        |
 | `packages/core`     | Event log interface, state reducer, outbox, LoRa airtime scheduler, bridge rules                   | The DOM, Svelte, BLE, network APIs                   |
 | `packages/meshcore` | Talking to a MeshCore companion radio: connect, configure channel, send and receive datagrams      | `packages/core`, the UI                              |
-| `apps/web`          | UI, map, persistence (IndexedDB/OPFS), wiring transports to `core`                                 | Server code                                          |
+| `apps/web`          | UI, map, persistence (IndexedDB), wiring transports to `core`                                      | Server code                                          |
 | `apps/server`       | Storing and relaying encrypted envelopes; serving map tiles and, in command-post mode, the web app | Plaintext event contents (it can never decrypt them) |
 
 The dependency direction is strictly downwards in the diagram. `protocol` and `core` are pure TypeScript with no I/O, so they run unchanged in the browser, in Node and in tests. This is what keeps the hard parts testable.
@@ -125,16 +125,16 @@ Command-post mode needs HTTPS on a local network, because browsers require a sec
 
 ## 6. Persistence
 
-| Where   | What                                                | Technology                                               |
-| ------- | --------------------------------------------------- | -------------------------------------------------------- |
-| Browser | Event log, outbox, settings, identity keys          | IndexedDB                                                |
-| Browser | Offline map extracts                                | Origin Private File System (OPFS)                        |
-| Server  | Encrypted envelopes per group, with retention limit | SQLite through `node:sqlite`                             |
-| Server  | Base map                                            | One PMTiles file; per-area extracts generated on request |
+| Where   | What                                                | Technology                                                    |
+| ------- | --------------------------------------------------- | ------------------------------------------------------------- |
+| Browser | Event log, outbox, settings, identity keys          | IndexedDB                                                     |
+| Browser | Offline map tiles, with the areas they belong to    | IndexedDB                                                     |
+| Server  | Encrypted envelopes per group, with retention limit | SQLite through `node:sqlite`                                  |
+| Server  | Base map                                            | One PMTiles file, served as a static file with range requests |
 
 ## 7. Maps
 
-The base map is OpenStreetMap data rendered as vector tiles from a single PMTiles file that **we host**. The public OpenStreetMap tile servers forbid bulk downloading, so they cannot be used for offline maps. To prepare for an incident, the web app asks the server for an extract of an area and stores it in OPFS; MapLibre then reads it with no network. See [ADR-0007](docs/decisions/0007-self-hosted-vector-maps.md).
+The base map is OpenStreetMap data rendered as vector tiles from a single PMTiles file that **we host**. The public OpenStreetMap tile servers forbid bulk downloading, so they cannot be used for offline maps. To prepare for an incident, the web app downloads every tile of an area, up to zoom 14, straight from that file and stores it in IndexedDB. MapLibre reads tiles through a `malla-tiles://` protocol that answers from IndexedDB first and the network second. Glyphs and sprites ship inside the app. See [ADR-0007](docs/decisions/0007-self-hosted-vector-maps.md) and [ADR-0011](docs/decisions/0011-client-side-area-download.md).
 
 ## 8. Security model
 

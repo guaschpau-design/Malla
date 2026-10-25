@@ -1,9 +1,10 @@
-// Minimal translation layer: a reactive current locale and a typed lookup.
+// Minimal translation layer: dictionaries, locale detection and placeholder formatting.
 
-import { en, type Messages } from './en.ts';
+import { en, type MessageKey, type Messages } from './en.ts';
 import { es } from './es.ts';
 
 export type Locale = 'es' | 'en';
+export type { MessageKey, Messages };
 
 export const locales: Readonly<Record<Locale, Messages>> = { es, en };
 
@@ -14,4 +15,16 @@ export function detectLocale(languages: readonly string[]): Locale {
     if (base === 'es' || base === 'en') return base;
   }
   return 'es';
+}
+
+export type Translate = (
+  key: MessageKey,
+  values?: Readonly<Record<string, string | number>>,
+) => string;
+
+/** Returns a function that looks up a key and fills `{placeholders}`. */
+export function translator(locale: Locale): Translate {
+  const messages = locales[locale];
+  return (key, values = {}) =>
+    messages[key].replace(/\{(\w+)\}/g, (match, name: string) => String(values[name] ?? match));
 }

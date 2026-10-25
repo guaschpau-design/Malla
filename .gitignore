@@ -8,4 +8,7 @@ coverage/
 data/
 *.sqlite
 *.pmtiles
+!apps/web/e2e/fixtures/*.pmtiles
 .DS_Store
+test-results/
+playwright-report/

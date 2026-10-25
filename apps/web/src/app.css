@@ -6,22 +6,72 @@
     'Segoe UI',
     Roboto,
     sans-serif;
-  line-height: 1.5;
+  line-height: 1.45;
   --bg: #f8fafc;
+  --surface: #ffffff;
   --fg: #0f172a;
   --muted: #475569;
+  --border: #cbd5e1;
+  --accent: #ea580c;
+  --ok: #16a34a;
+  --danger: #dc2626;
+  --bar-bg: #0f172a;
+  --bar-fg: #f8fafc;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f172a;
-    --fg: #f1f5f9;
+    --bg: #0b1220;
+    --surface: #111a2e;
+    --fg: #e2e8f0;
     --muted: #94a3b8;
+    --border: #334155;
+    --ok: #22c55e;
+    --danger: #f87171;
+    --bar-bg: #020617;
   }
 }
 
+html,
 body {
+  height: 100%;
   margin: 0;
+}
+
+body {
   background: var(--bg);
   color: var(--fg);
+}
+
+button {
+  padding: 0.5rem 0.8rem;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+button.primary {
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+button.ghost {
+  border-color: transparent;
+}
+
+button.icon {
+  padding: 0.3rem 0.55rem;
+  border-color: transparent;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }

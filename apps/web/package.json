@@ -9,15 +9,24 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings"
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings && tsc -p e2e",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@malla/protocol": "workspace:*"
+    "@malla/protocol": "workspace:*",
+    "@protomaps/basemaps": "^5.7.2",
+    "idb": "^8.0.4",
+    "maplibre-gl": "^6.15.0",
+    "pmtiles": "^4.5.0"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "fake-indexeddb": "^6.2.6",
     "svelte": "^5.57.2",
     "svelte-check": "^4.7.7",
-    "vite": "^8.3.5"
+    "vite": "^8.3.5",
+    "vite-plugin-pwa": "^2.0.0",
+    "workbox-window": "^7.4.1"
   }
 }
