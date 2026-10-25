@@ -130,14 +130,17 @@ for file in compose.yaml Caddyfile maps.sh; do
   curl -fsSL "$REPO_RAW/$REF/deploy/vps/$file" -o "$INSTALL_DIR/$file"
 done
 chmod 0755 "$INSTALL_DIR/maps.sh"
-# A command post set by an earlier run is kept unless a new one is given.
-if [[ -z "$COMMAND_POST" && -f "$INSTALL_DIR/.env" ]]; then
-  COMMAND_POST="$(sed -n 's/^TESELIA_COMMAND_POST=//p' "$INSTALL_DIR/.env")"
+# Settings live in .env; each run updates its own and keeps any other an operator added there
+# (TESELIA_RETENTION_DAYS, TESELIA_MAP_BBOX...). A command post set before stays unless replaced.
+set_setting() {
+  touch "$INSTALL_DIR/.env"
+  sed -i "/^$1=/d" "$INSTALL_DIR/.env"
+  echo "$1=$2" >> "$INSTALL_DIR/.env"
+}
+set_setting TESELIA_DOMAIN "$DOMAIN"
+if [[ -n "$COMMAND_POST" ]] || ! grep -q '^TESELIA_COMMAND_POST=' "$INSTALL_DIR/.env" 2>/dev/null; then
+  set_setting TESELIA_COMMAND_POST "$COMMAND_POST"
 fi
-cat > "$INSTALL_DIR/.env" <<CONF
-TESELIA_DOMAIN=$DOMAIN
-TESELIA_COMMAND_POST=$COMMAND_POST
-CONF
 
 cat > /etc/systemd/system/teselia-update.service <<'CONF'
 [Unit]
@@ -172,6 +175,7 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
+EnvironmentFile=-/opt/teselia/.env
 ExecStart=/opt/teselia/maps.sh /opt/teselia/maps
 CONF
 cat > /etc/systemd/system/teselia-maps.timer <<'CONF'
@@ -191,7 +195,8 @@ systemctl enable --now teselia-update.timer >/dev/null
 
 if [[ ! -f "$INSTALL_DIR/maps/basemap.pmtiles" ]]; then
   step "Building the base map (only the first time; it can take half an hour)"
-  "$INSTALL_DIR/maps.sh" "$INSTALL_DIR/maps" ||
+  # shellcheck source=/dev/null
+  (set -a && . "$INSTALL_DIR/.env" && "$INSTALL_DIR/maps.sh" "$INSTALL_DIR/maps") ||
     echo "The base map could not be built now; teselia-maps.timer will try again."
 fi
 # Enabled only now, so its first run cannot overlap the build above.

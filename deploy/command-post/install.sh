@@ -72,7 +72,12 @@ for variable in "${DNS_VARS[@]}"; do
   [[ -n "${!variable:-}" ]] || fail "the environment variable $variable is empty. Pass it with sudo env $variable=..."
 done
 if [[ -z "$WIFI_PASSWORD" ]]; then
-  WIFI_PASSWORD="$(tr -dc 'a-z0-9' </dev/urandom | head -c 10)"
+  # Keep the password of an earlier run, so phones that already joined stay joined.
+  WIFI_PASSWORD="$(nmcli -s -g 802-11-wireless-security.psk connection show teselia-post 2>/dev/null || true)"
+fi
+if [[ -z "$WIFI_PASSWORD" ]]; then
+  random="$(head -c 256 /dev/urandom | LC_ALL=C tr -dc 'a-z0-9')"
+  WIFI_PASSWORD="${random:0:10}"
 fi
 [[ ${#WIFI_PASSWORD} -ge 8 ]] || fail "the Wi-Fi password needs at least 8 characters."
 
@@ -130,8 +135,12 @@ lego() {
   docker run --rm --env-file dns.env -v "$INSTALL_DIR/certs:/certs" $LEGO_IMAGE \\
     --path /certs --email "\$LEGO_EMAIL" --accept-tos --dns "\$LEGO_DNS" --domains "\$TESELIA_DOMAIN" "\$@"
 }
-if [[ -f "certs/certificates/\$TESELIA_DOMAIN.crt" ]]; then
-  lego renew --days 30 && docker compose restart caddy >/dev/null 2>&1
+certificate="certs/certificates/\$TESELIA_DOMAIN.crt"
+if [[ -f "\$certificate" ]]; then
+  # Caddy only reloads the certificate on a restart; restart it only when lego renewed it.
+  before="\$(stat -c %Y "\$certificate")"
+  lego renew --days 30
+  [[ "\$(stat -c %Y "\$certificate")" != "\$before" ]] && docker compose restart caddy >/dev/null 2>&1
 else
   lego run
 fi
@@ -180,6 +189,8 @@ step "Configuring the firewall: phones on the post's Wi-Fi reach the post and no
 ufw default deny incoming >/dev/null
 ufw default allow outgoing >/dev/null
 ufw default deny routed >/dev/null
+# SSH only from the network the post is plugged into, never from its own Wi-Fi.
+ufw deny in on "$WIFI_INTERFACE" to any port 22 proto tcp >/dev/null
 ufw allow 22/tcp >/dev/null
 ufw allow 80/tcp >/dev/null
 ufw allow 443/tcp >/dev/null
