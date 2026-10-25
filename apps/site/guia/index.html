@@ -3,14 +3,15 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Guía de Teselia · Prepárate y úsala sin complicaciones</title>
+    <title>Guía de Teselia · Preparación, operación y despliegue</title>
     <meta
       name="description"
-      content="Cómo preparar a tu grupo con Teselia, qué hacer en una emergencia, cómo usar las radios y qué es un puesto de mando, explicado paso a paso."
+      content="Cómo preparar al equipo con Teselia, qué hacer durante un operativo, cómo seguir coordinados sin cobertura con radios LoRa o un puesto de mando, y cómo se protege la información."
     />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#10202c" />
     <link rel="icon" href="../app/icons/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="../app/icons/favicon-64.png" type="image/png" sizes="64x64" />
+    <link rel="apple-touch-icon" href="../app/icons/apple-touch-icon.png" />
     <link rel="alternate" hreflang="en" href="../en/guide/" />
     <link rel="stylesheet" href="../styles.css" />
   </head>
@@ -18,72 +19,50 @@
     <header class="top">
       <div class="wrap">
         <a class="brand" href="../"
-          ><svg class="lockup" role="img" aria-label="Teselia" viewBox="0 0 610.1 139.3">
-            <g transform="translate(0 12.14) scale(1.1500)">
-              <path
-                d="M8.0 9.6 L28.4 8.0 L31.6 28.4 L8.0 31.6 Z"
-                fill="currentColor"
-                stroke="currentColor"
-                stroke-width="4"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M40.6 8.0 L61.0 9.6 L59.4 30.0 L40.6 28.4 Z"
-                fill="#f26a2e"
-                stroke="#f26a2e"
-                stroke-width="4"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M68.4 6.4 L93.6 8.0 L92.0 31.6 L68.4 30.0 Z"
-                fill="currentColor"
-                stroke="currentColor"
-                stroke-width="4"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M39.0 37.4 L62.6 40.6 L59.4 61.0 L40.6 61.0 Z"
-                fill="currentColor"
-                stroke="currentColor"
-                stroke-width="4"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M40.6 70.0 L59.4 68.4 L61.0 93.6 L37.4 93.6 Z"
-                fill="currentColor"
-                stroke="currentColor"
-                stroke-width="4"
-                stroke-linejoin="round"
-              />
-            </g>
-            <g transform="translate(151.0 0.00)" fill="currentColor">
-              <g transform="translate(0 100.00) scale(0.071429)">
-                <path
-                  d="M420.9476318359375 0.0V-1122.99365234375H42.0489501953125V-1400.0H1104.3533935546875V-1122.99365234375H725.4547119140625V0.0Z M1604.3509521484375 30.0Q1438.100341796875 30.0 1312.699951171875 -37.07513427734375Q1187.299560546875 -104.1502685546875 1117.4243774414062 -224.6505126953125Q1047.5491943359375 -345.1507568359375 1047.5491943359375 -505.901123046875Q1047.5491943359375 -623.0513916015625 1088.1243286132812 -721.2765502929688Q1128.699462890625 -819.501708984375 1202.5247192382812 -891.2767944335938Q1276.3499755859375 -963.0518798828125 1376.2503662109375 -1002.5269165039062Q1476.1507568359375 -1042.001953125 1595.4512939453125 -1042.001953125Q1726.60205078125 -1042.001953125 1829.0526123046875 -995.6766967773438Q1931.503173828125 -949.3514404296875 1998.7785034179688 -866.3259887695312Q2066.0538330078125 -783.300537109375 2092.40380859375 -671.7249145507812Q2118.7537841796875 -560.1492919921875 2096.0533447265625 -428.99853515625H1323.6549072265625Q1324.1551513671875 -361.400390625 1360.4297485351562 -310.62677001953125Q1396.704345703125 -259.8531494140625 1462.0533447265625 -231.32891845703125Q1527.40234375 -202.8046875 1614.4508056640625 -202.8046875Q1703.1512451171875 -202.8046875 1783.2263793945312 -226.72955322265625Q1863.301513671875 -250.6544189453125 1934.8521728515625 -299.704345703125L2033.00341796875 -95.2001953125Q1985.9534912109375 -58.100341796875 1913.2530517578125 -29.80029296875Q1840.5526123046875 -1.500244140625 1759.4769897460938 14.2498779296875Q1678.4013671875 30.0 1604.3509521484375 30.0ZM1341.9554443359375 -634.40234375H1809.6470947265625Q1807.5472412109375 -720.9500732421875 1748.9481201171875 -771.5739135742188Q1690.3489990234375 -822.19775390625 1587.6510009765625 -822.19775390625Q1485.40283203125 -822.19775390625 1418.2789916992188 -771.5739135742188Q1351.1551513671875 -720.9500732421875 1341.9554443359375 -634.40234375Z M2625.5521240234375 28.699951171875Q2488.7508544921875 28.699951171875 2374.0501708984375 -6.4500732421875Q2259.3494873046875 -41.60009765625 2177.2486572265625 -104.400390625L2274.3499755859375 -312.20458984375Q2353.7508544921875 -259.1546630859375 2446.3764038085938 -228.32965087890625Q2539.001953125 -197.504638671875 2623.6519775390625 -197.504638671875Q2706.500732421875 -197.504638671875 2751.0748901367188 -222.37884521484375Q2795.6490478515625 -247.2530517578125 2795.6490478515625 -293.501708984375Q2795.6490478515625 -335.7503662109375 2755.7246704101562 -355.399658203125Q2715.80029296875 -375.0489501953125 2601.2515869140625 -397.79833984375Q2400.100341796875 -433.998046875 2307.5746459960938 -511.9486083984375Q2215.0489501953125 -589.899169921875 2215.0489501953125 -726.60009765625Q2215.0489501953125 -823.80078125 2268.79931640625 -897.0261840820312Q2322.5496826171875 -970.2515869140625 2417.100341796875 -1011.1267700195312Q2511.6510009765625 -1052.001953125 2635.0518798828125 -1052.001953125Q2755.502685546875 -1052.001953125 2862.7785034179688 -1019.2518310546875Q2970.0543212890625 -986.501708984375 3047.0548095703125 -928.20166015625L2953.9534912109375 -719.697509765625Q2913.503173828125 -751.7474365234375 2861.5278930664062 -775.597412109375Q2809.5526123046875 -799.4473876953125 2753.00244140625 -812.6223754882812Q2696.4522705078125 -825.79736328125 2642.7523193359375 -825.79736328125Q2570.703369140625 -825.79736328125 2526.5291137695312 -802.2731323242188Q2482.3548583984375 -778.7489013671875 2482.3548583984375 -736.500244140625Q2482.3548583984375 -693.8516845703125 2521.9789428710938 -673.40234375Q2561.60302734375 -652.9530029296875 2673.5521240234375 -628.4033203125Q2884.103759765625 -584.503173828125 2973.2293090820312 -511.37786865234375Q3062.3548583984375 -438.2525634765625 3062.3548583984375 -306.701904296875Q3062.3548583984375 -205.4013671875 3007.2794799804688 -130.02593994140625Q2952.2041015625 -54.6505126953125 2853.9534912109375 -12.97528076171875Q2755.702880859375 28.699951171875 2625.5521240234375 28.699951171875Z M3710.3509521484375 30.0Q3544.100341796875 30.0 3418.699951171875 -37.07513427734375Q3293.299560546875 -104.1502685546875 3223.4243774414062 -224.6505126953125Q3153.5491943359375 -345.1507568359375 3153.5491943359375 -505.901123046875Q3153.5491943359375 -623.0513916015625 3194.1243286132812 -721.2765502929688Q3234.699462890625 -819.501708984375 3308.5247192382812 -891.2767944335938Q3382.3499755859375 -963.0518798828125 3482.2503662109375 -1002.5269165039062Q3582.1507568359375 -1042.001953125 3701.4512939453125 -1042.001953125Q3832.60205078125 -1042.001953125 3935.0526123046875 -995.6766967773438Q4037.503173828125 -949.3514404296875 4104.778503417969 -866.3259887695312Q4172.0538330078125 -783.300537109375 4198.40380859375 -671.7249145507812Q4224.7537841796875 -560.1492919921875 4202.0533447265625 -428.99853515625H3429.6549072265625Q3430.1551513671875 -361.400390625 3466.4297485351562 -310.62677001953125Q3502.704345703125 -259.8531494140625 3568.0533447265625 -231.32891845703125Q3633.40234375 -202.8046875 3720.4508056640625 -202.8046875Q3809.1512451171875 -202.8046875 3889.2263793945312 -226.72955322265625Q3969.301513671875 -250.6544189453125 4040.8521728515625 -299.704345703125L4139.00341796875 -95.2001953125Q4091.9534912109375 -58.100341796875 4019.2530517578125 -29.80029296875Q3946.5526123046875 -1.500244140625 3865.4769897460938 14.2498779296875Q3784.4013671875 30.0 3710.3509521484375 30.0ZM3447.9554443359375 -634.40234375H3915.6470947265625Q3913.5472412109375 -720.9500732421875 3854.9481201171875 -771.5739135742188Q3796.3489990234375 -822.19775390625 3693.6510009765625 -822.19775390625Q3591.40283203125 -822.19775390625 3524.2789916992188 -771.5739135742188Q3457.1551513671875 -720.9500732421875 3447.9554443359375 -634.40234375Z M4361.7489013671875 0.0V-1440.0H4660.9559326171875V0.0Z M4892.7489013671875 0.0V-1012.001953125H5191.9559326171875V0.0ZM5042.3524169921875 -1169.80029296875Q4968.2510986328125 -1169.80029296875 4914.10009765625 -1216.1510009765625Q4859.9490966796875 -1262.501708984375 4859.9490966796875 -1340.503173828125Q4859.9490966796875 -1418.504638671875 4914.10009765625 -1464.8553466796875Q4968.2510986328125 -1511.2060546875 5042.3524169921875 -1511.2060546875Q5116.4537353515625 -1511.2060546875 5170.604736328125 -1464.8553466796875Q5224.7557373046875 -1418.504638671875 5224.7557373046875 -1340.503173828125Q5224.7557373046875 -1262.501708984375 5170.604736328125 -1216.1510009765625Q5116.4537353515625 -1169.80029296875 5042.3524169921875 -1169.80029296875Z M5706.899658203125 30.0Q5605.1497802734375 30.0 5524.9495849609375 -9.12506103515625Q5444.7493896484375 -48.2501220703125 5398.424133300781 -120.9503173828125Q5352.098876953125 -193.6505126953125 5352.098876953125 -294.700927734375Q5352.098876953125 -381.0513916015625 5395.1490478515625 -448.42657470703125Q5438.19921875 -515.8017578125 5525.79931640625 -559.4268188476562Q5613.3994140625 -603.0518798828125 5747.524230957031 -618.3519287109375Q5881.6490478515625 -633.6519775390625 6063.79833984375 -616.502197265625L6067.1982421875 -426.798828125Q5961.0509033203125 -444.2486572265625 5878.927307128906 -443.89892578125Q5796.8037109375 -443.5491943359375 5740.7542724609375 -427.72467041015625Q5684.704833984375 -411.900146484375 5655.6549072265625 -382.0506591796875Q5626.60498046875 -352.201171875 5626.60498046875 -309.6514892578125Q5626.60498046875 -251.502685546875 5670.104248046875 -220.6534423828125Q5713.603515625 -189.80419921875 5787.2520751953125 -189.80419921875Q5851.3509521484375 -189.80419921875 5902.4500732421875 -212.62872314453125Q5953.5491943359375 -235.4532470703125 5983.723693847656 -278.7525634765625Q6013.898193359375 -322.0518798828125 6013.898193359375 -383.80126953125V-624.499267578125Q6013.898193359375 -682.6485595703125 5989.6485595703125 -726.4481201171875Q5965.39892578125 -770.2476806640625 5913.924377441406 -794.7224731445312Q5862.4498291015625 -819.197265625 5779.300048828125 -819.197265625Q5700.699951171875 -819.197265625 5623.424865722656 -795.5472412109375Q5546.1497802734375 -771.897216796875 5481.900146484375 -724.3974609375L5403.8487548828125 -932.301513671875Q5501.5491943359375 -994.9515380859375 5611.3499755859375 -1023.4767456054688Q5721.1507568359375 -1052.001953125 5825.501708984375 -1052.001953125Q5968.2021484375 -1052.001953125 6074.877868652344 -1006.7767944335938Q6181.5535888671875 -961.5516357421875 6240.829162597656 -867.7510986328125Q6300.104736328125 -773.9505615234375 6300.104736328125 -628.3994140625V0.0H6039.899169921875V-110.3994140625Q5990.499267578125 -42.8497314453125 5903.699462890625 -6.42486572265625Q5816.899658203125 30.0 5706.899658203125 30.0Z"
-                />
-              </g>
-            </g></svg
-        ></a>
-        <nav aria-label="Secciones">
-          <a href="../en/guide/" hreflang="en" lang="en">English</a>
+          ><img src="../img/lockup-pale.svg" width="761" height="150" alt="Teselia"
+        /></a>
+        <nav aria-label="Principal">
+          <a href="./" aria-current="page">Guía</a>
+          <a class="button small" href="../app/">Abrir<span class="optional">&nbsp;la app</span></a>
+          <span class="lang" role="group" aria-label="Idioma">
+            <span aria-current="true">ES</span>
+            <a href="../en/guide/" hreflang="en" lang="en" aria-label="English">EN</a>
+          </span>
         </nav>
-        <a class="button small" href="../app/">Abrir la app</a>
       </div>
     </header>
 
-    <main class="wrap prose">
-      <h1>Guía de Teselia</h1>
-      <p class="lead">
-        Todo lo que necesitas para usar Teselia con tu grupo: cómo prepararos, qué hacer cuando algo
-        pasa y cómo seguir comunicados sin cobertura. Sin tecnicismos.
-      </p>
+    <div class="guide-head ink">
+      <div class="wrap">
+        <div class="text">
+          <p class="eyebrow">Guía</p>
+          <h1>Preparación, operación y despliegue.</h1>
+          <p class="lead">
+            Cómo preparar al equipo, qué hacer durante un operativo y cómo mantener la coordinación
+            cuando no hay cobertura. Sin tecnicismos.
+          </p>
+        </div>
+        <figure class="phone">
+          <picture>
+            <source type="image/webp" srcset="../img/app-phone.webp" />
+            <img
+              src="../img/app-phone.jpg"
+              width="640"
+              height="1385"
+              alt="Teselia en un móvil: un SOS médico confirmado por un compañero, sobre el mapa del equipo."
+            />
+          </picture>
+        </figure>
+      </div>
+    </div>
 
+    <main class="wrap prose">
       <nav class="toc" aria-label="Contenido">
-        <strong>Contenido</strong>
+        <p class="label">Contenido</p>
         <ol>
           <li><a href="#que-es">Qué es Teselia</a></li>
-          <li><a href="#antes">Antes: prepara a tu grupo</a></li>
-          <li><a href="#durante">Durante: qué hacer</a></li>
+          <li><a href="#antes">Antes: prepara al equipo</a></li>
+          <li><a href="#durante">Durante el operativo</a></li>
           <li><a href="#sin-internet">Cuando no hay internet</a></li>
           <li><a href="#puesto">El puesto de mando</a></li>
           <li><a href="#radios">Las radios</a></li>
@@ -93,26 +72,28 @@
         </ol>
       </nav>
 
-      <h2 id="que-es">1. Qué es Teselia</h2>
+      <h2 id="que-es">Qué es Teselia</h2>
       <p>
-        Teselia es un mapa que comparte tu grupo. En él cada persona ve dónde están las demás, qué
-        se ha marcado (un punto de encuentro, un peligro, una zona) y los mensajes del grupo. Si
-        alguien necesita ayuda, pulsa SOS y todo el grupo lo sabe al momento, con su posición.
+        Teselia es una herramienta de consciencia situacional para equipos civiles. Reúne en un mapa
+        común la posición de cada miembro, lo que se ha marcado en el terreno (sectores, puntos de
+        encuentro, peligros), los mensajes del equipo y las alertas. Si alguien necesita ayuda,
+        pulsa SOS y todo el equipo lo sabe al momento, con su posición.
       </p>
       <p>
-        Con internet funciona como cualquier app de mensajería. Sin internet, puede seguir
-        funcionando de dos maneras: con <strong>radios de bolsillo</strong> que se pasan los
-        mensajes entre ellas, o a través de un <strong>puesto de mando</strong>, un ordenador con su
-        propia wifi en el lugar del incidente.
+        Con internet funciona como cualquier app de mensajería. Sin internet, sigue funcionando de
+        dos maneras: con <strong>radios de bolsillo</strong> que se pasan los mensajes entre ellas,
+        o a través de un <strong>puesto de mando</strong>, un ordenador con su propia wifi en la
+        zona de operaciones.
       </p>
       <div class="box">
         <p><strong>Teselia no sustituye al 112.</strong></p>
-        <p>Sirve para que tu grupo se coordine. Si puedes llamar a emergencias, llama siempre.</p>
+        <p>Sirve para que el equipo se coordine. Si puedes llamar a emergencias, llama siempre.</p>
       </div>
 
-      <h2 id="antes">2. Antes: prepara a tu grupo</h2>
+      <h2 id="antes">Antes: prepara al equipo</h2>
       <p>
-        Una emergencia no es el momento de aprender una app. Reservad media hora un día tranquilo.
+        Una emergencia no es el momento de aprender una herramienta. Reservad media hora un día
+        tranquilo.
       </p>
       <h3>Cada persona</h3>
       <ol>
@@ -134,42 +115,58 @@
       <ol>
         <li>
           Crea el grupo en «Grupos» → «Crear un grupo». Quien lo crea es su coordinador: puede
-          invitar a otras personas y enviar alertas.
+          invitar a otras personas y enviar avisos.
         </li>
         <li>
           Pulsa «Invitar» y comparte el enlace o deja que escaneen el código QR. Quien tiene la
           invitación entra en el grupo, así que compártela solo con quien debe estar.
         </li>
         <li>
-          Si podéis, conseguid algunas radios y preparadlas (ver <a href="#radios">Las radios</a>).
+          Si vais a usar radios, preparadlas con antelación (ver <a href="#radios">Las radios</a>).
         </li>
       </ol>
-      <h3>Todo el grupo</h3>
+      <h3>Todo el equipo</h3>
       <ul>
         <li>
           Acordad un plan sencillo: un punto de encuentro, quién coordina y qué hacer si no hay
           cobertura.
         </li>
         <li>
-          Haced una prueba juntos: mandad un mensaje, enviad un SOS de prueba y canceladlo, y si
-          tenéis radios, repetidlo con el móvil en modo avión y el Bluetooth encendido.
+          Haced un simulacro: mandad un mensaje, enviad un SOS de prueba y canceladlo, y si tenéis
+          radios, repetidlo con el móvil en modo avión y el Bluetooth encendido.
         </li>
-        <li>Repetid la prueba de vez en cuando, con las baterías cargadas.</li>
+        <li>Repetid el simulacro de vez en cuando, con las baterías cargadas.</li>
       </ul>
 
-      <h2 id="durante">3. Durante: qué hacer</h2>
+      <h2 id="durante">Durante el operativo</h2>
+      <figure class="figure">
+        <picture>
+          <source type="image/webp" srcset="../img/app-sos.webp" />
+          <img
+            src="../img/app-sos.jpg"
+            width="1400"
+            height="978"
+            loading="lazy"
+            alt="Teselia en una tablet: un SOS médico arriba, el equipo y las marcas en el mapa y el chat con un aviso de coordinación."
+          />
+        </picture>
+        <figcaption>
+          Un SOS recibido: arriba, quién lo pide y quién lo ha confirmado. En el chat, la respuesta
+          del equipo y un aviso de quien coordina.
+        </figcaption>
+      </figure>
       <ul>
         <li>
           <strong>Comparte tu posición</strong> con el botón «Mi posición» → «Compartir». Puedes
-          pausarla (el grupo ve la última) u ocultarla cuando quieras.
+          pausarla (el equipo ve la última) u ocultarla cuando quieras.
         </li>
         <li>
-          <strong>Escribe al grupo</strong> con el botón «Chat». Mensajes cortos y claros: por radio
-          cuestan menos y llegan antes.
+          <strong>Escribe al equipo</strong> con el botón «Chat». Mensajes cortos y claros: por
+          radio cuestan menos y llegan antes.
         </li>
         <li>
-          <strong>Marca lo importante</strong> en el mapa: un punto de encuentro, un peligro, una
-          zona cortada. Todo el grupo lo ve a la vez.
+          <strong>Marca lo importante</strong> en el mapa: un punto de encuentro, un peligro, un
+          sector. Todo el equipo lo ve a la vez.
         </li>
         <li>
           <strong>Si necesitas ayuda, pulsa SOS</strong>, elige qué pasa y envíalo. Lleva tu
@@ -178,58 +175,179 @@
         </li>
         <li>
           <strong>Si ves un SOS de otra persona</strong>, pulsa «Recibido» para que sepa que el
-          grupo lo ha visto.
+          equipo lo ha visto.
         </li>
         <li>
-          <strong>Quien coordina</strong> puede enviar alertas desde el chat. Las alertas críticas
-          se quedan en pantalla hasta que cada persona las confirma.
+          <strong>Quien coordina</strong> puede enviar avisos desde el chat. Los avisos críticos se
+          quedan en pantalla hasta que cada persona los confirma.
         </li>
       </ul>
 
-      <h2 id="sin-internet">4. Cuando no hay internet</h2>
+      <h2 id="sin-internet">Cuando no hay internet</h2>
       <p>
-        Lo primero: <strong>no tienes que cambiar nada en la app.</strong> Teselia usa el camino que
-        haya en cada momento. Lo que escribas sin conexión se guarda y sale en cuanto hay un camino.
+        Lo primero: <strong>no tienes que cambiar nada en la app.</strong> Teselia usa el enlace que
+        haya en cada momento. Lo que escribas sin conexión se guarda y sale en cuanto hay uno.
       </p>
+      <figure class="figure">
+        <div class="diagram">
+          <div class="routes">
+            <div class="route">
+              <h3>Con internet</h3>
+              <div class="path" aria-hidden="true">
+                <span class="node">Tu móvil</span><span class="line"></span>
+                <span class="node hub">Servidor</span><span class="line"></span>
+                <span class="node">Equipo</span>
+              </div>
+            </div>
+            <div class="route">
+              <h3>Con radio</h3>
+              <div class="path" aria-hidden="true">
+                <span class="node">Tu móvil</span><span class="line"></span>
+                <span class="node hub">Radio</span><span class="line air"></span>
+                <span class="node">Malla</span>
+              </div>
+            </div>
+            <div class="route">
+              <h3>Con un puesto</h3>
+              <div class="path" aria-hidden="true">
+                <span class="node">Tu móvil</span><span class="line"></span>
+                <span class="node hub">Puesto</span><span class="line later"></span>
+                <span class="node">Servidor</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          Los tres caminos. La línea de puntos es radio; la discontinua, un enlace que llega cuando
+          vuelve internet.
+        </figcaption>
+      </figure>
       <h3>Si tienes una radio</h3>
       <p>
         Pulsa «LoRa» arriba y «Conectar radio». Desde ese momento tus mensajes, tu posición y tus
-        SOS salen por radio y te llegan los del grupo. La radio no tiene que estar a la vista: puede
-        ir en la mochila.
+        SOS salen por radio y te llegan los del equipo. La radio no tiene que estar a la vista:
+        puede ir en la mochila.
       </p>
       <h3>Si hay un puesto de mando cerca</h3>
       <p>
         Conéctate a su wifi (el nombre y la contraseña los tiene quien lo monta) y abre Teselia como
         siempre. Arriba verás un punto naranja y «Puesto de mando»: ya estás en contacto con el
-        grupo. Lo explicamos en el apartado siguiente.
+        equipo. Lo explicamos en el apartado siguiente.
       </p>
       <h3>Si no tienes ninguna de las dos cosas</h3>
       <p>
         El mapa descargado sigue funcionando y puedes escribir: los mensajes se envían solos cuando
-        vuelva la conexión o cuando te acerques a un puesto de mando. Si alguien de tu grupo tiene
+        vuelva la conexión o cuando te acerques a un puesto de mando. Si alguien del equipo tiene
         radio, mantente cerca de esa persona.
       </p>
 
-      <h2 id="puesto">5. El puesto de mando</h2>
+      <h2 id="puesto">El puesto de mando</h2>
       <p>
-        Un puesto de mando es un ordenador portátil o una Raspberry Pi (un ordenador pequeño) que
-        alguien del grupo lleva al lugar del incidente. Hace tres cosas:
+        Un puesto de mando es un ordenador que alguien del equipo lleva a la zona de operaciones.
+        Hace tres cosas:
       </p>
+      <figure class="figure">
+        <div class="diagram">
+          <svg
+            viewBox="0 0 680 250"
+            role="img"
+            aria-label="Los móviles del equipo se conectan por wifi al ordenador del puesto de mando. El puesto enlaza por radio con la malla LoRa y, cuando vuelve internet, con el servidor de Teselia."
+          >
+            <g fill="none" stroke="#15232d" stroke-width="2">
+              <path d="M66 54 C150 54 170 112 232 112" />
+              <path d="M66 125 L232 118" />
+              <path d="M66 196 C150 196 170 124 232 124" />
+            </g>
+            <path
+              d="M348 98 C400 98 420 52 478 52"
+              fill="none"
+              stroke="#d4531b"
+              stroke-width="3"
+              stroke-dasharray="0.1 7"
+              stroke-linecap="round"
+            />
+            <path
+              d="M348 132 C400 132 420 166 470 166"
+              fill="none"
+              stroke="#9aa8a2"
+              stroke-width="2"
+              stroke-dasharray="7 6"
+            />
+            <g fill="#fff" stroke="#15232d" stroke-width="2">
+              <rect x="38" y="30" width="28" height="48" rx="6" />
+              <rect x="38" y="101" width="28" height="48" rx="6" />
+              <rect x="38" y="172" width="28" height="48" rx="6" />
+            </g>
+            <g fill="#15232d">
+              <rect x="47" y="70" width="10" height="2" rx="1" />
+              <rect x="47" y="141" width="10" height="2" rx="1" />
+              <rect x="47" y="212" width="10" height="2" rx="1" />
+            </g>
+            <rect
+              x="236"
+              y="74"
+              width="108"
+              height="74"
+              rx="7"
+              fill="#fff"
+              stroke="#d4531b"
+              stroke-width="2.5"
+            />
+            <path d="M224 152 H356 L349 162 H231 Z" fill="#d4531b" />
+            <g fill="none" stroke="#d4531b" stroke-width="2.5" stroke-linecap="round">
+              <path d="M272 108 A26 26 0 0 1 308 108" />
+              <path d="M279 116 A16 16 0 0 1 301 116" />
+            </g>
+            <circle cx="290" cy="124" r="3.5" fill="#d4531b" />
+            <rect
+              x="480"
+              y="34"
+              width="24"
+              height="40"
+              rx="5"
+              fill="#fff"
+              stroke="#15232d"
+              stroke-width="2"
+            />
+            <path d="M492 34 V16" stroke="#15232d" stroke-width="2" stroke-linecap="round" />
+            <circle cx="492" cy="62" r="3" fill="#d4531b" />
+            <g fill="#fff" stroke="#15232d" stroke-width="2">
+              <rect x="472" y="146" width="40" height="17" rx="3" />
+              <rect x="472" y="167" width="40" height="17" rx="3" />
+            </g>
+            <g fill="#15232d">
+              <circle cx="502" cy="154.5" r="2" />
+              <circle cx="502" cy="175.5" r="2" />
+            </g>
+            <g font-size="14" font-weight="600" fill="#15232d">
+              <text x="52" y="244" text-anchor="middle">Móviles</text>
+              <text x="290" y="188" text-anchor="middle">Puesto de mando</text>
+              <text x="522" y="50">Radio LoRa</text>
+              <text x="526" y="162">Servidor de Teselia</text>
+            </g>
+            <g font-size="12.5" fill="#4f6069">
+              <text x="290" y="206" text-anchor="middle">ordenador con wifi propia</text>
+              <text x="522" y="68">enlace con la malla</text>
+              <text x="526" y="180">cuando vuelve internet</text>
+            </g>
+          </svg>
+        </div>
+      </figure>
       <ol>
         <li>
           <strong>Crea su propia wifi.</strong> Funciona sin internet y sin antenas de telefonía,
           como la wifi de una casa sin conexión al exterior.
         </li>
         <li>
-          <strong>Hace de punto de encuentro para los mensajes.</strong> Los móviles conectados a su
-          wifi se pasan los mensajes a través de él, aunque no tengan radio. Es la forma de incluir
-          a quien solo tiene un iPhone o no tiene radio.
+          <strong>Hace de servidor del equipo.</strong> Los móviles conectados a su wifi se pasan
+          los mensajes a través de él, aunque no tengan radio. Es la forma de incluir a quien solo
+          tiene un iPhone o no tiene radio.
         </li>
         <li>
           <strong>Hace de puente.</strong> Si en el puesto hay una radio conectada, lo que llega por
           radio pasa a la wifi y al revés. Y cuando el puesto recupera internet (por cable, por
           satélite o con un móvil que tenga datos), envía todo al servidor de Teselia y recoge lo
-          que el resto del grupo haya escrito.
+          que el resto de la organización haya escrito.
         </li>
       </ol>
       <div class="box">
@@ -260,17 +378,12 @@
       </ul>
       <h3>Quién monta el puesto</h3>
       <p>
-        Lo prepara con antelación una persona con algo de soltura con ordenadores, siguiendo
-        <a href="https://github.com/guaschpau-design/Malla/tree/main/deploy/command-post"
-          >estas instrucciones</a
-        >. Una vez preparado, en el lugar del incidente solo hay que encenderlo. Necesita conectarse
-        a internet al menos una vez cada dos meses para renovar su certificado de seguridad.
-      </p>
-      <p>
-        El puesto de mando es una función nueva y todavía la estamos probando en condiciones reales.
+        Lo prepara con antelación una persona con algo de soltura con ordenadores. Una vez
+        preparado, en la zona de operaciones solo hay que encenderlo. Necesita conectarse a internet
+        al menos una vez cada dos meses para renovar su certificado de seguridad.
       </p>
 
-      <h2 id="radios">6. Las radios</h2>
+      <h2 id="radios">Las radios</h2>
       <p>
         Teselia usa radios <strong>MeshCore</strong>: aparatos pequeños que se conectan al móvil por
         Bluetooth y se envían mensajes entre ellos usando LoRa, una señal de radio que llega muy
@@ -278,26 +391,22 @@
       </p>
       <ul>
         <li>
-          <strong>Cuál comprar:</strong> para empezar, la SenseCAP T1000-E, del tamaño de una
-          tarjeta y con batería para días. Hay más modelos en la
-          <a href="../#radios">lista de radios compatibles</a>.
+          <strong>Qué modelos:</strong> estamos validando radios en campo. Publicaremos aquí los
+          modelos recomendados cuando terminen las pruebas.
         </li>
         <li>
           <strong>Prepararla:</strong> se hace una vez, desde un ordenador con Chrome, con el
-          instalador oficial de MeshCore. Los pasos están en la
-          <a href="https://github.com/guaschpau-design/Malla/blob/main/docs/hardware.md"
-            >guía de radios</a
-          >.
+          instalador web oficial de MeshCore y el programa «Companion Bluetooth».
         </li>
         <li>
           <strong>Alcance:</strong> desde un kilómetro en ciudad hasta decenas de kilómetros entre
           lugares altos. Cada radio repite los mensajes de las demás, así que cuantas más haya, más
-          lejos llegan. Una radio en un balcón alto o en una ventana ayuda a todo el grupo.
+          lejos llegan. Una radio en un balcón alto o en una ventana ayuda a todo el equipo.
         </li>
         <li>
           <strong>Por qué va más despacio:</strong> la radio envía muy pocos datos, y la ley limita
-          cuánto tiempo puede emitir. Teselia da prioridad a lo urgente: primero los SOS, luego las
-          alertas, luego los mensajes y por último las posiciones.
+          cuánto tiempo puede emitir. Teselia da prioridad a lo urgente: primero los SOS, luego los
+          avisos, luego los mensajes y por último las posiciones.
         </li>
         <li>
           <strong>Mensajes de MeshCore:</strong> si alguien cercano usa la app MeshCore, sus
@@ -306,11 +415,10 @@
         </li>
       </ul>
 
-      <h2 id="iphone">7. Si tienes iPhone</h2>
+      <h2 id="iphone">Si tienes iPhone</h2>
       <p>
         Por internet, Teselia funciona igual en iPhone. Lo que Safari no permite es conectar una
-        radio por Bluetooth. Mientras llega la app de la App Store, en una emergencia tienes dos
-        opciones:
+        radio por Bluetooth. Mientras llega la app nativa, en una emergencia tienes dos opciones:
       </p>
       <ul>
         <li>Conectarte a un <a href="#puesto">puesto de mando</a>.</li>
@@ -320,7 +428,7 @@
         </li>
       </ul>
 
-      <h2 id="seguridad">8. Privacidad y seguridad</h2>
+      <h2 id="seguridad">Privacidad y seguridad</h2>
       <ul>
         <li>
           Todo lo del grupo va cifrado con una clave que solo tienen sus miembros. Ni el servidor ni
@@ -342,7 +450,7 @@
         <li>Tu posición solo se comparte cuando tú lo eliges.</li>
       </ul>
 
-      <h2 id="problemas">9. Si algo no funciona</h2>
+      <h2 id="problemas">Si algo no funciona</h2>
       <details>
         <summary>Arriba pone «Sin conexión»</summary>
         <p>
@@ -381,13 +489,14 @@
       </details>
     </main>
 
-    <footer>
+    <footer class="ink">
       <div class="wrap">
-        <p><strong>Teselia</strong> · Software libre bajo licencia EUPL-1.2</p>
-        <p>
-          <a href="../">Inicio</a> ·
-          <a href="https://github.com/guaschpau-design/Malla">Código en GitHub</a>
-        </p>
+        <img src="../img/lockup-pale.svg" width="761" height="150" alt="Teselia" />
+        <p>Software libre con licencia EUPL-1.2.</p>
+        <nav aria-label="Enlaces">
+          <a href="../">Inicio</a>
+          <a href="../en/guide/" hreflang="en" lang="en">English</a>
+        </nav>
       </div>
     </footer>
   </body>

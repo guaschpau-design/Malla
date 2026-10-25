@@ -2,7 +2,7 @@ import type { Messages } from './en.ts';
 
 export const es: Messages = {
   appTagline:
-    'Consciencia situacional compartida para la sociedad civil, con internet y por malla LoRa.',
+    'Consciencia situacional para equipos civiles: posiciones, mensajes, alertas e incidentes en un mapa común, con internet, por radio LoRa o desde un puesto de mando.',
   online: 'En línea',
   offline: 'Sin conexión',
   commandPost: 'Puesto de mando',

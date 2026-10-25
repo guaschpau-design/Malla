@@ -1,7 +1,7 @@
 {
   "name": "teselia",
   "private": true,
-  "description": "Open-source situational awareness for European civil society, online and over LoRa mesh.",
+  "description": "Open-source situational awareness for civilian teams: positions, messages, alerts and incidents on one shared map, online, over LoRa radio or through a command post.",
   "license": "EUPL-1.2",
   "type": "module",
   "packageManager": "pnpm@10.28.0",

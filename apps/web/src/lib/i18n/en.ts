@@ -1,7 +1,8 @@
 // The English dictionary defines the set of keys. Every other language must provide all of them.
 
 export const en = {
-  appTagline: 'Shared situational awareness for civil society, online and over LoRa mesh.',
+  appTagline:
+    'Situational awareness for civilian teams: positions, messages, alerts and incidents on one shared map, over the internet, LoRa radio or a command post.',
   online: 'Online',
   offline: 'Offline',
   commandPost: 'Command post',

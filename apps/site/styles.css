@@ -1,24 +1,27 @@
 /* Teselia site. Plain CSS, no build step, no third-party requests (ADR-0017).
-   The design: a night map and paper. The map in the hero is the one loud element; the rest
-   is text set with care, on two surfaces (ink and paper) that alternate down the page. */
+   The design: a night map and paper. Two surfaces (ink and paper) alternate down the page; the
+   photograph and the screenshots of the app are the loud elements, the rest is type set with care.
+   Signal orange is kept for what is urgent and for the one action on each screen. */
 
 @font-face {
-  font-family: Geologica;
+  font-family: Archivo;
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  src: url('fonts/geologica-latin-wght-normal.woff2') format('woff2-variations');
+  font-stretch: 62% 125%;
+  src: url('fonts/archivo-latin-standard-normal.woff2') format('woff2-variations');
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
     U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: Geologica;
+  font-family: Archivo;
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  src: url('fonts/geologica-latin-ext-wght-normal.woff2') format('woff2-variations');
+  font-stretch: 62% 125%;
+  src: url('fonts/archivo-latin-ext-standard-normal.woff2') format('woff2-variations');
   unicode-range:
     U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
     U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
@@ -29,26 +32,26 @@
   /* Ink: the night map. Paper: where the reading happens. */
   --ink: #10202c;
   --ink-deep: #0a161f;
+  --ink-raised: #172b39;
   --ink-text: #e6ebe8;
   --ink-muted: #93a6ad;
   --contour: #2a4654;
   --contour-strong: #3b6072;
   --paper: #e8ece9;
-  --paper-deep: #d9e0dc;
+  --paper-deep: #dde3df;
   --paper-text: #15232d;
   --paper-muted: #4f6069;
   --rule: #c2ccc7;
   --signal: #f26a2e; /* urgent, and the one action on each screen */
   --signal-deep: #d4531b; /* the same, on paper */
-  --people: #8fd3d6; /* members on the map */
   --measure: 62ch;
   font-family:
-    Geologica,
+    Archivo,
     system-ui,
     -apple-system,
     'Segoe UI',
     sans-serif;
-  font-weight: 380;
+  font-weight: 400;
   line-height: 1.55;
   font-size: 17px;
   -webkit-text-size-adjust: 100%;
@@ -86,19 +89,21 @@ h1,
 h2,
 h3 {
   margin: 0;
-  font-weight: 640;
-  letter-spacing: -0.022em;
-  line-height: 1.08;
+  font-weight: 650;
+  font-stretch: 112%;
+  letter-spacing: -0.025em;
+  line-height: 1.06;
   text-wrap: balance;
 }
 
 h2 {
   font-size: clamp(1.9rem, 1.3rem + 2.2vw, 2.9rem);
-  max-width: 24ch;
+  max-width: 22ch;
 }
 
 h3 {
-  font-size: 1.15rem;
+  font-size: 1.12rem;
+  font-stretch: 106%;
   letter-spacing: -0.01em;
   line-height: 1.3;
 }
@@ -113,6 +118,22 @@ h3 {
   outline-offset: 3px;
 }
 
+/* A short label above a heading. */
+.eyebrow {
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-stretch: 115%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--signal-deep);
+}
+
+.ink .eyebrow,
+.hero .eyebrow {
+  color: var(--signal);
+}
+
 /* Surfaces */
 
 .ink {
@@ -124,7 +145,7 @@ h3 {
   color: var(--ink-text);
 }
 
-/* Top bar */
+/* Top bar: the brand on the left; the guide, the app and the language on the right. */
 
 .top {
   position: sticky;
@@ -132,6 +153,7 @@ h3 {
   top: 0;
   background: var(--ink);
   color: var(--ink-text);
+  border-bottom: 1px solid rgb(255 255 255 / 6%);
 }
 
 .top .wrap {
@@ -141,55 +163,83 @@ h3 {
   min-height: 4rem;
 }
 
-.top .button {
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
 .brand {
   display: inline-flex;
   flex-shrink: 0;
-  gap: 0.6rem;
   align-items: center;
   margin-right: auto;
-  font-size: 1.25rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  text-decoration: none;
 }
 
-.brand .lockup {
+.brand img {
   display: block;
-  height: 1.7rem;
+  height: 1.6rem;
   width: auto;
 }
 
 .top nav {
   display: flex;
-  gap: 1.4rem;
-  font-size: 0.95rem;
+  gap: 1.75rem;
+  align-items: center;
 }
 
-.top nav a {
+.top nav > a:not(.button) {
+  font-size: 0.95rem;
   color: var(--ink-muted);
   text-decoration: none;
 }
 
-.top nav a:hover {
+.top nav > a:not(.button):hover,
+.top nav > a[aria-current='page'] {
   color: var(--ink-text);
 }
 
-@media (max-width: 46rem) {
+.top .button {
+  white-space: nowrap;
+}
+
+/* The language switch: both languages, the current one lit. */
+.lang {
+  display: inline-flex;
+  padding: 0.2rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-stretch: 110%;
+  letter-spacing: 0.06em;
+  border: 1px solid var(--contour);
+  border-radius: 0.5rem;
+}
+
+.lang a,
+.lang span {
+  padding: 0.2rem 0.5rem;
+  color: var(--ink-muted);
+  text-decoration: none;
+  border-radius: 0.3rem;
+}
+
+.lang a:hover {
+  color: var(--ink-text);
+}
+
+.lang span {
+  color: var(--ink-text);
+  background: var(--ink-raised);
+}
+
+@media (max-width: 40rem) {
   .top .wrap {
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   .top nav {
-    gap: 1rem;
+    gap: 0.9rem;
   }
 
-  .top nav .optional,
-  .top .button .optional {
+  .brand img {
+    height: 1.35rem;
+  }
+
+  .top .optional {
     display: none;
   }
 }
@@ -203,6 +253,7 @@ h3 {
   min-height: 3rem;
   padding: 0.6rem 1.4rem;
   font-weight: 600;
+  font-stretch: 106%;
   color: #fff;
   text-decoration: none;
   background: var(--signal);
@@ -224,7 +275,8 @@ h3 {
   background: rgb(255 255 255 / 8%);
 }
 
-.paper .button.quiet:hover {
+.paper .button.quiet:hover,
+.prose .button.quiet:hover {
   background: rgb(0 0 0 / 5%);
 }
 
@@ -259,7 +311,7 @@ h3 {
   object-position: 70% 40%;
 }
 
-/* Darkens the top-left, where the words are, and dissolves the bottom into the page's ink. */
+/* Darkens the left, where the words are, and dissolves the bottom into the page's ink. */
 .hero::after {
   position: absolute;
   inset: 0;
@@ -276,9 +328,9 @@ h3 {
     linear-gradient(
       90deg,
       var(--ink) 0%,
-      rgb(16 32 44 / 88%) 28%,
-      rgb(16 32 44 / 30%) 52%,
-      rgb(16 32 44 / 0%) 68%
+      rgb(16 32 44 / 88%) 30%,
+      rgb(16 32 44 / 30%) 55%,
+      rgb(16 32 44 / 0%) 70%
     );
 }
 
@@ -290,15 +342,15 @@ h3 {
 }
 
 .hero h1 {
-  font-size: clamp(2.5rem, 1.4rem + 4.6vw, 4.8rem);
-  max-width: 13ch;
+  font-size: clamp(2.5rem, 1.3rem + 4.6vw, 4.6rem);
+  max-width: 14ch;
   text-shadow: 0 2px 24px rgb(0 0 0 / 35%);
 }
 
 .hero .lead {
-  margin: 1.4rem 0 2rem;
+  margin: 1.5rem 0 2.2rem;
   font-size: 1.2rem;
-  max-width: 34ch;
+  max-width: 38ch;
   color: #dfe6e3;
   text-shadow: 0 1px 12px rgb(0 0 0 / 45%);
 }
@@ -310,20 +362,38 @@ h3 {
 }
 
 .hero .fine {
-  margin: 2rem 0 0;
-  font-size: 0.95rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.4rem;
+  margin: 2.2rem 0 0;
+  padding: 0;
+  font-size: 0.92rem;
+  list-style: none;
   color: #c2cfd0;
   text-shadow: 0 1px 8px rgb(0 0 0 / 50%);
 }
 
+.hero .fine li::before {
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-right: 0.55rem;
+  content: '';
+  vertical-align: 0.12em;
+  background: var(--signal);
+  transform: rotate(45deg);
+}
+
+/* The photographer's credit: there, but out of the way. */
 .hero .credit {
   position: absolute;
-  right: 1.25rem;
-  bottom: 0.9rem;
+  right: 1rem;
+  bottom: 0.6rem;
   z-index: 2;
   margin: 0;
-  font-size: 0.78rem;
-  color: var(--ink-muted);
+  font-size: 0.62rem;
+  letter-spacing: 0.02em;
+  color: rgb(230 235 232 / 28%);
 }
 
 @media (max-width: 46rem) {
@@ -333,7 +403,7 @@ h3 {
 
   .hero .wrap {
     align-self: start;
-    padding: 2.5rem 0 24rem;
+    padding: 2.5rem 0 22rem;
   }
 
   .hero img {
@@ -343,9 +413,9 @@ h3 {
   .hero::after {
     background: linear-gradient(
       180deg,
-      rgb(16 32 44 / 85%) 0%,
-      rgb(16 32 44 / 60%) 40%,
-      rgb(16 32 44 / 0%) 62%,
+      rgb(16 32 44 / 88%) 0%,
+      rgb(16 32 44 / 70%) 45%,
+      rgb(16 32 44 / 0%) 68%,
       rgb(16 32 44 / 0%) 88%,
       var(--ink) 100%
     );
@@ -355,52 +425,162 @@ h3 {
 /* Sections */
 
 section {
-  padding: 5.5rem 0;
+  padding: 6rem 0;
 }
 
 section.paper + section.paper {
   padding-top: 0;
 }
 
-.section-head {
-  margin-bottom: 2.5rem;
+section.paper + section.paper > .wrap {
+  padding-top: 5rem;
+  border-top: 1px solid var(--rule);
 }
 
-.section-head p {
-  margin-top: 1rem;
+.section-head {
+  margin-bottom: 3rem;
+}
+
+.section-head p:not(.eyebrow) {
+  margin-top: 1.1rem;
   font-size: 1.15rem;
   color: var(--paper-muted);
-  max-width: 50ch;
+  max-width: 52ch;
 }
 
-.ink .section-head p {
+.ink .section-head p:not(.eyebrow) {
   color: var(--ink-muted);
 }
 
-/* Routes: how a message travels in each situation */
+/* Capabilities: the app itself, annotated, and what each number means. */
+
+.shot {
+  position: relative;
+  margin: 0 0 3.5rem;
+}
+
+.shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0.9rem;
+  box-shadow:
+    0 0 0 1px rgb(16 32 44 / 12%),
+    0 30px 60px -20px rgb(16 32 44 / 45%),
+    0 12px 24px -12px rgb(16 32 44 / 30%);
+}
+
+.pin {
+  position: absolute;
+  top: var(--y);
+  left: var(--x);
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--signal);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 3px 10px rgb(0 0 0 / 35%);
+  transform: translate(-50%, -50%);
+}
+
+/* On a phone the page shows the app as it looks on a phone, without the numbers. */
+@media (max-width: 40rem) {
+  .pin {
+    display: none;
+  }
+
+  .shot img {
+    width: min(100%, 17rem);
+    margin: 0 auto;
+    border-radius: 1.6rem;
+    box-shadow:
+      0 0 0 0.4rem #050c12,
+      0 30px 60px -20px rgb(16 32 44 / 55%);
+  }
+}
+
+.capabilities {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2.4rem 3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: capability;
+}
+
+.capabilities li {
+  position: relative;
+  padding-left: 2.8rem;
+  counter-increment: capability;
+}
+
+.capabilities li::before {
+  position: absolute;
+  top: -0.1rem;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  content: counter(capability);
+  color: #fff;
+  background: var(--signal-deep);
+  border-radius: 50%;
+}
+
+.capabilities h3 {
+  margin-bottom: 0.4rem;
+}
+
+.capabilities p {
+  margin: 0;
+  color: var(--paper-muted);
+}
+
+@media (max-width: 60rem) {
+  .capabilities {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 36rem) {
+  .capabilities {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Connectivity: how the data travels in each situation */
 
 .routes {
   display: grid;
-  gap: 0;
-  border-top: 1px solid var(--rule);
+  border-top: 1px solid var(--contour);
 }
 
 .route {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
-  gap: 2rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 3rem;
   align-items: center;
-  padding: 2rem 0;
-  border-bottom: 1px solid var(--rule);
+  padding: 2.2rem 0;
+  border-bottom: 1px solid var(--contour);
 }
 
 .route h3 {
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.35rem;
 }
 
 .route p {
   margin: 0;
-  color: var(--paper-muted);
+  color: var(--ink-muted);
 }
 
 .path {
@@ -409,128 +589,113 @@ section.paper + section.paper {
   gap: 0.6rem;
   align-items: center;
   font-size: 0.9rem;
-  color: var(--paper-muted);
 }
 
 .path .node {
-  padding: 0.35rem 0.75rem;
-  color: var(--paper-text);
-  background: #fff;
-  border: 1px solid var(--rule);
+  padding: 0.4rem 0.8rem;
+  color: var(--ink-text);
+  border: 1px solid var(--contour-strong);
   border-radius: 999px;
   white-space: nowrap;
 }
 
 .path .node.hub {
   font-weight: 600;
+  color: #fff;
+  background: var(--ink-raised);
+  border-color: var(--signal);
 }
 
 .path .line {
   height: 0;
-  border-top: 2px solid var(--paper-text);
+  border-top: 2px solid var(--ink-text);
 }
 
 .path .line.air {
-  border-top-style: dotted;
-  border-top-width: 3px;
+  border-top: 3px dotted var(--signal);
 }
 
-.path .line.off {
+.path .line.later {
+  border-top: 2px dashed var(--contour-strong);
+}
+
+/* The same diagram, on paper (in the guide). */
+.prose .path .node {
+  color: var(--paper-text);
+  background: #fff;
+  border-color: var(--rule);
+}
+
+.prose .path .node.hub {
+  color: var(--paper-text);
+  background: #fff;
+  border-color: var(--signal-deep);
+}
+
+.prose .path .line {
+  border-top-color: var(--paper-text);
+}
+
+.prose .path .line.air {
+  border-top-color: var(--signal-deep);
+}
+
+.prose .path .line.later {
   border-top-color: var(--rule);
 }
 
-.route .state {
-  display: inline-block;
-  margin-left: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--signal-deep);
-  vertical-align: 0.1em;
-}
-
-@media (max-width: 46rem) {
+@media (max-width: 50rem) {
   .route {
     grid-template-columns: 1fr;
-    gap: 1.2rem;
+    gap: 1.3rem;
   }
 
   .path {
     font-size: 0.8rem;
+    gap: 0.4rem;
+  }
+
+  .path .node {
+    padding: 0.3rem 0.6rem;
   }
 }
 
-/* Features: a list, two columns, no boxes */
+/* Audiences: who it is for, in a row */
 
-.features {
+.audiences {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
-  gap: 2.2rem 3rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.features h3 {
+.audiences li {
+  padding-top: 1rem;
+  border-top: 2px solid var(--paper-text);
+}
+
+.audiences h3 {
   margin-bottom: 0.4rem;
+  font-size: 1.02rem;
 }
 
-.features p {
+.audiences p {
   margin: 0;
-  color: var(--ink-muted);
-}
-
-/* Status: where the project is */
-
-.status {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 3rem;
-}
-
-.status dl {
-  margin: 0;
-  border-top: 1px solid var(--rule);
-}
-
-.status dt {
-  padding: 1.1rem 0 0.2rem;
-  font-weight: 600;
-}
-
-.status dd {
-  margin: 0;
-  padding: 0 0 1.1rem;
+  font-size: 0.95rem;
   color: var(--paper-muted);
-  border-bottom: 1px solid var(--rule);
 }
 
-.status dd.ok::before,
-.status dd.testing::before,
-.status dd.later::before {
-  display: inline-block;
-  width: 0.6rem;
-  height: 0.6rem;
-  margin-right: 0.5rem;
-  content: '';
-  border-radius: 50%;
+@media (max-width: 60rem) {
+  .audiences {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
-.status dd.ok::before {
-  background: #2f9e6b;
-}
-
-.status dd.testing::before {
-  background: var(--signal-deep);
-}
-
-.status dd.later::before {
-  background: var(--rule);
-}
-
-@media (max-width: 50rem) {
-  .status {
+@media (max-width: 34rem) {
+  .audiences {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
   }
 }
 
@@ -538,9 +703,9 @@ section.paper + section.paper {
 
 .steps {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: 2rem 2.5rem;
-  margin: 0 0 2.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2rem 3rem;
+  margin: 0 0 2.8rem;
   padding: 0;
   list-style: none;
   counter-reset: step;
@@ -552,11 +717,12 @@ section.paper + section.paper {
 
 .steps li::before {
   display: block;
-  margin-bottom: 0.8rem;
-  font-size: 2.4rem;
-  font-weight: 200;
+  margin-bottom: 0.9rem;
+  font-size: 2.6rem;
+  font-weight: 250;
+  font-stretch: 120%;
   line-height: 1;
-  content: counter(step);
+  content: counter(step, decimal-leading-zero);
   color: var(--signal-deep);
 }
 
@@ -569,61 +735,92 @@ section.paper + section.paper {
   color: var(--paper-muted);
 }
 
+@media (max-width: 50rem) {
+  .steps {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Get: two plain columns */
 
 .get {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 3rem;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 4rem;
 }
 
 .get h2 {
-  margin-bottom: 1rem;
+  margin-bottom: 1.1rem;
 }
 
-.get p {
+.get p,
+.get ul {
   color: var(--ink-muted);
 }
 
 .get ul {
   margin: 1rem 0 0;
   padding-left: 1.1rem;
-  color: var(--ink-muted);
 }
 
 .get li + li {
-  margin-top: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.get .note {
+  margin-top: 2rem;
+  padding-top: 1.2rem;
+  font-size: 0.95rem;
+  border-top: 1px solid var(--contour);
 }
 
 @media (max-width: 50rem) {
   .get {
     grid-template-columns: 1fr;
+    gap: 2.5rem;
   }
 }
 
-/* Promises */
+/* Privacy: four plain statements */
 
-.promises {
+.principles {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.5rem 3rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2rem;
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 1.15rem;
-  line-height: 1.4;
-  max-width: 52rem;
 }
 
-@media (max-width: 36rem) {
-  .promises {
-    grid-template-columns: 1fr;
+.principles li {
+  padding-top: 1rem;
+  border-top: 2px solid var(--paper-text);
+}
+
+.principles h3 {
+  margin-bottom: 0.4rem;
+}
+
+.principles p {
+  margin: 0;
+  color: var(--paper-muted);
+}
+
+.principles + .aside {
+  margin: 2.5rem 0 0;
+  color: var(--paper-muted);
+}
+
+@media (max-width: 60rem) {
+  .principles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-.promises li {
-  padding-top: 1rem;
-  border-top: 2px solid var(--paper-text);
+@media (max-width: 34rem) {
+  .principles {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Questions */
@@ -637,7 +834,8 @@ details:last-of-type {
 }
 
 summary {
-  padding: 1.1rem 0;
+  position: relative;
+  padding: 1.1rem 2rem 1.1rem 0;
   font-size: 1.08rem;
   font-weight: 560;
   cursor: pointer;
@@ -649,7 +847,9 @@ summary::-webkit-details-marker {
 }
 
 summary::after {
-  float: right;
+  position: absolute;
+  top: 1.1rem;
+  right: 0.2rem;
   content: '+';
   font-weight: 300;
   color: var(--paper-muted);
@@ -665,7 +865,7 @@ details p {
 }
 
 .questions {
-  max-width: 44rem;
+  max-width: 46rem;
 }
 
 /* Footer */
@@ -680,76 +880,206 @@ footer .wrap {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem 2.5rem;
+  align-items: center;
   justify-content: space-between;
+}
+
+footer img {
+  display: block;
+  height: 1.3rem;
+  width: auto;
 }
 
 footer a {
   color: var(--ink-text);
 }
 
-footer p {
+footer p,
+footer.ink p {
   margin: 0;
+  color: var(--ink-muted);
 }
 
-/* Guide: long-form reading on paper */
+footer nav {
+  display: flex;
+  gap: 1.5rem;
+}
+
+/* Guide: an ink header with the app, a map of the contents, then long-form reading on paper */
+
+.guide-head {
+  padding: 4.5rem 0 0;
+  overflow: hidden;
+}
+
+.guide-head .wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 3rem;
+  align-items: end;
+}
+
+.guide-head .text {
+  align-self: center;
+  padding-bottom: 4rem;
+}
+
+.guide-head h1 {
+  font-size: clamp(2.4rem, 1.6rem + 3vw, 3.8rem);
+  max-width: 14ch;
+}
+
+.guide-head .lead {
+  margin: 1.3rem 0 0;
+  font-size: 1.2rem;
+  max-width: 40ch;
+  color: var(--ink-muted);
+}
+
+/* A phone, cut by the bottom of the band. */
+.phone {
+  justify-self: center;
+  width: min(19rem, 100%);
+  margin: 0;
+  padding: 0.55rem 0.55rem 0;
+  background: #050c12;
+  border-radius: 2.4rem 2.4rem 0 0;
+  box-shadow: 0 0 0 1px var(--contour);
+}
+
+.phone img {
+  display: block;
+  width: 100%;
+  height: 26rem;
+  object-fit: cover;
+  object-position: top;
+  border-radius: 1.9rem 1.9rem 0 0;
+}
+
+@media (max-width: 46rem) {
+  .guide-head {
+    padding-top: 3rem;
+  }
+
+  .guide-head .wrap {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .guide-head .text {
+    padding-bottom: 2.5rem;
+  }
+
+  .phone {
+    width: 15rem;
+  }
+
+  .phone img {
+    height: 17rem;
+  }
+}
 
 .prose {
-  max-width: 44rem;
+  max-width: 46rem;
   padding: 3.5rem 0 5rem;
-}
-
-.prose h1 {
-  font-size: clamp(2.2rem, 1.6rem + 2.6vw, 3.4rem);
-  max-width: 16ch;
+  counter-reset: chapter;
 }
 
 .prose h2 {
-  margin: 3rem 0 1rem;
+  margin: 4rem 0 1.1rem;
   padding-top: 2rem;
-  font-size: 1.7rem;
+  font-size: 1.8rem;
+  max-width: none;
   border-top: 1px solid var(--rule);
+  counter-increment: chapter;
+}
+
+.prose h2::before {
+  display: block;
+  margin-bottom: 0.7rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  content: counter(chapter, decimal-leading-zero);
+  color: var(--signal-deep);
 }
 
 .prose h3 {
-  margin: 1.8rem 0 0.5rem;
+  margin: 2rem 0 0.5rem;
 }
 
 .prose li + li {
-  margin-top: 0.4rem;
+  margin-top: 0.45rem;
 }
 
-.prose .lead {
-  margin: 1rem 0 2rem;
-  font-size: 1.2rem;
+/* Contents: a grid of numbered cards. */
+.toc {
+  margin: 0;
+}
+
+.toc .label {
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: var(--paper-muted);
 }
 
-.toc {
-  padding: 1.2rem 1.4rem;
-  background: var(--paper-deep);
-  border-radius: 0.8rem;
-}
-
 .toc ol {
-  margin: 0.5rem 0 0;
-  padding-left: 1.3rem;
-  columns: 2;
-  column-gap: 2rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: toc;
 }
 
 .toc li {
-  break-inside: avoid;
+  margin: 0;
+  counter-increment: toc;
+}
+
+.toc li + li {
+  margin: 0;
+}
+
+.toc a {
+  display: block;
+  height: 100%;
+  padding: 0.85rem 1rem 0.9rem;
+  font-weight: 560;
+  line-height: 1.3;
+  text-decoration: none;
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 0.6rem;
+}
+
+.toc a::before {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  content: counter(toc, decimal-leading-zero);
+  color: var(--signal-deep);
+}
+
+.toc a:hover {
+  border-color: var(--paper-text);
 }
 
 @media (max-width: 40rem) {
   .toc ol {
-    columns: 1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 .box {
-  margin: 1.4rem 0;
-  padding: 1rem 1.3rem;
+  margin: 1.6rem 0;
+  padding: 1.1rem 1.3rem;
   border-left: 3px solid var(--signal-deep);
   background: var(--paper-deep);
   border-radius: 0 0.6rem 0.6rem 0;
@@ -763,9 +1093,79 @@ footer p {
   margin-top: 0;
 }
 
+/* Figures in the guide: screenshots and diagrams, with a caption under them. */
+.figure {
+  margin: 2rem 0;
+}
+
+.figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0.7rem;
+  box-shadow:
+    0 0 0 1px rgb(16 32 44 / 12%),
+    0 18px 40px -18px rgb(16 32 44 / 40%);
+}
+
+.figure figcaption {
+  margin-top: 0.8rem;
+  font-size: 0.9rem;
+  color: var(--paper-muted);
+}
+
+.diagram {
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 0.8rem;
+}
+
+.diagram svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family: inherit;
+}
+
+.diagram .routes {
+  border-top: none;
+}
+
+.diagram .route {
+  grid-template-columns: 9rem minmax(0, 1fr);
+  gap: 1.5rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.diagram .route:last-child {
+  border-bottom: none;
+}
+
+.diagram .route h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 40rem) {
+  .diagram {
+    padding: 1rem;
+  }
+
+  .diagram .route {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+}
+
 .prose details {
   border: none;
   border-top: 1px solid var(--rule);
+}
+
+.prose details:last-of-type {
+  border-bottom: 1px solid var(--rule);
 }
 
 [id] {
@@ -776,9 +1176,4 @@ footer p {
   html {
     scroll-behavior: auto;
   }
-}
-
-footer nav {
-  display: flex;
-  gap: 1.5rem;
 }

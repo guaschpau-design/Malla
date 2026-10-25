@@ -37,7 +37,8 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 
 - Server image with the relay, the landing page and the web app, for amd64 and arm64 ([ADR-0017](docs/decisions/0017-server-serves-site-and-app.md)).
 - One-command, hardened, self-updating VPS install ([ADR-0013](docs/decisions/0013-self-updating-vps.md)) and command post kit.
-- Landing page and user guide at teselia.eu, in Spanish and English.
+- Landing page and user guide at teselia.eu, in Spanish and English, with annotated screenshots of the app and diagrams of how it connects.
+- Brand: a mark of three hexagonal tiles and an Archivo wordmark, used on the site, the app and its icons.
 
 ### Known limits
 

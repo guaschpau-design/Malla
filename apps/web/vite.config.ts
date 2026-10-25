@@ -16,7 +16,7 @@ export default defineConfig({
         name: 'Teselia',
         short_name: 'Teselia',
         description:
-          'Consciencia situacional para la sociedad civil, con internet y por malla LoRa.',
+          'Consciencia situacional para equipos civiles: posiciones, mensajes, alertas e incidentes en un mapa común, con internet, por radio LoRa o desde un puesto de mando.',
         lang: 'es',
         start_url: base,
         scope: base,

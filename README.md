@@ -1,8 +1,8 @@
 # Teselia
 
-**Consciencia situacional libre para la sociedad civil europea.** Un mapa compartido en tiempo real donde un grupo ve a sus miembros, se comunica y marca lo que ocurre sobre el terreno, con internet o sin él, a través de radios LoRa MeshCore.
+**Consciencia situacional para equipos civiles.** Posiciones, mensajes, alertas e incidentes de todo el equipo en un mapa común y en tiempo real: con internet, por radio LoRa (MeshCore) o desde un puesto de mando cuando la red cae. Software libre, cifrado de extremo a extremo y sin cuentas.
 
-**Open situational awareness for European civil society.** A shared real-time map where a group sees its members, talks and marks what is happening on the ground, with or without internet, over MeshCore LoRa radios.
+**Situational awareness for civilian teams.** The whole team's positions, messages, alerts and incidents on one shared map, in real time: over the internet, over LoRa radio (MeshCore) or through a command post when the network goes down. Free software, end-to-end encrypted, no accounts.
 
 > Estado: en desarrollo, hacia la v0.1. · Status: in development, towards v0.1.
 >
