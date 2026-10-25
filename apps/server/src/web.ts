@@ -2,7 +2,7 @@
 // command post with no internet serves everything a phone needs.
 
 import { existsSync } from 'node:fs';
-import { join, resolve, sep } from 'node:path';
+import { extname, join, resolve, sep } from 'node:path';
 
 import fastifyStatic from '@fastify/static';
 import { RELAY_PATH, SERVER_INFO_PATH } from '@teselia/protocol';
@@ -31,8 +31,11 @@ export async function serveWeb(app: FastifyInstance, root: string): Promise<void
       const path = request.url.split('?')[0] ?? '';
       // "/app" and "/en" mean their folders; relative links only work with the slash.
       if (!path.endsWith('/') && hasIndex(root, path)) return reply.redirect(`${path}/`, 301);
-      // Any other path under the app (the invitation path /app/join among them) is the app.
-      if (path.startsWith(APP_PREFIX)) return reply.sendFile(join('app', 'index.html'));
+      // Any other page under the app (the invitation path /app/join among them) is the app.
+      // A missing file (a map glyph range, say) is a 404, not the app's HTML in its place.
+      if (path.startsWith(APP_PREFIX) && !extname(path)) {
+        return reply.sendFile(join('app', 'index.html'));
+      }
     }
     return reply.code(404).type('text/plain').send('Not found');
   });

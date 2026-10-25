@@ -40,6 +40,7 @@ describe('web serving', () => {
     expect(join.statusCode).toBe(200);
     expect(join.body).toContain('id="app"');
     expect((await server.inject('/elsewhere')).statusCode).toBe(404);
+    expect((await server.inject('/app/map-assets/fonts/45.pbf')).statusCode).toBe(404);
     await server.close();
   });
 
