@@ -205,7 +205,7 @@ describe('MeshCore radio', () => {
     expect(states).toEqual(['disconnected']);
   });
 
-  it('gives up on a command the radio never answers', async () => {
+  it('gives up on a command the radio never answers, and on the radio itself', async () => {
     vi.useFakeTimers();
     const fake = new FakeCompanion(slots(['Public', EMPTY], ['', EMPTY]));
     fake.sendChannelData = () => new Promise(() => undefined);
@@ -214,6 +214,10 @@ describe('MeshCore radio', () => {
     const outcome = radio.send(new Uint8Array([1]));
     await vi.advanceTimersByTimeAsync(5000);
     expect(await outcome).toMatchObject({ status: 'failed', reason: 'the radio did not answer' });
+    // A late answer could be taken for the next command's: the link is dropped instead.
+    await vi.advanceTimersByTimeAsync(0);
+    expect(radio.state).toBe('disconnected');
+    expect(fake.closed).toBe(true);
     vi.useRealTimers();
   });
 });

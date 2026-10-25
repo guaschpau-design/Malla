@@ -2,7 +2,9 @@
 //
 // The companion protocol answers commands with generic OK/ERR frames, so two commands in flight
 // at once could take each other's answers. Every command therefore goes through one queue, and
-// each has a timeout in case the radio never answers (old firmware, lost Bluetooth link).
+// each has a timeout in case the radio never answers (old firmware, lost Bluetooth link). A late
+// answer could still be taken for the next command's, so a radio that misses the timeout is
+// disconnected: the user reconnects it and starts clean.
 
 import { channelName, chooseChannelSlot } from './channel-slot.ts';
 import {
@@ -157,11 +159,13 @@ export class MeshCoreRadio implements RadioLink {
 
   /**
    * Fetches every message the radio is holding and passes ours on. A notice that arrives while
-   * draining makes the loop run once more, so no message is left waiting.
+   * draining makes the loop run once more, so no message is left waiting. Until the group channel
+   * is set, messages stay in the radio: reading them earlier would lose the group's datagrams.
+   * Datagrams of another group's slot are dropped; that group gets them from its server.
    */
   async #drain(): Promise<void> {
     this.#drainRequested = true;
-    if (this.#draining) return;
+    if (this.#draining || this.#channel === null) return;
     this.#draining = true;
     try {
       while (this.#drainRequested) {
@@ -202,7 +206,9 @@ export class MeshCoreRadio implements RadioLink {
   /** Runs one command after the previous one has finished, with a timeout. */
   #command<T>(run: () => Promise<T>): Promise<T> {
     const result = this.#queue.then(() => withTimeout(run()));
-    this.#queue = result.catch(() => undefined);
+    this.#queue = result.catch((error: unknown) => {
+      if (error instanceof RadioError && error.code === 'timeout') void this.disconnect();
+    });
     return result;
   }
 
