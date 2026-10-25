@@ -3,12 +3,33 @@
 export interface ServerConfig {
   readonly host: string;
   readonly port: number;
+  /** SQLite database file. */
+  readonly databasePath: string;
+  /** Envelopes older than this are deleted. */
+  readonly retentionDays: number;
 }
 
 export function readConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
-  const port = Number(env['MALLA_PORT'] ?? 8080);
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
-    throw new Error(`MALLA_PORT must be a TCP port, got ${env['MALLA_PORT'] ?? ''}`);
+  return {
+    host: env['MALLA_HOST'] ?? '0.0.0.0',
+    port: integer(env, 'MALLA_PORT', 8080, 1, 65535),
+    databasePath: env['MALLA_DB'] ?? 'data/malla.db',
+    retentionDays: integer(env, 'MALLA_RETENTION_DAYS', 30, 1, 3650),
+  };
+}
+
+function integer(
+  env: NodeJS.ProcessEnv,
+  name: string,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  const text = env[name];
+  if (text === undefined || text === '') return fallback;
+  const value = Number(text);
+  if (!Number.isInteger(value) || value < min || value > max) {
+    throw new Error(`${name} must be an integer from ${min} to ${max}, got "${text}"`);
   }
-  return { host: env['MALLA_HOST'] ?? '0.0.0.0', port };
+  return value;
 }

@@ -11,7 +11,12 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@fastify/websocket": "11.3.4",
     "@malla/protocol": "workspace:*",
-    "fastify": "^5.12.7"
+    "fastify": "^5.12.7",
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.2"
   }
 }
