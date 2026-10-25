@@ -2,4 +2,14 @@
 
 Connects Teselia to a MeshCore companion radio (firmware v1.18 or later, Companion BLE build) and exchanges events as channel data datagrams, as specified in [`docs/protocol.md`](../../docs/protocol.md) §7 and decided in [ADR-0006](../../docs/decisions/0006-meshcore-first-channel-datagrams.md).
 
-The rest of the code depends only on the `RadioLink` interface in `src/radio-link.ts`. The implementation, built on the MIT-licensed `@liamcottle/meshcore.js`, arrives on day 5; keeping it behind this interface means the library can be replaced without touching anything else.
+The rest of the code depends only on the `RadioLink` interface in `src/radio-link.ts`, so the library underneath can be replaced without touching anything else.
+
+| File                | Responsibility                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------- |
+| `radio-link.ts`     | The interface the app uses                                                                        |
+| `meshcore-radio.ts` | `RadioLink` over a MeshCore companion: one command at a time, timeouts, draining waiting messages |
+| `channel-slot.ts`   | Which channel slot holds the group secret; channel names                                          |
+| `companion.ts`      | The typed subset of the companion connection used here                                            |
+| `web-ble.ts`        | Connecting over Web Bluetooth with the MIT-licensed `@liamcottle/meshcore.js`                     |
+
+While Teselia is connected it reads every message the radio holds, so text messages meant for the MeshCore app are not shown there.

@@ -1,6 +1,7 @@
-// The contract between Teselia and a LoRa radio. Implemented for MeshCore on day 5 (ADR-0006).
+// The contract between Teselia and a LoRa radio (ADR-0006). The app depends only on this; the
+// MeshCore implementation is in meshcore-radio.ts.
 
-export type RadioLinkState = 'disconnected' | 'connecting' | 'ready' | 'unsupported-firmware';
+export type RadioLinkState = 'disconnected' | 'connecting' | 'ready';
 
 export interface ReceivedFrame {
   /** Encoded event bytes, exactly as the sender produced them. */
@@ -10,18 +11,20 @@ export interface ReceivedFrame {
 }
 
 export type SendOutcome =
-  | { readonly status: 'queued' }
-  /** The radio's queue is full; try again later. */
-  | { readonly status: 'busy' }
-  | { readonly status: 'failed'; readonly reason: string };
+  { readonly status: 'sent' } | { readonly status: 'failed'; readonly reason: string };
 
 export interface RadioLink {
   readonly state: RadioLinkState;
+  /** Name the radio advertises over Bluetooth, once connected. */
+  readonly name: string | null;
 
   /** Asks the user to pick a radio and connects to it. */
   connect(): Promise<void>;
 
-  /** Stores the group secret in a channel slot so the radio encrypts and decrypts our traffic. */
+  /**
+   * Stores the group secret in a channel slot so the radio encrypts and decrypts our traffic.
+   * Reuses a slot that already holds the secret; never overwrites another channel.
+   */
   configureGroupChannel(groupName: string, secret: Uint8Array): Promise<void>;
 
   /** Floods one encoded event on the group channel. */

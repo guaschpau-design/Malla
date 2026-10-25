@@ -261,7 +261,7 @@ Decoders MUST accept only secure URLs with no query whose last path segment is e
 
 ## 7. Transport: MeshCore
 
-- The group secret is written to a channel slot of the companion radio with `CMD_SET_CHANNEL`. The channel name is the group name, truncated to 31 bytes at a code-point boundary.
+- The group secret is written to a channel slot of the companion radio with `CMD_SET_CHANNEL`. The channel name is the group name, truncated to 31 bytes at a code-point boundary. Implementations MUST reuse a slot that already holds the secret, otherwise take the first empty slot (empty name, all-zero secret) other than slot 0, and MUST NOT overwrite any other channel.
 - Each event is sent with `CMD_SEND_CHANNEL_DATA` on that channel, flood routing (`path_len = 0xFF`), `data_type = 0xFF4D`, payload = the event bytes. The radio encrypts it with the channel key.
 - Inbound `RESP_CODE_CHANNEL_DATA_RECV` frames on that channel with `data_type = 0xFF4D` are decoded as events. Other `data_type` values are ignored.
 - The radio encrypts channel traffic with AES-128 in ECB mode and authenticates it with a 2-byte truncated HMAC. That protects against casual listening, not against a determined attacker; see [ADR-0010](decisions/0010-lora-link-security.md).

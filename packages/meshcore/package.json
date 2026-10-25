@@ -10,5 +10,9 @@
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@liamcottle/meshcore.js": "1.15.0",
+    "@teselia/protocol": "workspace:*"
   }
 }
