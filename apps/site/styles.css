@@ -449,3 +449,67 @@ footer p {
   outline: 3px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* Guide: long-form reading */
+
+.prose {
+  max-width: 44rem;
+  padding: 3rem 0 4rem;
+}
+
+.prose h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  line-height: 1.15;
+}
+
+.prose h2 {
+  margin: 2.8rem 0 0.8rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.prose h3 {
+  margin: 1.8rem 0 0.4rem;
+}
+
+.prose li + li {
+  margin-top: 0.35rem;
+}
+
+.prose .lead {
+  font-size: 1.15rem;
+  color: var(--muted);
+}
+
+.toc {
+  padding: 1rem 1.2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+}
+
+.toc ol {
+  margin: 0.4rem 0 0;
+  padding-left: 1.3rem;
+}
+
+.box {
+  margin: 1.2rem 0;
+  padding: 1rem 1.2rem;
+  background: var(--accent-soft);
+  border-radius: 0.8rem;
+}
+
+.box p {
+  margin: 0.3rem 0 0;
+}
+
+.box p:first-child {
+  margin-top: 0;
+}
+
+/* Anchored headings clear the sticky top bar. */
+[id] {
+  scroll-margin-top: 4.5rem;
+}
