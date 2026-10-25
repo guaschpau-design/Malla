@@ -87,4 +87,9 @@ describe('envelopes', () => {
     expect(openEnvelope(keys, new Uint8Array(10))).toBeNull();
     expect(openEnvelope(keys, new Uint8Array(MAX_ENVELOPE_SIZE + 1))).toBeNull();
   });
+
+  it('refuses to seal an event larger than the protocol allows', () => {
+    const keys = deriveGroupKeys(new Uint8Array(16));
+    expect(() => sealEnvelope(keys, new Uint8Array(MAX_EVENT_SIZE + 1))).toThrow(RangeError);
+  });
 });

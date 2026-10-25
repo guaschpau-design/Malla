@@ -16,7 +16,7 @@ A group shares a map. Every change to that map — a position, a chat line, a ma
 │        │                                                              │
 │        ▼                                                              │
 │  packages/core: state reducer · LoRa scheduler · bridge rules         │
-│        │                 · bridge                                     │
+│        │                                                              │
 │        ▼                                                              │
 │  packages/protocol: event codec · crypto · invitations                │
 │        │                                   │                          │

@@ -93,3 +93,43 @@ describe('invitations', () => {
     expect(decodeInvitationToken('AAAA').ok).toBe(false);
   });
 });
+
+describe('invitation links', () => {
+  const plain = {
+    role: 'member',
+    secret: new Uint8Array(16).fill(3),
+    issuer: ALICE,
+    groupName: 'Grupo',
+    server: null,
+  } as const;
+  const token = encodeInvitationToken(plain);
+  const tokenText = token.ok ? token.value : '';
+
+  it('accepts only https links whose last path segment is join', () => {
+    expect(parseInvitationUrl(`https://app.example/join#${tokenText}`).ok).toBe(true);
+    expect(parseInvitationUrl(`https://app.example/teselia/join#${tokenText}`).ok).toBe(true);
+    expect(parseInvitationUrl(`http://app.example/join#${tokenText}`).ok).toBe(false);
+    expect(parseInvitationUrl(`https://app.example/xjoin#${tokenText}`).ok).toBe(false);
+    expect(parseInvitationUrl(`https://app.example/join/#${tokenText}`).ok).toBe(false);
+    expect(parseInvitationUrl(`https://app.example/join?x=1#${tokenText}`).ok).toBe(false);
+  });
+
+  it('accepts plain http only on a loopback host, for development', () => {
+    expect(parseInvitationUrl(`http://localhost:5173/join#${tokenText}`).ok).toBe(true);
+    expect(parseInvitationUrl(`http://127.0.0.1/join#${tokenText}`).ok).toBe(true);
+    expect(parseInvitationUrl(`http://localhost.example/join#${tokenText}`).ok).toBe(false);
+    expect(encodeInvitationToken({ ...plain, server: 'http://localhost:8080' }).ok).toBe(true);
+    expect(encodeInvitationToken({ ...plain, server: 'http://192.168.1.10' }).ok).toBe(false);
+  });
+
+  it('refuses a server value that only looks like an https URL', () => {
+    expect(encodeInvitationToken({ ...plain, server: 'https://' }).ok).toBe(false);
+  });
+
+  it('grants member when the role byte is reserved', () => {
+    const bytes = fromBase64url(tokenText) ?? new Uint8Array();
+    bytes[1] = 9; // role byte
+    const decoded = decodeInvitationToken(toBase64url(bytes));
+    expect(decoded.ok && decoded.value.role).toBe('member');
+  });
+});

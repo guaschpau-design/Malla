@@ -50,6 +50,9 @@ importers:
       '@fastify/websocket':
         specifier: 11.3.4
         version: 11.3.4
+      '@teselia/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@teselia/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol

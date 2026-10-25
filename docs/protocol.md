@@ -62,7 +62,7 @@ Codes are never reused. New capabilities are added as new types; existing layout
 
 ### 3.3 `MEMBER_INFO`
 
-Announces who is behind a node ID. Sent on joining a group, when alias or role changes, and periodically (at most every 6 hours over LoRa).
+Announces who is behind a node ID. Sent on joining a group and when alias or role changes; over LoRa, also each time a radio starts carrying the group, so members who only hear the radio learn it.
 
 | Size | Field       | Notes                                                                     |
 | ---- | ----------- | ------------------------------------------------------------------------- |
@@ -310,7 +310,7 @@ Both are secure URLs ending in `/` when present. Clients ignore unknown fields. 
 
 ### 8.2 Replication
 
-A server with an `upstream` (a command post) keeps, for every group it stores, a connection to the upstream as a client of that group:
+A server with an `upstream` (a command post) keeps, for every group it stores or its clients join, a connection to the upstream as a client of that group. It MAY cap the number of these connections, since anyone on its network can join any group ID.
 
 - It joins with its own cursor for the upstream, stores every `env` it receives under the message's `key` and relays it to its own clients.
 - It pushes every envelope its own clients pushed, oldest first, until the upstream answers `stored`, and SHOULD stay under the upstream's rate limits.
