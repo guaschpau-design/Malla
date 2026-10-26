@@ -4,36 +4,67 @@
 import { encodeEvent, peekHeader, type EventHeader, type TeselEvent } from '@tesel/protocol';
 
 import type { AppDb, EventKey, OutboxEntry } from '../storage/app-db.ts';
-import { groupCursors } from '../sync/cursor-store.ts';
+import { cursorKey, groupCursors } from '../sync/cursor-store.ts';
 
 /** Largest sequence number: the field is an unsigned 32-bit integer (protocol §2). */
 const MAX_SEQ = 0xffff_ffff;
 
+/** A received event that was new to the log. */
+export interface Received {
+  readonly entry: OutboxEntry;
+  readonly bytes: Uint8Array;
+}
+
+export interface ReceiveOptions {
+  /** The events were heard over the radio and this device bridges them: queue them for the server. */
+  readonly forward?: boolean;
+  /** How far a relay has been read with these events; saved with them, never ahead of them. */
+  readonly readTo?: { readonly relay: string; readonly cursor: number };
+}
+
 /**
- * Stores a received event. Returns the entry if it is new, null if it was already in the log or
- * is not an event at all. Events of types this version does not know are kept: they are still
- * valid to forward. With `forward`, the event also goes into the outbox, for the server: this
- * device is bridging an event it heard over the radio.
+ * Stores received events in one transaction, however many: storage is what limits how fast a
+ * device catches up after hours without coverage. Returns the new ones, in order. Events already
+ * in the log, repeated in the batch or not events at all are skipped; events of types this
+ * version does not know are kept, since they are still valid to forward (protocol §3.1).
  */
-export async function receiveEvent(
+export async function receiveEvents(
   db: AppDb,
   groupId: string,
-  bytes: Uint8Array,
-  forward = false,
-): Promise<OutboxEntry | null> {
-  const header = peekHeader(bytes);
-  if (!header.ok) return null;
-  const entry: OutboxEntry = { groupId, origin: header.value.origin, seq: header.value.seq };
-  const key: EventKey = [groupId, entry.origin, entry.seq];
-  const tx = db.transaction(['events', 'outbox'], 'readwrite');
-  if ((await tx.objectStore('events').getKey(key)) !== undefined) {
-    await tx.done;
-    return null;
+  batch: readonly Uint8Array[],
+  options: ReceiveOptions = {},
+): Promise<Received[]> {
+  const candidates = new Map<string, Received>();
+  for (const bytes of batch) {
+    const header = peekHeader(bytes);
+    if (!header.ok) continue;
+    const entry: OutboxEntry = { groupId, origin: header.value.origin, seq: header.value.seq };
+    const id = `${entry.origin}:${String(entry.seq)}`;
+    if (!candidates.has(id)) candidates.set(id, { entry, bytes });
   }
-  await tx.objectStore('events').put({ ...entry, bytes });
-  if (forward) await tx.objectStore('outbox').put(entry);
-  await tx.done;
-  return entry;
+  // Requests are issued together and served in order by the transaction: much faster than
+  // waiting for each one in turn.
+  const tx = db.transaction(['events', 'outbox', 'cursors'], 'readwrite');
+  const events = tx.objectStore('events');
+  const unique = [...candidates.values()];
+  const known = await Promise.all(unique.map(({ entry }) => events.getKey(eventKeyOf(entry))));
+  const received = unique.filter((_, index) => known[index] === undefined);
+  const writes: Promise<unknown>[] = received.map(({ entry, bytes }) =>
+    events.put({ ...entry, bytes }),
+  );
+  if (options.forward === true) {
+    writes.push(...received.map(({ entry }) => tx.objectStore('outbox').put(entry)));
+  }
+  if (options.readTo !== undefined) {
+    const { relay, cursor } = options.readTo;
+    writes.push(tx.objectStore('cursors').put(cursor, cursorKey(groupId, relay)));
+  }
+  await Promise.all([...writes, tx.done]);
+  return received;
+}
+
+function eventKeyOf(entry: OutboxEntry): EventKey {
+  return [entry.groupId, entry.origin, entry.seq];
 }
 
 export async function loadEvents(db: AppDb, groupId: string): Promise<Uint8Array[]> {

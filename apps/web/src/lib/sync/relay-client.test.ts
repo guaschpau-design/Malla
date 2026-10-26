@@ -40,7 +40,10 @@ const POST = 'https://post.example/';
 function setup(cursor = 0, relays: readonly string[] = [SERVER]) {
   const sockets: FakeSocket[] = [];
   const statuses: RelayStatus[] = [];
-  const envelopes: number[] = [];
+  /** Each batch handed on, as its envelopes' cursors. */
+  const envelopes: number[][] = [];
+  /** Batches and syncs in the order they were handled. */
+  const handled: string[] = [];
   const synced: string[] = [];
   const cursorsAsked: string[] = [];
   const client = new RelayClient({
@@ -57,19 +60,21 @@ function setup(cursor = 0, relays: readonly string[] = [SERVER]) {
         cursorsAsked.push(relay);
         return Promise.resolve(cursor);
       },
-      onEnvelope: (_env, at) => {
-        envelopes.push(at);
+      onEnvelopes: (batch) => {
+        envelopes.push(batch.map((envelope) => envelope.cursor));
+        handled.push(`batch of ${String(batch.length)}`);
         return Promise.resolve();
       },
       onSynced: (at, relay) => {
         synced.push(`${at}@${relay}`);
+        handled.push(`synced at ${String(at)}`);
         return Promise.resolve();
       },
       onStored: () => Promise.resolve(),
       onStatus: (status) => statuses.push(status),
     },
   });
-  return { client, sockets, statuses, envelopes, synced, cursorsAsked };
+  return { client, sockets, statuses, envelopes, handled, synced, cursorsAsked };
 }
 
 beforeEach(() => {
@@ -99,10 +104,33 @@ describe('relay client', () => {
     socket.receive({ t: 'env', cursor: 43, key: new Uint8Array(16), env: new Uint8Array(50) });
     socket.receive({ t: 'synced', cursor: 43 });
     await flush();
-    expect(envelopes).toEqual([42, 43]);
+    expect(envelopes).toEqual([[42, 43]]);
     expect(synced).toEqual([`43@${SERVER}`]);
     expect(client.relay).toBe(SERVER);
     expect(statuses).toEqual(['connecting', 'syncing', 'synced']);
+  });
+
+  it('hands envelopes on in batches that never cross another message', async () => {
+    const { client, sockets, envelopes, handled } = setup();
+    client.start();
+    await flush();
+    const socket = sockets[0];
+    if (!socket) throw new Error('no socket');
+    socket.open();
+    await flush();
+    const env = (cursor: number) => ({
+      t: 'env' as const,
+      cursor,
+      key: new Uint8Array(16),
+      env: new Uint8Array(50),
+    });
+    for (let cursor = 1; cursor <= 1001; cursor++) socket.receive(env(cursor));
+    socket.receive({ t: 'synced', cursor: 1001 });
+    socket.receive(env(1002));
+    await flush();
+    expect(envelopes.map((batch) => batch.length)).toEqual([1000, 1, 1]);
+    expect(envelopes.flat()).toEqual(Array.from({ length: 1002 }, (_, i) => i + 1));
+    expect(handled).toEqual(['batch of 1000', 'batch of 1', 'synced at 1001', 'batch of 1']);
   });
 
   it('only pushes once synced', async () => {

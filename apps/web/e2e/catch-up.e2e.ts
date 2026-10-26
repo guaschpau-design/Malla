@@ -1,0 +1,136 @@
+// A device that has been away for hours catches up with what its group did meanwhile in seconds,
+// not minutes: envelopes are stored and applied in batches (ARCHITECTURE.md §4.1). The relay is
+// played by the test, so that thousands of envelopes can wait for the device at once, past the
+// rate limits a real server applies to pushes.
+
+import {
+  deriveGroupKeys,
+  encodeEvent,
+  encodeRelayMessage,
+  eventKey,
+  generateIdentity,
+  parseClientMessage,
+  sealEnvelope,
+  type ServerMessage,
+  type TeselEvent,
+} from '@tesel/protocol';
+import { expect, test, type Page } from '@playwright/test';
+
+import { device } from './helpers.ts';
+
+const MEMBERS = 50;
+const EVENTS = 5000;
+/** Before batching this took about ten minutes; now it takes a few seconds. */
+const CATCH_UP_LIMIT_MS = 30_000;
+
+test('a device catches up with thousands of waiting events in seconds', async ({ browser }) => {
+  const ana = await device(browser, 'Ana');
+  await ana.getByRole('button', { name: 'Grupos: Sin grupo' }).click();
+  await ana.getByLabel('Nombre del grupo').fill('Operativo largo');
+  await ana.getByRole('button', { name: 'Crear', exact: true }).click();
+  await expect(ana.getByTitle('Sincronizado')).toBeVisible();
+  const backlog = backlogFor(await groupSecret(ana));
+
+  // From now on the relay is the test: it answers a join with the whole backlog.
+  await ana.context().routeWebSocket(/\/v1\/ws$/, (relay) => {
+    relay.onMessage((text) => {
+      const message = parseClientMessage(String(text));
+      if (!message.ok || message.value.t !== 'join') return;
+      for (const envelope of backlog) relay.send(encodeRelayMessage(envelope));
+      relay.send(encodeRelayMessage({ t: 'synced', cursor: backlog.length }));
+    });
+  });
+
+  const start = Date.now();
+  await ana.reload();
+  await expect
+    .poll(() => storedEvents(ana), { timeout: CATCH_UP_LIMIT_MS, intervals: [250] })
+    .toBeGreaterThanOrEqual(EVENTS);
+  expect(Date.now() - start).toBeLessThan(CATCH_UP_LIMIT_MS);
+  await expect(ana.getByTitle('Sincronizado')).toBeVisible();
+  await ana.getByRole('button', { name: 'Grupos: Operativo largo' }).click();
+  await expect(ana.getByText(`Miembros (${String(MEMBERS + 1)})`)).toBeVisible();
+});
+
+/** Fifty members announce themselves and share their position every ten seconds. */
+function backlogFor(secret: Uint8Array): ServerMessage[] {
+  const keys = deriveGroupKeys(secret);
+  const members = Array.from({ length: MEMBERS }, () => generateIdentity());
+  const start = Math.floor(Date.now() / 1000) - 8 * 3600;
+  const events: TeselEvent[] = members.map((member, index) => ({
+    type: 'member-info',
+    origin: member.nodeId,
+    seq: 1,
+    time: start,
+    role: 'member',
+    publicKey: member.publicKey,
+    alias: `Miembro ${String(index + 1)}`,
+  }));
+  for (let index = 0; events.length < EVENTS; index++) {
+    const member = members[index % MEMBERS];
+    if (member === undefined) throw new Error('no member');
+    const round = Math.floor(index / MEMBERS);
+    events.push({
+      type: 'position',
+      origin: member.nodeId,
+      seq: 2 + round,
+      time: start + 10 * round,
+      lat: 39.47 + (index % 97) / 10_000,
+      lon: -0.37,
+      accuracy: 8,
+      heading: null,
+      speed: null,
+    });
+  }
+  return events.map((event, index) => {
+    const bytes = encodeEvent(event);
+    if (!bytes.ok) throw new Error(bytes.error.detail);
+    return {
+      t: 'env',
+      cursor: index + 1,
+      key: eventKey(keys, event),
+      env: sealEnvelope(keys, bytes.value),
+    };
+  });
+}
+
+/** The secret of the device's only group, as an invitation would carry it. */
+async function groupSecret(page: Page): Promise<Uint8Array> {
+  const secret = await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve) => {
+      const open = indexedDB.open('tesel');
+      open.onsuccess = () => {
+        resolve(open.result);
+      };
+    });
+    const groups = await new Promise<{ secret: Uint8Array }[]>((resolve) => {
+      const req = db.transaction('groups').objectStore('groups').getAll();
+      req.onsuccess = () => {
+        resolve(req.result as { secret: Uint8Array }[]);
+      };
+    });
+    db.close();
+    return Array.from(groups[0]?.secret ?? []);
+  });
+  return Uint8Array.from(secret);
+}
+
+/** How many events the device has stored for its group, its own included. */
+function storedEvents(page: Page): Promise<number> {
+  return page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve) => {
+      const open = indexedDB.open('tesel');
+      open.onsuccess = () => {
+        resolve(open.result);
+      };
+    });
+    const count = await new Promise<number>((resolve) => {
+      const req = db.transaction('events').objectStore('events').count();
+      req.onsuccess = () => {
+        resolve(req.result);
+      };
+    });
+    db.close();
+    return count;
+  });
+}

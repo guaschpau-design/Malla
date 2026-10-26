@@ -216,3 +216,20 @@ describe('slices', () => {
     expect(after.objects).toBe(before.objects);
   });
 });
+
+describe('long operations', () => {
+  it('rebuilds eight hours of fifty members sharing their position every ten seconds', () => {
+    const members = Array.from({ length: 50 }, (_, i) => i.toString(16).padStart(8, '0') as NodeId);
+    const events: TeselEvent[] = [];
+    for (let round = 0; round < (8 * 3600) / 10; round++) {
+      members.forEach((member, index) => {
+        events.push(position(member, round + 1, T0 + 10 * round, 39.47 + index / 1000));
+      });
+    }
+    // About half a second on a laptop. The bound only catches a slice that turns quadratic.
+    const start = performance.now();
+    const state = stateOf(events);
+    expect(performance.now() - start).toBeLessThan(10_000);
+    expect(state.positions.size).toBe(50);
+  });
+});

@@ -116,7 +116,7 @@ A new capability is a new event type (protocol §3.2 and §9: no version change)
 
 ### 4.1 Internet
 
-The web app keeps a WebSocket to the active group's server; groups that are not active sync when they are opened. Each event is sealed into an **envelope** — AES-256-GCM ciphertext plus an opaque event key — and pushed. The server assigns each envelope a per-group **cursor** (an increasing integer), stores it, and fans it out to the group's other connections. On reconnect a client asks for everything after the last cursor it saw. The server cannot read, forge or alter events; it can only drop them.
+The web app keeps a WebSocket to the active group's server; groups that are not active sync when they are opened. Each event is sealed into an **envelope** — AES-256-GCM ciphertext plus an opaque event key — and pushed. The server assigns each envelope a per-group **cursor** (an increasing integer), stores it, and fans it out to the group's other connections. On reconnect a client asks for everything after the last cursor it saw. Envelopes that arrive together are handled in batches of up to a thousand: each batch is stored in one transaction together with its cursor, which therefore never runs ahead of the log, and applied to the state in one update. A device back after hours without coverage catches up in seconds rather than one envelope per screen frame. The server cannot read, forge or alter events; it can only drop them.
 
 ### 4.2 LoRa (MeshCore)
 

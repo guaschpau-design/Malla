@@ -54,11 +54,16 @@ export function reduce(state: GroupState, event: TeselEvent): GroupState {
   return next;
 }
 
+/** The state after several more events, in any order: what a device does with a batch. */
+export function reduceAll(state: GroupState, events: Iterable<TeselEvent>): GroupState {
+  let next = state;
+  for (const event of events) next = reduce(next, event);
+  return next;
+}
+
 /** The state of a set of events, in any order. */
 export function stateOf(events: Iterable<TeselEvent>): GroupState {
-  let state = EMPTY_STATE;
-  for (const event of events) state = reduce(state, event);
-  return state;
+  return reduceAll(EMPTY_STATE, events);
 }
 
 // The one place where a slice is widened to any event and any state. It is safe: READERS only

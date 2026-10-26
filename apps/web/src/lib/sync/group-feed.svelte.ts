@@ -3,7 +3,7 @@
 
 import {
   EMPTY_STATE,
-  reduce,
+  reduceAll,
   type GroupState,
   type LoraEvent,
   type LoraPacket,
@@ -36,14 +36,14 @@ import {
   loadEvents,
   pendingEvents,
   publishEvent,
-  receiveEvent,
+  receiveEvents,
 } from '../events/event-log.ts';
 import type { StoredGroup } from '../groups/group.ts';
 import type { LocalIdentity } from '../identity/identity.ts';
 import type { AppDb, OutboxEntry } from '../storage/app-db.ts';
 import { defaultServerUrl } from '../config.ts';
 import { loadCursor, saveCursor } from './cursor-store.ts';
-import { RelayClient, type RelayStatus } from './relay-client.ts';
+import { RelayClient, type ReceivedEnvelope, type RelayStatus } from './relay-client.ts';
 import { relaysFor } from './relays.ts';
 
 /** `local-only` when the group has no server: events stay on this device (and LoRa, later). */
@@ -95,7 +95,7 @@ export class GroupFeed {
             group: this.#keys.groupId,
             handlers: {
               cursor: (relay) => loadCursor(db, group.id, relay),
-              onEnvelope: (env, cursor, relay) => this.#receive(env, relay, cursor),
+              onEnvelopes: (batch, relay) => this.#receive(batch, relay),
               onSynced: async (cursor, relay) => {
                 await saveCursor(db, group.id, relay, cursor);
                 await this.#flushOutbox();
@@ -114,7 +114,7 @@ export class GroupFeed {
   /** Loads the group's log, announces this member if needed and connects to the server. */
   static async open(db: AppDb, group: StoredGroup, identity: LocalIdentity): Promise<GroupFeed> {
     const feed = new GroupFeed(db, group, identity);
-    for (const bytes of await loadEvents(db, group.id)) feed.#apply(bytes);
+    feed.#apply(await loadEvents(db, group.id));
     await feed.#announceSelf();
     if (feed.#client) {
       window.addEventListener('online', feed.#retry);
@@ -151,10 +151,11 @@ export class GroupFeed {
   async receiveFromRadio(bytes: Uint8Array): Promise<void> {
     const heard = loraEventOf(bytes);
     if (heard) this.#lora?.heard(heard);
-    const entry = await receiveEvent(this.#db, this.#group.id, bytes, this.#client !== null);
-    if (entry === null) return;
-    this.#apply(bytes);
-    this.#push(entry, bytes);
+    const forward = this.#client !== null;
+    const [received] = await receiveEvents(this.#db, this.#group.id, [bytes], { forward });
+    if (received === undefined) return;
+    this.#apply([bytes]);
+    this.#push(received.entry, bytes);
   }
 
   close(): void {
@@ -234,21 +235,25 @@ export class GroupFeed {
   async #publish(build: (header: EventHeader) => TeselEvent): Promise<void> {
     const header = { origin: this.#identity.nodeId, time: Math.floor(Date.now() / 1000) };
     const { entry, bytes } = await publishEvent(this.#db, this.#group.id, build, header);
-    const event = this.#apply(bytes);
+    const [event] = this.#apply([bytes]);
     this.#push(entry, bytes);
     if (event) this.#lora?.offer({ event, bytes }, 'own');
   }
 
-  async #receive(env: Uint8Array, relay: string, cursor: number): Promise<void> {
+  /** A batch from the relay: stored with its cursor, then applied to the picture at once. */
+  async #receive(batch: readonly ReceivedEnvelope[], relay: string): Promise<void> {
+    const last = batch.at(-1);
+    if (last === undefined) return;
     // An envelope that does not open was not sealed with this group's key: skip it.
-    const bytes = openEnvelope(this.#keys, env);
-    if (bytes !== null && (await receiveEvent(this.#db, this.#group.id, bytes)) !== null) {
-      this.#apply(bytes);
+    const opened = batch.flatMap(({ env }) => openEnvelope(this.#keys, env) ?? []);
+    const readTo = { relay, cursor: last.cursor };
+    const received = await receiveEvents(this.#db, this.#group.id, opened, { readTo });
+    this.#apply(received.map(({ bytes }) => bytes));
+    for (const { bytes } of received) {
       // Types this version does not know are bridged too (protocol §3.1).
       const event = loraEventOf(bytes);
       if (event) this.#lora?.offer({ event, bytes }, 'bridged');
     }
-    await saveCursor(this.#db, this.#group.id, relay, cursor);
   }
 
   async #flushOutbox(): Promise<void> {
@@ -274,12 +279,17 @@ export class GroupFeed {
     await confirmStored(this.#db, entry);
   }
 
-  /** Adds an event to the picture; events of unknown types are kept in the log only. */
-  #apply(bytes: Uint8Array): TeselEvent | null {
-    const event = decodeEvent(bytes);
-    if (!event.ok) return null;
-    this.state = reduce(this.state, event.value);
-    return event.value;
+  /**
+   * Adds events to the picture in one update, so the map redraws once per batch. Returns the ones
+   * decoded; events of types this version does not know are kept in the log only.
+   */
+  #apply(batch: readonly Uint8Array[]): TeselEvent[] {
+    const events = batch.flatMap((bytes) => {
+      const event = decodeEvent(bytes);
+      return event.ok ? [event.value] : [];
+    });
+    if (events.length > 0) this.state = reduceAll(this.state, events);
+    return events;
   }
 }
 

@@ -4,13 +4,14 @@ import { decodeEvent, encodeEvent, type NodeId } from '@tesel/protocol';
 import { describe, expect, it } from 'vitest';
 
 import { openAppDb } from '../storage/app-db.ts';
+import { loadCursor } from '../sync/cursor-store.ts';
 import {
   confirmStored,
   deleteGroupEvents,
   loadEvents,
   pendingEvents,
   publishEvent,
-  receiveEvent,
+  receiveEvents,
 } from './event-log.ts';
 
 const ME = 'a1b2c3d4' as NodeId;
@@ -57,22 +58,34 @@ describe('event log', () => {
   it('stores a received event once, whichever transport brings it again', async () => {
     const db = await freshDb();
     const bytes = chatBytes(OTHER, 4, 'hola');
-    expect(await receiveEvent(db, 'group', bytes)).toEqual({
-      groupId: 'group',
-      origin: OTHER,
-      seq: 4,
-    });
-    expect(await receiveEvent(db, 'group', bytes)).toBeNull();
-    expect(await receiveEvent(db, 'group', new Uint8Array([1, 2, 3]))).toBeNull();
+    const entry = { groupId: 'group', origin: OTHER, seq: 4 };
+    expect(await receiveEvents(db, 'group', [bytes])).toEqual([{ entry, bytes }]);
+    expect(await receiveEvents(db, 'group', [bytes, new Uint8Array([1, 2, 3])])).toEqual([]);
     expect(await loadEvents(db, 'group')).toEqual([bytes]);
     expect(await pendingEvents(db, 'group')).toEqual([]);
+  });
+
+  it('stores a batch in order, skipping what repeats within it', async () => {
+    const db = await freshDb();
+    const first = chatBytes(OTHER, 1, 'uno');
+    const second = chatBytes(OTHER, 2, 'dos');
+    const received = await receiveEvents(db, 'group', [first, second, first]);
+    expect(received.map((r) => r.bytes)).toEqual([first, second]);
+    expect(await loadEvents(db, 'group')).toHaveLength(2);
+  });
+
+  it('saves how far a relay was read together with the events read', async () => {
+    const db = await freshDb();
+    const relay = 'https://tesel.example/';
+    await receiveEvents(db, 'group', [chatBytes(OTHER, 1, 'a')], { readTo: { relay, cursor: 42 } });
+    expect(await loadCursor(db, 'group', relay)).toBe(42);
   });
 
   it('queues an event heard over the radio for the server when bridging', async () => {
     const db = await freshDb();
     const bytes = chatBytes(OTHER, 7, 'por radio');
-    const entry = await receiveEvent(db, 'group', bytes, true);
-    expect(await pendingEvents(db, 'group')).toEqual([{ entry, bytes }]);
+    const [received] = await receiveEvents(db, 'group', [bytes], { forward: true });
+    expect(await pendingEvents(db, 'group')).toEqual([received]);
   });
 
   it('refuses an event that does not fit the protocol, without using a sequence number', async () => {
@@ -94,8 +107,8 @@ describe('event log', () => {
 
   it('forgets everything a group left behind', async () => {
     const db = await freshDb();
-    await receiveEvent(db, 'gone', chatBytes(OTHER, 1, 'a'));
-    await receiveEvent(db, 'kept', chatBytes(OTHER, 2, 'b'));
+    await receiveEvents(db, 'gone', [chatBytes(OTHER, 1, 'a')]);
+    await receiveEvents(db, 'kept', [chatBytes(OTHER, 2, 'b')]);
     await deleteGroupEvents(db, 'gone');
     expect(await loadEvents(db, 'gone')).toEqual([]);
     expect(await loadEvents(db, 'kept')).toHaveLength(1);

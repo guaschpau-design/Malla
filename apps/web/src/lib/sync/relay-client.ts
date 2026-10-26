@@ -1,5 +1,5 @@
 // Keeps one group's WebSocket to a relay open (protocol §8): joins with the last cursor, passes
-// envelopes on in order and reconnects with back-off when the link drops. Each round of attempts
+// envelopes on in order, in batches, and reconnects with back-off when the link drops. Each round of attempts
 // tries the group's relays in order, the group's server and its command posts (§8.3), and keeps
 // the first that answers.
 
@@ -24,11 +24,21 @@ export interface SocketLike {
 
 export type RelayStatus = 'connecting' | 'syncing' | 'synced' | 'disconnected';
 
+/** An envelope as the relay sent it, with its cursor (protocol §8). */
+export interface ReceivedEnvelope {
+  readonly env: Uint8Array;
+  readonly cursor: number;
+}
+
 /** Handlers that receive `relay`, the server base URL of the connection, get its own cursors. */
 export interface RelayHandlers {
   /** The cursor to join with: the last one this device stored for the group and relay. */
   readonly cursor: (relay: string) => Promise<number>;
-  readonly onEnvelope: (env: Uint8Array, cursor: number, relay: string) => Promise<void>;
+  /**
+   * Envelopes that arrived together, in order. A device that has been away gets thousands at
+   * once, and taking them in one go means one storage write and one redraw instead of one each.
+   */
+  readonly onEnvelopes: (batch: readonly ReceivedEnvelope[], relay: string) => Promise<void>;
   /** The backlog is in; from now on pushes are possible. */
   readonly onSynced: (cursor: number, relay: string) => Promise<void>;
   readonly onStored: (key: Uint8Array) => Promise<void>;
@@ -48,6 +58,8 @@ const FIRST_RETRY_MS = 1000;
 const MAX_RETRY_MS = 30_000;
 /** A relay that has not opened by then is given up for the next one. */
 const CONNECT_TIMEOUT_MS = 5000;
+/** Largest batch of envelopes handed on at once, so that no single step blocks the app for long. */
+const MAX_BATCH = 1000;
 
 export class RelayClient {
   readonly #options: RelayClientOptions;
@@ -64,6 +76,8 @@ export class RelayClient {
   #stopped = true;
   /** Messages are handled one at a time, in arrival order, so cursors only move forward. */
   #queue: Promise<void> = Promise.resolve();
+  /** The batch envelopes join while it waits in the queue; null once it starts or is closed. */
+  #batch: ReceivedEnvelope[] | null = null;
   readonly #pushes = new PushQueue((key, env) => {
     this.#socket?.send(encodeRelayMessage({ t: 'push', key, env }));
   });
@@ -139,6 +153,7 @@ export class RelayClient {
     }
     const socket = this.#createSocket(relayUrl(relay));
     this.#socket = socket;
+    this.#batch = null;
     this.#connectTimer = setTimeout(() => {
       this.#connectTimer = null;
       this.#socket = null;
@@ -156,7 +171,14 @@ export class RelayClient {
     };
     socket.onmessage = (event) => {
       const message = typeof event.data === 'string' ? parseServerMessage(event.data) : null;
-      if (message !== null) this.#enqueue(() => this.#handle(message, relay));
+      if (message === null) return;
+      if (message.t === 'env') {
+        this.#collect({ env: message.env, cursor: message.cursor }, relay);
+        return;
+      }
+      // Envelopes after this message go in a new batch, handled after it.
+      this.#batch = null;
+      this.#enqueue(() => this.#handle(message, relay));
     };
     socket.onclose = () => {
       if (this.#socket !== socket) return;
@@ -179,12 +201,22 @@ export class RelayClient {
     this.#connect();
   }
 
-  async #handle(message: ServerMessage, relay: string): Promise<void> {
+  /** Adds an envelope to the waiting batch, or queues a new batch if none is waiting or it is full. */
+  #collect(envelope: ReceivedEnvelope, relay: string): void {
+    if (this.#batch === null || this.#batch.length >= MAX_BATCH) {
+      const batch: ReceivedEnvelope[] = [];
+      this.#batch = batch;
+      this.#enqueue(async () => {
+        if (this.#batch === batch) this.#batch = null;
+        await this.#options.handlers.onEnvelopes(batch, relay);
+      });
+    }
+    this.#batch.push(envelope);
+  }
+
+  async #handle(message: Exclude<ServerMessage, { t: 'env' }>, relay: string): Promise<void> {
     const { handlers } = this.#options;
     switch (message.t) {
-      case 'env':
-        await handlers.onEnvelope(message.env, message.cursor, relay);
-        return;
       case 'synced':
         this.#retryMs = FIRST_RETRY_MS;
         this.#setStatus('synced');

@@ -6,7 +6,7 @@ import type { AppDb } from '../storage/app-db.ts';
 
 /** The stored cursor, or 0 if this device never synced the group through this relay. */
 export async function loadCursor(db: AppDb, groupId: string, relay: string): Promise<number> {
-  return (await db.get('cursors', [groupId, serverBaseUrl(relay)])) ?? 0;
+  return (await db.get('cursors', cursorKey(groupId, relay))) ?? 0;
 }
 
 export async function saveCursor(
@@ -15,7 +15,12 @@ export async function saveCursor(
   relay: string,
   cursor: number,
 ): Promise<void> {
-  await db.put('cursors', cursor, [groupId, serverBaseUrl(relay)]);
+  await db.put('cursors', cursor, cursorKey(groupId, relay));
+}
+
+/** Where the cursor of a group on a relay is stored: one per server, whatever its address form. */
+export function cursorKey(groupId: string, relay: string): [string, string] {
+  return [groupId, serverBaseUrl(relay)];
 }
 
 /** The key range of every cursor of a group. */
