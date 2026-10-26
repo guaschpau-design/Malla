@@ -40,6 +40,7 @@ import {
 } from '../events/event-log.ts';
 import type { StoredGroup } from '../groups/group.ts';
 import type { LocalIdentity } from '../identity/identity.ts';
+import type { DeviceFix } from '../position/device-location.svelte.ts';
 import type { AppDb, OutboxEntry } from '../storage/app-db.ts';
 import { defaultServerUrl } from '../config.ts';
 import { loadCursor, saveCursor } from './cursor-store.ts';
@@ -53,15 +54,6 @@ export type FeedStatus = RelayStatus | 'local-only';
 export interface LoraSink {
   offer(packet: LoraPacket, source: LoraSource): void;
   heard(event: LoraEvent): void;
-}
-
-/** A position as the device reports it, in protocol units. */
-export interface Fix {
-  readonly lat: number;
-  readonly lon: number;
-  readonly accuracy: number | null;
-  readonly heading: number | null;
-  readonly speed: number | null;
 }
 
 export class GroupFeed {
@@ -168,8 +160,15 @@ export class GroupFeed {
     await this.#publish((header) => ({ ...header, type: 'chat', text }));
   }
 
-  async sharePosition(fix: Fix): Promise<void> {
-    await this.#publish((header) => ({ ...header, type: 'position', ...fix }));
+  async sharePosition({ at, accuracy, heading, speed }: DeviceFix): Promise<void> {
+    await this.#publish((header) => ({
+      ...header,
+      type: 'position',
+      ...at,
+      accuracy,
+      heading,
+      speed,
+    }));
   }
 
   async hidePosition(): Promise<void> {

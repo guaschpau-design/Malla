@@ -1,8 +1,8 @@
 <!-- A map symbol as it appears on the map (symbol-images.ts), for forms and lists. -->
 <script lang="ts">
   import { symbolInfo } from './catalog.ts';
-  import { GLYPH_GRID, TILE_GLYPH_SIZE, TILE_RADIUS, tilePath } from './glyphs.ts';
-  import GlyphPaths from './GlyphPaths.svelte';
+  import { GLYPH_GRID, TILE_GLYPH_SIZE, TILE_RADIUS, tilePath } from '../ui/glyphs.ts';
+  import GlyphPaths from '../ui/GlyphPaths.svelte';
 
   interface Props {
     code: number;

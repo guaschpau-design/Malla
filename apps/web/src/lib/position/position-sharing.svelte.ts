@@ -4,10 +4,10 @@
 
 import type { AppDb } from '../storage/app-db.ts';
 import type { GroupFeed } from '../sync/group-feed.svelte.ts';
+import type { DeviceFix, DeviceLocation } from './device-location.svelte.ts';
 import { shouldReport, type Report } from './report-policy.ts';
 
 export type PositionMode = 'sharing' | 'paused' | 'hidden';
-export type SharingProblem = 'denied' | 'unavailable';
 
 const MODES: readonly PositionMode[] = ['sharing', 'paused', 'hidden'];
 
@@ -18,15 +18,17 @@ export async function loadPositionMode(db: AppDb): Promise<PositionMode> {
 
 export class PositionSharing {
   mode: PositionMode = $state('hidden');
-  problem: SharingProblem | null = $state(null);
 
   readonly #db: AppDb;
+  readonly #location: DeviceLocation;
   #feed: GroupFeed | null = null;
-  #watch: number | null = null;
+  /** Lets go of the GPS; set while sharing. */
+  #release: (() => void) | null = null;
   #last: Report | null = null;
 
-  constructor(db: AppDb) {
+  constructor(db: AppDb, location: DeviceLocation) {
     this.#db = db;
+    this.#location = location;
   }
 
   /** Starts serving a group's feed with the remembered mode. Publishes nothing by itself. */
@@ -34,12 +36,12 @@ export class PositionSharing {
     this.detach();
     this.#feed = feed;
     this.mode = mode;
-    if (mode === 'sharing') this.#startWatching();
+    if (mode === 'sharing') this.#startReporting();
   }
 
-  /** Stops watching the position, for instance when the active group changes. */
+  /** Stops reporting, for instance when the active group changes. */
   detach(): void {
-    this.#stopWatching();
+    this.#stopReporting();
     this.#feed = null;
   }
 
@@ -48,45 +50,30 @@ export class PositionSharing {
     await this.#db.put('settings', mode, 'positionMode');
     this.mode = mode;
     if (mode === 'sharing') {
-      this.#startWatching();
+      this.#startReporting();
       return;
     }
-    this.#stopWatching();
+    this.#stopReporting();
     if (mode === 'hidden') await this.#feed?.hidePosition();
   }
 
-  #startWatching(): void {
-    if (this.#watch !== null) return;
+  #startReporting(): void {
+    if (this.#release !== null) return;
     this.#last = null;
-    this.problem = null;
-    this.#watch = navigator.geolocation.watchPosition(
-      (position) => {
-        this.problem = null;
-        void this.#report(position);
-      },
-      (error) => {
-        this.problem = error.code === error.PERMISSION_DENIED ? 'denied' : 'unavailable';
-      },
-      { enableHighAccuracy: true, maximumAge: 5000 },
-    );
-  }
-
-  #stopWatching(): void {
-    if (this.#watch !== null) navigator.geolocation.clearWatch(this.#watch);
-    this.#watch = null;
-  }
-
-  async #report(position: GeolocationPosition): Promise<void> {
-    const { latitude, longitude, accuracy, heading, speed } = position.coords;
-    const at = { lat: latitude, lon: longitude };
-    const time = Math.floor(position.timestamp / 1000);
-    if (this.#feed === null || !shouldReport(this.#last, at, time)) return;
-    this.#last = { at, time };
-    await this.#feed.sharePosition({
-      ...at,
-      accuracy: Number.isFinite(accuracy) ? accuracy : null,
-      heading: heading !== null && Number.isFinite(heading) ? heading : null,
-      speed: speed !== null && Number.isFinite(speed) ? speed : null,
+    this.#release = this.#location.use((fix) => {
+      void this.#report(fix);
     });
+  }
+
+  #stopReporting(): void {
+    this.#release?.();
+    this.#release = null;
+  }
+
+  async #report(fix: DeviceFix): Promise<void> {
+    const time = Math.floor(fix.time / 1000);
+    if (this.#feed === null || !shouldReport(this.#last, fix.at, time)) return;
+    this.#last = { at: fix.at, time };
+    await this.#feed.sharePosition(fix);
   }
 }

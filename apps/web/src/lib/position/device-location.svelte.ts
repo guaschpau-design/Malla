@@ -1,0 +1,91 @@
+// Where this device is: the one reading of the GPS that everything uses (sharing the position,
+// following it on the map, navigating). The GPS runs only while something uses it, so nothing
+// asks for the location, or spends battery on it, unless the user turned that something on.
+
+import type { LatLon } from '@tesel/protocol';
+
+export interface DeviceFix {
+  readonly at: LatLon;
+  /** Radius in metres within which the device is, as the browser estimates it. */
+  readonly accuracy: number | null;
+  /** Degrees clockwise from true north; known only while moving. */
+  readonly heading: number | null;
+  /** Metres per second; known only while moving. */
+  readonly speed: number | null;
+  /** When the fix was taken, in milliseconds since the epoch. */
+  readonly time: number;
+}
+
+export type LocationProblem = 'denied' | 'unavailable';
+
+/** The part of the browser's Geolocation API this module uses, so tests can stand in for it. */
+export type GeolocationSource = Pick<Geolocation, 'watchPosition' | 'clearWatch'>;
+
+export class DeviceLocation {
+  /** The latest fix while the GPS runs; null before the first one and once it stops. */
+  fix: DeviceFix | null = $state.raw(null);
+  /** Why there is no fix, if the browser said so. Cleared by the next fix or when the GPS stops. */
+  problem: LocationProblem | null = $state(null);
+
+  readonly #source: GeolocationSource;
+  /** Whoever uses the location now, each with what to do on a new fix. */
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity -- bookkeeping, never rendered
+  readonly #users = new Set<{ readonly onfix: ((fix: DeviceFix) => void) | undefined }>();
+  #watch: number | null = null;
+
+  constructor(source: GeolocationSource = navigator.geolocation) {
+    this.#source = source;
+  }
+
+  /**
+   * Keeps the GPS on until the returned function is called, and hands each new fix to `onfix`.
+   * Every user of the location calls this; the GPS stops when the last one lets go.
+   */
+  use(onfix?: (fix: DeviceFix) => void): () => void {
+    const user = { onfix };
+    this.#users.add(user);
+    this.#start();
+    return () => {
+      // Letting go twice is harmless: the second time, the user is already gone.
+      if (this.#users.delete(user) && this.#users.size === 0) this.#stop();
+    };
+  }
+
+  #start(): void {
+    if (this.#watch !== null) return;
+    this.#watch = this.#source.watchPosition(
+      (position) => {
+        this.#receive(position);
+      },
+      (error) => {
+        this.problem = error.code === error.PERMISSION_DENIED ? 'denied' : 'unavailable';
+      },
+      { enableHighAccuracy: true, maximumAge: 5000 },
+    );
+  }
+
+  #stop(): void {
+    if (this.#watch !== null) this.#source.clearWatch(this.#watch);
+    this.#watch = null;
+    this.fix = null;
+    this.problem = null;
+  }
+
+  #receive(position: GeolocationPosition): void {
+    const { latitude, longitude, accuracy, heading, speed } = position.coords;
+    const fix: DeviceFix = {
+      at: { lat: latitude, lon: longitude },
+      accuracy: finiteOrNull(accuracy),
+      heading: finiteOrNull(heading),
+      speed: finiteOrNull(speed),
+      time: position.timestamp,
+    };
+    this.fix = fix;
+    this.problem = null;
+    for (const { onfix } of this.#users) onfix?.(fix);
+  }
+}
+
+function finiteOrNull(value: number | null): number | null {
+  return value !== null && Number.isFinite(value) ? value : null;
+}

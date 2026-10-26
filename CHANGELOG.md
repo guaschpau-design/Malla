@@ -9,6 +9,7 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 ### Map
 
 - OpenStreetMap vector base map, installable as an app and usable offline.
+- This device on the map where it is now, with its accuracy, and a button that keeps the map centred on it. The GPS runs only while something uses it.
 - Areas downloaded tile by tile for offline use ([ADR-0011](docs/decisions/0011-client-side-area-download.md)).
 - The base map (Spain, Portugal and the islands) is built from OpenStreetMap by our own server and served by it and by command posts.
 

@@ -22,6 +22,7 @@
   import { pmtilesArchive, registerTileProtocol } from './lib/map/tile-source.ts';
   import { openTileStore, type TileStore } from './lib/map/tile-store.ts';
   import OfflineAreasPanel from './lib/offline/OfflineAreasPanel.svelte';
+  import { DeviceLocation } from './lib/position/device-location.svelte.ts';
   import { loadPositionMode, PositionSharing } from './lib/position/position-sharing.svelte.ts';
   import UpdatePrompt from './lib/pwa/UpdatePrompt.svelte';
   import { RadioSession } from './lib/radio/radio.svelte.ts';
@@ -52,6 +53,7 @@
   let feed: GroupFeed | undefined = $state.raw();
   let map: MapLibreMap | undefined = $state();
   const radio = new RadioSession();
+  const location = new DeviceLocation();
   /** How this device reaches its group now (lib/links). */
   const linkInput = $derived({
     server: feed?.status ?? null,
@@ -79,7 +81,7 @@
     });
     void openAppDb().then(async (opened) => {
       db = opened;
-      sharing = new PositionSharing(opened);
+      sharing = new PositionSharing(opened, location);
       void radio.useStorage(opened);
       session = await Session.load(opened);
     });
@@ -211,7 +213,7 @@
     {/if}
 
     {#if map}
-      <MapWorkspace {t} {locale} {map} group={workspaceGroup} {radio} />
+      <MapWorkspace {t} {locale} {map} group={workspaceGroup} {radio} {location} />
     {/if}
 
     {#if map && store && panels.open === 'offline'}

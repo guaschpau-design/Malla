@@ -1,10 +1,10 @@
 <!-- While drawing: every tap on the map adds a point, and the drawing so far is previewed. -->
 <script lang="ts">
   import type { LatLon } from '@tesel/protocol';
-  import type { GeoJSONSource, Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
+  import type { Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
   import { onMount } from 'svelte';
 
-  import { keepInstalled } from '../map/overlay.ts';
+  import { useOverlay } from '../map/overlay.svelte.ts';
   import { themeColor } from '../ui/theme.ts';
   import type { Draft } from './draft.ts';
   import { draftFeatures } from './draft-features.ts';
@@ -18,55 +18,47 @@
   let { map, draft, onpoint }: Props = $props();
 
   const SOURCE = 'tesel-draft';
-  const LAYERS = [`${SOURCE}-line`, `${SOURCE}-point`];
   const data = $derived(draftFeatures(draft));
 
-  function install(): void {
-    if (map.getSource(SOURCE) !== undefined) return;
-    map.addSource(SOURCE, { type: 'geojson', data });
-    // A drawing in progress: an ink dashed line, with this device's lime on its points.
-    const ink = themeColor('ink');
-    map.addLayer({
-      id: `${SOURCE}-line`,
-      type: 'line',
-      source: SOURCE,
-      filter: ['==', ['geometry-type'], 'LineString'],
-      paint: { 'line-color': ink, 'line-width': 3, 'line-dasharray': [2, 1] },
-    });
-    map.addLayer({
-      id: `${SOURCE}-point`,
-      type: 'circle',
-      source: SOURCE,
-      filter: ['==', ['geometry-type'], 'Point'],
-      paint: {
-        'circle-radius': 6,
-        'circle-color': themeColor('self'),
-        'circle-stroke-width': 2.5,
-        'circle-stroke-color': ink,
-      },
-    });
-  }
+  // A drawing in progress: an ink dashed line, with this device's lime on its points.
+  useOverlay(() => map, {
+    data: { [SOURCE]: () => data },
+    layers: () => {
+      const ink = themeColor('ink');
+      return [
+        {
+          id: `${SOURCE}-line`,
+          type: 'line',
+          source: SOURCE,
+          filter: ['==', ['geometry-type'], 'LineString'],
+          paint: { 'line-color': ink, 'line-width': 3, 'line-dasharray': [2, 1] },
+        },
+        {
+          id: `${SOURCE}-point`,
+          type: 'circle',
+          source: SOURCE,
+          filter: ['==', ['geometry-type'], 'Point'],
+          paint: {
+            'circle-radius': 6,
+            'circle-color': themeColor('self'),
+            'circle-stroke-width': 2.5,
+            'circle-stroke-color': ink,
+          },
+        },
+      ];
+    },
+  });
 
   function onClick(event: MapMouseEvent): void {
     onpoint({ lat: event.lngLat.lat, lon: event.lngLat.lng });
   }
 
   onMount(() => {
-    const stopInstalling = keepInstalled(map, install);
     map.on('click', onClick);
     map.getCanvas().style.cursor = 'crosshair';
     return () => {
-      stopInstalling();
       map.off('click', onClick);
       map.getCanvas().style.cursor = '';
-      for (const id of LAYERS) if (map.getLayer(id)) map.removeLayer(id);
-      if (map.getSource(SOURCE)) map.removeSource(SOURCE);
     };
-  });
-
-  // Read `data` first, so the effect depends on it even before the source exists.
-  $effect(() => {
-    const current = data;
-    void map.getSource<GeoJSONSource>(SOURCE)?.setData(current);
   });
 </script>

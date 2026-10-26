@@ -1,10 +1,10 @@
-// How marker symbols and shape styles (protocol §4) look in this app: a pictogram (glyphs.ts) and
+// How marker symbols and shape styles (protocol §4) look in this app: a pictogram (ui/glyphs.ts) and
 // a family of colour (app.css). Unknown codes fall back to the generic symbol and the neutral
 // style, as the protocol requires.
 
 import type { MessageKey } from '../i18n/index.ts';
 import type { Tone } from '../ui/theme.ts';
-import type { GlyphName } from './glyphs.ts';
+import type { GlyphName } from '../ui/glyphs.ts';
 
 export interface SymbolInfo {
   readonly code: number;

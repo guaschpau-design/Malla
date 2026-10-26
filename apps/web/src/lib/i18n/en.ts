@@ -109,6 +109,9 @@ export const en = {
   messageTooLong: 'Too long to send over radio: shorten it.',
   locationDenied: 'Location permission is off. Turn it on for this app in the browser settings.',
   locationUnavailable: 'Your position is not available right now.',
+  locateStart: 'Show my location',
+  locateStop: 'Stop showing my location',
+  locateCentre: 'Centre the map on me',
   syncSynced: 'Synced with the group’s server.',
   syncViaCommandPost:
     'Synced through a command post. It passes everything on to the rest of the group when it has internet.',

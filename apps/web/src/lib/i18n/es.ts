@@ -110,6 +110,9 @@ export const es: Messages = {
   locationDenied:
     'El permiso de ubicación está desactivado. Actívalo para esta app en los ajustes del navegador.',
   locationUnavailable: 'Tu posición no está disponible ahora mismo.',
+  locateStart: 'Mostrar mi ubicación',
+  locateStop: 'Dejar de mostrar mi ubicación',
+  locateCentre: 'Centrar el mapa en mí',
   syncSynced: 'Sincronizado con el servidor del grupo.',
   syncViaCommandPost:
     'Sincronizado a través de un puesto de mando. Lo pasa todo al resto del grupo cuando tiene internet.',

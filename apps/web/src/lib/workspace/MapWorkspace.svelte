@@ -26,7 +26,10 @@
   import ObjectDetails from '../objects/ObjectDetails.svelte';
   import ObjectForm from '../objects/ObjectForm.svelte';
   import ObjectLayer from '../objects/ObjectLayer.svelte';
+  import type { DeviceLocation } from '../position/device-location.svelte.ts';
+  import LocateControl from '../position/LocateControl.svelte';
   import PositionControl from '../position/PositionControl.svelte';
+  import SelfLayer from '../position/SelfLayer.svelte';
   import type { RadioSession } from '../radio/radio.svelte.ts';
   import type { PositionSharing } from '../position/position-sharing.svelte.ts';
   import type { GroupFeed } from '../sync/group-feed.svelte.ts';
@@ -40,9 +43,10 @@
     /** The active group's feed and this device's place in it, when there is an active group. */
     group: { feed: GroupFeed; self: NodeId; role: Role; sharing: PositionSharing } | null;
     radio: RadioSession;
+    location: DeviceLocation;
   }
 
-  let { t, locale, map, group, radio }: Props = $props();
+  let { t, locale, map, group, radio, location }: Props = $props();
 
   // Drawing: tapping points (`draft`), then describing the object (`describing`).
   let draft: Draft | null = $state.raw(null);
@@ -125,7 +129,7 @@
 </script>
 
 {#if group}
-  {@const { feed, self, role, sharing } = group}
+  {@const { feed, self, role } = group}
   <MemberLayer {map} groupState={feed.state} {self} />
   <ObjectLayer {map} groupState={feed.state} interactive={draft === null} onselect={select} />
 
@@ -191,11 +195,15 @@
     <SosDialog {t} fallback={mapCentre()} onsend={sendSos} oncancel={() => (sosOpen = false)} />
   {/if}
 
-  {#if sharing.problem}
-    <Toast>{sharing.problem === 'denied' ? t('locationDenied') : t('locationUnavailable')}</Toast>
-  {:else if notice}
+  {#if notice}
     <Toast>{notice}</Toast>
   {/if}
+{/if}
+
+<SelfLayer {map} {location} />
+<LocateControl {t} {map} {location} />
+{#if location.problem}
+  <Toast>{location.problem === 'denied' ? t('locationDenied') : t('locationUnavailable')}</Toast>
 {/if}
 
 {#if !draft}

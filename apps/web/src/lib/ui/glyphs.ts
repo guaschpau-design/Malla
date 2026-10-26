@@ -46,7 +46,7 @@ export const GLYPHS = {
     ['M12 10.5V20.5M8 20.5h8', 'M8.8 7.2a4.6 4.6 0 0 1 6.4 0', 'M6.2 4.6a8.3 8.3 0 0 1 11.6 0'],
     ['M12 8.8a1.6 1.6 0 1 1 0 3.2a1.6 1.6 0 1 1 0-3.2z'],
   ),
-  // Signs of the interface: the channels a device uses (links/LinkButton.svelte).
+  // Signs of the interface rather than of map symbols.
   globe: glyph([
     'M12 3.5a8.5 8.5 0 1 1 0 17a8.5 8.5 0 1 1 0-17z',
     'M3.5 12h17',
@@ -55,6 +55,10 @@ export const GLYPHS = {
   wifi: glyph(
     ['M4 9.5a11.3 11.3 0 0 1 16 0', 'M7 12.8a7 7 0 0 1 10 0', 'M9.9 15.9a2.9 2.9 0 0 1 4.2 0'],
     ['M12 17.6a1.5 1.5 0 1 1 0 3a1.5 1.5 0 1 1 0-3z'],
+  ),
+  locate: glyph(
+    ['M12 5.5a6.5 6.5 0 1 1 0 13a6.5 6.5 0 1 1 0-13z', 'M12 2v3.5M12 18.5V22M2 12h3.5M18.5 12H22'],
+    ['M12 9.8a2.2 2.2 0 1 1 0 4.4a2.2 2.2 0 1 1 0-4.4z'],
   ),
 } satisfies Record<string, Glyph>;
 

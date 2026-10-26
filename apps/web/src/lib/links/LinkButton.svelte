@@ -2,8 +2,8 @@
      connections panel. -->
 <script lang="ts">
   import type { Translate } from '../i18n/index.ts';
-  import type { GlyphName } from '../objects/glyphs.ts';
-  import Pictogram from '../objects/Pictogram.svelte';
+  import type { GlyphName } from '../ui/glyphs.ts';
+  import Pictogram from '../ui/Pictogram.svelte';
   import type { Channel, Link } from './links.ts';
 
   interface Props {

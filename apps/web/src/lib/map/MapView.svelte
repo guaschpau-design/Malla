@@ -1,13 +1,7 @@
 <script lang="ts">
   import 'maplibre-gl/dist/maplibre-gl.css';
 
-  import {
-    GeolocateControl,
-    Map as MapLibreMap,
-    NavigationControl,
-    ScaleControl,
-    setWorkerUrl,
-  } from 'maplibre-gl';
+  import { Map as MapLibreMap, NavigationControl, ScaleControl, setWorkerUrl } from 'maplibre-gl';
   // MapLibre loads its worker relative to its own module, which bundling breaks; give Vite
   // the worker as a separate asset instead.
   import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
@@ -43,13 +37,6 @@
       hash: 'map',
     });
     instance.addControl(new NavigationControl({ showCompass: true }), 'top-right');
-    instance.addControl(
-      new GeolocateControl({
-        positionOptions: { enableHighAccuracy: true },
-        trackUserLocation: true,
-      }),
-      'top-right',
-    );
     instance.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left');
     map = instance;
     onready(instance);

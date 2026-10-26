@@ -12,7 +12,7 @@ import {
   TILE_GLYPH_SIZE,
   TILE_RADIUS,
   tilePath,
-} from './glyphs.ts';
+} from '../ui/glyphs.ts';
 
 /** Drawn at twice the size, for sharp icons on high-density screens. */
 const PIXEL_RATIO = 2;
