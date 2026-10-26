@@ -1,6 +1,6 @@
 <!--
   Everything on top of the map: this device, the group's members, objects and incidents, drawing,
-  measuring and navigating, the panels and the toolbar. Without an active group, only what works
+  measuring and navigating, the panels and the dock. Without an active group, only what works
   alone: this device, coordinates, measuring, navigating to a point and offline maps.
 -->
 <script lang="ts">
@@ -9,13 +9,15 @@
 
   import { onMount } from 'svelte';
 
-  import CoordinatesPanel from '../coordinates/CoordinatesPanel.svelte';
+  import FindCoordinatePanel from '../coordinates/FindCoordinatePanel.svelte';
   import PointLayer from '../coordinates/PointLayer.svelte';
+  import PointPanel from '../coordinates/PointPanel.svelte';
   import type { Locale, Translate } from '../i18n/index.ts';
   import IncidentBanners from '../incidents/IncidentBanners.svelte';
   import SosDialog from '../incidents/SosDialog.svelte';
   import { onLongPress } from '../map/long-press.ts';
   import LayersPanel from '../map/LayersPanel.svelte';
+  import MapControl from '../map/MapControl.svelte';
   import MemberLayer from '../map/MemberLayer.svelte';
   import TrailLayer from '../map/TrailLayer.svelte';
   import Measuring from '../measure/Measuring.svelte';
@@ -28,17 +30,19 @@
   import ObjectForm from '../objects/ObjectForm.svelte';
   import ObjectLayer from '../objects/ObjectLayer.svelte';
   import type { DeviceLocation } from '../position/device-location.svelte.ts';
-  import LocateControl from '../position/LocateControl.svelte';
+  import LocateButton from '../position/LocateButton.svelte';
+  import MePanel from '../position/MePanel.svelte';
   import SelfLayer from '../position/SelfLayer.svelte';
   import type { RadioSession } from '../radio/radio.svelte.ts';
   import type { PositionSharing } from '../position/position-sharing.svelte.ts';
   import type { Preferences } from '../settings/preferences.ts';
   import type { GroupFeed } from '../sync/group-feed.svelte.ts';
+  import Pictogram from '../ui/Pictogram.svelte';
   import Toast from '../ui/Toast.svelte';
-  import { closePanel, panels } from '../ui/panels.svelte.ts';
+  import { closePanel, panels, togglePanel } from '../ui/panels.svelte.ts';
   import { keepScreenAwake } from '../ui/screen-awake.svelte.ts';
+  import Dock from './Dock.svelte';
   import GroupPanels from './GroupPanels.svelte';
-  import Toolbar from './Toolbar.svelte';
 
   interface Props {
     t: Translate;
@@ -57,9 +61,10 @@
   keepScreenAwake(() => preferences.keepScreenOn.value || navigation.target !== null);
 
   const drawing = new Drawing();
-  let measuring = $state(false);
+  /** Measuring, and the point it started from if any. */
+  let measuring: { readonly from: LatLon | null } | null = $state.raw(null);
   /** Drawing or measuring: taps on the map add points instead of opening what they hit. */
-  const tapping = $derived(drawing.draft !== null || measuring);
+  const tapping = $derived(drawing.draft !== null || measuring !== null);
   const shown = $derived({
     members: !preferences.hiddenLayers.value.includes('members'),
     trails: !preferences.hiddenLayers.value.includes('trails'),
@@ -67,7 +72,7 @@
   });
   let selected: string | null = $state(null);
   let selectedMember: NodeId | null = $state(null);
-  /** The point shown in the coordinates panel. */
+  /** The point shown in the point panel. */
   let point: LatLon | null = $state.raw(null);
   let sosOpen = $state(false);
   let notice: string | null = $state(null);
@@ -79,7 +84,7 @@
 
   function startDrawing(kind: DraftKind): void {
     closePanel();
-    measuring = false;
+    measuring = null;
     drawing.start(kind);
   }
 
@@ -126,9 +131,10 @@
     panels.open = 'member';
   }
 
-  function startMeasuring(): void {
+  function startMeasuring(from: LatLon | null): void {
     closePanel();
-    measuring = true;
+    drawing.stop();
+    measuring = { from };
   }
 
   async function sendSos(
@@ -218,19 +224,37 @@
   {/if}
 {/if}
 
-{#if panels.open === 'point'}
-  {#if point}<PointLayer {map} {point} />{/if}
-  <CoordinatesPanel
+{#if panels.open === 'point' && point}
+  {@const at = point}
+  <PointLayer {map} point={at} />
+  <PointPanel
     {t}
-    {point}
-    format={preferences.coordinateFormat}
     {locale}
+    {at}
     {location}
-    onfind={find}
-    onmark={group ? markAt : null}
-    onnavigate={(at: LatLon) => {
+    format={preferences.coordinateFormat}
+    onnavigate={() => {
       navigateTo({ kind: 'point', at, name: t('mapPoint') });
     }}
+    onmeasure={() => {
+      startMeasuring(at);
+    }}
+    onmark={group
+      ? () => {
+          markAt(at);
+        }
+      : null}
+    onclose={closePanel}
+  />
+{:else if panels.open === 'find'}
+  <FindCoordinatePanel {t} onfind={find} onclose={closePanel} />
+{:else if panels.open === 'me'}
+  <MePanel
+    {t}
+    {locale}
+    {location}
+    format={preferences.coordinateFormat}
+    sharing={group?.sharing ?? null}
     onclose={closePanel}
   />
 {/if}
@@ -265,7 +289,7 @@
       }}
     />
   {:else if measuring}
-    <Measuring {t} {locale} {map} onclose={() => (measuring = false)} />
+    <Measuring {t} {locale} {map} from={measuring.from} onclose={() => (measuring = null)} />
   {/if}
   <Navigation {t} {locale} {map} {location} groupState={group?.feed.state ?? null} />
   {#if group && !tapping}
@@ -281,18 +305,32 @@
     />
   {/if}
 </div>
-<LocateControl {t} {map} {location} />
+<MapControl {map}>
+  <LocateButton {t} {map} {location} />
+  <button
+    aria-label={t('layers')}
+    title={t('layers')}
+    aria-expanded={panels.open === 'layers'}
+    onclick={() => {
+      togglePanel('layers');
+    }}
+  >
+    <Pictogram name="layers" size={18} />
+  </button>
+</MapControl>
 {#if location.problem}
   <Toast>{location.problem === 'denied' ? t('locationDenied') : t('locationUnavailable')}</Toast>
 {/if}
 
 {#if !tapping}
-  <Toolbar
+  <Dock
     {t}
     sharing={group?.sharing ?? null}
     onsos={() => (sosOpen = true)}
     ondraw={startDrawing}
-    onmeasure={startMeasuring}
+    onmeasure={() => {
+      startMeasuring(null);
+    }}
     keepScreenOn={preferences.keepScreenOn}
   />
 {/if}

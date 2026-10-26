@@ -2,7 +2,7 @@
 
 import { expect, test } from '@playwright/test';
 
-import { chooseAlias } from './helpers.ts';
+import { chooseAlias, openMore } from './helpers.ts';
 
 test('a downloaded area keeps working after going offline and reloading', async ({
   page,
@@ -19,8 +19,7 @@ test('a downloaded area keeps working after going offline and reloading', async 
     )
     .toBe(true);
 
-  await page.getByRole('button', { name: 'Herramientas' }).click();
-  await page.getByRole('menuitem', { name: 'Mapas sin conexión' }).click();
+  await openMore(page, 'Mapas sin conexión');
   await page.getByLabel('Nombre').fill('Valencia centro');
   await page.getByRole('button', { name: 'Descargar', exact: true }).click();
   await expect(page.getByText('Valencia centro')).toBeVisible();

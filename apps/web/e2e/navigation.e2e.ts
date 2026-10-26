@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { device } from './helpers.ts';
+import { device, openMore } from './helpers.ts';
 
 test('a point picked on the map is measured from here and navigated to', async ({ browser }) => {
   const page = await device(browser, 'Ana');
@@ -13,20 +13,19 @@ test('a point picked on the map is measured from here and navigated to', async (
   if (box === null) throw new Error('no map');
   await canvas.click({ button: 'right', position: { x: box.width / 2, y: box.height / 2 - 150 } });
 
-  const panel = page.getByRole('region', { name: 'Coordenadas' });
-  await expect(panel.getByText(/^\d+ m · 00\d° N desde ti$/)).toBeVisible();
-  await panel.getByRole('button', { name: 'Guíame hasta aquí' }).click();
+  const panel = page.getByRole('region', { name: 'Punto del mapa' });
+  await expect(panel.getByText(/^\d+ m · (00\d|35\d)° N desde ti$/)).toBeVisible();
+  await panel.getByRole('button', { name: 'Guíame' }).click();
 
   const card = page.getByRole('status').filter({ hasText: 'Hacia Punto del mapa' });
-  await expect(card).toContainText(/\d+ m · 00\d° N/);
+  await expect(card).toContainText(/\d+ m · (00\d|35\d)° N/);
   await card.getByRole('button', { name: 'Parar' }).click();
   await expect(card).toBeHidden();
 });
 
 test('distances are measured point by point, with the area they enclose', async ({ browser }) => {
   const page = await device(browser, 'Ana');
-  await page.getByRole('button', { name: 'Herramientas' }).click();
-  await page.getByRole('menuitem', { name: 'Medir distancias' }).click();
+  await openMore(page, 'Medir distancias');
   const card = page.getByRole('status').filter({ hasText: 'Toca el mapa para medir' });
   await expect(card).toBeVisible();
 
@@ -43,5 +42,5 @@ test('distances are measured point by point, with the area they enclose', async 
   await measures.getByRole('button', { name: 'Deshacer' }).click();
   await expect(page.getByText('área encerrada')).toBeHidden();
   await page.getByRole('button', { name: 'Cerrar' }).click();
-  await expect(page.getByRole('button', { name: 'Herramientas' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Más' })).toBeVisible();
 });

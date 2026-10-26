@@ -2,7 +2,7 @@
 
 import { expect, test } from '@playwright/test';
 
-import { device, twoMembers } from './helpers.ts';
+import { device, shareAs, twoMembers } from './helpers.ts';
 
 test('new groups propose the build’s own server', async ({ browser }) => {
   const ana = await device(browser, 'Ana');
@@ -28,17 +28,13 @@ test('members of a group chat and see who shares their position', async ({ brows
 
   // Berta shares her position; Ana's member list shows it, then shows when she hides it.
   await berta.getByRole('button', { name: 'Cerrar' }).click();
-  await berta.getByRole('button', { name: 'Mi posición: Posición oculta' }).click();
-  await berta.getByRole('menuitemradio', { name: /^Compartir/ }).click();
-  await expect(
-    berta.getByRole('button', { name: 'Mi posición: Compartiendo posición' }),
-  ).toBeVisible();
+  await shareAs(berta, 'Compartir');
+  await expect(berta.getByRole('button', { name: 'Yo: Compartiendo posición' })).toBeVisible();
   await ana.getByRole('button', { name: 'Cerrar' }).click();
   await ana.getByRole('button', { name: /^Grupos:/ }).click();
   const bertaRow = ana.getByRole('listitem').filter({ hasText: /^Berta/ });
   await expect(bertaRow).toContainText('comparte posición');
-  await berta.getByRole('button', { name: 'Mi posición: Compartiendo posición' }).click();
-  await berta.getByRole('menuitemradio', { name: /^Ocultar/ }).click();
+  await shareAs(berta, 'Ocultar');
   await expect(bertaRow).toContainText('no comparte posición');
 
   // A device that reloads gets the history from its own log and the server.
@@ -49,15 +45,10 @@ test('members of a group chat and see who shares their position', async ({ brows
 
 test('sharing resumes by itself after the app restarts', async ({ browser }) => {
   const { ana, berta } = await twoMembers(browser);
-  await berta.getByRole('button', { name: 'Mi posición: Posición oculta' }).click();
-  await berta.getByRole('menuitemradio', { name: /^Compartir/ }).click();
-  await expect(
-    berta.getByRole('button', { name: 'Mi posición: Compartiendo posición' }),
-  ).toBeVisible();
+  await shareAs(berta, 'Compartir');
+  await expect(berta.getByRole('button', { name: 'Yo: Compartiendo posición' })).toBeVisible();
   await berta.reload();
-  await expect(
-    berta.getByRole('button', { name: 'Mi posición: Compartiendo posición' }),
-  ).toBeVisible();
+  await expect(berta.getByRole('button', { name: 'Yo: Compartiendo posición' })).toBeVisible();
   await ana.getByRole('button', { name: /^Grupos:/ }).click();
   await expect(ana.getByRole('listitem').filter({ hasText: /^Berta/ })).toContainText(
     'comparte posición',

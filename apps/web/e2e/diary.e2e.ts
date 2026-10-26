@@ -2,11 +2,10 @@ import { readFile } from 'node:fs/promises';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { twoMembers } from './helpers.ts';
+import { openMore, twoMembers } from './helpers.ts';
 
 async function openDiary(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Herramientas' }).click();
-  await page.getByRole('menuitem', { name: 'Diario de la operación' }).click();
+  await openMore(page, 'Diario de la operación');
 }
 
 test('the diary tells what happened and downloads as text for the report', async ({ browser }) => {

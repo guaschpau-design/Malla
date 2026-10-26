@@ -15,7 +15,7 @@ async function tapMapCentre(page: Page): Promise<void> {
 test('a marker drawn by one member can be opened and deleted by another', async ({ browser }) => {
   const { ana, berta } = await twoMembers(browser, VIEW);
 
-  await ana.getByRole('button', { name: 'Dibujar' }).click();
+  await ana.getByRole('button', { name: 'Añadir' }).click();
   await ana.getByRole('menuitem', { name: 'Marcador' }).click();
   await expect(ana.getByText('Toca el mapa donde va el marcador.')).toBeVisible();
   await tapMapCentre(ana);
@@ -86,7 +86,7 @@ test('an area is drawn point by point and described before it is shared', async 
   const at = (dx: number, dy: number) =>
     ana.mouse.click(box.x + box.width / 2 + dx, box.y + box.height / 2 + dy);
 
-  await ana.getByRole('button', { name: 'Dibujar' }).click();
+  await ana.getByRole('button', { name: 'Añadir' }).click();
   await ana.getByRole('menuitem', { name: 'Zona' }).click();
   await expect(ana.getByRole('button', { name: 'Terminar' })).toBeDisabled();
   await at(-80, -80);

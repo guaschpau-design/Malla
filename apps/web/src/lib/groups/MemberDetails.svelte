@@ -13,6 +13,7 @@
   import type { Heard } from '../links/heard.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import { useNow } from '../ui/now.svelte.ts';
+  import ActionButton from '../ui/ActionButton.svelte';
   import Panel from '../ui/Panel.svelte';
   import { ROLE_LABELS } from './role-label.ts';
 
@@ -46,15 +47,16 @@
       {@const at = { lat: report.lat, lon: report.lon }}
       <p class="hint">{t('positionAt', { time: formatTime(report.time * 1000, locale) })}</p>
       <CoordinateBlock {t} {at} {format} />
-      <FromHere
-        {t}
-        {locale}
-        {at}
-        {location}
-        onnavigate={() => {
-          onnavigate(alias);
-        }}
-      />
+      <FromHere {t} {locale} {at} {location} />
+      <div class="row">
+        <ActionButton
+          icon="heading"
+          label={t('guideMe')}
+          onclick={() => {
+            onnavigate(alias);
+          }}
+        />
+      </div>
     {:else}
       <p class="hint">{t('memberNoPosition')}</p>
     {/if}

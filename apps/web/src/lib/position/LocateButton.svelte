@@ -4,7 +4,6 @@
   import { onMount, untrack } from 'svelte';
 
   import type { MessageKey, Translate } from '../i18n/index.ts';
-  import MapControl from '../map/MapControl.svelte';
   import Pictogram from '../ui/Pictogram.svelte';
   import type { DeviceLocation } from './device-location.svelte.ts';
   import { afterPan, afterPress, type FollowMode } from './follow.ts';
@@ -62,29 +61,17 @@
   });
 </script>
 
-<MapControl {map}>
-  <button
-    class="locate {mode}"
-    onclick={press}
-    aria-pressed={mode === 'follow'}
-    aria-label={t(ACTIONS[mode])}
-    title={t(ACTIONS[mode])}
-  >
-    <Pictogram name="locate" size={18} />
-  </button>
-</MapControl>
+<button
+  class="locate {mode}"
+  onclick={press}
+  aria-pressed={mode === 'follow'}
+  aria-label={t(ACTIONS[mode])}
+  title={t(ACTIONS[mode])}
+>
+  <Pictogram name="locate" size={18} />
+</button>
 
 <style>
-  /* Sized and coloured like MapLibre's own buttons beside it. */
-  .locate {
-    display: grid;
-    place-items: center;
-    padding: 0;
-    color: var(--ink);
-    border: 0;
-    border-radius: 0;
-  }
-
   /* The buttons stay white in the dark theme, where the accent line is lime: use the deep shade. */
   .locate.follow {
     color: var(--signal-deep);

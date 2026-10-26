@@ -3,6 +3,7 @@
 // asks for the location, or spends battery on it, unless the user turned that something on.
 
 import type { LatLon } from '@tesel/protocol';
+import { untrack } from 'svelte';
 
 export interface DeviceFix {
   readonly at: LatLon;
@@ -38,13 +39,18 @@ export class DeviceLocation {
   }
 
   /**
-   * Keeps the GPS on until the returned function is called, and hands each new fix to `onfix`.
-   * Every user of the location calls this; the GPS stops when the last one lets go.
+   * Keeps the GPS on until the returned function is called, and hands `onfix` the current fix, if
+   * there is one, and each new one. Every user of the location calls this; the GPS stops when the
+   * last one lets go. A still device may report no new fix for a long time, so a user that comes
+   * while the GPS already runs starts from the fix others have.
    */
   use(onfix?: (fix: DeviceFix) => void): () => void {
     const user = { onfix };
     this.#users.add(user);
     this.#start();
+    // Not tracked: an effect that calls `use` must not rerun, and restart the GPS, on every fix.
+    const current = untrack(() => this.fix);
+    if (current !== null) onfix?.(current);
     return () => {
       // Letting go twice is harmless: the second time, the user is already gone.
       if (this.#users.delete(user) && this.#users.size === 0) this.#stop();

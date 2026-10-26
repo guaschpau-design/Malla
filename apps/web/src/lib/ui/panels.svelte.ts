@@ -9,6 +9,8 @@ export type PanelName =
   | 'connections'
   | 'point'
   | 'layers'
+  | 'me'
+  | 'find'
   | 'diary';
 
 export const panels = $state({ open: null as PanelName | null });

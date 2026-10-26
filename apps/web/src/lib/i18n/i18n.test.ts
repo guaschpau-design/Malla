@@ -1,3 +1,6 @@
+import { readdir, readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { en } from './en.ts';
@@ -19,5 +22,19 @@ describe('translations', () => {
     for (const key of Object.keys(en) as (keyof typeof en)[]) {
       expect(placeholders(es[key])).toEqual(placeholders(en[key]));
     }
+  });
+});
+
+describe('texts in use', () => {
+  it('has no text that nothing shows', async () => {
+    const root = join(import.meta.dirname, '..', '..');
+    const files = (await readdir(root, { recursive: true })).filter(
+      (file) => /\.(ts|svelte)$/.test(file) && !file.includes('i18n'),
+    );
+    const sources = (
+      await Promise.all(files.map((file) => readFile(join(root, file), 'utf8')))
+    ).join('\n');
+    const unused = Object.keys(en).filter((key) => !sources.includes(`'${key}'`));
+    expect(unused).toEqual([]);
   });
 });

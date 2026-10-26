@@ -60,6 +60,16 @@ describe('device location', () => {
     expect(location.fix).toEqual(expected);
   });
 
+  it('hands a newcomer the fix the GPS already has', () => {
+    const gps = new FakeGps();
+    const location = new DeviceLocation(gps);
+    location.use();
+    gps.fix(39.47, -0.37);
+    const heard: unknown[] = [];
+    location.use((fix) => heard.push(fix));
+    expect(heard).toHaveLength(1);
+  });
+
   it('forgets the fix and the problem when the GPS stops', () => {
     const gps = new FakeGps();
     const location = new DeviceLocation(gps);

@@ -5,8 +5,7 @@ import { device } from './helpers.ts';
 test('a hidden map layer stays hidden after the app restarts', async ({ browser }) => {
   const page = await device(browser, 'Ana');
   const openLayers = async () => {
-    await page.getByRole('button', { name: 'Herramientas' }).click();
-    await page.getByRole('menuitem', { name: 'Capas del mapa' }).click();
+    await page.getByRole('button', { name: 'Capas del mapa' }).click();
   };
   await openLayers();
   const trails = page.getByRole('checkbox', { name: /^Recorridos/ });

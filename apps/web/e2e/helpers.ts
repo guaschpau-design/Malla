@@ -45,3 +45,21 @@ export async function twoMembers(
   await expect(berta.getByTitle('Sincronizado')).toBeVisible();
   return { ana, berta };
 }
+
+/** Chooses how this device shares its position, in the "Me" panel, and closes the panel. */
+export async function shareAs(
+  page: Page,
+  choice: 'Compartir' | 'Pausar' | 'Ocultar',
+): Promise<void> {
+  await page.getByRole('button', { name: /^Yo/ }).click();
+  const panel = page.getByRole('region', { name: 'Yo' });
+  await panel.getByRole('radio', { name: new RegExp(`^${choice}`) }).click();
+  await expect(panel.getByRole('radio', { name: new RegExp(`^${choice}`) })).toBeChecked();
+  await panel.getByRole('button', { name: 'Cerrar' }).click();
+}
+
+/** Opens one of the items of the dock's "More" menu. */
+export async function openMore(page: Page, item: string): Promise<void> {
+  await page.getByRole('button', { name: 'Más' }).click();
+  await page.getByRole('menuitem', { name: item }).click();
+}

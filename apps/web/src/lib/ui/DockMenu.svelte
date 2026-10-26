@@ -1,0 +1,88 @@
+<!-- A dock button that opens a menu above the dock, aligned with the dock's right edge so it stays
+     on screen. The menu closes when an item is chosen, when the user taps elsewhere or presses
+     Escape. -->
+<script lang="ts">
+  import type { Snippet } from 'svelte';
+
+  import DockButton from './DockButton.svelte';
+  import type { GlyphName } from './glyphs.ts';
+
+  interface Props {
+    icon: GlyphName;
+    label: string;
+    /** The items; each calls `close` once chosen. */
+    items: Snippet<[close: () => void]>;
+  }
+
+  let { icon, label, items }: Props = $props();
+
+  let open = $state(false);
+  let root: HTMLDivElement;
+
+  function close(): void {
+    open = false;
+  }
+
+  function onPointerDown(event: PointerEvent): void {
+    if (open && event.target instanceof Node && !root.contains(event.target)) close();
+  }
+</script>
+
+<svelte:window
+  onpointerdown={onPointerDown}
+  onkeydown={(event: KeyboardEvent) => {
+    if (event.key === 'Escape') close();
+  }}
+/>
+
+<div class="dock-menu" bind:this={root}>
+  {#if open}
+    <div class="menu" role="menu" aria-label={label}>
+      {@render items(close)}
+    </div>
+  {/if}
+  <DockButton {icon} {label} expanded={open} onclick={() => (open = !open)} />
+</div>
+
+<style>
+  /* Not positioned: the menu places itself against the dock. */
+  .dock-menu {
+    display: flex;
+    flex: 1;
+  }
+
+  .menu {
+    position: absolute;
+    z-index: 3;
+    right: 0;
+    bottom: calc(100% + 0.75rem);
+    display: grid;
+    gap: 0.25rem;
+    width: min(18rem, calc(100vw - 2rem));
+    padding: 0.4rem;
+    color: var(--fg);
+    background: var(--surface);
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 30%);
+  }
+
+  /* Items are buttons with a pictogram, a name and, sometimes, a line of explanation. */
+  .menu :global(button) {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.15rem 0.7rem;
+    align-items: center;
+    text-align: left;
+    border-color: transparent;
+  }
+
+  .menu :global(button > span) {
+    grid-column: 2;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .menu :global(button[aria-checked='true']) {
+    border-color: var(--accent-line);
+  }
+</style>

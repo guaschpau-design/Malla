@@ -11,6 +11,7 @@
   import { objectPosition } from '../navigation/target.ts';
   import type { DeviceLocation } from '../position/device-location.svelte.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
+  import ActionButton from '../ui/ActionButton.svelte';
   import Panel from '../ui/Panel.svelte';
   import { objectKind } from './catalog.ts';
 
@@ -65,15 +66,7 @@
       </p>
       {#if at}
         <CoordinateBlock {t} {at} {format} />
-        <FromHere
-          {t}
-          {locale}
-          {at}
-          {location}
-          onnavigate={() => {
-            onnavigate(title);
-          }}
-        />
+        <FromHere {t} {locale} {at} {location} />
       {/if}
       <p class="hint">
         {t('changedBy', {
@@ -82,6 +75,15 @@
         })}
       </p>
       <div class="row">
+        {#if at}
+          <ActionButton
+            icon="heading"
+            label={t('guideMe')}
+            onclick={() => {
+              onnavigate(title);
+            }}
+          />
+        {/if}
         <button onclick={remove}>{t('delete')}</button>
       </div>
     </div>

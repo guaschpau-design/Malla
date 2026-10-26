@@ -27,3 +27,19 @@
 <div class="maplibregl-ctrl maplibregl-ctrl-group" bind:this={element}>
   {@render children()}
 </div>
+
+<style>
+  /* Buttons sized and coloured like MapLibre's own (zoom, compass). */
+  div :global(button) {
+    display: grid;
+    place-items: center;
+    padding: 0;
+    color: var(--ink);
+    border: 0;
+    border-radius: 0;
+  }
+
+  div :global(button + button) {
+    border-top: 1px solid var(--border);
+  }
+</style>

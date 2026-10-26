@@ -73,8 +73,9 @@ try {
   await page.getByRole('button', { name: 'Invitar' }).click();
   const link = await page.getByLabel('Enlace de invitación').inputValue();
   await page.getByRole('button', { name: 'Cerrar' }).click();
-  await page.getByRole('button', { name: 'Mi posición: Posición oculta' }).click();
-  await page.getByRole('menuitemradio', { name: /^Compartir/ }).click();
+  await page.getByRole('button', { name: /^Yo/ }).click();
+  await page.getByRole('radio', { name: /^Compartir/ }).click();
+  await page.getByRole('button', { name: 'Cerrar' }).click();
 
   const invitation = parseInvitationUrl(link);
   if (!invitation.ok || invitation.value.server === null) throw new Error(`bad link ${link}`);
