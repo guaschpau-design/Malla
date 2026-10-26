@@ -1,4 +1,4 @@
-// Payload field helpers shared by the codec: references, texts, measurements, enumerations and
+// Payload field helpers shared by the payload layouts (payloads.ts): references, texts, measurements, enumerations and
 // shape geometry (docs/protocol.md §1, §3).
 
 import { ByteReader, ByteWriter, encodeUtf8, ProtocolFailure } from './bytes.ts';

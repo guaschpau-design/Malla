@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { decodeEvent, encodeEvent, peekHeader } from './codec.ts';
-import { MAX_EVENT_SIZE } from './constants.ts';
+import { EventTypeCode, MAX_EVENT_SIZE } from './constants.ts';
 import type { NodeId, ShapeEvent, TeselEvent } from './events.ts';
+import { EVENT_TYPES, PAYLOADS } from './payloads.ts';
 import { ALICE, BOB, CAROL, hex, SAMPLE_EVENTS, seededRandom, T0, toHex } from './test-helpers.ts';
 
 function encodeOrFail(event: TeselEvent): Uint8Array {
@@ -374,5 +375,17 @@ describe('input validation', () => {
       time: T0,
     };
     expect(encodeEvent(event).ok).toBe(false);
+  });
+});
+
+describe('event types', () => {
+  it('gives every type of §3.2 a layout, each under its own code', () => {
+    const codes = EVENT_TYPES.map((type) => PAYLOADS[type].code);
+    expect(codes).toEqual(Object.values(EventTypeCode));
+  });
+
+  it('round-trips a sample of every known type', () => {
+    const sampled = new Set(SAMPLE_EVENTS.map((event) => event.type));
+    expect([...sampled].sort()).toEqual([...EVENT_TYPES].sort());
   });
 });

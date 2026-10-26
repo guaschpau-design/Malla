@@ -92,7 +92,7 @@ An event has a fixed 14-byte header — protocol version, type, origin node ID, 
 
 ### 3.4 Deriving state
 
-The current picture is a pure function of the event log, computed by the reducer in `packages/core`:
+The current picture is a pure function of the event log, computed by the reducer in `packages/core`. The state is composed of **slices**, one module per domain in `packages/core/src/state/`: each declares the event types it reads, its empty value and how one more event changes it. The reducer routes each event to the slices that read it and leaves the others untouched, so unchanged slices keep their identity and the UI only recomputes what changed.
 
 - **Positions:** latest `POSITION` or `POSITION_HIDDEN` per origin.
 - **Map objects:** identified by the `(origin, seq)` of the event that created them. Later `MARKER`/`SHAPE` events for the same object replace it; `OBJECT_DELETE` removes it. Conflicts resolve by **last writer wins**, ordering by `(timestamp, origin, seq)`.
@@ -101,6 +101,16 @@ The current picture is a pure function of the event log, computed by the reducer
 - **Acknowledgements:** per acknowledged event, the first `ACK` of each member.
 
 Events can arrive late, twice or out of order — through LoRa, a bridge and the server at once. The reducer is idempotent and order-independent, so this never matters. This is the property the tests protect most. See [ADR-0003](docs/decisions/0003-event-log-last-writer-wins.md).
+
+### 3.5 Adding an event type
+
+A new capability is a new event type (protocol §3.2 and §9: no version change). It touches one place in each layer, and the compiler or a test points at any that is missing:
+
+1. **Spec first:** its code and layout in [`docs/protocol.md`](docs/protocol.md) §3, its size within the 165-byte budget.
+2. **Protocol:** the type in `packages/protocol/src/events.ts`, the code in `constants.ts`, and its layout (writer next to reader) in `payloads.ts`, whose record is keyed by every event type. A round-trip sample goes in `test-helpers.ts`; a test fails while a type has none.
+3. **State:** a slice in `packages/core/src/state/`, or an existing slice that also reads the type, listed in `reducer.ts`. A test fails while a known type has no slice.
+4. **Radio:** its urgency in `packages/core/src/urgency.ts`, a record keyed by every event type.
+5. **App:** the action that publishes it in `GroupFeed` and the UI that shows it, with texts in both languages.
 
 ## 4. Transports
 

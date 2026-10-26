@@ -1,7 +1,13 @@
-import type { ChatEvent, TeselEvent, NodeId, PositionEvent } from '@tesel/protocol';
+import {
+  EVENT_TYPES,
+  type ChatEvent,
+  type TeselEvent,
+  type NodeId,
+  type PositionEvent,
+} from '@tesel/protocol';
 import { describe, expect, it } from 'vitest';
 
-import { EMPTY_STATE, reduce, stateOf } from './reducer.ts';
+import { EMPTY_STATE, HANDLED_TYPES, reduce, stateOf } from './reducer.ts';
 
 const ALICE = 'a1b2c3d4' as NodeId;
 const BOB = '0f1e2d3c' as NodeId;
@@ -194,5 +200,19 @@ describe('group state', () => {
 
   it('starts empty', () => {
     expect(EMPTY_STATE.members.size + EMPTY_STATE.positions.size + EMPTY_STATE.chat.length).toBe(0);
+  });
+});
+
+describe('slices', () => {
+  it('give every event type of the protocol a place in the state', () => {
+    expect([...HANDLED_TYPES].sort()).toEqual([...EVENT_TYPES].sort());
+  });
+
+  it('keep the identity of the slices an event does not touch', () => {
+    const before = stateOf(EVENTS);
+    const after = reduce(before, chat(BOB, 99, T0 + 500, 'later'));
+    expect(after.chat).not.toBe(before.chat);
+    expect(after.members).toBe(before.members);
+    expect(after.objects).toBe(before.objects);
   });
 });
