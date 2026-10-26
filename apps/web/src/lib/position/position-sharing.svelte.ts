@@ -1,20 +1,13 @@
-// How this device shares its position with the active group (briefing §4): sharing, paused
-// (the group keeps the last position, now out of date) or hidden (the group stops seeing it).
-// The choice is remembered on the device, so sharing resumes after the app restarts.
+// Shares this device's position with the active group in the mode the user chose
+// (position-mode.ts). The choice is remembered, so sharing resumes after the app restarts.
 
+import { savePreference } from '../settings/preference.svelte.ts';
+import { PREFERENCES } from '../settings/preferences.ts';
 import type { AppDb } from '../storage/app-db.ts';
 import type { GroupFeed } from '../sync/group-feed.svelte.ts';
 import type { DeviceFix, DeviceLocation } from './device-location.svelte.ts';
+import type { PositionMode } from './position-mode.ts';
 import { shouldReport, type Report } from './report-policy.ts';
-
-export type PositionMode = 'sharing' | 'paused' | 'hidden';
-
-const MODES: readonly PositionMode[] = ['sharing', 'paused', 'hidden'];
-
-export async function loadPositionMode(db: AppDb): Promise<PositionMode> {
-  const stored = await db.get('settings', 'positionMode');
-  return MODES.find((mode) => mode === stored) ?? 'hidden';
-}
 
 export class PositionSharing {
   mode: PositionMode = $state('hidden');
@@ -47,7 +40,7 @@ export class PositionSharing {
 
   async setMode(mode: PositionMode): Promise<void> {
     // Stored first, so what the screen shows is what the app will resume with.
-    await this.#db.put('settings', mode, 'positionMode');
+    await savePreference(this.#db, PREFERENCES.positionMode, mode);
     this.mode = mode;
     if (mode === 'sharing') {
       this.#startReporting();

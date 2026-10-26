@@ -23,9 +23,11 @@
   import { openTileStore, type TileStore } from './lib/map/tile-store.ts';
   import OfflineAreasPanel from './lib/offline/OfflineAreasPanel.svelte';
   import { DeviceLocation } from './lib/position/device-location.svelte.ts';
-  import { loadPositionMode, PositionSharing } from './lib/position/position-sharing.svelte.ts';
+  import { PositionSharing } from './lib/position/position-sharing.svelte.ts';
   import UpdatePrompt from './lib/pwa/UpdatePrompt.svelte';
   import { RadioSession } from './lib/radio/radio.svelte.ts';
+  import { loadPreference } from './lib/settings/preference.svelte.ts';
+  import { loadPreferences, PREFERENCES, type Preferences } from './lib/settings/preferences.ts';
   import { Session } from './lib/session.svelte.ts';
   import { openAppDb, type AppDb } from './lib/storage/app-db.ts';
   import { GroupFeed } from './lib/sync/group-feed.svelte.ts';
@@ -49,6 +51,7 @@
   let store: TileStore | undefined = $state();
   let db: AppDb | undefined;
   let session: Session | undefined = $state();
+  let preferences: Preferences | undefined = $state.raw();
   let sharing: PositionSharing | undefined;
   let feed: GroupFeed | undefined = $state.raw();
   let map: MapLibreMap | undefined = $state();
@@ -83,6 +86,7 @@
       db = opened;
       sharing = new PositionSharing(opened, location);
       void radio.useStorage(opened);
+      preferences = await loadPreferences(opened);
       session = await Session.load(opened);
     });
 
@@ -115,7 +119,7 @@
     let opened: GroupFeed | undefined;
     let cancelled = false;
     void GroupFeed.open(database, group, identity).then(async (created) => {
-      const mode = await loadPositionMode(database);
+      const mode = await loadPreference(database, PREFERENCES.positionMode);
       if (cancelled) {
         created.close();
         return;
@@ -212,8 +216,8 @@
       <MapView {theme} lang={locale} onready={onMapReady} />
     {/if}
 
-    {#if map}
-      <MapWorkspace {t} {locale} {map} group={workspaceGroup} {radio} {location} />
+    {#if map && preferences}
+      <MapWorkspace {t} {locale} {map} group={workspaceGroup} {radio} {location} {preferences} />
     {/if}
 
     {#if map && store && panels.open === 'offline'}

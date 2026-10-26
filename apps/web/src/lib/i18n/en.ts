@@ -112,6 +112,22 @@ export const en = {
   locateStart: 'Show my location',
   locateStop: 'Stop showing my location',
   locateCentre: 'Centre the map on me',
+  coordinates: 'Coordinates',
+  coordinatesIntro:
+    'Press and hold a point of the map to see its coordinates, or type in coordinates you were given.',
+  coordinateFormat: 'Coordinate format',
+  formatDecimal: 'Degrees',
+  formatDms: 'DMS',
+  formatUtm: 'UTM',
+  formatMgrs: 'MGRS',
+  formatOutOfRange: 'Too close to the pole for this format',
+  copy: 'Copy',
+  findCoordinate: 'Go to a coordinate',
+  find: 'Go',
+  coordinateUnreadable:
+    'These are not coordinates Tesel can read. Try degrees (39.4699, -0.3763), UTM (30S 725695 4372210) or MGRS (30S YJ 25695 72210).',
+  markHere: 'Mark this point',
+  tools: 'Tools',
   syncSynced: 'Synced with the group’s server.',
   syncViaCommandPost:
     'Synced through a command post. It passes everything on to the rest of the group when it has internet.',

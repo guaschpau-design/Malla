@@ -21,6 +21,8 @@ export interface OutboxEntry {
   readonly seq: number;
 }
 
+export type SettingKey = 'activeGroupId' | 'positionMode' | 'coordinateFormat';
+
 export type EventKey = [groupId: string, origin: NodeId, seq: number];
 
 /** A group and a relay it syncs through: the group's server or a command post (protocol §8.3). */
@@ -30,8 +32,8 @@ export interface AppSchema extends DBSchema {
   /** A single record under the key `self`. */
   identity: { key: 'self'; value: LocalIdentity };
   groups: { key: string; value: StoredGroup };
-  /** Small preferences of this device: the active group and how it shares its position. */
-  settings: { key: 'activeGroupId' | 'positionMode'; value: string };
+  /** The active group and the preferences of this device (settings/preferences.ts). */
+  settings: { key: SettingKey; value: unknown };
   /** The next sequence number this device will use (ARCHITECTURE.md §3.3). */
   sequence: { key: 'next'; value: number };
   events: { key: EventKey; value: StoredEvent; indexes: { byGroup: string } };

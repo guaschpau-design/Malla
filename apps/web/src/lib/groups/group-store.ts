@@ -27,7 +27,8 @@ export async function deleteGroup(db: AppDb, id: string): Promise<void> {
 }
 
 export async function getActiveGroupId(db: AppDb): Promise<string | undefined> {
-  return db.get('settings', 'activeGroupId');
+  const stored = await db.get('settings', 'activeGroupId');
+  return typeof stored === 'string' ? stored : undefined;
 }
 
 export async function setActiveGroupId(db: AppDb, id: string): Promise<void> {

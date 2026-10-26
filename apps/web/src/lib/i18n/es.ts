@@ -113,6 +113,22 @@ export const es: Messages = {
   locateStart: 'Mostrar mi ubicación',
   locateStop: 'Dejar de mostrar mi ubicación',
   locateCentre: 'Centrar el mapa en mí',
+  coordinates: 'Coordenadas',
+  coordinatesIntro:
+    'Mantén pulsado un punto del mapa para ver sus coordenadas, o escribe las que te hayan dado.',
+  coordinateFormat: 'Formato de coordenadas',
+  formatDecimal: 'Grados',
+  formatDms: 'GMS',
+  formatUtm: 'UTM',
+  formatMgrs: 'MGRS',
+  formatOutOfRange: 'Demasiado cerca del polo para este formato',
+  copy: 'Copiar',
+  findCoordinate: 'Ir a una coordenada',
+  find: 'Ir',
+  coordinateUnreadable:
+    'Tesel no reconoce estas coordenadas. Prueba en grados (39.4699, -0.3763), UTM (30S 725695 4372210) o MGRS (30S YJ 25695 72210).',
+  markHere: 'Marcar este punto',
+  tools: 'Herramientas',
   syncSynced: 'Sincronizado con el servidor del grupo.',
   syncViaCommandPost:
     'Sincronizado a través de un puesto de mando. Lo pasa todo al resto del grupo cuando tiene internet.',

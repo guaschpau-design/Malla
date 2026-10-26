@@ -3,6 +3,7 @@
   import type { NodeId, Role } from '@tesel/protocol';
 
   import type { Translate } from '../i18n/index.ts';
+  import CopyButton from '../ui/CopyButton.svelte';
   import QrCode from '../ui/QrCode.svelte';
   import { invitationFor, type StoredGroup } from './group.ts';
   import { invitationLink } from './join-link.ts';
@@ -18,7 +19,6 @@
   let { t, group, issuer, onback }: Props = $props();
 
   let role: Role = $state('member');
-  let copied = $state(false);
   const canShare = 'share' in navigator;
 
   const link = $derived(
@@ -28,12 +28,6 @@
       invitationFor(group, role, issuer),
     ),
   );
-
-  async function copy(text: string): Promise<void> {
-    await navigator.clipboard.writeText(text);
-    copied = true;
-    setTimeout(() => (copied = false), 2000);
-  }
 
   async function share(text: string): Promise<void> {
     try {
@@ -70,7 +64,7 @@
       />
     </label>
     <div class="row">
-      <button onclick={() => copy(link.value)}>{copied ? t('copied') : t('copyLink')}</button>
+      <CopyButton text={link.value} label={t('copyLink')} copiedLabel={t('copied')} />
       {#if canShare}
         <button onclick={() => share(link.value)}>{t('share')}</button>
       {/if}

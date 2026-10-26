@@ -6,10 +6,15 @@
   import type { AlertLevel, EventRef, LatLon, NodeId, Role, SosKind } from '@tesel/protocol';
   import type { Map as MapLibreMap } from 'maplibre-gl';
 
+  import { onMount } from 'svelte';
+
   import ChatPanel from '../chat/ChatPanel.svelte';
+  import CoordinatesPanel from '../coordinates/CoordinatesPanel.svelte';
+  import PointLayer from '../coordinates/PointLayer.svelte';
   import type { Locale, Translate } from '../i18n/index.ts';
   import IncidentBanners from '../incidents/IncidentBanners.svelte';
   import SosDialog from '../incidents/SosDialog.svelte';
+  import { onLongPress } from '../map/long-press.ts';
   import MemberLayer from '../map/MemberLayer.svelte';
   import {
     addPoint,
@@ -32,9 +37,11 @@
   import SelfLayer from '../position/SelfLayer.svelte';
   import type { RadioSession } from '../radio/radio.svelte.ts';
   import type { PositionSharing } from '../position/position-sharing.svelte.ts';
+  import type { Preferences } from '../settings/preferences.ts';
   import type { GroupFeed } from '../sync/group-feed.svelte.ts';
   import Toast from '../ui/Toast.svelte';
   import { closePanel, panels, togglePanel } from '../ui/panels.svelte.ts';
+  import ToolsMenu from './ToolsMenu.svelte';
 
   interface Props {
     t: Translate;
@@ -44,14 +51,17 @@
     group: { feed: GroupFeed; self: NodeId; role: Role; sharing: PositionSharing } | null;
     radio: RadioSession;
     location: DeviceLocation;
+    preferences: Preferences;
   }
 
-  let { t, locale, map, group, radio, location }: Props = $props();
+  let { t, locale, map, group, radio, location, preferences }: Props = $props();
 
   // Drawing: tapping points (`draft`), then describing the object (`describing`).
   let draft: Draft | null = $state.raw(null);
   let describing = $state(false);
   let selected: string | null = $state(null);
+  /** The point shown in the coordinates panel. */
+  let point: LatLon | null = $state.raw(null);
   let sosOpen = $state(false);
   let notice: string | null = $state(null);
 
@@ -71,6 +81,29 @@
     draft = addPoint(draft, at);
     if (isFull(draft)) describing = true;
   }
+
+  /** Starts a marker at a point and goes straight to describing it. */
+  function markAt(at: LatLon): void {
+    startDrawing('marker');
+    addDraftPoint(at);
+  }
+
+  function inspect(at: LatLon): void {
+    point = at;
+    panels.open = 'point';
+  }
+
+  /** A coordinate typed in the panel: shown on the map. */
+  function find(at: LatLon): void {
+    inspect(at);
+    show(at);
+  }
+
+  onMount(() =>
+    onLongPress(map, (at) => {
+      if (draft === null) inspect(at);
+    }),
+  );
 
   function stopDrawing(): void {
     draft = null;
@@ -168,6 +201,7 @@
       {locale}
       groupState={feed.state}
       objectKey={key}
+      format={preferences.coordinateFormat}
       ondelete={async () => {
         const record = feed.state.objects.get(key);
         if (record) await feed.deleteObject(record.object);
@@ -200,6 +234,18 @@
   {/if}
 {/if}
 
+{#if panels.open === 'point'}
+  {#if point}<PointLayer {map} {point} />{/if}
+  <CoordinatesPanel
+    {t}
+    {point}
+    format={preferences.coordinateFormat}
+    onfind={find}
+    onmark={group ? markAt : null}
+    onclose={closePanel}
+  />
+{/if}
+
 <SelfLayer {map} {location} />
 <LocateControl {t} {map} {location} />
 {#if location.problem}
@@ -225,15 +271,7 @@
           {t('chat')}
         </button>
       {/if}
-      <button
-        class="fab"
-        aria-expanded={panels.open === 'offline'}
-        onclick={() => {
-          togglePanel('offline');
-        }}
-      >
-        {t('offlineAreas')}
-      </button>
+      <ToolsMenu {t} />
     </div>
   </div>
 {/if}

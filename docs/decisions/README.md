@@ -26,3 +26,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0018](0018-command-post.md)                       | A command post is a replicating server on its own Wi-Fi, found by name   | Accepted                      |
 | [0019](0019-name-tesel.md)                         | The project is called Tesel                                              | Accepted                      |
 | [0020](0020-colour-and-symbols.md)                 | Signal lime, colours defined once, and symbols of our own                | Accepted                      |
+| [0021](0021-coordinate-formats.md)                 | Write coordinates in four formats, converted by our own code             | Accepted                      |
