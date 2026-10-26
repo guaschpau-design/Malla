@@ -164,4 +164,6 @@ export const SAMPLE_EVENTS: readonly TeselEvent[] = [
     place: null,
     text: 'Revisar el almacén',
   },
+  { type: 'roll-call', origin: CAROL, seq: 2, time: T0 + 15, text: '' },
+  { type: 'roll-call', origin: CAROL, seq: 3, time: T0 + 16, text: '¿Todos en el punto B?' },
 ];

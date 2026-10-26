@@ -261,6 +261,11 @@ export class GroupFeed {
     await this.#publish((header) => ({ ...header, type: 'alert', level: 'critical', text }));
   }
 
+  /** Calls the roll with the usual question, which each receiver words in its language (§3.12). */
+  async callRoll(): Promise<void> {
+    await this.#publish((header) => ({ ...header, type: 'roll-call', text: '' }));
+  }
+
   /**
    * Creates a task, or changes the task `task` refers to; a new task's reference is its own event's
    * (protocol §3.11).

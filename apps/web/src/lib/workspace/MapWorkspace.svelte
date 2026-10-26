@@ -347,6 +347,7 @@
       onacknowledge={acknowledge}
       oncancel={cancelSos}
       onshow={show}
+      onneedhelp={() => (sosOpen = true)}
     />
   {/if}
 </div>

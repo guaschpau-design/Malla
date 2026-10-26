@@ -1,5 +1,5 @@
 <!-- The active group's chat, with alerts in the same timeline. Coordinators can send a message as
-     an alert: it stays on everyone's screen until they acknowledge it. -->
+     an alert, which stays on everyone's screen until they acknowledge it, and call the roll. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
   import {
@@ -24,11 +24,12 @@
     locale: Locale;
     groupState: GroupState;
     self: NodeId;
-    /** Coordinators can send alerts as well as messages (a UI rule, see ADR-0005). */
-    canAlert: boolean;
+    /** This device coordinates: it can send alerts and call the roll (a UI rule, ADR-0005). */
+    coordinator: boolean;
     onsend: (text: string) => Promise<void>;
     /** Sends the text as a critical alert. */
     onalert: (text: string) => Promise<void>;
+    onrollcall: () => void;
     /** Text messages of other MeshCore apps heard by the radio; shown in their own tab. */
     radioTexts: readonly StoredRadioText[];
     showRadioTab: boolean;
@@ -40,9 +41,10 @@
     locale,
     groupState,
     self,
-    canAlert,
+    coordinator,
     onsend,
     onalert,
+    onrollcall,
     radioTexts,
     showRadioTab,
     onclose,
@@ -145,17 +147,23 @@
         autocomplete="off"
       />
       <button type="submit" class="primary" disabled={!fits.message}>{t('send')}</button>
-      {#if canAlert}
-        <button
-          type="button"
-          class="danger alert-button"
-          disabled={!fits.alert}
-          title={t('sendAlertHint')}
-          onclick={() => send('alert')}
-        >
-          <Pictogram name="warning" size={18} />
-          {t('sendAlert')}
-        </button>
+      {#if coordinator}
+        <div class="coordinator">
+          <button
+            type="button"
+            class="danger"
+            disabled={!fits.alert}
+            title={t('sendAlertHint')}
+            onclick={() => send('alert')}
+          >
+            <Pictogram name="warning" size={18} />
+            {t('sendAlert')}
+          </button>
+          <button type="button" onclick={onrollcall}>
+            <Pictogram name="person" size={18} />
+            {t('callRoll')}
+          </button>
+        </div>
       {/if}
     </form>
     {#if size > CHAT_MAX_BYTES}<p class="warning">{t('messageTooLong')}</p>{/if}
@@ -239,7 +247,8 @@
     white-space: pre-wrap;
   }
 
-  /* The text and Send on one line; Send as alert, for coordinators, below them across the panel. */
+  /* The text and Send on one line; for coordinators, Send as alert and Call the roll below them,
+     across the panel. */
   .compose {
     display: grid;
     grid-template-columns: 1fr auto;
@@ -250,9 +259,15 @@
     min-width: 0;
   }
 
-  .alert-button {
-    display: inline-flex;
+  .coordinator {
+    display: grid;
     grid-column: 1 / -1;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .coordinator button {
+    display: inline-flex;
     gap: 0.4rem;
     align-items: center;
     justify-content: center;

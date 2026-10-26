@@ -158,6 +158,16 @@ describe('LoRa scheduler', () => {
     expect(drain(lora, 60_000)).toEqual([]);
   });
 
+  it('answers a roll call even after hearing someone else answer it', () => {
+    const lora = scheduler(0.5);
+    const call = { type: 'roll-call', origin: OTHER, seq: 7, time: T0, text: '' } as const;
+    lora.heard(call, 0);
+    const target = { origin: OTHER, seq: 7 };
+    lora.offer(packet({ type: 'ack', origin: ME, target }), 'own', 0);
+    lora.heard({ type: 'ack', origin: '630dcd29' as NodeId, seq: 1, time: T0, target }, 10_000);
+    expect(drain(lora, 60_000)).toEqual(['ack']);
+  });
+
   it('retries a packet the radio refused, without charging its airtime', () => {
     const lora = scheduler();
     lora.offer(chat(), 'own', 0);

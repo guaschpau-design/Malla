@@ -58,6 +58,7 @@ The payload follows, up to 151 bytes.
 | `0x0A` | `ALERT`           | §3.9                                                   |
 | `0x0B` | `ACK`             | Event reference (8 bytes) of the event acknowledged    |
 | `0x0C` | `TASK`            | §3.11                                                  |
+| `0x0D` | `ROLL_CALL`       | §3.12                                                  |
 
 Codes are never reused. New capabilities are added as new types; existing layouts never change within version 1.
 
@@ -150,7 +151,7 @@ With an empty label, a shape holds up to 33 points.
 
 An `SOS` stays active until a `SOS_CANCEL` referencing it is received. Any member MAY cancel an SOS; the interface SHOULD show who cancelled it. Senders SHOULD repeat an `SOS` over LoRa with back-off until at least one `ACK` for it is received. Repeats are byte-identical copies, so receivers de-duplicate them.
 
-**Acknowledging over LoRa.** To keep acknowledgements from flooding the air, a receiver SHOULD send at most one `ACK` per `SOS` or critical `ALERT`, after a random delay of 2–30 seconds, and SHOULD NOT send it if it has meanwhile heard another member's `ACK` for the same event. Over the internet, every receiver MAY acknowledge immediately.
+**Acknowledging over LoRa.** To keep acknowledgements from flooding the air, a receiver SHOULD send at most one `ACK` per `SOS` or critical `ALERT`, after a random delay of 2–30 seconds, and SHOULD NOT send it if it has meanwhile heard another member's `ACK` for the same event. Over the internet, every receiver MAY acknowledge immediately. Answers to a `ROLL_CALL` are the exception (§3.12).
 
 ### 3.9 `ALERT`
 
@@ -191,6 +192,18 @@ Tasks follow the same rules as objects (§3.10), with `task` in place of `object
 - A cancelled task no longer shows as pending, but it is not deleted: a newer `TASK` reopens it.
 
 A member whose node ID happens to be `00000000` cannot be assigned tasks; with 2³² possible IDs this is accepted.
+
+### 3.12 `ROLL_CALL`
+
+Asks every member of the group to say they are well.
+
+| Size  | Field  | Notes                                                                                  |
+| ----- | ------ | -------------------------------------------------------------------------------------- |
+| 0–151 | `text` | text-rest; empty for the usual question, which each receiver words in its own language |
+
+- Each member answers once, with an `ACK` referencing the `ROLL_CALL`. A member who needs help sends an `SOS` instead.
+- The newest `ROLL_CALL` by `(time, origin, seq)` is the current one; older ones are history.
+- Over LoRa, answers wait the same random 2–30 seconds as other acknowledgements but, unlike them (§3.8), are never dropped for having heard another member's answer: each member answers for themselves.
 
 ## 4. Symbol and style codes
 

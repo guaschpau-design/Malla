@@ -13,6 +13,7 @@ import { members } from './state/members.ts';
 import { alerts, chat } from './state/messages.ts';
 import { objects } from './state/objects.ts';
 import { positions } from './state/positions.ts';
+import { rollCall } from './state/roll-call.ts';
 import type { Slice } from './state/slice.ts';
 import { sos, sosCancels } from './state/sos.ts';
 import { tasks } from './state/tasks.ts';
@@ -34,6 +35,7 @@ const SLICES = {
   alerts,
   acks,
   tasks,
+  rollCall,
   journal,
 };
 

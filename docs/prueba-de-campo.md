@@ -16,6 +16,7 @@ Lista para probar Tesel en condiciones reales antes de publicar la v0.1. Las pru
 - [ ] Un marcador y una zona dibujados por una persona los ven todas; los puede borrar otra.
 - [ ] Un SOS llega a todos; «Recibido» le llega a quien lo envió; quien lo envió lo cancela.
 - [ ] Una alerta crítica de quien coordina se queda en pantalla hasta confirmarla.
+- [ ] Quien coordina pasa lista: a cada uno le sale «¿Estáis todos bien?», responde «Estoy bien» y quien pasó lista ve quién falta.
 - [ ] Una tarea con sitio para otra persona: le avisa, el botón «Tareas» lo cuenta y, al darla por hecha, quien la creó lo ve.
 - [ ] iPhone: todo lo anterior funciona igual en Safari.
 
@@ -27,6 +28,7 @@ Todos con datos móviles y wifi desactivados, Bluetooth encendido, radio conecta
 - [ ] El chat llega por radio. Apunta cuánto tarda.
 - [ ] Las posiciones se actualizan por radio (cada pocos minutos, no al momento).
 - [ ] Una tarea y su cambio a «Hecha» llegan por radio.
+- [ ] Un pase de lista llega por radio y las respuestas de todos vuelven, aunque varias salgan a la vez.
 - [ ] Un SOS llega por radio; se repite hasta que alguien pulsa «Recibido»; la cancelación también llega.
 - [ ] El tiempo de emisión de la última hora (panel «Conexiones») se queda por debajo del 100 %.
 - [ ] Alcance: separaos poco a poco y apunta la distancia a la que dejan de llegar los mensajes, en ciudad y, si podéis, desde un sitio alto.

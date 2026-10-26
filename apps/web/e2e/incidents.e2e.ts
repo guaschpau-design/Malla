@@ -78,6 +78,24 @@ test('a critical alert stays on screen until each member acknowledges it', async
   );
 });
 
+test('a roll call is answered by each member and followed by its caller', async ({ browser }) => {
+  const { ana, berta } = await twoMembers(browser, VIEW);
+
+  await ana.getByRole('button', { name: 'Chat' }).click();
+  await ana.getByRole('button', { name: 'Pasar lista' }).click();
+  const caller = ana.getByRole('region', { name: 'Pase de lista' });
+  await expect(caller).toContainText('Responden 0 de 1');
+  await expect(caller).toContainText('Faltan: Berta');
+
+  const call = berta.getByRole('region', { name: 'Pase de lista' });
+  await expect(call).toContainText('¿Estáis todos bien?');
+  await call.getByRole('button', { name: 'Estoy bien' }).click();
+  await expect(call).toBeHidden();
+
+  await expect(caller).toContainText('Responden 1 de 1');
+  await expect(caller).toContainText('Han respondido todos.');
+});
+
 test('an area is drawn point by point and described before it is shared', async ({ browser }) => {
   const { ana } = await twoMembers(browser, VIEW);
   const box = await ana.locator('.maplibregl-canvas').boundingBox();

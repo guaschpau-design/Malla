@@ -43,6 +43,7 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 - Markers and areas with a symbol catalogue, editable by any member. Lines and circles from other clients are shown (protocol §3.7).
 - SOS calls with kind, position and acknowledgements; cancellation by the sender or a coordinator.
 - Alerts from coordinators: a chat message sent as an alert stays on every screen until acknowledged ([ADR-0026](docs/decisions/0026-one-kind-of-alert.md)).
+- Roll call: a coordinator calls it from the chat; each member answers «Estoy bien» or «Necesito ayuda» (which opens the SOS), and the caller sees who has not answered yet. One new event, `ROLL_CALL`, answered with ACKs that LoRa never drops for another member's answer ([ADR-0028](docs/decisions/0028-roll-call.md), protocol §3.12).
 
 ### Transports
 

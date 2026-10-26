@@ -8,6 +8,7 @@ export const URGENCY: Readonly<Record<EventType, number>> = {
   sos: 0,
   'sos-cancel': 1,
   alert: 2,
+  'roll-call': 2,
   'position-hidden': 3,
   ack: 4,
   chat: 5,

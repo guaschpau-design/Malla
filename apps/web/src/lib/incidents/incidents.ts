@@ -1,10 +1,12 @@
-// SOS calls and alerts as the interface shows them: who, what, and who has acknowledged.
+// SOS calls, alerts and the roll call as the interface shows them: who, what, and who has
+// acknowledged or answered.
 
 import type { GroupState } from '@tesel/core';
 import {
   eventRefKey,
   type AlertEvent,
   type NodeId,
+  type RollCallEvent,
   type SosCancelEvent,
   type SosEvent,
 } from '@tesel/protocol';
@@ -82,6 +84,45 @@ export function recentAlerts(state: GroupState, self: NodeId, since: number): Al
       };
     })
     .reverse();
+}
+
+/** A roll call is open for answers this long, in seconds; then it is history (§3.12). */
+export const ROLL_CALL_OPEN_S = 30 * 60;
+
+export interface RollCallView {
+  readonly key: string;
+  readonly event: RollCallEvent;
+  readonly caller: string;
+  /** This device called it. */
+  readonly mine: boolean;
+  readonly answeredBySelf: boolean;
+  /** Everyone the group knows but the caller, by alias: who said they are well, and who not yet. */
+  readonly answered: readonly string[];
+  readonly pending: readonly string[];
+}
+
+/** The current roll call while it is open at `now` (seconds), or null. */
+export function openRollCall(state: GroupState, self: NodeId, now: number): RollCallView | null {
+  const event = state.rollCall;
+  if (event === null || now - event.time > ROLL_CALL_OPEN_S) return null;
+  const key = eventRefKey(event);
+  const acks = state.acks.get(key);
+  const answered: string[] = [];
+  const pending: string[] = [];
+  for (const id of state.members.keys()) {
+    if (id === event.origin) continue;
+    (acks?.has(id) ? answered : pending).push(aliasOf(state, id));
+  }
+  const byName = (a: string, b: string) => a.localeCompare(b);
+  return {
+    key,
+    event,
+    caller: aliasOf(state, event.origin),
+    mine: event.origin === self,
+    answeredBySelf: acks?.has(self) ?? false,
+    answered: answered.sort(byName),
+    pending: pending.sort(byName),
+  };
 }
 
 export function aliasOf(state: GroupState, id: NodeId): string {

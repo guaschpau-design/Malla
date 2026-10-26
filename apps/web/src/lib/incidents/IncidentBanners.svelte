@@ -1,4 +1,5 @@
-<!-- Active SOS calls and recent alerts, on top of the map until they are dealt with. -->
+<!-- Active SOS calls, the open roll call and recent alerts, on top of the map until they are dealt
+     with. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
   import type { EventRef, LatLon, NodeId } from '@tesel/protocol';
@@ -6,7 +7,8 @@
 
   import { formatTime } from '../format.ts';
   import type { Locale, Translate } from '../i18n/index.ts';
-  import { activeSos, recentAlerts } from './incidents.ts';
+  import { useNow } from '../ui/now.svelte.ts';
+  import { activeSos, openRollCall, recentAlerts } from './incidents.ts';
   import { ALERT_LEVELS, SOS_KINDS } from './sos-kinds.ts';
 
   interface Props {
@@ -19,23 +21,42 @@
     onacknowledge: (target: EventRef) => Promise<void>;
     oncancel: (sos: EventRef) => Promise<void>;
     onshow: (at: LatLon) => void;
+    /** Answers a roll call with "I need help": opens the SOS dialog. */
+    onneedhelp: () => void;
   }
 
-  let { t, locale, groupState, self, canCancelOthers, onacknowledge, oncancel, onshow }: Props =
-    $props();
+  let {
+    t,
+    locale,
+    groupState,
+    self,
+    canCancelOthers,
+    onacknowledge,
+    oncancel,
+    onshow,
+    onneedhelp,
+  }: Props = $props();
 
   /** Alerts are shown for an hour, or until dismissed on this device. */
   const ALERT_WINDOW_S = 60 * 60;
   const dismissed = new SvelteSet<string>();
+  const now = useNow(60_000);
 
   const calls = $derived(activeSos(groupState, self));
   const alerts = $derived(
-    recentAlerts(groupState, self, Date.now() / 1000 - ALERT_WINDOW_S).filter(
+    recentAlerts(groupState, self, now.seconds - ALERT_WINDOW_S).filter(
       (alert) => !dismissed.has(alert.key) && !(alert.event.level === 'critical' && alert.bySelf),
     ),
   );
+  /** The open roll call, while this member has to answer it or its caller follows the answers. */
+  const rollCall = $derived.by(() => {
+    const open = openRollCall(groupState, self, now.seconds);
+    if (open === null || dismissed.has(open.key)) return null;
+    return open.mine || !open.answeredBySelf ? open : null;
+  });
 
-  // Vibrate when an SOS or critical alert arrives while the app is open (not for the backlog).
+  // Vibrate when an SOS, a critical alert or a roll call arrives while the app is open (not for
+  // the backlog).
   let known: Set<string> | null = null;
   $effect(() => {
     const urgent = [
@@ -43,6 +64,7 @@
       ...alerts
         .filter((alert) => alert.event.level === 'critical' && !alert.mine)
         .map((a) => a.key),
+      ...(rollCall && !rollCall.mine ? [rollCall.key] : []),
     ];
     const previous = known;
     const isNew = previous !== null && urgent.some((key) => !previous.has(key));
@@ -84,6 +106,35 @@
       </div>
     </section>
   {/each}
+  {#if rollCall}
+    {@const call = rollCall}
+    <section class="banner roll-call" aria-label={t('rollCall')}>
+      <strong>{t('rollCall')} · {call.caller}</strong>
+      <span class="when">{formatTime(call.event.time * 1000, locale)}</span>
+      {#if call.mine}
+        <p>
+          {t('rollCallAnswered', {
+            answered: call.answered.length,
+            expected: call.answered.length + call.pending.length,
+          })}
+        </p>
+        <p class="acks">
+          {call.pending.length > 0
+            ? t('rollCallPending', { names: call.pending.join(', ') })
+            : t('rollCallAll')}
+        </p>
+        <div class="row">
+          <button onclick={() => dismissed.add(call.key)}>{t('close')}</button>
+        </div>
+      {:else}
+        <p>{call.event.text || t('rollCallQuestion')}</p>
+        <div class="row">
+          <button class="primary" onclick={() => onacknowledge(call.event)}>{t('imWell')}</button>
+          <button class="danger" onclick={onneedhelp}>{t('needHelp')}</button>
+        </div>
+      {/if}
+    </section>
+  {/if}
   {#each alerts as alert (alert.key)}
     <section
       class="banner alert level-{alert.event.level}"
@@ -143,7 +194,8 @@
     border-left-color: var(--warning);
   }
 
-  .banner.level-info {
+  .banner.level-info,
+  .banner.roll-call {
     border-left-color: var(--info);
   }
 

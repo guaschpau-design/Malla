@@ -37,6 +37,7 @@ export const SOS_TEXT_MAX_BYTES = PAYLOAD_BUDGET - KIND_SIZE - POINT_SIZE - ACCU
 export const ALERT_TEXT_MAX_BYTES = PAYLOAD_BUDGET - KIND_SIZE; // §3.9
 export const TASK_TEXT_MAX_BYTES =
   PAYLOAD_BUDGET - EVENT_REF_SIZE - KIND_SIZE - NODE_ID_SIZE - KIND_SIZE - POINT_SIZE; // §3.11
+export const ROLL_CALL_TEXT_MAX_BYTES = PAYLOAD_BUDGET; // §3.12
 
 // --- Enumerations ------------------------------------------------------------------------
 // §3.1: a reserved value decodes to its documented default rather than rejecting the event,

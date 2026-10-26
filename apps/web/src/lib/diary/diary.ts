@@ -33,6 +33,10 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
   const introduced = new Set<string>();
   const objects = new Map<string, MarkerEvent | ShapeEvent>();
   const tasks = new Map<string, TaskEvent>();
+  // Answers can be stamped before their roll call by a device whose clock runs early.
+  const rollCalls = new Set(
+    state.journal.flatMap((event) => (event.type === 'roll-call' ? [eventRefKey(event)] : [])),
+  );
   return state.journal.flatMap((event) => {
     const text = describe(event);
     if (text === null) return [];
@@ -75,8 +79,11 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
         if (sos) return t('diaryAckSos', { name: aliasOf(state, sos.origin) });
         const alert = state.alerts.find((item) => eventRefKey(item) === target);
         if (alert) return t('diaryAckAlert', { name: aliasOf(state, alert.origin) });
+        if (rollCalls.has(target)) return t('diaryAnsweredRollCall');
         return null;
       }
+      case 'roll-call':
+        return withText(t('diaryRollCall'), event.text);
       case 'marker':
       case 'shape': {
         const key = eventRefKey(event.object);

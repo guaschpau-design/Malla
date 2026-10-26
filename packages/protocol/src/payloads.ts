@@ -1,4 +1,4 @@
-// The payload of every event type (docs/protocol.md §3.3–§3.11), each written next to the code
+// The payload of every event type (docs/protocol.md §3.3–§3.12), each written next to the code
 // that reads it, so that the two halves of a layout cannot drift apart. Adding an event type
 // means adding its entry here: the record is keyed by every `EventType`, so the compiler refuses
 // a type without a layout.
@@ -31,6 +31,7 @@ import {
   SOS_KINDS,
   SOS_TEXT_MAX_BYTES,
   TASK_STATUSES,
+  ROLL_CALL_TEXT_MAX_BYTES,
   TASK_TEXT_MAX_BYTES,
   writeAssignee,
   writeGeometry,
@@ -215,6 +216,18 @@ export const PAYLOADS: { readonly [K in EventType]: PayloadCodec<EventOfType<K>>
       const text = reader.textRest(1, TASK_TEXT_MAX_BYTES, 'task text');
       return { ...header, type: 'task', task, status, assignee, place, text };
     },
+  },
+  // §3.12
+  'roll-call': {
+    code: EventTypeCode.ROLL_CALL,
+    write(writer, event) {
+      writeTextRest(writer, event.text, 0, ROLL_CALL_TEXT_MAX_BYTES, 'roll call text');
+    },
+    read: (reader, header) => ({
+      ...header,
+      type: 'roll-call',
+      text: reader.textRest(0, ROLL_CALL_TEXT_MAX_BYTES, 'roll call text'),
+    }),
   },
 };
 

@@ -87,6 +87,8 @@ export class LoraScheduler {
   readonly #onAir = new Map<string, number>();
   /** Own SOS calls still waiting for an acknowledgement or a cancellation. */
   readonly #openSos = new Set<string>();
+  /** Roll calls seen: each member answers them, so their ACKs are never dropped (§3.12). */
+  readonly #rollCalls = new Set<string>();
   readonly #spent: { readonly at: number; readonly ms: number }[] = [];
   #lastOwnPosition: { readonly at: LatLon; readonly time: number } | null = null;
   readonly #lastBridgedPosition = new Map<NodeId, number>();
@@ -129,7 +131,7 @@ export class LoraScheduler {
     this.#onAir.set(key, now);
     this.#pending.delete(key);
     this.observe(event);
-    if (event.type === 'ack') {
+    if (event.type === 'ack' && !this.#rollCalls.has(eventRefKey(event.target))) {
       // Another member acknowledged: our own ACK for the same event would only add noise.
       const target = eventRefKey(event.target);
       for (const [pendingKey, pending] of this.#pending) {
@@ -145,6 +147,7 @@ export class LoraScheduler {
   observe(event: LoraEvent): void {
     if (event.type === 'ack') this.#closeSos(eventRefKey(event.target));
     if (event.type === 'sos-cancel') this.#closeSos(eventRefKey(event.sos));
+    if (event.type === 'roll-call') this.#rollCalls.add(eventRefKey(event));
   }
 
   /**
@@ -156,6 +159,7 @@ export class LoraScheduler {
     this.#pending.clear();
     this.#onAir.clear();
     this.#openSos.clear();
+    this.#rollCalls.clear();
     this.#lastOwnPosition = null;
     this.#lastBridgedPosition.clear();
     this.#inFlight = null;

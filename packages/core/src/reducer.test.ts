@@ -207,6 +207,13 @@ describe('group state', () => {
     expect(state.positions.get(BOB)?.type).toBe('position');
   });
 
+  it('keeps the newest roll call as the current one, whatever order they arrive in', () => {
+    const first = { type: 'roll-call', origin: ALICE, seq: 20, time: T0 + 200, text: '' } as const;
+    const second = { ...first, seq: 21, time: T0 + 300 };
+    expect(stateOf([second, first]).rollCall).toBe(second);
+    expect(stateOf([first, second]).rollCall).toBe(second);
+  });
+
   it('keeps the latest change of each task, whoever made it', () => {
     const task = stateOf(EVENTS).tasks.get(`${BOB}:10`);
     expect(task?.status).toBe('done');

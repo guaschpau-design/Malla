@@ -38,6 +38,7 @@ export const EventTypeCode = {
   ALERT: 0x0a,
   ACK: 0x0b,
   TASK: 0x0c,
+  ROLL_CALL: 0x0d,
 } as const;
 
 /** §3.3 Ed25519 key sizes. */

@@ -129,6 +129,13 @@ export interface TaskEvent extends EventHeader {
   readonly text: string;
 }
 
+/** §3.12 Asks every member to say they are well; each answers with an ACK. */
+export interface RollCallEvent extends EventHeader {
+  readonly type: 'roll-call';
+  /** Empty for the usual question, worded by each receiver in its own language. */
+  readonly text: string;
+}
+
 export type TeselEvent =
   | MemberInfoEvent
   | PositionEvent
@@ -141,6 +148,7 @@ export type TeselEvent =
   | SosCancelEvent
   | AlertEvent
   | AckEvent
-  | TaskEvent;
+  | TaskEvent
+  | RollCallEvent;
 
 export type EventType = TeselEvent['type'];
