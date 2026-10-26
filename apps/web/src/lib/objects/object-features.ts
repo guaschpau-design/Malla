@@ -5,6 +5,7 @@ import type { LatLon, ShapeEvent } from '@tesel/protocol';
 import type { Feature, FeatureCollection, Geometry, Point } from 'geojson';
 
 import { circleRing, toPosition } from '../map/geometry.ts';
+import type { Tone } from '../ui/theme.ts';
 import { styleInfo, symbolImageName } from './catalog.ts';
 
 export interface ObjectProperties {
@@ -18,7 +19,8 @@ export interface MarkerProperties extends ObjectProperties {
 }
 
 export interface ShapeProperties extends ObjectProperties {
-  readonly color: string;
+  /** Family of colour, which the layer turns into the colour app.css gives it. */
+  readonly tone: Tone;
 }
 
 export interface SosProperties {
@@ -44,7 +46,7 @@ export function mapObjects(state: GroupState): MapObjects {
       shapes.push({
         type: 'Feature',
         geometry: shapeGeometry(record),
-        properties: { key, label: record.label, color: styleInfo(record.style).color },
+        properties: { key, label: record.label, tone: styleInfo(record.style).tone },
       });
     }
   }

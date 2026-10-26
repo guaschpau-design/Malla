@@ -19,7 +19,7 @@ test('a marker drawn by one member can be opened and deleted by another', async 
   await ana.getByRole('menuitem', { name: 'Marcador' }).click();
   await expect(ana.getByText('Toca el mapa donde va el marcador.')).toBeVisible();
   await tapMapCentre(ana);
-  await ana.getByLabel('Símbolo').selectOption({ label: '🔥 Fuego' });
+  await ana.getByRole('radio', { name: 'Fuego' }).check();
   await ana.getByLabel('Etiqueta (opcional)').fill('Foco norte');
   await ana.getByRole('button', { name: 'Guardar' }).click();
 
@@ -95,7 +95,7 @@ test('an area is drawn point by point and described before it is shared', async 
   await at(-80, 80);
   await ana.getByRole('button', { name: 'Deshacer' }).click();
   await ana.getByRole('button', { name: 'Terminar' }).click();
-  await ana.getByLabel('Tipo').selectOption({ label: 'Zona de peligro' });
+  await ana.getByRole('radio', { name: 'Zona de peligro' }).check();
   await ana.getByRole('button', { name: 'Guardar' }).click();
 
   // The triangle left after undoing covers the point to the right of the centre.

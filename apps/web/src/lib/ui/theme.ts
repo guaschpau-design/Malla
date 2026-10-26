@@ -1,0 +1,26 @@
+// The map draws with MapLibre, which cannot read CSS. It asks here for the colours app.css defines,
+// so that they stay defined in one place.
+
+import type { ExpressionSpecification } from 'maplibre-gl';
+
+/** Families of colour for map symbols and shapes, each a `--tone-*` variable in app.css. */
+export const TONES = ['slate', 'red', 'orange', 'amber', 'blue', 'green', 'teal', 'ink'] as const;
+export type Tone = (typeof TONES)[number];
+
+/** The current value of a colour variable of app.css, e.g. `themeColor('danger')`. */
+export function themeColor(name: string): string {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim();
+  if (value === '') throw new Error(`app.css defines no --${name}`);
+  return value;
+}
+
+export function toneColor(tone: Tone): string {
+  return themeColor(`tone-${tone}`);
+}
+
+/** A map expression that colours a feature by its `tone` property. */
+export function toneExpression(): ExpressionSpecification {
+  const [first, ...rest] = TONES;
+  const others = rest.flatMap((tone) => [tone, toneColor(tone)]);
+  return ['match', ['get', 'tone'], first, toneColor(first), ...others, toneColor('slate')];
+}

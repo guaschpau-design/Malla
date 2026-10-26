@@ -12,4 +12,4 @@ The Tesel mark, wordmark and lockup.
 
 The app icons are rendered from the mark with `pnpm --filter @tesel/web icons` (`apps/web/scripts/render-icons.js`).
 
-Colours: ink `#10202c`, pale `#e6ebe8`, signal `#f26a2e`. The mark is pale on ink and ink on paper; the lit tile is always signal orange. Keep clear space of at least one tile around the lockup. The site's typeface is the same Archivo.
+Colours, in `colors.json`, shared with the app and the site ([ADR-0020](../docs/decisions/0020-colour-and-symbols.md)): ink `#10202c`, pale `#e6ebe8`, signal lime `#c8f04a`, and its deep shade `#4d6e00` for text and lines on light backgrounds. The mark is pale on ink and ink on paper; the lit tile is always signal lime. Keep clear space of at least one tile around the lockup. The site's typeface is the same Archivo.

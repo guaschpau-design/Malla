@@ -85,7 +85,7 @@
   }
 
   .menu button.current {
-    border-color: var(--accent);
+    border-color: var(--accent-line);
   }
 
   .menu span {

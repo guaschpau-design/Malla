@@ -3,10 +3,11 @@
 #   python3 brand/build.py
 #
 # The mark is three hexagonal tiles: a tessellation, the cells of a map grid and the nodes of a
-# mesh at once. One tile is lit, in signal orange. The wordmark is Archivo, expanded (width 118)
+# mesh at once. One tile is lit, in signal lime. The wordmark is Archivo, expanded (width 118)
 # at weight 640, converted to outlines so it needs no font. Needs fonttools, brotli and uharfbuzz
 # (pip install fonttools brotli uharfbuzz).
 import io
+import json
 import math
 import os
 
@@ -18,7 +19,10 @@ from fontTools.varLib.instancer import instantiateVariableFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONT = os.path.join(HERE, '..', 'apps', 'site', 'fonts', 'archivo-latin-standard-normal.woff2')
-INK, PALE, SIGNAL = '#10202c', '#e6ebe8', '#f26a2e'
+# The brand's colours, shared with the app and the site (a test keeps them in step).
+with open(os.path.join(HERE, 'colors.json')) as colors_file:
+    COLORS = json.load(colors_file)
+INK, PALE, SIGNAL = COLORS['ink'], COLORS['pale'], COLORS['signal']
 WIDTH, WEIGHT, TRACKING = 118, 640, -0.01
 
 # The mark, in a 100 x 100 box: three pointy-top hexagons in a triangle, with grout between them.

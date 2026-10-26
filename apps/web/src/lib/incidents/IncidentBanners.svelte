@@ -86,7 +86,7 @@
   {/each}
   {#each alerts as alert (alert.key)}
     <section
-      class="banner alert {alert.event.level}"
+      class="banner alert level-{alert.event.level}"
       aria-label={t(ALERT_LEVELS[alert.event.level])}
     >
       <strong>{t(ALERT_LEVELS[alert.event.level])} · {alert.author}</strong>
@@ -140,17 +140,18 @@
     box-shadow: 0 4px 16px rgb(0 0 0 / 25%);
   }
 
+  /* Level classes are prefixed: a plain `.warning` is the app's error text (app.css). */
   .banner.sos,
-  .banner.critical {
+  .banner.level-critical {
     border-left-color: var(--danger);
   }
 
-  .banner.warning {
-    border-left-color: #f59e0b;
+  .banner.level-warning {
+    border-left-color: var(--warning);
   }
 
-  .banner.info {
-    border-left-color: #2563eb;
+  .banner.level-info {
+    border-left-color: var(--info);
   }
 
   .sos strong {

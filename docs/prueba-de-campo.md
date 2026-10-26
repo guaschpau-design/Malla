@@ -39,7 +39,7 @@ Todos con datos móviles y wifi desactivados, Bluetooth encendido, radio conecta
 
 Requiere haber seguido [`deploy/command-post/README.md`](../deploy/command-post/README.md).
 
-- [ ] Un móvil sin datos se conecta a la wifi del puesto, abre Tesel y arriba aparece «Puesto de mando» con el punto naranja. Apunta si el navegador pidió algún permiso.
+- [ ] Un móvil sin datos se conecta a la wifi del puesto, abre Tesel y arriba aparece «Puesto de mando» con el punto azul. Apunta si el navegador pidió algún permiso.
 - [ ] Un iPhone sin datos hace lo mismo y se comunica con el grupo.
 - [ ] Un móvil que nunca tuvo Tesel abre `https://puesto.tesel.eu/app/`, se une al grupo escaneando el QR y ve el mapa completo.
 - [ ] Con una radio conectada en el puesto (Chrome en el portátil), los mensajes de quien está en la wifi del puesto llegan a quien solo tiene radio, y al revés.

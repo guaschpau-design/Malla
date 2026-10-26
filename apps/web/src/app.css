@@ -7,28 +7,65 @@
     Roboto,
     sans-serif;
   line-height: 1.45;
-  --bg: #f8fafc;
+
+  /* Every colour of the app is defined here, once. The map, which cannot read CSS, asks for these
+     through lib/ui/theme.ts. The brand colours come from brand/colors.json (a test keeps them in
+     step) and so does the site. */
+
+  /* Brand */
+  --ink: #10202c;
+  --pale: #e6ebe8;
+  --signal: #c8f04a;
+  --signal-deep: #4d6e00;
+
+  /* Surfaces and text */
+  --bg: #f4f6f4;
   --surface: #ffffff;
-  --fg: #0f172a;
-  --muted: #475569;
-  --border: #cbd5e1;
-  --accent: #ea580c;
-  --ok: #16a34a;
-  --danger: #dc2626;
-  --bar-bg: #10202c;
-  --bar-fg: #f8fafc;
+  --fg: var(--ink);
+  --muted: #4f6069;
+  --border: #cfd8d3;
+  --bar-bg: var(--ink);
+  --bar-fg: var(--pale);
+
+  /* The one action on a screen: lime, with ink on it. Lines and outlines on light surfaces take
+     the deep shade, since lime alone does not stand out on white. */
+  --accent: var(--signal);
+  --on-accent: var(--ink);
+  --accent-line: var(--signal-deep);
+
+  /* Meanings */
+  --danger: #e5383b;
+  --warning: #f2a516;
+  --info: #2f6fde;
+
+  /* The map: this device, the other members, labels over the base map. */
+  --self: var(--signal);
+  --self-ring: var(--ink);
+  --member: #3e7bfa;
+  --map-text: var(--ink);
+  --map-halo: #ffffff;
+
+  /* Families of map symbols and shapes (objects/catalog.ts). */
+  --tone-slate: #56656f;
+  --tone-red: #d7263d;
+  --tone-orange: #e4572e;
+  --tone-amber: #d99a00;
+  --tone-blue: #2f6fde;
+  --tone-green: #14915f;
+  --tone-teal: #0f8a7e;
+  --tone-ink: var(--ink);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0b1220;
-    --surface: #111a2e;
-    --fg: #e2e8f0;
-    --muted: #94a3b8;
-    --border: #334155;
-    --ok: #22c55e;
-    --danger: #f87171;
-    --bar-bg: #020617;
+    --bg: #0a161f;
+    --surface: #132531;
+    --fg: var(--pale);
+    --muted: #93a6ad;
+    --border: #2a4654;
+    --bar-bg: #050c12;
+    --accent-line: var(--signal);
+    --danger: #ff5c5f;
   }
 }
 
@@ -55,9 +92,9 @@ button {
 
 button.primary {
   font-weight: 600;
-  color: #fff;
+  color: var(--on-accent);
   background: var(--accent);
-  border-color: var(--accent);
+  border-color: var(--accent-line);
 }
 
 button.danger {
@@ -84,7 +121,7 @@ button:disabled {
 button:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent-line);
   outline-offset: 2px;
 }
 
@@ -187,6 +224,6 @@ select {
 }
 
 .fab.on {
-  color: #fff;
+  color: var(--on-accent);
   background: var(--accent);
 }

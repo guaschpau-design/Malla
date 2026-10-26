@@ -21,6 +21,7 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0013](0013-self-updating-vps.md)                  | A self-updating VPS behind Caddy, installed by one script                | Accepted                      |
 | [0014](0014-name-teselia.md)                       | The project is called Teselia                                            | Superseded by 0019            |
 | [0019](0019-name-tesel.md)                         | The project is called Tesel                                              | Accepted                      |
+| [0020](0020-colour-and-symbols.md)                 | Signal lime, colours defined once, and symbols of our own                | Accepted                      |
 | [0015](0015-lora-airtime-policy.md)                | LoRa airtime policy                                                      | Accepted                      |
 | [0016](0016-web-app-and-native-shells.md)          | The web app first, and Android and iOS apps built from the same code     | Accepted                      |
 | [0017](0017-server-serves-site-and-app.md)         | The server serves the landing page and the web app                       | Accepted                      |

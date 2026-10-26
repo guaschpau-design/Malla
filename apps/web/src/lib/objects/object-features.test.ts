@@ -100,8 +100,8 @@ describe('map objects', () => {
     expect(polygon?.geometry.type).toBe('Polygon');
     const ring = polygon?.geometry.type === 'Polygon' ? polygon.geometry.coordinates[0] : [];
     expect(ring?.at(0)).toEqual(ring?.at(-1));
-    expect(polygon?.properties.color).toBe('#dc2626');
-    expect(circle?.properties.color).toBe('#475569');
+    expect(polygon?.properties.tone).toBe('red');
+    expect(circle?.properties.tone).toBe('slate');
   });
 
   it('shows only SOS calls that are still active', () => {

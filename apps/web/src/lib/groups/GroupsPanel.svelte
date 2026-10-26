@@ -185,7 +185,7 @@
   }
 
   .cards > li.active {
-    border-color: var(--accent);
+    border-color: var(--accent-line);
   }
 
   .role {

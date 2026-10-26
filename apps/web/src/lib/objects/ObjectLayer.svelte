@@ -5,6 +5,7 @@
   import { onMount } from 'svelte';
 
   import { keepInstalled } from '../map/overlay.ts';
+  import { themeColor, toneExpression } from '../ui/theme.ts';
   import { mapObjects } from './object-features.ts';
   import { addSymbolImages } from './symbol-images.ts';
 
@@ -37,6 +38,10 @@
   function install(): void {
     addSymbolImages(map);
     if (map.getSource(SHAPES) !== undefined) return;
+    const tone = toneExpression();
+    const danger = themeColor('danger');
+    const text = themeColor('map-text');
+    const halo = themeColor('map-halo');
     map.addSource(SHAPES, { type: 'geojson', data: data.shapes });
     map.addSource(MARKERS, { type: 'geojson', data: data.markers });
     map.addSource(SOS, { type: 'geojson', data: data.sos });
@@ -45,13 +50,13 @@
       type: 'fill',
       source: SHAPES,
       filter: ['==', ['geometry-type'], 'Polygon'],
-      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.18 },
+      paint: { 'fill-color': tone, 'fill-opacity': 0.18 },
     });
     map.addLayer({
       id: `${SHAPES}-line`,
       type: 'line',
       source: SHAPES,
-      paint: { 'line-color': ['get', 'color'], 'line-width': 3 },
+      paint: { 'line-color': tone, 'line-width': 3 },
     });
     map.addLayer({
       id: `${SHAPES}-label`,
@@ -64,8 +69,8 @@
         'symbol-placement': 'point',
       },
       paint: {
-        'text-color': ['get', 'color'],
-        'text-halo-color': '#ffffff',
+        'text-color': tone,
+        'text-halo-color': halo,
         'text-halo-width': 1.5,
       },
     });
@@ -79,17 +84,17 @@
         'text-field': ['get', 'label'],
         'text-font': ['Noto Sans Medium'],
         'text-size': 12,
-        'text-offset': [0, 1.6],
+        'text-offset': [0, 1.5],
         'text-anchor': 'top',
         'text-optional': true,
       },
-      paint: { 'text-color': '#0f172a', 'text-halo-color': '#ffffff', 'text-halo-width': 1.5 },
+      paint: { 'text-color': text, 'text-halo-color': halo, 'text-halo-width': 1.5 },
     });
     map.addLayer({
       id: `${SOS}-halo`,
       type: 'circle',
       source: SOS,
-      paint: { 'circle-radius': 22, 'circle-color': '#dc2626', 'circle-opacity': 0.25 },
+      paint: { 'circle-radius': 22, 'circle-color': danger, 'circle-opacity': 0.25 },
     });
     map.addLayer({
       id: `${SOS}-dot`,
@@ -97,9 +102,9 @@
       source: SOS,
       paint: {
         'circle-radius': 10,
-        'circle-color': '#dc2626',
+        'circle-color': danger,
         'circle-stroke-width': 3,
-        'circle-stroke-color': '#ffffff',
+        'circle-stroke-color': halo,
       },
     });
     map.addLayer({
@@ -114,7 +119,7 @@
         'text-anchor': 'top',
         'text-allow-overlap': true,
       },
-      paint: { 'text-color': '#dc2626', 'text-halo-color': '#ffffff', 'text-halo-width': 2 },
+      paint: { 'text-color': danger, 'text-halo-color': halo, 'text-halo-width': 2 },
     });
   }
 

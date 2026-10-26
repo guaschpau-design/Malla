@@ -6,6 +6,7 @@
   import { onMount } from 'svelte';
 
   import { memberFeatures } from './member-features.ts';
+  import { themeColor } from '../ui/theme.ts';
   import { keepInstalled } from './overlay.ts';
 
   interface Props {
@@ -25,16 +26,18 @@
   function install(): void {
     if (map.getSource(SOURCE) !== undefined) return;
     map.addSource(SOURCE, { type: 'geojson', data });
+    const halo = themeColor('map-halo');
     map.addLayer({
       id: `${SOURCE}-dot`,
       type: 'circle',
       source: SOURCE,
       paint: {
         'circle-radius': 8,
-        'circle-color': ['case', ['get', 'self'], '#ea580c', '#2563eb'],
+        'circle-color': ['case', ['get', 'self'], themeColor('self'), themeColor('member')],
         'circle-opacity': ['case', ['get', 'stale'], 0.4, 1],
-        'circle-stroke-width': 2,
-        'circle-stroke-color': '#ffffff',
+        // Lime alone does not stand out on a light map: this device gets an ink ring.
+        'circle-stroke-width': ['case', ['get', 'self'], 3, 2],
+        'circle-stroke-color': ['case', ['get', 'self'], themeColor('self-ring'), halo],
       },
     });
     map.addLayer({
@@ -50,8 +53,8 @@
         'text-allow-overlap': true,
       },
       paint: {
-        'text-color': '#0f172a',
-        'text-halo-color': '#ffffff',
+        'text-color': themeColor('map-text'),
+        'text-halo-color': halo,
         'text-halo-width': 1.5,
         'text-opacity': ['case', ['get', 'stale'], 0.6, 1],
       },

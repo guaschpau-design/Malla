@@ -326,7 +326,7 @@
   .dot {
     width: 0.55rem;
     height: 0.55rem;
-    background: var(--ok);
+    background: var(--signal);
     border-radius: 50%;
   }
 
@@ -336,7 +336,7 @@
 
   /* Connected, but only as far as the command post: online for the group, not for the world. */
   .status.post .dot {
-    background: var(--accent);
+    background: var(--info);
   }
 
   main {
@@ -392,12 +392,12 @@
   }
 
   .sync.synced {
-    background: var(--ok);
+    background: var(--signal);
   }
 
   .sync.connecting,
   .sync.syncing {
-    background: #f59e0b;
+    background: var(--warning);
   }
 
   .sync.disconnected {

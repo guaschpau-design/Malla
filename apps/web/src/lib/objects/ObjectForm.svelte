@@ -6,6 +6,7 @@
   import Panel from '../ui/Panel.svelte';
   import { SHAPE_STYLES, SYMBOLS } from './catalog.ts';
   import type { DraftKind } from './draft.ts';
+  import SymbolIcon from './SymbolIcon.svelte';
 
   interface Props {
     t: Translate;
@@ -55,20 +56,28 @@
       void save();
     }}
   >
-    <label>
-      {isMarker ? t('symbol') : t('shapeType')}
-      <select bind:value={code}>
+    <fieldset>
+      <legend>{isMarker ? t('symbol') : t('shapeType')}</legend>
+      <div class="choices">
         {#if isMarker}
           {#each SYMBOLS as symbol (symbol.code)}
-            <option value={symbol.code}>{symbol.emoji} {t(symbol.label)}</option>
+            <label class="choice">
+              <input type="radio" name="code" value={symbol.code} bind:group={code} />
+              <SymbolIcon code={symbol.code} size={30} />
+              <span>{t(symbol.label)}</span>
+            </label>
           {/each}
         {:else}
           {#each SHAPE_STYLES as style (style.code)}
-            <option value={style.code}>{t(style.label)}</option>
+            <label class="choice">
+              <input type="radio" name="code" value={style.code} bind:group={code} />
+              <span class="swatch" style:--swatch="var(--tone-{style.tone})"></span>
+              <span>{t(style.label)}</span>
+            </label>
           {/each}
         {/if}
-      </select>
-    </label>
+      </div>
+    </fieldset>
     <label>
       {t('objectLabel')}
       <input bind:value={label} autocomplete="off" />
@@ -81,3 +90,68 @@
     </div>
   </form>
 </Panel>
+
+<style>
+  fieldset {
+    margin: 0;
+    padding: 0;
+    border: none;
+  }
+
+  legend {
+    margin-bottom: 0.4rem;
+    padding: 0;
+    font-size: 0.9rem;
+  }
+
+  .choices {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    gap: 0.35rem;
+  }
+
+  .choice {
+    position: relative;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+    line-height: 1.2;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+  }
+
+  .choice:has(input:checked) {
+    font-weight: 600;
+    border-color: var(--accent-line);
+    box-shadow: inset 0 0 0 1px var(--accent-line);
+  }
+
+  .choice:has(input:focus-visible) {
+    outline: 2px solid var(--accent-line);
+    outline-offset: 2px;
+  }
+
+  /* The radio button is the whole card, invisible: it keeps keyboards, screen readers and taps
+     working, and the frame shows the choice. */
+  .choice input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: pointer;
+    opacity: 0;
+  }
+
+  .swatch {
+    flex-shrink: 0;
+    width: 1.6rem;
+    height: 0.9rem;
+    background: color-mix(in srgb, var(--swatch) 25%, transparent);
+    border: 2.5px solid var(--swatch);
+    border-radius: 0.2rem;
+  }
+</style>

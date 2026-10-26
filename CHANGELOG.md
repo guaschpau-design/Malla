@@ -38,7 +38,8 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 - Server image with the relay, the landing page and the web app, for amd64 and arm64 ([ADR-0017](docs/decisions/0017-server-serves-site-and-app.md)).
 - One-command, hardened, self-updating VPS install ([ADR-0013](docs/decisions/0013-self-updating-vps.md)) and command post kit.
 - Landing page and user guide at tesel.eu, in Spanish and English, with annotated screenshots of the app and diagrams of how it connects.
-- Brand: a mark of three hexagonal tiles and an Archivo wordmark, used on the site, the app and its icons.
+- Brand: a mark of three hexagonal tiles, one in signal lime, and an Archivo wordmark, used on the site, the app and its icons ([ADR-0020](docs/decisions/0020-colour-and-symbols.md)).
+- Map symbols of our own: pictograms on hexagonal tiles, coloured by family, chosen from a grid of symbols.
 - The project is called Tesel, formerly Teselia ([ADR-0019](docs/decisions/0019-name-tesel.md)); `tesel.eu` is its domain and the VPS redirects `teselia.eu` to it.
 
 ### Known limits

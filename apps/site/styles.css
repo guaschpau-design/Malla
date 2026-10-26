@@ -1,7 +1,9 @@
 /* Tesel site. Plain CSS, no build step, no third-party requests (ADR-0017).
    The design: a night map and paper. Two surfaces (ink and paper) alternate down the page; the
    photograph and the screenshots of the app are the loud elements, the rest is type set with care.
-   Signal orange is kept for what is urgent and for the one action on each screen. */
+   Signal lime is kept for the one action on each screen and for what marks this device; on paper
+   it takes its deep shade, since lime alone does not stand out on a light background. The brand
+   colours come from brand/colors.json, like the app's (a test keeps them in step). */
 
 @font-face {
   font-family: Archivo;
@@ -42,8 +44,9 @@
   --paper-text: #15232d;
   --paper-muted: #4f6069;
   --rule: #c2ccc7;
-  --signal: #f26a2e; /* urgent, and the one action on each screen */
-  --signal-deep: #d4531b; /* the same, on paper */
+  --signal: #c8f04a; /* the one action on each screen, with ink on it */
+  --signal-hover: #b4dc30;
+  --signal-deep: #4d6e00; /* the same, as text and lines on paper */
   --measure: 62ch;
   font-family:
     Archivo,
@@ -114,8 +117,14 @@ h3 {
 }
 
 :focus-visible {
-  outline: 3px solid var(--signal);
+  outline: 3px solid var(--signal-deep);
   outline-offset: 3px;
+}
+
+.ink :focus-visible,
+.top :focus-visible,
+.hero :focus-visible {
+  outline-color: var(--signal);
 }
 
 /* A short label above a heading. */
@@ -254,7 +263,7 @@ h3 {
   padding: 0.6rem 1.4rem;
   font-weight: 600;
   font-stretch: 106%;
-  color: #fff;
+  color: var(--ink);
   text-decoration: none;
   background: var(--signal);
   border: 1.5px solid transparent;
@@ -262,7 +271,7 @@ h3 {
 }
 
 .button:hover {
-  background: var(--signal-deep);
+  background: var(--signal-hover);
 }
 
 .button.quiet {
@@ -480,9 +489,9 @@ section.paper + section.paper > .wrap {
   height: 2rem;
   font-size: 0.9rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--ink);
   background: var(--signal);
-  border: 2px solid #fff;
+  border: 2px solid var(--ink);
   border-radius: 50%;
   box-shadow: 0 3px 10px rgb(0 0 0 / 35%);
   transform: translate(-50%, -50%);
@@ -531,8 +540,9 @@ section.paper + section.paper > .wrap {
   font-size: 0.85rem;
   font-weight: 700;
   content: counter(capability);
-  color: #fff;
-  background: var(--signal-deep);
+  color: var(--ink);
+  background: var(--signal);
+  border: 1.5px solid var(--ink);
   border-radius: 50%;
 }
 

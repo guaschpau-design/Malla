@@ -114,7 +114,7 @@
         {#each entries as entry (entry.key)}
           <li
             class:own={entry.event.origin === self}
-            class="{entry.kind} {entry.kind === 'alert' ? entry.event.level : ''}"
+            class="{entry.kind} {entry.kind === 'alert' ? `level-${entry.event.level}` : ''}"
           >
             <span class="meta">
               {#if entry.kind === 'alert'}{t(ALERT_LEVELS[entry.event.level])} ·{/if}
@@ -174,7 +174,7 @@
 
   .tabs button[aria-selected='true'] {
     font-weight: 600;
-    border-bottom-color: var(--accent);
+    border-bottom-color: var(--accent-line);
   }
 
   .count {
@@ -207,20 +207,21 @@
 
   li.own {
     justify-self: end;
-    border-color: var(--accent);
+    border-color: var(--accent-line);
   }
 
+  /* Level classes are prefixed: a plain `.warning` is the app's error text (app.css). */
   li.alert {
     justify-self: stretch;
     max-width: none;
-    border-left: 6px solid #2563eb;
+    border-left: 6px solid var(--info);
   }
 
-  li.alert.warning {
-    border-left-color: #f59e0b;
+  li.alert.level-warning {
+    border-left-color: var(--warning);
   }
 
-  li.alert.critical {
+  li.alert.level-critical {
     border-left-color: var(--danger);
   }
 

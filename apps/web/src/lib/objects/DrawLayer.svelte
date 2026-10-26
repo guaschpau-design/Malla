@@ -5,6 +5,7 @@
   import { onMount } from 'svelte';
 
   import { keepInstalled } from '../map/overlay.ts';
+  import { themeColor } from '../ui/theme.ts';
   import type { Draft } from './draft.ts';
   import { draftFeatures } from './draft-features.ts';
 
@@ -23,12 +24,14 @@
   function install(): void {
     if (map.getSource(SOURCE) !== undefined) return;
     map.addSource(SOURCE, { type: 'geojson', data });
+    // A drawing in progress: an ink dashed line, with this device's lime on its points.
+    const ink = themeColor('ink');
     map.addLayer({
       id: `${SOURCE}-line`,
       type: 'line',
       source: SOURCE,
       filter: ['==', ['geometry-type'], 'LineString'],
-      paint: { 'line-color': '#ea580c', 'line-width': 3, 'line-dasharray': [2, 1] },
+      paint: { 'line-color': ink, 'line-width': 3, 'line-dasharray': [2, 1] },
     });
     map.addLayer({
       id: `${SOURCE}-point`,
@@ -37,9 +40,9 @@
       filter: ['==', ['geometry-type'], 'Point'],
       paint: {
         'circle-radius': 6,
-        'circle-color': '#ea580c',
-        'circle-stroke-width': 2,
-        'circle-stroke-color': '#ffffff',
+        'circle-color': themeColor('self'),
+        'circle-stroke-width': 2.5,
+        'circle-stroke-color': ink,
       },
     });
   }
