@@ -2,7 +2,9 @@
 <script lang="ts">
   import type { LatLon } from '@tesel/protocol';
 
-  import type { Translate } from '../i18n/index.ts';
+  import type { Locale, Translate } from '../i18n/index.ts';
+  import FromHere from '../navigation/FromHere.svelte';
+  import type { DeviceLocation } from '../position/device-location.svelte.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import Panel from '../ui/Panel.svelte';
   import CoordinateBlock from './CoordinateBlock.svelte';
@@ -10,16 +12,19 @@
 
   interface Props {
     t: Translate;
+    locale: Locale;
     point: LatLon | null;
+    location: DeviceLocation;
     format: Preference<CoordinateFormat>;
     /** A typed coordinate was read: show it. */
     onfind: (at: LatLon) => void;
     /** Present when the point can be marked for the group. */
     onmark: ((at: LatLon) => void) | null;
+    onnavigate: (at: LatLon) => void;
     onclose: () => void;
   }
 
-  let { t, point, format, onfind, onmark, onclose }: Props = $props();
+  let { t, locale, point, location, format, onfind, onmark, onnavigate, onclose }: Props = $props();
 
   let typed = $state('');
   let unreadable = $state(false);
@@ -35,9 +40,18 @@
 <Panel title={t('coordinates')} closeLabel={t('close')} {onclose}>
   <div class="stack section">
     {#if point}
-      <CoordinateBlock {t} at={point} {format} />
+      {@const at = point}
+      <CoordinateBlock {t} {at} {format} />
+      <FromHere
+        {t}
+        {locale}
+        {at}
+        {location}
+        onnavigate={() => {
+          onnavigate(at);
+        }}
+      />
       {#if onmark}
-        {@const at = point}
         <div class="row">
           <button
             onclick={() => {

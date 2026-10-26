@@ -9,6 +9,8 @@ import type { Feature, FeatureCollection, Point } from 'geojson';
 export const STALE_AFTER_S = 10 * 60;
 
 export interface MemberProperties {
+  /** Node ID, used to select the member. */
+  readonly id: NodeId;
   readonly label: string;
   readonly stale: boolean;
 }
@@ -23,6 +25,7 @@ export function memberFeatures(state: GroupState, self: NodeId, now: number): Me
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [report.lon, report.lat] },
       properties: {
+        id: origin,
         label: state.members.get(origin)?.alias ?? origin,
         stale: now - report.time > STALE_AFTER_S,
       },

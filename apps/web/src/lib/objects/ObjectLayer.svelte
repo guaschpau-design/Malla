@@ -5,6 +5,7 @@
   import { onMount } from 'svelte';
 
   import { useOverlay } from '../map/overlay.svelte.ts';
+  import { tappedProperty } from '../map/taps.ts';
   import { themeColor, toneExpression } from '../ui/theme.ts';
   import { mapObjects } from './object-features.ts';
   import { addSymbolImages } from './symbol-images.ts';
@@ -115,10 +116,8 @@
 
   function onClick(event: MapMouseEvent): void {
     if (!interactive) return;
-    const layers = TAPPABLE.filter((id) => map.getLayer(id) !== undefined);
-    const [hit] = map.queryRenderedFeatures(event.point, { layers });
-    const key: unknown = hit?.properties['key'];
-    if (typeof key === 'string') onselect(key);
+    const key = tappedProperty(map, event, TAPPABLE, 'key');
+    if (key !== null) onselect(key);
   }
 
   onMount(() => {

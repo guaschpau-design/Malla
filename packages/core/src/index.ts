@@ -8,7 +8,13 @@ export {
   type ObjectRecord,
 } from './reducer.ts';
 export { EU_NARROW, eventAirtimeMs, timeOnAirMs, type LoraPreset } from './airtime.ts';
-export { distanceMeters, EARTH_RADIUS_M } from './geo.ts';
+export {
+  areaSquareMeters,
+  bearingDegrees,
+  distanceMeters,
+  EARTH_RADIUS_M,
+  pathMeters,
+} from './geo.ts';
 export {
   LIMITS,
   LoraScheduler,

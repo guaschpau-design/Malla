@@ -1,21 +1,26 @@
-<!-- Draws the other members of the group on the map; this device is drawn by SelfLayer. -->
+<!-- Draws the other members of the group on the map, and reports taps on them. This device is
+     drawn by SelfLayer. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
   import type { NodeId } from '@tesel/protocol';
-  import type { Map as MapLibreMap } from 'maplibre-gl';
+  import type { Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
   import { onMount } from 'svelte';
 
   import { themeColor } from '../ui/theme.ts';
   import { memberFeatures } from './member-features.ts';
   import { useOverlay } from './overlay.svelte.ts';
+  import { tappedProperty } from './taps.ts';
 
   interface Props {
     map: MapLibreMap;
     groupState: GroupState;
     self: NodeId;
+    /** False while drawing or measuring, so taps go there instead. */
+    interactive: boolean;
+    onselect: (id: NodeId) => void;
   }
 
-  let { map, groupState, self }: Props = $props();
+  let { map, groupState, self, interactive, onselect }: Props = $props();
 
   const SOURCE = 'tesel-members';
   /** Stale markers are re-evaluated this often even when no event arrives. */
@@ -63,10 +68,18 @@
     },
   });
 
+  function onClick(event: MapMouseEvent): void {
+    if (!interactive) return;
+    const id = tappedProperty(map, event, [`${SOURCE}-dot`], 'id');
+    if (id !== null) onselect(id as NodeId);
+  }
+
   onMount(() => {
     const timer = setInterval(() => (now = Date.now() / 1000), REFRESH_MS);
+    map.on('click', onClick);
     return () => {
       clearInterval(timer);
+      map.off('click', onClick);
     };
   });
 </script>

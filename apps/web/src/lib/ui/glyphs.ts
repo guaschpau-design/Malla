@@ -60,6 +60,8 @@ export const GLYPHS = {
     ['M12 5.5a6.5 6.5 0 1 1 0 13a6.5 6.5 0 1 1 0-13z', 'M12 2v3.5M12 18.5V22M2 12h3.5M18.5 12H22'],
     ['M12 9.8a2.2 2.2 0 1 1 0 4.4a2.2 2.2 0 1 1 0-4.4z'],
   ),
+  /** Points up; turned to show a direction. */
+  heading: glyph([], ['M12 2.5l7 18-7-4.2-7 4.2z']),
 } satisfies Record<string, Glyph>;
 
 export type GlyphName = keyof typeof GLYPHS;

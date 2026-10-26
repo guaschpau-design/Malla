@@ -28,7 +28,7 @@ describe('member features', () => {
       { type: 'position-hidden', origin: CARLA, seq: 3, time: T0 + 1 },
     ]);
     const { features } = memberFeatures(state, ANA, T0 + 10);
-    expect(features.map((f) => f.properties)).toEqual([{ label: 'Berta', stale: true }]);
+    expect(features.map((f) => f.properties)).toEqual([{ id: BERTA, label: 'Berta', stale: true }]);
     expect(features[0]?.geometry.coordinates).toEqual([-0.37, 39.47]);
   });
 });

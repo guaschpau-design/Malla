@@ -1,6 +1,7 @@
 <!--
-  Everything on top of the map: the group's members, objects and incidents, drawing, the chat
-  and the toolbar. Without an active group only the offline maps button is shown.
+  Everything on top of the map: this device, the group's members, objects and incidents, drawing,
+  measuring and navigating, the panels and the toolbar. Without an active group, only what works
+  alone: this device, coordinates, measuring, navigating to a point and offline maps.
 -->
 <script lang="ts">
   import type { AlertLevel, EventRef, LatLon, NodeId, Role, SosKind } from '@tesel/protocol';
@@ -12,36 +13,31 @@
   import CoordinatesPanel from '../coordinates/CoordinatesPanel.svelte';
   import PointLayer from '../coordinates/PointLayer.svelte';
   import type { Locale, Translate } from '../i18n/index.ts';
+  import MemberDetails from '../groups/MemberDetails.svelte';
   import IncidentBanners from '../incidents/IncidentBanners.svelte';
   import SosDialog from '../incidents/SosDialog.svelte';
   import { onLongPress } from '../map/long-press.ts';
   import MemberLayer from '../map/MemberLayer.svelte';
-  import {
-    addPoint,
-    draftGeometry,
-    isFull,
-    startDraft,
-    undoPoint,
-    type Draft,
-    type DraftKind,
-  } from '../objects/draft.ts';
+  import Measuring from '../measure/Measuring.svelte';
+  import Navigation from '../navigation/Navigation.svelte';
+  import { navigateTo } from '../navigation/navigation.svelte.ts';
+  import { draftGeometry, type DraftKind } from '../objects/draft.ts';
   import DrawBar from '../objects/DrawBar.svelte';
+  import { Drawing } from '../objects/drawing.svelte.ts';
   import DrawLayer from '../objects/DrawLayer.svelte';
-  import DrawMenu from '../objects/DrawMenu.svelte';
   import ObjectDetails from '../objects/ObjectDetails.svelte';
   import ObjectForm from '../objects/ObjectForm.svelte';
   import ObjectLayer from '../objects/ObjectLayer.svelte';
   import type { DeviceLocation } from '../position/device-location.svelte.ts';
   import LocateControl from '../position/LocateControl.svelte';
-  import PositionControl from '../position/PositionControl.svelte';
   import SelfLayer from '../position/SelfLayer.svelte';
   import type { RadioSession } from '../radio/radio.svelte.ts';
   import type { PositionSharing } from '../position/position-sharing.svelte.ts';
   import type { Preferences } from '../settings/preferences.ts';
   import type { GroupFeed } from '../sync/group-feed.svelte.ts';
   import Toast from '../ui/Toast.svelte';
-  import { closePanel, panels, togglePanel } from '../ui/panels.svelte.ts';
-  import ToolsMenu from './ToolsMenu.svelte';
+  import { closePanel, panels } from '../ui/panels.svelte.ts';
+  import Toolbar from './Toolbar.svelte';
 
   interface Props {
     t: Translate;
@@ -56,10 +52,12 @@
 
   let { t, locale, map, group, radio, location, preferences }: Props = $props();
 
-  // Drawing: tapping points (`draft`), then describing the object (`describing`).
-  let draft: Draft | null = $state.raw(null);
-  let describing = $state(false);
+  const drawing = new Drawing();
+  let measuring = $state(false);
+  /** Drawing or measuring: taps on the map add points instead of opening what they hit. */
+  const tapping = $derived(drawing.draft !== null || measuring);
   let selected: string | null = $state(null);
+  let selectedMember: NodeId | null = $state(null);
   /** The point shown in the coordinates panel. */
   let point: LatLon | null = $state.raw(null);
   let sosOpen = $state(false);
@@ -72,20 +70,14 @@
 
   function startDrawing(kind: DraftKind): void {
     closePanel();
-    draft = startDraft(kind);
-    describing = false;
-  }
-
-  function addDraftPoint(at: LatLon): void {
-    if (draft === null) return;
-    draft = addPoint(draft, at);
-    if (isFull(draft)) describing = true;
+    measuring = false;
+    drawing.start(kind);
   }
 
   /** Starts a marker at a point and goes straight to describing it. */
   function markAt(at: LatLon): void {
     startDrawing('marker');
-    addDraftPoint(at);
+    drawing.add(at);
   }
 
   function inspect(at: LatLon): void {
@@ -101,27 +93,33 @@
 
   onMount(() =>
     onLongPress(map, (at) => {
-      if (draft === null) inspect(at);
+      if (!tapping) inspect(at);
     }),
   );
 
-  function stopDrawing(): void {
-    draft = null;
-    describing = false;
-  }
-
   async function saveDraft(code: number, label: string): Promise<void> {
+    const { draft } = drawing;
     if (draft === null || group === null) return;
-    const [point] = draft.points;
+    const [first] = draft.points;
     const geometry = draftGeometry(draft);
-    if (draft.kind === 'marker' && point) await group.feed.placeMarker(point, code, label);
+    if (draft.kind === 'marker' && first) await group.feed.placeMarker(first, code, label);
     else if (geometry) await group.feed.drawShape(geometry, code, label);
-    stopDrawing();
+    drawing.stop();
   }
 
   function select(key: string): void {
     selected = key;
     panels.open = 'object';
+  }
+
+  function selectMember(id: NodeId): void {
+    selectedMember = id;
+    panels.open = 'member';
+  }
+
+  function startMeasuring(): void {
+    closePanel();
+    measuring = true;
   }
 
   async function sendSos(
@@ -163,35 +161,24 @@
 
 {#if group}
   {@const { feed, self, role } = group}
-  <MemberLayer {map} groupState={feed.state} {self} />
-  <ObjectLayer {map} groupState={feed.state} interactive={draft === null} onselect={select} />
+  <MemberLayer
+    {map}
+    groupState={feed.state}
+    {self}
+    interactive={!tapping}
+    onselect={selectMember}
+  />
+  <ObjectLayer {map} groupState={feed.state} interactive={!tapping} onselect={select} />
 
-  {#if draft && !describing}
-    <DrawLayer {map} {draft} onpoint={addDraftPoint} />
-    <DrawBar
+  {#if drawing.draft && drawing.describing}
+    <ObjectForm
       {t}
-      {draft}
-      onundo={() => {
-        if (draft) draft = undoPoint(draft);
+      kind={drawing.draft.kind}
+      onsave={saveDraft}
+      oncancel={() => {
+        drawing.stop();
       }}
-      onfinish={() => (describing = true)}
-      oncancel={stopDrawing}
     />
-  {:else}
-    <IncidentBanners
-      {t}
-      {locale}
-      groupState={feed.state}
-      {self}
-      canCancelOthers={role === 'coordinator'}
-      onacknowledge={acknowledge}
-      oncancel={cancelSos}
-      onshow={show}
-    />
-  {/if}
-
-  {#if draft && describing}
-    <ObjectForm {t} kind={draft.kind} onsave={saveDraft} oncancel={stopDrawing} />
   {/if}
 
   {#if panels.open === 'object' && selected}
@@ -202,9 +189,29 @@
       groupState={feed.state}
       objectKey={key}
       format={preferences.coordinateFormat}
+      {location}
+      onnavigate={(name: string) => {
+        navigateTo({ kind: 'object', key, name });
+      }}
       ondelete={async () => {
         const record = feed.state.objects.get(key);
         if (record) await feed.deleteObject(record.object);
+      }}
+      onclose={closePanel}
+    />
+  {/if}
+
+  {#if panels.open === 'member' && selectedMember}
+    {@const id = selectedMember}
+    <MemberDetails
+      {t}
+      {locale}
+      groupState={feed.state}
+      {id}
+      format={preferences.coordinateFormat}
+      {location}
+      onnavigate={(name: string) => {
+        navigateTo({ kind: 'member', id, name });
       }}
       onclose={closePanel}
     />
@@ -226,7 +233,13 @@
   {/if}
 
   {#if sosOpen}
-    <SosDialog {t} fallback={mapCentre()} onsend={sendSos} oncancel={() => (sosOpen = false)} />
+    <SosDialog
+      {t}
+      {location}
+      fallback={mapCentre()}
+      onsend={sendSos}
+      oncancel={() => (sosOpen = false)}
+    />
   {/if}
 
   {#if notice}
@@ -240,72 +253,93 @@
     {t}
     {point}
     format={preferences.coordinateFormat}
+    {locale}
+    {location}
     onfind={find}
     onmark={group ? markAt : null}
+    onnavigate={(at: LatLon) => {
+      navigateTo({ kind: 'point', at, name: t('mapPoint') });
+    }}
     onclose={closePanel}
   />
 {/if}
 
 <SelfLayer {map} {location} />
+
+<!-- The top of the map: what is going on now, then the incidents. -->
+<div class="top">
+  {#if drawing.draft && drawing.tapping}
+    <DrawLayer
+      {map}
+      draft={drawing.draft}
+      onpoint={(at: LatLon) => {
+        drawing.add(at);
+      }}
+    />
+    <DrawBar
+      {t}
+      draft={drawing.draft}
+      onundo={() => {
+        drawing.undo();
+      }}
+      onfinish={() => {
+        drawing.finish();
+      }}
+      oncancel={() => {
+        drawing.stop();
+      }}
+    />
+  {:else if measuring}
+    <Measuring {t} {locale} {map} onclose={() => (measuring = false)} />
+  {/if}
+  <Navigation
+    {t}
+    {locale}
+    {map}
+    {location}
+    groupState={group?.feed.state ?? null}
+    showCard={!tapping}
+  />
+  {#if group && !tapping}
+    <IncidentBanners
+      {t}
+      {locale}
+      groupState={group.feed.state}
+      self={group.self}
+      canCancelOthers={group.role === 'coordinator'}
+      onacknowledge={acknowledge}
+      oncancel={cancelSos}
+      onshow={show}
+    />
+  {/if}
+</div>
 <LocateControl {t} {map} {location} />
 {#if location.problem}
   <Toast>{location.problem === 'denied' ? t('locationDenied') : t('locationUnavailable')}</Toast>
 {/if}
 
-{#if !draft}
-  <div class="toolbar">
-    {#if group}
-      <button class="sos" onclick={() => (sosOpen = true)}>{t('sos')}</button>
-    {/if}
-    <div class="actions">
-      {#if group}
-        <PositionControl {t} sharing={group.sharing} />
-        <DrawMenu {t} onstart={startDrawing} />
-        <button
-          class="fab"
-          aria-expanded={panels.open === 'chat'}
-          onclick={() => {
-            togglePanel('chat');
-          }}
-        >
-          {t('chat')}
-        </button>
-      {/if}
-      <ToolsMenu {t} />
-    </div>
-  </div>
+{#if !tapping}
+  <Toolbar
+    {t}
+    sharing={group?.sharing ?? null}
+    onsos={() => (sosOpen = true)}
+    ondraw={startDrawing}
+    onmeasure={startMeasuring}
+  />
 {/if}
 
 <style>
-  .toolbar {
+  /* Clear of the map's own controls on the right, which are 29 px wide with a 10 px margin. */
+  .top {
     position: absolute;
-    z-index: 1;
-    right: 1rem;
-    bottom: calc(2.5rem + env(safe-area-inset-bottom));
-    left: 1rem;
-    display: flex;
-    gap: 0.75rem;
-    align-items: flex-end;
-    pointer-events: none;
-  }
-
-  .actions {
-    display: flex;
-    flex: 1;
-    flex-wrap: wrap-reverse;
+    z-index: 2;
+    top: 0.75rem;
+    right: 3.25rem;
+    left: 0.75rem;
+    display: grid;
     gap: 0.5rem;
-    justify-content: flex-end;
-  }
-
-  .sos {
-    width: 4rem;
-    height: 4rem;
-    font-weight: 800;
-    color: #fff;
-    pointer-events: auto;
-    background: var(--danger);
-    border: 3px solid #fff;
-    border-radius: 50%;
-    box-shadow: 0 4px 16px rgb(0 0 0 / 35%);
+    max-width: 30rem;
+    margin: 0 auto;
+    pointer-events: none;
   }
 </style>

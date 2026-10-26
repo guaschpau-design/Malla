@@ -114,16 +114,9 @@
 
 <style>
   .banners {
-    position: absolute;
-    z-index: 2;
-    top: 0.75rem;
-    right: 0.75rem;
-    left: 0.75rem;
     display: grid;
     gap: 0.5rem;
-    max-width: 30rem;
     max-height: 60dvh;
-    margin: 0 auto;
     overflow-y: auto;
     pointer-events: none;
   }

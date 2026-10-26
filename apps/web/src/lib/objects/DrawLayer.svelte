@@ -1,4 +1,4 @@
-<!-- While drawing: every tap on the map adds a point, and the drawing so far is previewed. -->
+<!-- While drawing or measuring: every tap on the map adds a point, and the path so far is shown. -->
 <script lang="ts">
   import type { LatLon } from '@tesel/protocol';
   import type { Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
