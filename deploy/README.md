@@ -10,7 +10,7 @@ GitHub Pages, where the app used to live, now only redirects to `https://tesel.e
 
 ## Server on a VPS
 
-The project's server runs at `https://tesel.eu`, on an IONOS VPS in Spain.
+The project's server runs at `https://tesel.eu`, on an IONOS VPS in Spain. It answers the project's former domain, `teselia.eu`, with a permanent redirect ([ADR-0019](../docs/decisions/0019-name-tesel.md)).
 
 The server runs on any Debian or Ubuntu VPS with a domain pointing to it ([ADR-0013](../docs/decisions/0013-self-updating-vps.md)).
 
@@ -33,7 +33,8 @@ What [`vps/install.sh`](vps/install.sh) sets up:
 | SSH        | `fail2ban` bans repeated failed logins; password logins are turned off if an SSH key is installed                                                   |
 | Containers | Docker with [`vps/compose.yaml`](vps/compose.yaml): the server (read-only, no capabilities, unprivileged) and Caddy                                 |
 | HTTPS      | Caddy gets and renews a Let's Encrypt certificate ([`vps/Caddyfile`](vps/Caddyfile)); no access logs are kept                                       |
-| Updates    | A systemd timer pulls `ghcr.io/guaschpau-design/tesel-server:latest` every 15 minutes and restarts what changed                                   |
+| Old names  | With `--redirect-from`, domains the server used to have answer with a permanent redirect to the same address on the new one                         |
+| Updates    | A systemd timer pulls `ghcr.io/guaschpau-design/tesel-server:latest` every 15 minutes and restarts what changed                                     |
 | Base map   | [`vps/maps.sh`](vps/maps.sh) extracts the area from the latest Protomaps build of OpenStreetMap, served at `/maps/basemap.pmtiles`; rebuilt monthly |
 
 CI publishes that image after every green push to `main` (job `image`), for amd64 and arm64. Running the script again applies changes to `compose.yaml` or `Caddyfile` and is otherwise harmless.
@@ -48,6 +49,10 @@ systemctl list-timers tesel-update  # when the next update check runs
 ```
 
 To announce a command post (below), run the script again with `--command-post https://puesto.example.eu`; the setting is kept on later runs.
+
+To move the server to a new domain, point both names at the VPS and run the script with `--domain new.example.eu --redirect-from old.example.eu` (several old names go comma-separated). Links and QR codes printed with the old name keep working; the setting is kept on later runs.
+
+A server installed while the project was called Teselia (in `/opt/teselia`) is moved by the script on its next run: it keeps the base map and the settings in `.env`, and removes the old containers, timers and stored envelopes, which were sealed with keys derived under the old name.
 
 ## Command post
 

@@ -33,6 +33,7 @@ services:
       - '443:443/udp'
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./redirects.caddy:/etc/caddy/redirects.caddy:ro
       - ./maps:/srv/maps:ro
       - caddy-data:/data
       - caddy-config:/config

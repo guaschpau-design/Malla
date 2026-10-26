@@ -1,5 +1,8 @@
 # HTTPS for the Tesel server. Caddy gets a Let's Encrypt certificate for TESEL_DOMAIN, serves
 # the base map built by maps.sh and passes everything else, WebSockets included, to the server.
+# Old domain names, if any, redirect here from the file install.sh writes (ADR-0019).
+import /etc/caddy/redirects.caddy
+
 {$TESEL_DOMAIN} {
 	header {
 		Strict-Transport-Security "max-age=31536000"

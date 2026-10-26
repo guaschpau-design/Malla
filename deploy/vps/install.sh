@@ -2,7 +2,7 @@
 # Installs a Tesel server on a fresh Debian or Ubuntu VPS, hardened and updating itself.
 #
 #   curl -fsSL https://raw.githubusercontent.com/guaschpau-design/Tesel/main/deploy/vps/install.sh \
-#     | sudo bash -s -- --domain tesel.example.eu
+#     | sudo bash -s -- --domain tesel.example.eu [--redirect-from old.example.eu]
 #
 # Safe to run again: it converges to the same setup, which is also how configuration changes
 # in this folder reach an existing server. See deploy/README.md for what it does and why.
@@ -12,18 +12,23 @@ set -euo pipefail
 REPO_RAW="https://raw.githubusercontent.com/guaschpau-design/Tesel"
 REF="main"
 DOMAIN=""
+REDIRECT_FROM=""
 COMMAND_POST=""
 SKIP_DNS_CHECK=false
 INSTALL_DIR="/opt/tesel"
+# Where servers installed before the project was renamed live (ADR-0019).
+LEGACY_DIR="/opt/teselia"
 
 usage() {
-  echo "Usage: install.sh --domain DOMAIN [--command-post URL] [--ref GIT_REF] [--skip-dns-check]" >&2
+  echo "Usage: install.sh --domain DOMAIN [--redirect-from DOMAIN[,DOMAIN...]] [--command-post URL]" >&2
+  echo "                  [--ref GIT_REF] [--skip-dns-check]" >&2
   exit 2
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --domain) DOMAIN="${2:-}"; shift 2 ;;
+    --redirect-from) REDIRECT_FROM="${2:-}"; shift 2 ;;
     --command-post) COMMAND_POST="${2:-}"; shift 2 ;;
     --ref) REF="${2:-}"; shift 2 ;;
     --skip-dns-check) SKIP_DNS_CHECK=true; shift ;;
@@ -34,8 +39,14 @@ done
 step() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 fail() { printf '\n\033[31mError:\033[0m %s\n' "$*" >&2; exit 1; }
 
+is_domain() { [[ "$1" =~ ^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; }
+
 [[ -n "$DOMAIN" ]] || usage
-[[ "$DOMAIN" =~ ^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]] || fail "\"$DOMAIN\" is not a domain name."
+is_domain "$DOMAIN" || fail "\"$DOMAIN\" is not a domain name."
+IFS=',' read -r -a REDIRECT_DOMAINS <<< "$REDIRECT_FROM"
+for old in "${REDIRECT_DOMAINS[@]}"; do
+  is_domain "$old" || fail "--redirect-from: \"$old\" is not a domain name."
+done
 [[ -z "$COMMAND_POST" || "$COMMAND_POST" =~ ^https://[A-Za-z0-9.-]+/?$ ]] ||
   fail "--command-post must be https://host"
 [[ $EUID -eq 0 ]] || fail "run as root (with sudo)."
@@ -43,12 +54,36 @@ fail() { printf '\n\033[31mError:\033[0m %s\n' "$*" >&2; exit 1; }
 . /etc/os-release
 [[ "$ID" == "debian" || "$ID" == "ubuntu" ]] || fail "only Debian and Ubuntu are supported."
 
-step "Checking that $DOMAIN points to this server"
+# Caddy can only obtain certificates for names that reach this server.
+step "Checking that ${DOMAIN}${REDIRECT_FROM:+ and $REDIRECT_FROM} point to this server"
 SERVER_IP="$(ip -4 route get 1.1.1.1 | awk '{for (i = 1; i < NF; i++) if ($i == "src") print $(i + 1)}')"
-DOMAIN_IP="$(getent ahostsv4 "$DOMAIN" | awk 'NR == 1 {print $1}' || true)"
-if [[ "$DOMAIN_IP" != "$SERVER_IP" && "$SKIP_DNS_CHECK" == false ]]; then
-  fail "$DOMAIN resolves to '${DOMAIN_IP:-nothing}', but this server is $SERVER_IP.
-Create an A record for $DOMAIN pointing to $SERVER_IP, wait a few minutes and run this again."
+for name in "$DOMAIN" "${REDIRECT_DOMAINS[@]}"; do
+  NAME_IP="$(getent ahostsv4 "$name" | awk 'NR == 1 {print $1}' || true)"
+  if [[ "$NAME_IP" != "$SERVER_IP" && "$SKIP_DNS_CHECK" == false ]]; then
+    fail "$name resolves to '${NAME_IP:-nothing}', but this server is $SERVER_IP.
+Create an A record for $name pointing to $SERVER_IP, wait a few minutes and run this again."
+  fi
+done
+
+# A server installed while the project was called Teselia moves here: its base map and settings
+# are kept, the rest goes. Its stored envelopes go too, since they were sealed with keys derived
+# under the old name and no app can open them (ADR-0019).
+if [[ -d "$LEGACY_DIR" ]]; then
+  step "Moving the server installed as Teselia to $INSTALL_DIR"
+  systemctl disable --now teselia-update.timer teselia-maps.timer >/dev/null 2>&1 || true
+  rm -f /etc/systemd/system/teselia-{update,maps}.{service,timer}
+  systemctl daemon-reload
+  (cd "$LEGACY_DIR" && docker compose down --volumes --rmi all) || true
+  install -m 0755 -d "$INSTALL_DIR"
+  if [[ -d "$LEGACY_DIR/maps" && ! -e "$INSTALL_DIR/maps" ]]; then
+    mv "$LEGACY_DIR/maps" "$INSTALL_DIR/maps"
+  fi
+  if [[ -f "$LEGACY_DIR/.env" && ! -e "$INSTALL_DIR/.env" ]]; then
+    sed 's/^TESELIA_/TESEL_/' "$LEGACY_DIR/.env" > "$INSTALL_DIR/.env"
+  fi
+  rm -rf "$LEGACY_DIR"
+  rm -f /etc/apt/apt.conf.d/52teselia-reboot /etc/fail2ban/jail.d/teselia.local \
+    /etc/ssh/sshd_config.d/10-teselia.conf
 fi
 
 step "Updating the system"
@@ -131,13 +166,27 @@ for file in compose.yaml Caddyfile maps.sh; do
 done
 chmod 0755 "$INSTALL_DIR/maps.sh"
 # Settings live in .env; each run updates its own and keeps any other an operator added there
-# (TESEL_RETENTION_DAYS, TESEL_MAP_BBOX...). A command post set before stays unless replaced.
+# (TESEL_RETENTION_DAYS, TESEL_MAP_BBOX...). A command post or old domains set before stay
+# unless replaced.
 set_setting() {
   touch "$INSTALL_DIR/.env"
   sed -i "/^$1=/d" "$INSTALL_DIR/.env"
   echo "$1=$2" >> "$INSTALL_DIR/.env"
 }
 set_setting TESEL_DOMAIN "$DOMAIN"
+if [[ -n "$REDIRECT_FROM" ]] || ! grep -q '^TESEL_REDIRECT_FROM=' "$INSTALL_DIR/.env"; then
+  set_setting TESEL_REDIRECT_FROM "$REDIRECT_FROM"
+fi
+# Caddy needs site names in its configuration itself, so the redirect site is written from the
+# setting into a file the Caddyfile imports (empty when there are no old names).
+REDIRECT_FROM="$(sed -n 's/^TESEL_REDIRECT_FROM=//p' "$INSTALL_DIR/.env")"
+{
+  echo "# Written by install.sh from TESEL_REDIRECT_FROM in .env: old names answer with a"
+  echo "# permanent redirect to the same address on $DOMAIN. Run install.sh again to change it."
+  if [[ -n "$REDIRECT_FROM" ]]; then
+    printf '%s {\n\tredir https://%s{uri} permanent\n}\n' "${REDIRECT_FROM//,/, }" "$DOMAIN"
+  fi
+} > "$INSTALL_DIR/redirects.caddy"
 if [[ -n "$COMMAND_POST" ]] || ! grep -q '^TESEL_COMMAND_POST=' "$INSTALL_DIR/.env" 2>/dev/null; then
   set_setting TESEL_COMMAND_POST "$COMMAND_POST"
 fi
