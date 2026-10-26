@@ -6,7 +6,7 @@ Lista para probar Tesel en condiciones reales antes de publicar la v0.1. Las pru
 
 - [ ] Radios preparadas con MeshCore Companion Bluetooth v1.18 o superior, región EU/UK Narrow ([`hardware.md`](hardware.md)), y cargadas.
 - [ ] En cada móvil: Tesel abierta desde `https://tesel.eu/app/`, añadida a la pantalla de inicio, con nombre elegido.
-- [ ] Mapa de la zona de la prueba descargado en cada móvil («Mapas sin conexión»).
+- [ ] Mapa de la zona de la prueba descargado en cada móvil («Herramientas» → «Mapas sin conexión»).
 - [ ] Un grupo creado por quien coordina y todos unidos con el QR.
 
 ## 1. Con internet (10 minutos)
