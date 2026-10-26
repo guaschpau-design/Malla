@@ -22,7 +22,12 @@ export interface OutboxEntry {
 }
 
 export type SettingKey =
-  'activeGroupId' | 'positionMode' | 'coordinateFormat' | 'hiddenLayers' | 'keepScreenOn';
+  | 'activeGroupId'
+  | 'positionMode'
+  | 'coordinateFormat'
+  | 'baseMap'
+  | 'hiddenLayers'
+  | 'keepScreenOn';
 
 export type EventKey = [groupId: string, origin: NodeId, seq: number];
 

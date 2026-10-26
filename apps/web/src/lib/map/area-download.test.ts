@@ -3,7 +3,7 @@ import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
 
 import { downloadArea, MAX_AREA_TILES, type TileArchive } from './area-download.ts';
-import { countTiles, tileKey, tilesInBounds } from './tile-math.ts';
+import { countTiles, tilesInBounds } from './tile-math.ts';
 import { openTileStore } from './tile-store.ts';
 
 let dbCounter = 0;
@@ -22,22 +22,28 @@ describe('area download', () => {
   it('stores every non-empty tile and reports progress to the end', async () => {
     const store = await freshStore();
     const progress: number[] = [];
-    const area = await downloadArea(fakeArchive, store, {
+    const area = await downloadArea(store, {
       id: 'v',
       name: 'Valencia',
       bounds,
-      maxZoom: 12,
+      layers: [
+        { source: 'basemap', archive: fakeArchive, maxZoom: 12 },
+        { source: 'ign-ortho', archive: fakeArchive, maxZoom: 10 },
+      ],
       signal: new AbortController().signal,
       onProgress: (p) => progress.push(p.done),
       now: () => 1000,
     });
 
-    const total = countTiles(bounds, 0, 12);
+    const total = countTiles(bounds, 0, 12) + countTiles(bounds, 0, 10);
     expect(progress.at(-1)).toBe(total);
     expect(area.complete).toBe(true);
     for (const tile of tilesInBounds(bounds, 0, 12)) {
-      const stored = await store.getTile(tileKey(tile));
+      const stored = await store.getTile('basemap', tile);
       expect(stored === undefined).toBe(tile.z === 12 && tile.x % 2 === 1);
+    }
+    for (const tile of tilesInBounds(bounds, 0, 10)) {
+      expect(await store.getTile('ign-ortho', tile)).toBeDefined();
     }
     expect(await store.listAreas()).toEqual([area]);
   });
@@ -45,11 +51,11 @@ describe('area download', () => {
   it('leaves an incomplete area behind when cancelled', async () => {
     const store = await freshStore();
     const controller = new AbortController();
-    const promise = downloadArea(fakeArchive, store, {
+    const promise = downloadArea(store, {
       id: 'c',
       name: 'Cancelled',
       bounds,
-      maxZoom: 13,
+      layers: [{ source: 'basemap', archive: fakeArchive, maxZoom: 13 }],
       signal: controller.signal,
       onProgress: (p) => {
         if (p.done === 5) controller.abort();
@@ -65,11 +71,11 @@ describe('area download', () => {
     const huge = { west: -10, south: 36, east: 4, north: 44 };
     expect(countTiles(huge, 0, 14)).toBeGreaterThan(MAX_AREA_TILES);
     await expect(
-      downloadArea(fakeArchive, store, {
+      downloadArea(store, {
         id: 'h',
         name: 'Iberia',
         bounds: huge,
-        maxZoom: 14,
+        layers: [{ source: 'basemap', archive: fakeArchive, maxZoom: 14 }],
         signal: new AbortController().signal,
         onProgress: () => undefined,
       }),

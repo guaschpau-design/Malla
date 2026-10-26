@@ -21,6 +21,7 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 - The operation diary: everything that happened in the group, in order and in plain words, downloadable as text for the report ([ADR-0022](docs/decisions/0022-log-files.md)).
 - The group's log can be saved to a file, encrypted for the group, and loaded on another device of the group to bring it what it is missing (protocol §10).
 - A simpler screen: the SOS button and a dock of four — Me (where you are and how you share your position), Add, Chat and More. Everything else starts from what is touched on the map: a point, a marker or a member opens what can be done there (guide, mark, measure). Map layers sit under the zoom.
+- Topographic map and aerial photographs of Spain from the IGN, as base maps chosen in the map layers panel, and downloadable with an offline area ([ADR-0023](docs/decisions/0023-ign-base-maps.md)).
 - Areas downloaded tile by tile for offline use ([ADR-0011](docs/decisions/0011-client-side-area-download.md)).
 - The base map (Spain, Portugal and the islands) is built from OpenStreetMap by our own server and served by it and by command posts.
 

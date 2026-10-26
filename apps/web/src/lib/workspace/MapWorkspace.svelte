@@ -262,7 +262,12 @@
 <SelfLayer {map} {location} />
 
 {#if panels.open === 'layers'}
-  <LayersPanel {t} hidden={preferences.hiddenLayers} onclose={closePanel} />
+  <LayersPanel
+    {t}
+    base={preferences.baseMap}
+    hidden={preferences.hiddenLayers}
+    onclose={closePanel}
+  />
 {/if}
 
 <!-- The top of the map: what is going on now, then the incidents. -->

@@ -1,17 +1,25 @@
-<!-- What is shown on the map. This device and SOS calls always are. -->
+<!-- The map under everything, and what is shown on it. This device and SOS calls always are. -->
 <script lang="ts">
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import Panel from '../ui/Panel.svelte';
   import { MAP_LAYERS, type MapLayer } from './layers.ts';
+  import { BASE_MAPS, type BaseMap } from './style.ts';
 
   interface Props {
     t: Translate;
+    base: Preference<BaseMap>;
     hidden: Preference<readonly MapLayer[]>;
     onclose: () => void;
   }
 
-  let { t, hidden, onclose }: Props = $props();
+  let { t, base, hidden, onclose }: Props = $props();
+
+  const BASE_NAMES: Readonly<Record<BaseMap, { label: MessageKey; hint: MessageKey }>> = {
+    streets: { label: 'baseMapStreets', hint: 'baseMapStreetsHint' },
+    topo: { label: 'baseMapTopo', hint: 'baseMapTopoHint' },
+    aerial: { label: 'baseMapAerial', hint: 'baseMapAerialHint' },
+  };
 
   const NAMES: Readonly<Record<MapLayer, { label: MessageKey; hint: MessageKey }>> = {
     members: { label: 'layerMembers', hint: 'layerMembersHint' },
@@ -26,6 +34,14 @@
 </script>
 
 <Panel title={t('layers')} closeLabel={t('close')} {onclose}>
+  <div class="bases section" role="radiogroup" aria-label={t('baseMap')}>
+    {#each BASE_MAPS as option (option)}
+      <button role="radio" aria-checked={base.value === option} onclick={() => base.set(option)}>
+        <strong>{t(BASE_NAMES[option].label)}</strong>
+        <span class="hint">{t(BASE_NAMES[option].hint)}</span>
+      </button>
+    {/each}
+  </div>
   <div class="stack section">
     {#each MAP_LAYERS as layer (layer)}
       <label class="layer">
@@ -45,6 +61,29 @@
 </Panel>
 
 <style>
+  .bases {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  .bases button {
+    display: grid;
+    gap: 0.15rem;
+    align-content: start;
+    padding: 0.5rem;
+    text-align: left;
+  }
+
+  .bases .hint {
+    font-size: 0.8rem;
+  }
+
+  .bases button[aria-checked='true'] {
+    border-color: var(--accent-line);
+    box-shadow: inset 0 0 0 1px var(--accent-line);
+  }
+
   .layer {
     display: flex;
     gap: 0.75rem;

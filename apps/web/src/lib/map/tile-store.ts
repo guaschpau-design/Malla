@@ -1,19 +1,32 @@
 // Offline storage of map tiles and of the areas they were downloaded for (IndexedDB).
 //
-// Areas may overlap, so each tile records which areas need it; deleting an area only removes
-// tiles that no remaining area uses.
+// Each tile is stored under its source and coordinates. Areas may overlap, so each tile records
+// which areas need it; deleting an area only removes tiles that no remaining area uses.
 
-import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import {
+  openDB,
+  type DBSchema,
+  type IDBPDatabase,
+  type IDBPTransaction,
+  type StoreNames,
+} from 'idb';
 
-import { tileKey, tilesInBounds, type Bounds } from './tile-math.ts';
+import { tileKey, tilesInBounds, type Bounds, type TileCoord } from './tile-math.ts';
+import type { TileSourceId } from './tile-sources.ts';
+
+/** One source of an area and the zoom up to which its tiles were downloaded. */
+export interface AreaLayer {
+  readonly source: TileSourceId;
+  readonly maxZoom: number;
+}
 
 export interface OfflineArea {
   readonly id: string;
   readonly name: string;
   readonly bounds: Bounds;
   readonly minZoom: number;
-  readonly maxZoom: number;
-  /** Tiles that exist in the source; empty tiles (open sea) are not stored. */
+  readonly layers: readonly AreaLayer[];
+  /** Tiles that exist in the sources; empty tiles (open sea) are not stored. */
   readonly storedTiles: number;
   readonly bytes: number;
   /** Milliseconds since the epoch. */
@@ -23,14 +36,14 @@ export interface OfflineArea {
 }
 
 export interface StoredTile {
-  readonly key: string;
+  readonly tile: TileCoord;
   readonly data: ArrayBuffer;
 }
 
 export interface TileStore {
-  getTile(key: string): Promise<ArrayBuffer | undefined>;
-  /** Stores tiles for an area in one transaction. */
-  putTiles(areaId: string, tiles: readonly StoredTile[]): Promise<void>;
+  getTile(source: TileSourceId, tile: TileCoord): Promise<ArrayBuffer | undefined>;
+  /** Stores tiles of one source for an area in one transaction. */
+  putTiles(areaId: string, source: TileSourceId, tiles: readonly StoredTile[]): Promise<void>;
   saveArea(area: OfflineArea): Promise<void>;
   listAreas(): Promise<OfflineArea[]>;
   deleteArea(area: OfflineArea): Promise<void>;
@@ -42,16 +55,48 @@ interface MapDb extends DBSchema {
 }
 
 const DB_NAME = 'tesel-map';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
+
+/** Where a tile is kept: its source, then z/x/y. */
+function storageKey(source: TileSourceId, tile: TileCoord): string {
+  return `${source}/${tileKey(tile)}`;
+}
 
 export async function openTileStore(name: string = DB_NAME): Promise<TileStore> {
   const db = await openDB<MapDb>(name, DB_VERSION, {
-    upgrade(database) {
-      database.createObjectStore('tiles');
-      database.createObjectStore('areas', { keyPath: 'id' });
+    upgrade(database, oldVersion, _newVersion, transaction) {
+      if (oldVersion < 1) {
+        database.createObjectStore('tiles');
+        database.createObjectStore('areas', { keyPath: 'id' });
+      }
+      // The upgrade transaction stays open while its requests run; openDB resolves after.
+      if (oldVersion === 1) void keyBySource(transaction);
     },
   });
   return new IndexedDbTileStore(db);
+}
+
+/**
+ * Version 1 had one source, the base map: its tiles were keyed z/x/y and its areas had one
+ * maxZoom. They become the base map's, under the keys and layers of version 2.
+ */
+async function keyBySource(
+  transaction: IDBPTransaction<MapDb, StoreNames<MapDb>[], 'versionchange'>,
+): Promise<void> {
+  const tiles = transaction.objectStore('tiles');
+  for (let cursor = await tiles.openCursor(); cursor; cursor = await cursor.continue()) {
+    const key = cursor.key;
+    if (!/^\d+\/\d+\/\d+$/.test(key)) continue;
+    await tiles.put(cursor.value, `basemap/${key}`);
+    await cursor.delete();
+  }
+  const areas = transaction.objectStore('areas');
+  for (let cursor = await areas.openCursor(); cursor; cursor = await cursor.continue()) {
+    const old = cursor.value as OfflineArea & { maxZoom?: number };
+    if (old.maxZoom === undefined) continue;
+    const { maxZoom, ...rest } = old;
+    await cursor.update({ ...rest, layers: [{ source: 'basemap', maxZoom }] });
+  }
 }
 
 class IndexedDbTileStore implements TileStore {
@@ -61,14 +106,19 @@ class IndexedDbTileStore implements TileStore {
     this.db = db;
   }
 
-  async getTile(key: string): Promise<ArrayBuffer | undefined> {
-    return (await this.db.get('tiles', key))?.data;
+  async getTile(source: TileSourceId, tile: TileCoord): Promise<ArrayBuffer | undefined> {
+    return (await this.db.get('tiles', storageKey(source, tile)))?.data;
   }
 
-  async putTiles(areaId: string, tiles: readonly StoredTile[]): Promise<void> {
+  async putTiles(
+    areaId: string,
+    source: TileSourceId,
+    tiles: readonly StoredTile[],
+  ): Promise<void> {
     const tx = this.db.transaction('tiles', 'readwrite');
     await Promise.all(
-      tiles.map(async ({ key, data }) => {
+      tiles.map(async ({ tile, data }) => {
+        const key = storageKey(source, tile);
         const existing = await tx.store.get(key);
         const areas = existing ? [...new Set([...existing.areas, areaId])] : [areaId];
         await tx.store.put({ data, areas }, key);
@@ -89,13 +139,15 @@ class IndexedDbTileStore implements TileStore {
   async deleteArea(area: OfflineArea): Promise<void> {
     const tx = this.db.transaction(['tiles', 'areas'], 'readwrite');
     const tiles = tx.objectStore('tiles');
-    for (const coord of tilesInBounds(area.bounds, area.minZoom, area.maxZoom)) {
-      const key = tileKey(coord);
-      const existing = await tiles.get(key);
-      if (!existing) continue;
-      const areas = existing.areas.filter((id) => id !== area.id);
-      if (areas.length === 0) await tiles.delete(key);
-      else await tiles.put({ data: existing.data, areas }, key);
+    for (const { source, maxZoom } of area.layers) {
+      for (const coord of tilesInBounds(area.bounds, area.minZoom, maxZoom)) {
+        const key = storageKey(source, coord);
+        const existing = await tiles.get(key);
+        if (!existing) continue;
+        const areas = existing.areas.filter((id) => id !== area.id);
+        if (areas.length === 0) await tiles.delete(key);
+        else await tiles.put({ data: existing.data, areas }, key);
+      }
     }
     await tx.objectStore('areas').delete(area.id);
     await tx.done;

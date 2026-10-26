@@ -8,15 +8,16 @@
   import { onMount } from 'svelte';
 
   import { mapAssetsUrl } from '../config.ts';
-  import { buildStyle, type MapTheme } from './style.ts';
+  import { buildStyle, type BaseMap, type MapTheme } from './style.ts';
 
   interface Props {
+    base: BaseMap;
     theme: MapTheme;
     lang: string;
     onready: (map: MapLibreMap) => void;
   }
 
-  let { theme, lang, onready }: Props = $props();
+  let { base, theme, lang, onready }: Props = $props();
 
   let container: HTMLDivElement;
   let map: MapLibreMap | undefined = $state();
@@ -27,10 +28,10 @@
 
   onMount(() => {
     setWorkerUrl(maplibreWorkerUrl);
-    appliedStyle = `${theme}/${lang}`;
+    appliedStyle = `${base}/${theme}/${lang}`;
     const instance = new MapLibreMap({
       container,
-      style: buildStyle(theme, lang, mapAssetsUrl()),
+      style: buildStyle(base, theme, lang, mapAssetsUrl()),
       ...INITIAL_VIEW,
       attributionControl: { compact: true },
       // Keeps the view in the URL (#map=zoom/lat/lon), so a reload or a shared link keeps it.
@@ -45,12 +46,12 @@
     };
   });
 
-  // Restyle when the theme or the label language changes.
+  // Restyle when the base map, the theme or the label language changes.
   $effect(() => {
-    const wanted = `${theme}/${lang}`;
+    const wanted = `${base}/${theme}/${lang}`;
     if (map && wanted !== appliedStyle) {
       appliedStyle = wanted;
-      map.setStyle(buildStyle(theme, lang, mapAssetsUrl()));
+      map.setStyle(buildStyle(base, theme, lang, mapAssetsUrl()));
     }
   });
 </script>

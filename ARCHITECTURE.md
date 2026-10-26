@@ -165,7 +165,7 @@ A command post is found by name and replicates by protocol ([ADR-0018](docs/deci
 | Where   | What                                                                                     | Technology                                                               |
 | ------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | Browser | Identity keys, groups, settings, each group's event log, the outbox and sync cursors     | IndexedDB database `tesel`                                               |
-| Browser | Offline map tiles, with the areas they belong to                                         | IndexedDB database `tesel-map`, separate so it can be cleared on its own |
+| Browser | Offline map tiles by source, with the areas they belong to                               | IndexedDB database `tesel-map`, separate so it can be cleared on its own |
 | File    | A group's log, saved and loaded by hand: its events sealed as for a relay (protocol §10) | JSON                                                                     |
 | Server  | Encrypted envelopes per group, with retention limit                                      | SQLite through `node:sqlite`                                             |
 | Server  | Base map                                                                                 | One PMTiles file, served as a static file with range requests            |
@@ -173,6 +173,8 @@ A command post is found by name and replicates by protocol ([ADR-0018](docs/deci
 ## 7. Maps
 
 The base map is OpenStreetMap data rendered as vector tiles from a single PMTiles file that **we host**. The public OpenStreetMap tile servers forbid bulk downloading, so they cannot be used for offline maps. To prepare for an incident, the web app downloads every tile of an area, up to zoom 14, straight from that file and stores it in IndexedDB. MapLibre reads tiles through a `tesel-tiles://` protocol that answers from IndexedDB first and the network second. Glyphs and sprites ship inside the app. See [ADR-0007](docs/decisions/0007-self-hosted-vector-maps.md) and [ADR-0011](docs/decisions/0011-client-side-area-download.md).
+
+Two more base maps cover Spain: the topographic map and the orthophotos of the Instituto Geográfico Nacional, open web map services the browser reads directly through the same protocol. An offline area can include them; every downloaded tile is kept under its source ([ADR-0023](docs/decisions/0023-ign-base-maps.md)).
 
 ## 8. Security model
 

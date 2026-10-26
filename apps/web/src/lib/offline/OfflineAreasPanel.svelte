@@ -3,11 +3,18 @@
   import { onMount } from 'svelte';
 
   import { formatBytes, formatDateTime } from '../format.ts';
-  import type { Locale, Translate } from '../i18n/index.ts';
-  import { downloadArea, MAX_AREA_TILES, type TileArchive } from '../map/area-download.ts';
+  import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
+  import {
+    countAreaTiles,
+    downloadArea,
+    MAX_AREA_TILES,
+    type DownloadLayer,
+  } from '../map/area-download.ts';
   import { BASEMAP_MAX_ZOOM } from '../map/style.ts';
-  import { countTiles, type Bounds } from '../map/tile-math.ts';
+  import type { Bounds } from '../map/tile-math.ts';
+  import type { TileArchives } from '../map/tile-source.ts';
   import type { OfflineArea, TileStore } from '../map/tile-store.ts';
+  import type { RasterSourceId, TileSourceId } from '../map/tile-sources.ts';
   import Panel from '../ui/Panel.svelte';
 
   interface Props {
@@ -15,14 +22,27 @@
     locale: Locale;
     map: MapLibreMap;
     store: TileStore;
-    archive: TileArchive;
+    archives: TileArchives;
     onclose: () => void;
   }
 
-  let { t, locale, map, store, archive, onclose }: Props = $props();
+  let { t, locale, map, store, archives, onclose }: Props = $props();
 
-  /** Rough average size of a vector tile, only used to estimate download size. */
-  const AVERAGE_TILE_BYTES = 25 * 1024;
+  /** Rough average size of a tile of each source, only used to estimate download size. */
+  const AVERAGE_TILE_BYTES: Readonly<Record<TileSourceId, number>> = {
+    basemap: 25 * 1024,
+    'ign-topo': 18 * 1024,
+    'ign-ortho': 18 * 1024,
+  };
+  /** Photographs and topographic maps need three zooms more than the vector map for the same
+      detail: their tiles cannot be enlarged without blurring. */
+  const RASTER_EXTRA_ZOOM = 3;
+  const SOURCE_NAMES: Readonly<Record<TileSourceId, MessageKey>> = {
+    basemap: 'baseMapStreets',
+    'ign-topo': 'baseMapTopo',
+    'ign-ortho': 'baseMapAerial',
+  };
+  const RASTERS: readonly RasterSourceId[] = ['ign-topo', 'ign-ortho'];
 
   const detailOptions = [
     { zoom: BASEMAP_MAX_ZOOM, label: 'detailStreets' },
@@ -40,7 +60,23 @@
   let storage: { used: number; quota: number } | null = $state(null);
   let controller: AbortController | null = null;
 
-  const tileCount = $derived(countTiles(bounds, 0, maxZoom));
+  /** The raster maps to download as well as the street map. */
+  let extras: RasterSourceId[] = $state([]);
+  const layers: DownloadLayer[] = $derived([
+    { source: 'basemap', archive: archives.basemap, maxZoom },
+    ...extras.map((source) => ({
+      source,
+      archive: archives[source],
+      maxZoom: maxZoom + RASTER_EXTRA_ZOOM,
+    })),
+  ]);
+  const tileCount = $derived(countAreaTiles(bounds, layers));
+  const estimatedBytes = $derived(
+    layers.reduce(
+      (sum, layer) => sum + countAreaTiles(bounds, [layer]) * AVERAGE_TILE_BYTES[layer.source],
+      0,
+    ),
+  );
   const tooLarge = $derived(tileCount > MAX_AREA_TILES);
 
   function currentBounds(): Bounds {
@@ -60,11 +96,11 @@
     progress = { done: 0, total: tileCount };
     const now = Date.now();
     try {
-      await downloadArea(archive, store, {
+      await downloadArea(store, {
         id: crypto.randomUUID(),
         name: name.trim() || t('defaultAreaName', { date: formatDateTime(now, locale) }),
         bounds,
-        maxZoom,
+        layers,
         signal: controller.signal,
         onProgress: (p) => (progress = { done: p.done, total: p.total }),
       });
@@ -127,6 +163,17 @@
       </select>
     </label>
 
+    <fieldset class="extras" disabled={progress !== null}>
+      <legend>{t('downloadAlso')}</legend>
+      {#each RASTERS as source (source)}
+        <label class="check">
+          <input type="checkbox" value={source} bind:group={extras} />
+          {t(SOURCE_NAMES[source])}
+        </label>
+      {/each}
+      <p class="hint">{t('downloadAlsoHint')}</p>
+    </fieldset>
+
     {#if progress}
       <progress max={progress.total} value={progress.done}></progress>
       <p class="hint">{t('downloading', { done: progress.done, total: progress.total })}</p>
@@ -142,7 +189,7 @@
       <p class="hint">
         {t('estimate', {
           tiles: tileCount.toLocaleString(locale),
-          size: formatBytes(tileCount * AVERAGE_TILE_BYTES, locale),
+          size: formatBytes(estimatedBytes, locale),
         })}
       </p>
       <button type="submit" class="primary">{t('download')}</button>
@@ -160,6 +207,7 @@
             <strong>{area.name}</strong>
             {#if !area.complete}<span class="badge danger">{t('incomplete')}</span>{/if}
             <span class="hint">
+              {area.layers.map((layer) => t(SOURCE_NAMES[layer.source])).join(' + ')} ·
               {formatBytes(area.bytes, locale)} · {formatDateTime(area.createdAt, locale)}
             </span>
           </div>
@@ -198,6 +246,26 @@
 
   progress {
     width: 100%;
+  }
+
+  .extras {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .extras legend {
+    margin-bottom: 0.25rem;
+    padding: 0;
+    font-size: 0.9rem;
+  }
+
+  .check {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
   }
 
   .areas li .hint {

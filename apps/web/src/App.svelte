@@ -19,7 +19,7 @@
   import { linkOf, radioLinkOf, serverDetail } from './lib/links/links.ts';
   import MapView from './lib/map/MapView.svelte';
   import type { MapTheme } from './lib/map/style.ts';
-  import { pmtilesArchive, registerTileProtocol } from './lib/map/tile-source.ts';
+  import { registerTileProtocol, tileArchives } from './lib/map/tile-source.ts';
   import { openTileStore, type TileStore } from './lib/map/tile-store.ts';
   import OfflineAreasPanel from './lib/offline/OfflineAreasPanel.svelte';
   import { DeviceLocation } from './lib/position/device-location.svelte.ts';
@@ -46,7 +46,7 @@
   if (fromAddress !== null) window.history.replaceState(null, '', import.meta.env.BASE_URL);
   let incoming: Result<Invitation, ProtocolError> | null = $state.raw(fromAddress);
 
-  const archive = pmtilesArchive(basemapUrl());
+  const archives = tileArchives(basemapUrl());
   let store: TileStore | undefined = $state();
   let db: AppDb | undefined;
   let session: Session | undefined = $state();
@@ -78,7 +78,7 @@
     darkQuery.addEventListener('change', onScheme);
 
     void openTileStore().then((opened) => {
-      registerTileProtocol(opened, archive);
+      registerTileProtocol(opened, archives);
       store = opened;
     });
     void openAppDb().then(async (opened) => {
@@ -210,8 +210,8 @@
   </header>
 
   <main>
-    {#if store}
-      <MapView {theme} lang={locale} onready={onMapReady} />
+    {#if store && preferences}
+      <MapView base={preferences.baseMap.value} {theme} lang={locale} onready={onMapReady} />
     {/if}
 
     {#if map && preferences}
@@ -219,7 +219,7 @@
     {/if}
 
     {#if map && store && panels.open === 'offline'}
-      <OfflineAreasPanel {t} {locale} {map} {store} {archive} onclose={closePanel} />
+      <OfflineAreasPanel {t} {locale} {map} {store} {archives} onclose={closePanel} />
     {/if}
 
     {#if panels.open === 'connections'}
