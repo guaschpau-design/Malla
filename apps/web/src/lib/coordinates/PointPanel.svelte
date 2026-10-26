@@ -22,10 +22,13 @@
     onmeasure: () => void;
     /** Present when the point can be marked for the group. */
     onmark: (() => void) | null;
+    /** Present when a task can be added there for the group. */
+    ontask: (() => void) | null;
     onclose: () => void;
   }
 
-  let { t, locale, at, location, format, onnavigate, onmeasure, onmark, onclose }: Props = $props();
+  let { t, locale, at, location, format, onnavigate, onmeasure, onmark, ontask, onclose }: Props =
+    $props();
 </script>
 
 <Panel title={t('mapPoint')} closeLabel={t('close')} {onclose}>
@@ -35,6 +38,7 @@
     <div class="row">
       <ActionButton icon="heading" label={t('guideMe')} onclick={onnavigate} />
       {#if onmark}<ActionButton icon="pin" label={t('markHere')} onclick={onmark} />{/if}
+      {#if ontask}<ActionButton icon="task" label={t('taskHere')} onclick={ontask} />{/if}
       <ActionButton icon="ruler" label={t('measureFromHere')} onclick={onmeasure} />
     </div>
   </div>

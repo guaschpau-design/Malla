@@ -30,3 +30,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0022](0022-log-files.md)                          | Carry a group's log in files of sealed envelopes                         | Accepted                      |
 | [0023](0023-ign-base-maps.md)                      | Topographic and aerial base maps from Spain's IGN, read by the browser   | Accepted                      |
 | [0024](0024-terrain-tiles-for-relief.md)           | Relief from the open Terrain Tiles, read by the browser                  | Accepted                      |
+| [0025](0025-tasks.md)                              | Tasks as one event type, changed by anyone, last writer wins             | Accepted                      |

@@ -14,6 +14,7 @@ const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] };
 export const OVERLAY_LEVELS = [
   'trails',
   'objects',
+  'tasks',
   'members',
   'sos',
   'self',

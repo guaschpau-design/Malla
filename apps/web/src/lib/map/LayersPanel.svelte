@@ -26,6 +26,7 @@
     members: { label: 'layerMembers', hint: 'layerMembersHint' },
     trails: { label: 'layerTrails', hint: 'layerTrailsHint' },
     objects: { label: 'layerObjects', hint: 'layerObjectsHint' },
+    tasks: { label: 'layerTasks', hint: 'layerTasksHint' },
   };
 
   async function toggle(layer: MapLayer, shown: boolean): Promise<void> {

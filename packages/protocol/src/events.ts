@@ -114,6 +114,21 @@ export interface AckEvent extends EventHeader {
   readonly target: EventRef;
 }
 
+export type TaskStatus = 'open' | 'in-progress' | 'done' | 'cancelled';
+
+/** §3.11 Creates or replaces a task. */
+export interface TaskEvent extends EventHeader {
+  readonly type: 'task';
+  /** The reference of the event that created the task. */
+  readonly task: EventRef;
+  readonly status: TaskStatus;
+  /** Who should do it, or null for anyone. */
+  readonly assignee: NodeId | null;
+  /** Where, or null for nowhere in particular. */
+  readonly place: LatLon | null;
+  readonly text: string;
+}
+
 export type TeselEvent =
   | MemberInfoEvent
   | PositionEvent
@@ -125,6 +140,7 @@ export type TeselEvent =
   | SosEvent
   | SosCancelEvent
   | AlertEvent
-  | AckEvent;
+  | AckEvent
+  | TaskEvent;
 
 export type EventType = TeselEvent['type'];

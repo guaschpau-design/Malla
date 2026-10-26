@@ -15,6 +15,7 @@ import { objects } from './state/objects.ts';
 import { positions } from './state/positions.ts';
 import type { Slice } from './state/slice.ts';
 import { sos, sosCancels } from './state/sos.ts';
+import { tasks } from './state/tasks.ts';
 import { trails } from './state/trails.ts';
 
 export type { ObjectRecord } from './state/objects.ts';
@@ -32,6 +33,7 @@ const SLICES = {
   sosCancels,
   alerts,
   acks,
+  tasks,
   journal,
 };
 

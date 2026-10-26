@@ -11,7 +11,8 @@ export type PanelName =
   | 'layers'
   | 'me'
   | 'find'
-  | 'diary';
+  | 'diary'
+  | 'tasks';
 
 export const panels = $state({ open: null as PanelName | null });
 

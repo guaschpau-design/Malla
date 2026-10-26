@@ -1,5 +1,5 @@
-<!-- The bottom of the map: the SOS button and the dock — Me, Add and Chat with a group, More
-     always. Everything else starts from what is tapped on the map. -->
+<!-- The bottom of the map: the SOS button and the dock — Me, Add, Chat and Tasks with a group,
+     More always. Everything else starts from what is tapped on the map. -->
 <script lang="ts">
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import AddMenu from '../objects/AddMenu.svelte';
@@ -8,6 +8,7 @@
   import type { PositionSharing } from '../position/position-sharing.svelte.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import DockButton from '../ui/DockButton.svelte';
+  import { stopEditingTask } from '../tasks/task-editor.svelte.ts';
   import { panels, togglePanel } from '../ui/panels.svelte.ts';
   import MoreMenu from './MoreMenu.svelte';
 
@@ -19,9 +20,11 @@
     ondraw: (kind: DraftKind) => void;
     onmeasure: () => void;
     keepScreenOn: Preference<boolean>;
+    /** Pending tasks assigned to this device. */
+    tasksForMe: number;
   }
 
-  let { t, sharing, onsos, ondraw, onmeasure, keepScreenOn }: Props = $props();
+  let { t, sharing, onsos, ondraw, onmeasure, keepScreenOn, tasksForMe }: Props = $props();
 
   const STATES: Readonly<Record<PositionMode, MessageKey>> = {
     sharing: 'positionStateSharing',
@@ -53,6 +56,17 @@
         expanded={panels.open === 'chat'}
         onclick={() => {
           togglePanel('chat');
+        }}
+      />
+      <DockButton
+        icon="task"
+        label={t('tasks')}
+        ariaLabel={tasksForMe > 0 ? t('tasksForYou', { count: tasksForMe }) : t('tasks')}
+        count={tasksForMe}
+        expanded={panels.open === 'tasks'}
+        onclick={() => {
+          stopEditingTask();
+          togglePanel('tasks');
         }}
       />
     {/if}
@@ -99,5 +113,13 @@
     border: 3px solid #fff;
     border-radius: 50%;
     box-shadow: 0 4px 16px rgb(0 0 0 / 35%);
+  }
+
+  /* Room for five buttons beside the SOS on the narrowest phones. */
+  @media (max-width: 22.5rem) {
+    .sos {
+      width: 3.4rem;
+      height: 3.4rem;
+    }
   }
 </style>

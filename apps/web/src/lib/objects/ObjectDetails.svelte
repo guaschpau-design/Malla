@@ -1,6 +1,7 @@
 <!-- What a map object is, who last changed it, and deleting it for the whole group. -->
 <script lang="ts">
   import { areaSquareMeters, pathMeters, type GroupState } from '@tesel/core';
+  import type { LatLon } from '@tesel/protocol';
 
   import CoordinateBlock from '../coordinates/CoordinateBlock.svelte';
   import type { CoordinateFormat } from '../coordinates/coordinates.ts';
@@ -24,12 +25,24 @@
     location: DeviceLocation;
     /** Guide this device there; the name says where to. */
     onnavigate: (name: string) => void;
+    /** Starts a task at the object's place. */
+    ontask: (at: LatLon) => void;
     ondelete: () => Promise<void>;
     onclose: () => void;
   }
 
-  let { t, locale, groupState, objectKey, format, location, onnavigate, ondelete, onclose }: Props =
-    $props();
+  let {
+    t,
+    locale,
+    groupState,
+    objectKey,
+    format,
+    location,
+    onnavigate,
+    ontask,
+    ondelete,
+    onclose,
+  }: Props = $props();
 
   const record = $derived(groupState.objects.get(objectKey));
   const kindName = $derived(record && record.type !== 'object-delete' ? t(objectKind(record)) : '');
@@ -76,11 +89,19 @@
       </p>
       <div class="row">
         {#if at}
+          {@const place = at}
           <ActionButton
             icon="heading"
             label={t('guideMe')}
             onclick={() => {
               onnavigate(title);
+            }}
+          />
+          <ActionButton
+            icon="task"
+            label={t('taskHere')}
+            onclick={() => {
+              ontask(place);
             }}
           />
         {/if}

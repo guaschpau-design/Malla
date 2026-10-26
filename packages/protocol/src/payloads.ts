@@ -1,4 +1,4 @@
-// The payload of every event type (docs/protocol.md §3.3–§3.9), each written next to the code
+// The payload of every event type (docs/protocol.md §3.3–§3.11), each written next to the code
 // that reads it, so that the two halves of a layout cannot drift apart. Adding an event type
 // means adding its entry here: the record is keyed by every `EventType`, so the compiler refuses
 // a type without a layout.
@@ -21,15 +21,21 @@ import {
   enumCode,
   enumValue,
   MARKER_LABEL_MAX_BYTES,
+  readAssignee,
   readGeometry,
   readMeasurement,
+  readPlace,
   readRef,
   ROLES,
   shapeKindCode,
   SOS_KINDS,
   SOS_TEXT_MAX_BYTES,
+  TASK_STATUSES,
+  TASK_TEXT_MAX_BYTES,
+  writeAssignee,
   writeGeometry,
   writeMeasurement,
+  writePlace,
   writeRef,
   writeTextRest,
 } from './fields.ts';
@@ -190,6 +196,25 @@ export const PAYLOADS: { readonly [K in EventType]: PayloadCodec<EventOfType<K>>
       writeRef(writer, event.target);
     },
     read: (reader, header) => ({ ...header, type: 'ack', target: readRef(reader) }),
+  },
+  // §3.11
+  task: {
+    code: EventTypeCode.TASK,
+    write(writer, event) {
+      writeRef(writer, event.task);
+      writer.u8(enumCode(TASK_STATUSES, event.status, 'task status'));
+      writeAssignee(writer, event.assignee);
+      writePlace(writer, event.place);
+      writeTextRest(writer, event.text, 1, TASK_TEXT_MAX_BYTES, 'task text');
+    },
+    read(reader, header) {
+      const task = readRef(reader);
+      const status = enumValue(TASK_STATUSES, reader.u8(), 'open');
+      const assignee = readAssignee(reader);
+      const place = readPlace(reader);
+      const text = reader.textRest(1, TASK_TEXT_MAX_BYTES, 'task text');
+      return { ...header, type: 'task', task, status, assignee, place, text };
+    },
   },
 };
 

@@ -9,6 +9,7 @@ export {
   CHAT_MAX_BYTES,
   MARKER_LABEL_MAX_BYTES,
   SOS_TEXT_MAX_BYTES,
+  TASK_TEXT_MAX_BYTES,
 } from './fields.ts';
 export * from './invitation.ts';
 export * from './log-file.ts';

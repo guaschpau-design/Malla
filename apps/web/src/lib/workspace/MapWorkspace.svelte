@@ -1,6 +1,6 @@
 <!--
-  Everything on top of the map: this device, the group's members, objects and incidents, drawing,
-  measuring and navigating, the panels and the dock. Without an active group, only what works
+  Everything on top of the map: this device, the group's members, objects, tasks and incidents,
+  drawing, measuring and navigating, the panels and the dock. Without an active group, only what works
   alone: this device, coordinates, measuring, navigating to a point and offline maps.
 -->
 <script lang="ts">
@@ -37,6 +37,9 @@
   import type { PositionSharing } from '../position/position-sharing.svelte.ts';
   import type { Preferences } from '../settings/preferences.ts';
   import type { GroupFeed } from '../sync/group-feed.svelte.ts';
+  import MapTasks from '../tasks/MapTasks.svelte';
+  import { newTask } from '../tasks/task-editor.svelte.ts';
+  import { myPendingCount } from '../tasks/tasks.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import Toast from '../ui/Toast.svelte';
   import { closePanel, panels, togglePanel } from '../ui/panels.svelte.ts';
@@ -69,6 +72,7 @@
     members: !preferences.hiddenLayers.value.includes('members'),
     trails: !preferences.hiddenLayers.value.includes('trails'),
     objects: !preferences.hiddenLayers.value.includes('objects'),
+    tasks: !preferences.hiddenLayers.value.includes('tasks'),
   });
   let selected: string | null = $state(null);
   let selectedMember: NodeId | null = $state(null);
@@ -176,6 +180,16 @@
     visible={shown.objects}
     onselect={select}
   />
+  {#key feed}
+    <MapTasks
+      {t}
+      {map}
+      groupState={feed.state}
+      {self}
+      interactive={!tapping}
+      visible={shown.tasks}
+    />
+  {/key}
   <MemberLayer
     {map}
     groupState={feed.state}
@@ -207,6 +221,7 @@
     {preferences}
     objectKey={selected}
     memberId={selectedMember}
+    onshow={find}
   />
 
   {#if sosOpen}
@@ -242,6 +257,11 @@
     onmark={group
       ? () => {
           markAt(at);
+        }
+      : null}
+    ontask={group
+      ? () => {
+          newTask(at);
         }
       : null}
     onclose={closePanel}
@@ -338,6 +358,7 @@
       startMeasuring(null);
     }}
     keepScreenOn={preferences.keepScreenOn}
+    tasksForMe={group ? myPendingCount(group.feed.state, group.self) : 0}
   />
 {/if}
 

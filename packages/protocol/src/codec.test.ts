@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { decodeEvent, encodeEvent, peekHeader } from './codec.ts';
 import { EventTypeCode, MAX_EVENT_SIZE } from './constants.ts';
 import type { NodeId, ShapeEvent, TeselEvent } from './events.ts';
+import { TASK_TEXT_MAX_BYTES } from './fields.ts';
 import { EVENT_TYPES, PAYLOADS } from './payloads.ts';
 import { ALICE, BOB, CAROL, hex, SAMPLE_EVENTS, seededRandom, T0, toHex } from './test-helpers.ts';
 
@@ -363,6 +364,53 @@ describe('reserved values and unknown types', () => {
       ok: true,
       value: { typeCode: 0x7f, origin: ALICE, seq: 42, time: T0 },
     });
+  });
+});
+
+describe('tasks', () => {
+  const task: TeselEvent = {
+    type: 'task',
+    origin: ALICE,
+    seq: 1,
+    time: T0,
+    task: { origin: ALICE, seq: 1 },
+    status: 'in-progress',
+    assignee: null,
+    place: null,
+    text: 'x'.repeat(TASK_TEXT_MAX_BYTES),
+  };
+  const STATUS = 14 + 8;
+  const PLACE = STATUS + 1 + 4;
+
+  it('fills the event exactly with the longest text', () => {
+    expect(encodeOrFail(task).length).toBe(MAX_EVENT_SIZE);
+  });
+
+  it('writes anyone and no place as zeros', () => {
+    const bytes = encodeOrFail(task);
+    expect(toHex(bytes.slice(STATUS + 1, PLACE + 9))).toBe('00'.repeat(13));
+  });
+
+  it('refuses an empty text', () => {
+    expect(encodeEvent({ ...task, text: '' }).ok).toBe(false);
+  });
+
+  it('refuses to assign node ID 00000000, which means anyone', () => {
+    expect(encodeEvent({ ...task, assignee: '00000000' as NodeId }).ok).toBe(false);
+  });
+
+  it('reads a reserved status as open', () => {
+    const bytes = encodeOrFail(task);
+    bytes[STATUS] = 9;
+    const decoded = decodeEvent(bytes);
+    expect(decoded.ok && decoded.value.type === 'task' && decoded.value.status).toBe('open');
+  });
+
+  it('reads a reserved place kind as none, whatever its point holds', () => {
+    const bytes = encodeOrFail({ ...task, text: 'x', place: { lat: 41, lon: 2 } });
+    bytes[PLACE] = 7;
+    const decoded = decodeEvent(bytes);
+    expect(decoded.ok && decoded.value.type === 'task' && decoded.value.place).toBeNull();
   });
 });
 

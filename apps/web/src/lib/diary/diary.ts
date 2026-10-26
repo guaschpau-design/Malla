@@ -2,9 +2,16 @@
 // agrees on, written out in the user's language from the journal (core/state/journal.ts).
 
 import type { GroupState, JournalEvent } from '@tesel/core';
-import { eventRefKey, type LatLon, type MarkerEvent, type ShapeEvent } from '@tesel/protocol';
+import {
+  eventRefKey,
+  type LatLon,
+  type MarkerEvent,
+  type ShapeEvent,
+  type TaskEvent,
+  type TaskStatus,
+} from '@tesel/protocol';
 
-import type { Translate } from '../i18n/index.ts';
+import type { MessageKey, Translate } from '../i18n/index.ts';
 import { ROLE_LABELS } from '../groups/role-label.ts';
 import { aliasOf } from '../incidents/incidents.ts';
 import { ALERT_LEVELS, SOS_KINDS } from '../incidents/sos-kinds.ts';
@@ -25,6 +32,7 @@ export interface DiaryLine {
 export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
   const introduced = new Set<string>();
   const objects = new Map<string, MarkerEvent | ShapeEvent>();
+  const tasks = new Map<string, TaskEvent>();
   return state.journal.flatMap((event) => {
     const text = describe(event);
     if (text === null) return [];
@@ -80,7 +88,27 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
         const last = objects.get(eventRefKey(event.object));
         return last ? t('diaryDeleted', { object: objectName(last) }) : null;
       }
+      case 'task': {
+        const key = eventRefKey(event.task);
+        const before = tasks.get(key);
+        tasks.set(key, event);
+        return describeTask(before, event);
+      }
     }
+  }
+
+  /** The most telling change of a task: its status, then who should do it, then the rest. */
+  function describeTask(before: TaskEvent | undefined, task: TaskEvent): string {
+    const vars = {
+      text: task.text,
+      name: task.assignee === null ? t('anyone') : aliasOf(state, task.assignee),
+    };
+    if (before === undefined) {
+      return t(task.assignee === null ? 'diaryTaskCreated' : 'diaryTaskCreatedFor', vars);
+    }
+    if (before.status !== task.status) return t(TASK_STATUS_LINES[task.status], vars);
+    if (before.assignee !== task.assignee) return t('diaryTaskAssigned', vars);
+    return t('diaryTaskChanged', vars);
   }
 
   function objectName(object: MarkerEvent | ShapeEvent): string {
@@ -89,6 +117,13 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
   }
 }
 
+const TASK_STATUS_LINES = {
+  open: 'diaryTaskReopened',
+  'in-progress': 'diaryTaskStarted',
+  done: 'diaryTaskDone',
+  cancelled: 'diaryTaskCancelled',
+} as const satisfies Readonly<Record<TaskStatus, MessageKey>>;
+
 function withText(sentence: string, text: string): string {
   return text ? `${sentence} «${text}»` : sentence;
 }
@@ -96,5 +131,6 @@ function withText(sentence: string, text: string): string {
 function placeOf(event: JournalEvent): LatLon | null {
   if (event.type === 'marker' || event.type === 'sos') return { lat: event.lat, lon: event.lon };
   if (event.type === 'shape' && event.geometry.kind === 'circle') return event.geometry.center;
+  if (event.type === 'task') return event.place;
   return null;
 }

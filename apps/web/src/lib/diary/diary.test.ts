@@ -94,6 +94,34 @@ describe('the operation diary', () => {
     ]);
   });
 
+  it('tells how each task moved along', () => {
+    const task = { origin: BERTA, seq: 10 };
+    const base = { type: 'task', task, assignee: null, place: null, text: 'Agua' } as const;
+    const tasks: TeselEvent[] = [
+      { ...base, origin: BERTA, seq: 10, time: T0 + 70, status: 'open' },
+      { ...base, origin: BERTA, seq: 11, time: T0 + 71, status: 'open', assignee: ANA },
+      { ...base, origin: ANA, seq: 7, time: T0 + 72, status: 'in-progress', assignee: ANA },
+      { ...base, origin: ANA, seq: 8, time: T0 + 73, status: 'done', assignee: ANA },
+      {
+        ...base,
+        origin: ANA,
+        seq: 9,
+        time: T0 + 74,
+        status: 'done',
+        assignee: ANA,
+        text: 'Agua: 20 l',
+      },
+    ];
+    const lines = diaryLines(stateOf([...EVENTS, ...tasks]), translator('es'));
+    expect(lines.slice(-5).map((line) => `${line.author}: ${line.text}`)).toEqual([
+      'Berta: Añade la tarea «Agua».',
+      'Berta: Pasa la tarea «Agua» a Ana.',
+      'Ana: Empieza la tarea «Agua».',
+      'Ana: Termina la tarea «Agua».',
+      'Ana: Cambia la tarea «Agua: 20 l».',
+    ]);
+  });
+
   it('places what happened somewhere', () => {
     const lines = diaryLines(stateOf(EVENTS), translator('es'));
     expect(lines.find((line) => line.text.startsWith('Pide ayuda'))?.at).toEqual({

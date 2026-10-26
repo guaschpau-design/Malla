@@ -15,14 +15,15 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 - A measuring tool for distances along a path and the area it encloses; lines, areas and circles show their length, area or radius.
 - Members on the map can be tapped for who they are, their last position and the way there.
 - Trails: where each member has been in the last hours, drawn from the positions they share. Hiding one's position hides the trail up to that moment too.
-- Map layers: members, trails and markers and zones can each be hidden; the choice is remembered. This device and SOS calls are always shown.
+- Map layers: members, trails, markers and zones, and tasks can each be hidden; the choice is remembered. This device and SOS calls are always shown.
 - What reaches this device from each member, and how: a member's details say when something of theirs last arrived by radio, through the server or through a command post, and the members list marks those whose news arrives by radio.
 - Keep the screen on, as an option, and always while guiding to a target.
 - The operation diary: everything that happened in the group, in order and in plain words, downloadable as text for the report ([ADR-0022](docs/decisions/0022-log-files.md)).
 - The group's log can be saved to a file, encrypted for the group, and loaded on another device of the group to bring it what it is missing (protocol §10).
-- A simpler screen: the SOS button and a dock of four — Me (where you are and how you share your position), Add, Chat and More. Everything else starts from what is touched on the map: a point, a marker or a member opens what can be done there (guide, mark, measure). Map layers sit under the zoom.
+- A simpler screen: the SOS button and a dock — Me (where you are and how you share your position), Add, Chat, Tasks and More. Everything else starts from what is touched on the map: a point, a marker or a member opens what can be done there (guide, mark, measure). Map layers sit under the zoom.
 - Topographic map and aerial photographs of Spain from the IGN, as base maps chosen in the map layers panel, and downloadable with an offline area ([ADR-0023](docs/decisions/0023-ign-base-maps.md)).
 - Relief, as an option: hills and valleys shaded on any base map, and the climb, descent and steepest stretch of the way to a point, shown with its distance and while guiding ([ADR-0024](docs/decisions/0024-terrain-tiles-for-relief.md)).
+- Tasks: a short text and, if wanted, who should do it and a place on the map; to do, in progress or done. Anyone can add one from the Tasks button or with "Task here" on a point or an object, take it, finish it or hand it on. The dock counts this device's tasks and a notice says when someone hands one over; tasks with a place show on the map, and the diary tells how each moved along. A new event type, `TASK`, carries each change in one radio message (protocol §3.11, [ADR-0025](docs/decisions/0025-tasks.md)).
 - Areas downloaded tile by tile for offline use ([ADR-0011](docs/decisions/0011-client-side-area-download.md)).
 - The base map (Spain, Portugal and the islands) is built from OpenStreetMap by our own server and served by it and by command posts.
 

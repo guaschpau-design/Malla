@@ -37,6 +37,7 @@ export const EventTypeCode = {
   SOS_CANCEL: 0x09,
   ALERT: 0x0a,
   ACK: 0x0b,
+  TASK: 0x0c,
 } as const;
 
 /** §3.3 Ed25519 key sizes. */

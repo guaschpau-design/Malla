@@ -57,6 +57,7 @@ The payload follows, up to 151 bytes.
 | `0x09` | `SOS_CANCEL`      | Event reference (8 bytes) of the `SOS` being cancelled |
 | `0x0A` | `ALERT`           | §3.9                                                   |
 | `0x0B` | `ACK`             | Event reference (8 bytes) of the event acknowledged    |
+| `0x0C` | `TASK`            | §3.11                                                  |
 
 Codes are never reused. New capabilities are added as new types; existing layouts never change within version 1.
 
@@ -167,6 +168,29 @@ Map objects (`MARKER`, `SHAPE`) are identified by an **object reference**: the e
 - To delete it, a member sends `OBJECT_DELETE` with the same `object`.
 - The current state of an object is given by the event with the greatest `(time, origin, seq)` among all events with that `object`, compared in that order, with `origin` compared as 4 unsigned bytes. If that event is an `OBJECT_DELETE`, the object does not exist.
 - Deletion is ordinary last-writer-wins: an edit newer than the delete brings the object back, and an older edit arriving late does not. This is intended; receivers MUST keep `OBJECT_DELETE` events so late edits can be compared against them.
+
+### 3.11 `TASK`
+
+Creates or replaces a task: a short text and, optionally, who should do it and where.
+
+| Size  | Field      | Notes                                                                            |
+| ----- | ---------- | -------------------------------------------------------------------------------- |
+| 8     | `task`     | Task reference, see below                                                        |
+| 1     | `status`   | `0` open, `1` in progress, `2` done, `3` cancelled; reserved values read as open |
+| 4     | `assignee` | Node ID of the member who should do it; `00000000` means anyone                  |
+| 1     | `place`    | `0` none, `1` point; reserved values read as none                                |
+| 4     | `lat`      | Coordinate of the point; `0` when `place` is none                                |
+| 4     | `lon`      | Coordinate of the point; `0` when `place` is none                                |
+| 1–129 | `text`     | text-rest                                                                        |
+
+Tasks follow the same rules as objects (§3.10), with `task` in place of `object`:
+
+- To create a task, an event uses its own `(origin, seq)` as `task`.
+- To change it — its status, assignee, place or text — any member sends a new `TASK` with the same `task` and every field filled in.
+- The current state of a task is given by the `TASK` with the greatest `(time, origin, seq)` among those with that `task`.
+- A cancelled task no longer shows as pending, but it is not deleted: a newer `TASK` reopens it.
+
+A member whose node ID happens to be `00000000` cannot be assigned tasks; with 2³² possible IDs this is accepted.
 
 ## 4. Symbol and style codes
 

@@ -11,7 +11,16 @@ import {
   ShapeKindCode,
   UNKNOWN_U16,
 } from './constants.ts';
-import type { AlertLevel, EventRef, Role, ShapeGeometry, SosKind } from './events.ts';
+import type {
+  AlertLevel,
+  EventRef,
+  LatLon,
+  NodeId,
+  Role,
+  ShapeGeometry,
+  SosKind,
+  TaskStatus,
+} from './events.ts';
 import { readPoint, readPointList, writePoint, writePointList } from './geometry.ts';
 import { nodeIdFromBytes, nodeIdToBytes } from './node-id.ts';
 
@@ -26,6 +35,8 @@ export const CHAT_MAX_BYTES = PAYLOAD_BUDGET; // §3.5
 export const MARKER_LABEL_MAX_BYTES = PAYLOAD_BUDGET - EVENT_REF_SIZE - SYMBOL_SIZE - POINT_SIZE; // §3.6
 export const SOS_TEXT_MAX_BYTES = PAYLOAD_BUDGET - KIND_SIZE - POINT_SIZE - ACCURACY_SIZE; // §3.8
 export const ALERT_TEXT_MAX_BYTES = PAYLOAD_BUDGET - KIND_SIZE; // §3.9
+export const TASK_TEXT_MAX_BYTES =
+  PAYLOAD_BUDGET - EVENT_REF_SIZE - KIND_SIZE - NODE_ID_SIZE - KIND_SIZE - POINT_SIZE; // §3.11
 
 // --- Enumerations ------------------------------------------------------------------------
 // §3.1: a reserved value decodes to its documented default rather than rejecting the event,
@@ -34,6 +45,7 @@ export const ALERT_TEXT_MAX_BYTES = PAYLOAD_BUDGET - KIND_SIZE; // §3.9
 export const ROLES: readonly Role[] = ['member', 'coordinator']; // §3.3, default member
 export const SOS_KINDS: readonly SosKind[] = ['general', 'medical', 'trapped', 'fire', 'security']; // §3.8, default general
 export const ALERT_LEVELS: readonly AlertLevel[] = ['info', 'warning', 'critical']; // §3.9, default warning
+export const TASK_STATUSES: readonly TaskStatus[] = ['open', 'in-progress', 'done', 'cancelled']; // §3.11, default open
 
 export function enumCode<T>(values: readonly T[], value: T, field: string): number {
   const code = values.indexOf(value);
@@ -57,6 +69,45 @@ export function readRef(reader: ByteReader): EventRef {
   const seq = reader.u32();
   if (seq < 1) throw new ProtocolFailure('invalid-value', 'reference seq must be at least 1');
   return { origin, seq };
+}
+
+// --- Assignee and place (§3.11) ----------------------------------------------------------
+
+const ANYONE = new Uint8Array(NODE_ID_SIZE);
+const ANYONE_ID = nodeIdFromBytes(ANYONE);
+const PlaceCode = { NONE: 0, POINT: 1 } as const;
+
+/** Writes a node ID, or all zeros for anyone. */
+export function writeAssignee(writer: ByteWriter, assignee: NodeId | null): void {
+  if (assignee === ANYONE_ID) {
+    throw new ProtocolFailure(
+      'invalid-value',
+      'node ID 00000000 means anyone and cannot be assigned',
+    );
+  }
+  writer.raw(assignee === null ? ANYONE : nodeIdToBytes(assignee));
+}
+
+export function readAssignee(reader: ByteReader): NodeId | null {
+  const id = nodeIdFromBytes(reader.raw(NODE_ID_SIZE));
+  return id === ANYONE_ID ? null : id;
+}
+
+/** Writes the place kind and its point, zeros for none. */
+export function writePlace(writer: ByteWriter, place: LatLon | null): void {
+  if (place === null) writer.u8(PlaceCode.NONE).raw(new Uint8Array(POINT_SIZE));
+  else {
+    writer.u8(PlaceCode.POINT);
+    writePoint(writer, place);
+  }
+}
+
+/** Reads the place; a reserved kind reads as none and its point is skipped. */
+export function readPlace(reader: ByteReader): LatLon | null {
+  const code = reader.u8();
+  if (code === PlaceCode.POINT) return readPoint(reader);
+  reader.raw(POINT_SIZE);
+  return null;
 }
 
 // --- Text --------------------------------------------------------------------------------

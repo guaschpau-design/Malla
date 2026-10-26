@@ -46,6 +46,7 @@ import type { Channel } from '../links/links.ts';
 import type { DeviceFix } from '../position/device-location.svelte.ts';
 import type { AppDb, OutboxEntry } from '../storage/app-db.ts';
 import { defaultServerUrl } from '../config.ts';
+import type { TaskFields } from '../tasks/tasks.ts';
 import { loadCursor, saveCursor } from './cursor-store.ts';
 import { RelayClient, type ReceivedEnvelope, type RelayStatus } from './relay-client.ts';
 import { loraEventOf, peekType } from './lora-events.ts';
@@ -258,6 +259,19 @@ export class GroupFeed {
 
   async sendAlert(level: AlertLevel, text: string): Promise<void> {
     await this.#publish((header) => ({ ...header, type: 'alert', level, text }));
+  }
+
+  /**
+   * Creates a task, or changes the task `task` refers to; a new task's reference is its own event's
+   * (protocol §3.11).
+   */
+  async writeTask(task: EventRef | null, fields: TaskFields): Promise<void> {
+    await this.#publish((header) => ({
+      ...header,
+      type: 'task',
+      task: task ?? { origin: header.origin, seq: header.seq },
+      ...fields,
+    }));
   }
 
   /** Publishes MEMBER_INFO if the group does not know this device's current alias and role. */

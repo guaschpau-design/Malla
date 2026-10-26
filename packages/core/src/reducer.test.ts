@@ -131,6 +131,39 @@ const EVENTS: readonly TeselEvent[] = [
     level: 'critical',
     text: 'Evacuad la zona norte',
   },
+  {
+    type: 'task',
+    origin: BOB,
+    seq: 10,
+    time: T0 + 110,
+    task: { origin: BOB, seq: 10 },
+    status: 'open',
+    assignee: ALICE,
+    place: { lat: 39.47, lon: -0.38 },
+    text: 'Revisar el almacén',
+  },
+  {
+    type: 'task',
+    origin: ALICE,
+    seq: 14,
+    time: T0 + 130,
+    task: { origin: BOB, seq: 10 },
+    status: 'done',
+    assignee: ALICE,
+    place: { lat: 39.47, lon: -0.38 },
+    text: 'Revisar el almacén',
+  },
+  {
+    type: 'task',
+    origin: BOB,
+    seq: 11,
+    time: T0 + 120,
+    task: { origin: BOB, seq: 10 },
+    status: 'in-progress',
+    assignee: ALICE,
+    place: null,
+    text: 'Revisar el almacén',
+  },
 ];
 
 /** Every ordering of a few events, plus a few shuffles of all of them. */
@@ -172,6 +205,12 @@ describe('group state', () => {
     const state = reduce(stateOf(EVENTS), late);
     expect(state.positions.get(ALICE)?.type).toBe('position-hidden');
     expect(state.positions.get(BOB)?.type).toBe('position');
+  });
+
+  it('keeps the latest change of each task, whoever made it', () => {
+    const task = stateOf(EVENTS).tasks.get(`${BOB}:10`);
+    expect(task?.status).toBe('done');
+    expect(task?.origin).toBe(ALICE);
   });
 
   it('orders chat by time, then origin, then sequence', () => {
