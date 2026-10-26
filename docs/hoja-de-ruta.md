@@ -17,18 +17,31 @@ Todo funciona en el dispositivo con los eventos que ya existen: no cambia el for
 | 1.7 | Pantalla encendida           | Opción para que la pantalla no se apague mientras se trabaja con el mapa.                                                                                                 |
 | 1.8 | Diario de la operación       | Todo lo que ha pasado en el grupo, en orden: mensajes, alertas, SOS, objetos. Se exporta como texto para el informe, y el registro completo se exporta e importa cifrado. |
 
-Orden de trabajo: 1.1 primero, porque coordenadas y navegación dependen de saber dónde está uno; después en el orden de la tabla.
+Hecha el 26 de octubre de 2026.
+
+## Fase 2 — Más sencilla, mejor mapa y tareas
+
+Principio: que la app sea versátil y cada equipo la use a su manera, sin menús dentro de menús. Casi todo empieza donde se toca el mapa.
+
+| #   | Punto                       | Qué hace                                                                                                                                                                   |
+| --- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2.1 | Interfaz reorganizada       | Abajo, cuatro botones fijos (Yo, Añadir, Chat, Más) y el SOS. Tocar un punto, un marcador o un miembro abre sus acciones (guiar, marcar, medir). Las capas, junto al zoom. |
+| 2.2 | Mapa topográfico y satélite | Ortofotos del PNOA y mapa topográfico del IGN (España, CC BY 4.0), descargables por zonas para usarlos sin conexión.                                                       |
+| 2.3 | Relieve                     | Modelo digital del terreno: sombreado y curvas en el mapa, y desnivel y pendiente más dura del tramo cuando la app guía hasta un sitio.                                    |
+| 2.4 | Tareas                      | Un texto corto y, si se quiere, una persona y un sitio del mapa; pendiente, en curso o hecha. Cualquiera puede crearlas; nada obligatorio más que el texto.                |
+
+Orden de trabajo: el de la tabla. Las tareas necesitan un tipo de evento nuevo (el protocolo lo admite sin cambiar de versión).
 
 ## Después, por orden
 
 Lo previsto en el briefing más lo aprendido de ATAK. Cada fase se detalla al empezarla.
 
-1. Partes rápidos (situación, heridos, daños) con formularios fijos que caben por radio.
-2. Tareas asignadas a personas o equipos.
+1. Rutas por calles y caminos de OpenStreetMap: con internet, calculadas por el servidor; sin conexión, con la red de caminos de cada zona descargada.
+2. Partes rápidos (situación, heridos, daños) con formularios fijos que caben por radio.
 3. Rutas planificadas, con puntos de paso.
 4. Fotos adjuntas (solo por internet; la radio no da para imágenes).
 5. Exportar el mapa (objetos y recorridos) a KML y GeoJSON para otras herramientas.
-6. Mapas satélite, topográfico y náutico.
+6. Mapa náutico, e imagen de satélite fuera de España.
 7. Simbología OTAN APP-6.
 8. Radios Meshtastic.
 9. Compatibilidad con ATAK (CoT).
