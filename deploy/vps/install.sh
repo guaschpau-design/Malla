@@ -65,31 +65,12 @@ Create an A record for $name pointing to $SERVER_IP, wait a few minutes and run 
   fi
 done
 
-# A server installed while the project was called Teselia moves here: its base map and settings
-# are kept, the rest goes. Its stored envelopes go too, since they were sealed with keys derived
-# under the old name and no app can open them (ADR-0019).
-if [[ -d "$LEGACY_DIR" ]]; then
-  step "Moving the server installed as Teselia to $INSTALL_DIR"
-  systemctl disable --now teselia-update.timer teselia-maps.timer >/dev/null 2>&1 || true
-  rm -f /etc/systemd/system/teselia-{update,maps}.{service,timer}
-  systemctl daemon-reload
-  (cd "$LEGACY_DIR" && docker compose down --volumes --rmi all) || true
-  install -m 0755 -d "$INSTALL_DIR"
-  if [[ -d "$LEGACY_DIR/maps" && ! -e "$INSTALL_DIR/maps" ]]; then
-    mv "$LEGACY_DIR/maps" "$INSTALL_DIR/maps"
-  fi
-  if [[ -f "$LEGACY_DIR/.env" && ! -e "$INSTALL_DIR/.env" ]]; then
-    sed 's/^TESELIA_/TESEL_/' "$LEGACY_DIR/.env" > "$INSTALL_DIR/.env"
-  fi
-  rm -rf "$LEGACY_DIR"
-  rm -f /etc/apt/apt.conf.d/52teselia-reboot /etc/fail2ban/jail.d/teselia.local \
-    /etc/ssh/sshd_config.d/10-teselia.conf
-fi
-
 step "Updating the system"
 export DEBIAN_FRONTEND=noninteractive
-APT_OPTIONS=(-yq -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)
-apt-get update -q
+# Automatic updates may hold the package lock when this runs; wait up to 10 minutes for them.
+APT_LOCK=(-o DPkg::Lock::Timeout=600)
+APT_OPTIONS=(-yq "${APT_LOCK[@]}" -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)
+apt-get update -q "${APT_LOCK[@]}"
 apt-get upgrade "${APT_OPTIONS[@]}"
 apt-get install "${APT_OPTIONS[@]}" ca-certificates curl ufw fail2ban python3-systemd unattended-upgrades
 
@@ -154,10 +135,32 @@ if ! command -v docker >/dev/null || ! docker compose version >/dev/null 2>&1; t
   chmod a+r /etc/apt/keyrings/docker.asc
   echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
 https://download.docker.com/linux/$ID $VERSION_CODENAME stable" > /etc/apt/sources.list.d/docker.list
-  apt-get update -q
+  apt-get update -q "${APT_LOCK[@]}"
   apt-get install "${APT_OPTIONS[@]}" docker-ce docker-ce-cli containerd.io docker-compose-plugin
 fi
 systemctl enable --now docker >/dev/null
+
+# A server installed while the project was called Teselia moves here, only now that the system and
+# Docker are ready, so a failure in those steps leaves it running. Its base map and settings are
+# kept. The rest goes, its stored envelopes too: they were sealed with keys derived under the old
+# name and no app can open them (ADR-0019).
+if [[ -d "$LEGACY_DIR" ]]; then
+  step "Moving the server installed as Teselia to $INSTALL_DIR"
+  systemctl disable --now teselia-update.timer teselia-maps.timer >/dev/null 2>&1 || true
+  rm -f /etc/systemd/system/teselia-{update,maps}.{service,timer}
+  systemctl daemon-reload
+  (cd "$LEGACY_DIR" && docker compose down --volumes --rmi all) || true
+  install -m 0755 -d "$INSTALL_DIR"
+  if [[ -d "$LEGACY_DIR/maps" && ! -e "$INSTALL_DIR/maps" ]]; then
+    mv "$LEGACY_DIR/maps" "$INSTALL_DIR/maps"
+  fi
+  if [[ -f "$LEGACY_DIR/.env" && ! -e "$INSTALL_DIR/.env" ]]; then
+    sed 's/^TESELIA_/TESEL_/' "$LEGACY_DIR/.env" > "$INSTALL_DIR/.env"
+  fi
+  rm -rf "$LEGACY_DIR"
+  rm -f /etc/apt/apt.conf.d/52teselia-reboot /etc/fail2ban/jail.d/teselia.local \
+    /etc/ssh/sshd_config.d/10-teselia.conf
+fi
 
 step "Installing Tesel in $INSTALL_DIR"
 install -m 0755 -d "$INSTALL_DIR"
