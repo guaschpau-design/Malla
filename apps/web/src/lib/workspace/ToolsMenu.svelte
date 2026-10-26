@@ -10,11 +10,14 @@
     t: Translate;
     onmeasure: () => void;
     keepScreenOn: Preference<boolean>;
+    /** The diary is the active group's. */
+    withGroup: boolean;
   }
 
-  let { t, onmeasure, keepScreenOn }: Props = $props();
+  let { t, onmeasure, keepScreenOn, withGroup }: Props = $props();
 
-  const TOOLS: readonly { label: MessageKey; run: () => void }[] = [
+  const TOOLS: readonly { label: MessageKey; run: () => void; needsGroup?: boolean }[] = [
+    { label: 'diary', run: () => (panels.open = 'diary'), needsGroup: true },
     { label: 'coordinates', run: () => (panels.open = 'point') },
     {
       label: 'measure',
@@ -27,9 +30,9 @@
   ];
 </script>
 
-<MenuButton label={t('tools')} title={t('tools')}>
+<MenuButton label={t('tools')} title={t('tools')} wide>
   {#snippet items(close: () => void)}
-    {#each TOOLS as tool (tool.label)}
+    {#each TOOLS.filter((tool) => withGroup || tool.needsGroup !== true) as tool (tool.label)}
       <button
         role="menuitem"
         onclick={() => {

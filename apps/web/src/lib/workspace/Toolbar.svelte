@@ -41,7 +41,7 @@
         {t('chat')}
       </button>
     {/if}
-    <ToolsMenu {t} {onmeasure} {keepScreenOn} />
+    <ToolsMenu {t} {onmeasure} {keepScreenOn} withGroup={sharing !== null} />
   </div>
 </div>
 

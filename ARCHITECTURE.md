@@ -101,6 +101,7 @@ The current picture is a pure function of the event log, computed by the reducer
 - **Chat and alerts:** append-only, ordered by `(timestamp, origin, seq)` so every device shows the same order.
 - **SOS:** every `SOS` is kept; one is active until a `SOS_CANCEL` for it arrives, and the first cancellation (by the same order) says who cancelled it.
 - **Acknowledgements:** per acknowledged event, the first `ACK` of each member.
+- **Journal:** every event except positions, in order: the record from which the app writes the operation diary ([ADR-0022](docs/decisions/0022-log-files.md)).
 
 Events can arrive late, twice or out of order — through LoRa, a bridge and the server at once. The reducer is idempotent and order-independent, so this never matters. This is the property the tests protect most. See [ADR-0003](docs/decisions/0003-event-log-last-writer-wins.md).
 
@@ -161,12 +162,13 @@ A command post is found by name and replicates by protocol ([ADR-0018](docs/deci
 
 ## 6. Persistence
 
-| Where   | What                                                                                 | Technology                                                               |
-| ------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| Browser | Identity keys, groups, settings, each group's event log, the outbox and sync cursors | IndexedDB database `tesel`                                               |
-| Browser | Offline map tiles, with the areas they belong to                                     | IndexedDB database `tesel-map`, separate so it can be cleared on its own |
-| Server  | Encrypted envelopes per group, with retention limit                                  | SQLite through `node:sqlite`                                             |
-| Server  | Base map                                                                             | One PMTiles file, served as a static file with range requests            |
+| Where   | What                                                                                     | Technology                                                               |
+| ------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Browser | Identity keys, groups, settings, each group's event log, the outbox and sync cursors     | IndexedDB database `tesel`                                               |
+| Browser | Offline map tiles, with the areas they belong to                                         | IndexedDB database `tesel-map`, separate so it can be cleared on its own |
+| File    | A group's log, saved and loaded by hand: its events sealed as for a relay (protocol §10) | JSON                                                                     |
+| Server  | Encrypted envelopes per group, with retention limit                                      | SQLite through `node:sqlite`                                             |
+| Server  | Base map                                                                                 | One PMTiles file, served as a static file with range requests            |
 
 ## 7. Maps
 

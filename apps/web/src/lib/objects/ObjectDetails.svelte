@@ -12,7 +12,7 @@
   import type { DeviceLocation } from '../position/device-location.svelte.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import Panel from '../ui/Panel.svelte';
-  import { styleInfo, symbolInfo } from './catalog.ts';
+  import { objectKind } from './catalog.ts';
 
   interface Props {
     t: Translate;
@@ -31,11 +31,7 @@
     $props();
 
   const record = $derived(groupState.objects.get(objectKey));
-  const kindName = $derived.by(() => {
-    if (record?.type === 'marker') return t(symbolInfo(record.symbol).label);
-    if (record?.type === 'shape') return t(styleInfo(record.style).label);
-    return '';
-  });
+  const kindName = $derived(record && record.type !== 'object-delete' ? t(objectKind(record)) : '');
   const at = $derived(objectPosition(groupState, objectKey));
   /** What can be measured of a line, an area or a circle. */
   const measure = $derived.by(() => {

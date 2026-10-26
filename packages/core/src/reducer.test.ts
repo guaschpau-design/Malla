@@ -198,6 +198,13 @@ describe('group state', () => {
     expect(stateOf(EVENTS).alerts.map((alert) => alert.text)).toEqual(['Evacuad la zona norte']);
   });
 
+  it('journals every event but positions, in the order every device agrees on', () => {
+    const { journal } = stateOf(EVENTS);
+    expect(journal).toHaveLength(EVENTS.filter((event) => event.type !== 'position').length);
+    const times = journal.map((event) => event.time);
+    expect(times).toEqual([...times].sort((a, b) => a - b));
+  });
+
   it('starts empty', () => {
     expect(EMPTY_STATE.members.size + EMPTY_STATE.positions.size + EMPTY_STATE.chat.length).toBe(0);
   });

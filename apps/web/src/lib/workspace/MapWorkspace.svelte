@@ -13,6 +13,7 @@
   import CoordinatesPanel from '../coordinates/CoordinatesPanel.svelte';
   import PointLayer from '../coordinates/PointLayer.svelte';
   import type { Locale, Translate } from '../i18n/index.ts';
+  import DiaryPanel from '../diary/DiaryPanel.svelte';
   import MemberDetails from '../groups/MemberDetails.svelte';
   import IncidentBanners from '../incidents/IncidentBanners.svelte';
   import SosDialog from '../incidents/SosDialog.svelte';
@@ -235,6 +236,10 @@
       }}
       onclose={closePanel}
     />
+  {/if}
+
+  {#if panels.open === 'diary'}
+    <DiaryPanel {t} {locale} {feed} format={preferences.coordinateFormat} onclose={closePanel} />
   {/if}
 
   {#if panels.open === 'chat'}

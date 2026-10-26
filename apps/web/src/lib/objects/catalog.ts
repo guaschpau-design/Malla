@@ -2,6 +2,8 @@
 // a family of colour (app.css). Unknown codes fall back to the generic symbol and the neutral
 // style, as the protocol requires.
 
+import type { MarkerEvent, ShapeEvent } from '@tesel/protocol';
+
 import type { MessageKey } from '../i18n/index.ts';
 import type { Tone } from '../ui/theme.ts';
 import type { GlyphName } from '../ui/glyphs.ts';
@@ -57,4 +59,9 @@ export function styleInfo(code: number): StyleInfo {
 /** Name of the map image drawn for a symbol (see symbol-images.ts). */
 export function symbolImageName(code: number): string {
   return `tesel-symbol-${String(symbolInfo(code).code)}`;
+}
+
+/** The name of what an object is: its symbol, or its style. */
+export function objectKind(object: MarkerEvent | ShapeEvent): MessageKey {
+  return object.type === 'marker' ? symbolInfo(object.symbol).label : styleInfo(object.style).label;
 }

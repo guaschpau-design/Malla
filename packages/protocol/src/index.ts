@@ -11,6 +11,7 @@ export {
   SOS_TEXT_MAX_BYTES,
 } from './fields.ts';
 export * from './invitation.ts';
+export * from './log-file.ts';
 export * from './node-id.ts';
 export { EVENT_TYPES } from './payloads.ts';
 export type { ProtocolError, ProtocolErrorCode, Result } from './result.ts';

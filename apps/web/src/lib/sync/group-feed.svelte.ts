@@ -13,8 +13,10 @@ import {
   decodeEvent,
   deriveGroupKeys,
   encodeEvent,
+  encodeLogFile,
   eventKey,
   openEnvelope,
+  parseLogFile,
   peekHeader,
   sameServer,
   sealEnvelope,
@@ -51,6 +53,12 @@ import { relaysFor } from './relays.ts';
 
 /** `local-only` when the group has no server: events stay on this device (and LoRa, later). */
 export type FeedStatus = RelayStatus | 'local-only';
+
+/** What loading a log file did (protocol §10). */
+export type LogImport =
+  | { readonly kind: 'loaded'; readonly added: number; readonly total: number }
+  | { readonly kind: 'other-group' }
+  | { readonly kind: 'unreadable' };
 
 /** Where the feed hands events for the radio: the LoRa scheduler of a connected radio. */
 export interface LoraSink {
@@ -124,6 +132,10 @@ export class GroupFeed {
     return this.#group.id;
   }
 
+  get groupName(): string {
+    return this.#group.name;
+  }
+
   /** The radio channel of the group: its name and secret (protocol §7). */
   get radioChannel(): { readonly name: string; readonly secret: Uint8Array } {
     return { name: this.#group.name, secret: this.#group.secret };
@@ -153,6 +165,31 @@ export class GroupFeed {
     if (received === undefined) return;
     this.#apply([bytes]);
     this.#push(received.entry, bytes);
+  }
+
+  /** The group's whole log as a log file, sealed so that only the group can read it. */
+  async exportLog(): Promise<string> {
+    const events = await loadEvents(this.#db, this.#group.id);
+    const envelopes = events.map((bytes) => sealEnvelope(this.#keys, bytes));
+    return encodeLogFile({ groupId: this.#keys.groupId, envelopes });
+  }
+
+  /**
+   * Adds the events of a log file of this group that this device is missing, as if a relay had
+   * brought them: they are applied and, with a server, passed on to it.
+   */
+  async importLog(text: string): Promise<LogImport> {
+    const file = parseLogFile(text);
+    if (!file.ok) return { kind: 'unreadable' };
+    if (toBase64url(file.value.groupId) !== toBase64url(this.#keys.groupId)) {
+      return { kind: 'other-group' };
+    }
+    const opened = file.value.envelopes.flatMap((env) => openEnvelope(this.#keys, env) ?? []);
+    const forward = this.#client !== null;
+    const received = await receiveEvents(this.#db, this.#group.id, opened, { forward });
+    this.#apply(received.map(({ bytes }) => bytes));
+    for (const { entry, bytes } of received) this.#push(entry, bytes);
+    return { kind: 'loaded', added: received.length, total: opened.length };
   }
 
   close(): void {

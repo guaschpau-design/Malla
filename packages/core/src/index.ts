@@ -5,6 +5,7 @@ export {
   reduceAll,
   stateOf,
   type GroupState,
+  type JournalEvent,
   type ObjectRecord,
   type Trail,
 } from './reducer.ts';

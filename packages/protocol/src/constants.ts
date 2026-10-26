@@ -91,3 +91,7 @@ export const SERVER_INFO_PATH = 'healthz';
 
 /** §7 MeshCore application identifier, in MeshCore's development range until registered. */
 export const MESHCORE_DATA_TYPE = 0xff4d;
+
+/** §10 Log files: the value of their `tesel` field and the layout version this code writes. */
+export const LOG_FILE_KIND = 'log';
+export const LOG_FILE_VERSION = 1;

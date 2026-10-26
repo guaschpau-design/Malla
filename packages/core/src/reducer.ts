@@ -8,6 +8,7 @@
 import type { EventType, TeselEvent } from '@tesel/protocol';
 
 import { acks } from './state/acks.ts';
+import { journal } from './state/journal.ts';
 import { members } from './state/members.ts';
 import { alerts, chat } from './state/messages.ts';
 import { objects } from './state/objects.ts';
@@ -17,10 +18,22 @@ import { sos, sosCancels } from './state/sos.ts';
 import { trails } from './state/trails.ts';
 
 export type { ObjectRecord } from './state/objects.ts';
+export type { JournalEvent } from './state/journal.ts';
 export type { Trail } from './state/trails.ts';
 
 /** Every slice of the group state, by its name in the state. */
-const SLICES = { members, positions, trails, chat, objects, sos, sosCancels, alerts, acks };
+const SLICES = {
+  members,
+  positions,
+  trails,
+  chat,
+  objects,
+  sos,
+  sosCancels,
+  alerts,
+  acks,
+  journal,
+};
 
 type SliceName = keyof typeof SLICES;
 

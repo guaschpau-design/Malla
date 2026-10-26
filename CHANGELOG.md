@@ -18,7 +18,9 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 - Map layers: members, trails and markers and zones can each be hidden; the choice is remembered. This device and SOS calls are always shown.
 - What reaches this device from each member, and how: a member's details say when something of theirs last arrived by radio, through the server or through a command post, and the members list marks those the radio hears.
 - Keep the screen on, as an option, and always while guiding to a target.
-- A tools menu gathers coordinates, measuring, map layers, offline maps and keeping the screen on.
+- The operation diary: everything that happened in the group, in order and in plain words, downloadable as text for the report ([ADR-0022](docs/decisions/0022-log-files.md)).
+- The group's log can be saved to a file, encrypted for the group, and loaded on another device of the group to bring it what it is missing (protocol §10).
+- A tools menu gathers the diary, coordinates, measuring, map layers, offline maps and keeping the screen on.
 - Areas downloaded tile by tile for offline use ([ADR-0011](docs/decisions/0011-client-side-area-download.md)).
 - The base map (Spain, Portugal and the islands) is built from OpenStreetMap by our own server and served by it and by command posts.
 

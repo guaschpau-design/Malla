@@ -27,3 +27,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0019](0019-name-tesel.md)                         | The project is called Tesel                                              | Accepted                      |
 | [0020](0020-colour-and-symbols.md)                 | Signal lime, colours defined once, and symbols of our own                | Accepted                      |
 | [0021](0021-coordinate-formats.md)                 | Write coordinates in four formats, converted by our own code             | Accepted                      |
+| [0022](0022-log-files.md)                          | Carry a group's log in files of sealed envelopes                         | Accepted                      |
