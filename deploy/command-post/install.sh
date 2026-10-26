@@ -83,8 +83,10 @@ fi
 
 step "Installing system packages"
 export DEBIAN_FRONTEND=noninteractive
-APT_OPTIONS=(-yq -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)
-apt-get update -q
+# Automatic updates may hold the package lock when this runs; wait up to 10 minutes for them.
+APT_LOCK=(-o DPkg::Lock::Timeout=600)
+APT_OPTIONS=(-yq "${APT_LOCK[@]}" -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)
+apt-get update -q "${APT_LOCK[@]}"
 apt-get install "${APT_OPTIONS[@]}" ca-certificates curl ufw network-manager dnsmasq-base
 
 if [[ -z "$WIFI_INTERFACE" ]]; then
@@ -101,7 +103,7 @@ if ! command -v docker >/dev/null || ! docker compose version >/dev/null 2>&1; t
   chmod a+r /etc/apt/keyrings/docker.asc
   echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
 https://download.docker.com/linux/$DOCKER_ID $VERSION_CODENAME stable" > /etc/apt/sources.list.d/docker.list
-  apt-get update -q
+  apt-get update -q "${APT_LOCK[@]}"
   apt-get install "${APT_OPTIONS[@]}" docker-ce docker-ce-cli containerd.io docker-compose-plugin
 fi
 systemctl enable --now docker >/dev/null

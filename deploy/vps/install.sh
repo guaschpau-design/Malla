@@ -243,7 +243,6 @@ Persistent=true
 WantedBy=timers.target
 CONF
 systemctl daemon-reload
-systemctl enable --now tesel-update.timer >/dev/null
 
 if [[ ! -f "$INSTALL_DIR/maps/basemap.pmtiles" ]]; then
   step "Building the base map (only the first time; it can take half an hour)"
@@ -261,6 +260,9 @@ if ! docker compose pull --quiet; then
 github.com/guaschpau-design → Packages → tesel-server → Package settings → Change visibility."
 fi
 docker compose up --detach --remove-orphans
+# Enabled only now: a timer whose boot delay has passed fires at once, and its own "compose up"
+# would race the one above for the same container names.
+systemctl enable --now tesel-update.timer >/dev/null
 
 step "Waiting for https://$DOMAIN"
 for _ in $(seq 1 60); do
