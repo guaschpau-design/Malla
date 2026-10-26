@@ -1,6 +1,6 @@
-// The pictograms of map symbols, drawn for Tesel on a 24 × 24 grid: strokes two units wide with
-// round ends, plus a few filled parts. The same paths draw the map's markers (on a canvas, with
-// Path2D) and the symbols in forms (as SVG), so both always look alike.
+// Tesel's pictograms, drawn on a 24 × 24 grid: strokes two units wide with round ends, plus a few
+// filled parts. The same paths draw the map's markers (on a canvas, with Path2D), the symbols in
+// forms and the interface's own signs (as SVG), so they all look alike.
 
 export interface Glyph {
   readonly strokes: readonly string[];
@@ -46,6 +46,16 @@ export const GLYPHS = {
     ['M12 10.5V20.5M8 20.5h8', 'M8.8 7.2a4.6 4.6 0 0 1 6.4 0', 'M6.2 4.6a8.3 8.3 0 0 1 11.6 0'],
     ['M12 8.8a1.6 1.6 0 1 1 0 3.2a1.6 1.6 0 1 1 0-3.2z'],
   ),
+  // Signs of the interface: the channels a device uses (links/LinkButton.svelte).
+  globe: glyph([
+    'M12 3.5a8.5 8.5 0 1 1 0 17a8.5 8.5 0 1 1 0-17z',
+    'M3.5 12h17',
+    'M12 3.5c2.6 2.4 3.6 5.2 3.6 8.5s-1 6.1-3.6 8.5c-2.6-2.4-3.6-5.2-3.6-8.5s1-6.1 3.6-8.5z',
+  ]),
+  wifi: glyph(
+    ['M4 9.5a11.3 11.3 0 0 1 16 0', 'M7 12.8a7 7 0 0 1 10 0', 'M9.9 15.9a2.9 2.9 0 0 1 4.2 0'],
+    ['M12 17.6a1.5 1.5 0 1 1 0 3a1.5 1.5 0 1 1 0-3z'],
+  ),
 } satisfies Record<string, Glyph>;
 
 export type GlyphName = keyof typeof GLYPHS;
@@ -53,6 +63,10 @@ export type GlyphName = keyof typeof GLYPHS;
 /** Width of a glyph's strokes, in grid units. */
 export const GLYPH_STROKE = 2;
 export const GLYPH_GRID = 24;
+
+/** A map symbol's tile, the same on the map and in forms: corner radius and pictogram size. */
+export const TILE_RADIUS = 17;
+export const TILE_GLYPH_SIZE = 19;
 
 /**
  * The tile a symbol sits on: a pointy-top hexagon like the tiles of the logo, centred on (cx, cy)

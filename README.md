@@ -1,8 +1,8 @@
 # Tesel
 
-**Consciencia situacional para equipos civiles.** Posiciones, mensajes, alertas e incidentes de todo el equipo en un mapa común y en tiempo real: con internet, por radio LoRa (MeshCore) o desde un puesto de mando cuando la red cae. Software libre, cifrado de extremo a extremo y sin cuentas.
+**Consciencia situacional para equipos.** Posiciones, mensajes, alertas e incidentes de todo el equipo en un mapa común y en tiempo real: con internet, por radio LoRa (MeshCore) o desde un puesto de mando cuando la red cae. Software libre, cifrado de extremo a extremo y sin cuentas.
 
-**Situational awareness for civilian teams.** The whole team's positions, messages, alerts and incidents on one shared map, in real time: over the internet, over LoRa radio (MeshCore) or through a command post when the network goes down. Free software, end-to-end encrypted, no accounts.
+**Situational awareness for teams.** The whole team's positions, messages, alerts and incidents on one shared map, in real time: over the internet, over LoRa radio (MeshCore) or through a command post when the network goes down. Free software, end-to-end encrypted, no accounts.
 
 > Estado: en desarrollo, hacia la v0.1. · Status: in development, towards v0.1.
 >

@@ -31,6 +31,7 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 - Internet: a zero-knowledge relay that stores and forwards encrypted envelopes (protocol §8).
 - MeshCore LoRa through a companion radio over Web Bluetooth (protocol §7), with priorities, a legal airtime budget, position thinning, SOS repeats and bridging between radio and internet by any member who has both ([ADR-0015](docs/decisions/0015-lora-airtime-policy.md)).
 - Text messages of other MeshCore apps are kept, read-only, in a chat tab.
+- The top bar says in plain words how the device reaches its group — internet, a command post, the radio, several at once, connecting or no connection — and opens a panel with each connection in detail.
 - Command post: a laptop or Raspberry Pi with its own Wi-Fi that replicates the group's server; apps find it by name and sync through it when the server cannot be reached ([ADR-0018](docs/decisions/0018-command-post.md)).
 
 ### Deployment

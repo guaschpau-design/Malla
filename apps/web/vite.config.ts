@@ -16,7 +16,7 @@ export default defineConfig({
         name: 'Tesel',
         short_name: 'Tesel',
         description:
-          'Consciencia situacional para equipos civiles: posiciones, mensajes, alertas e incidentes en un mapa común, con internet, por radio LoRa o desde un puesto de mando.',
+          'Consciencia situacional para equipos: posiciones, mensajes, alertas e incidentes en un mapa común y en tiempo real, con una red de respaldo propia cuando caen la telefonía o la electricidad.',
         lang: 'es',
         start_url: base,
         scope: base,

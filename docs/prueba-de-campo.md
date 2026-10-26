@@ -20,13 +20,13 @@ Lista para probar Tesel en condiciones reales antes de publicar la v0.1. Las pru
 
 ## 2. Sin internet, con radios (30 minutos)
 
-Todos con datos móviles y wifi desactivados, Bluetooth encendido, radio conectada desde «LoRa».
+Todos con datos móviles y wifi desactivados, Bluetooth encendido, radio conectada desde «Conexiones» (el indicador de arriba debe decir «Radio»).
 
 - [ ] Al conectar, el panel muestra el nombre de la radio y el canal del grupo. La app de MeshCore muestra un canal nuevo con el nombre del grupo, sin haber tocado los otros.
 - [ ] El chat llega por radio. Apunta cuánto tarda.
 - [ ] Las posiciones se actualizan por radio (cada pocos minutos, no al momento).
 - [ ] Un SOS llega por radio; se repite hasta que alguien pulsa «Recibido»; la cancelación también llega.
-- [ ] El tiempo de emisión de la última hora (panel «LoRa») se queda por debajo del 100 %.
+- [ ] El tiempo de emisión de la última hora (panel «Conexiones») se queda por debajo del 100 %.
 - [ ] Alcance: separaos poco a poco y apunta la distancia a la que dejan de llegar los mensajes, en ciudad y, si podéis, desde un sitio alto.
 - [ ] Una persona con radio y con datos móviles hace de puente: lo que escribe alguien solo por radio llega a otra persona que solo tiene internet, y al revés.
 - [ ] Si alguien usa la app de MeshCore cerca, sus mensajes aparecen en la pestaña «MeshCore» del chat.
@@ -39,7 +39,7 @@ Todos con datos móviles y wifi desactivados, Bluetooth encendido, radio conecta
 
 Requiere haber seguido [`deploy/command-post/README.md`](../deploy/command-post/README.md).
 
-- [ ] Un móvil sin datos se conecta a la wifi del puesto, abre Tesel y arriba aparece «Puesto de mando» con el punto azul. Apunta si el navegador pidió algún permiso.
+- [ ] Un móvil sin datos se conecta a la wifi del puesto, abre Tesel y arriba aparece «Puesto de mando». Apunta si el navegador pidió algún permiso.
 - [ ] Un iPhone sin datos hace lo mismo y se comunica con el grupo.
 - [ ] Un móvil que nunca tuvo Tesel abre `https://puesto.tesel.eu/app/`, se une al grupo escaneando el QR y ve el mapa completo.
 - [ ] Con una radio conectada en el puesto (Chrome en el portátil), los mensajes de quien está en la wifi del puesto llegan a quien solo tiene radio, y al revés.

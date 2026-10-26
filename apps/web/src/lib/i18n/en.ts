@@ -1,11 +1,18 @@
 // The English dictionary defines the set of keys. Every other language must provide all of them.
 
 export const en = {
-  appTagline:
-    'Situational awareness for civilian teams: positions, messages, alerts and incidents on one shared map, over the internet, LoRa radio or a command post.',
-  online: 'Online',
-  offline: 'Offline',
-  commandPost: 'Command post',
+  connections: 'Connections',
+  connectionsIntro:
+    'Tesel uses every connection it finds at once. What is written without one is kept and goes out as soon as there is one.',
+  linkInternet: 'Internet',
+  linkCommandPost: 'Command post',
+  linkRadio: 'Radio',
+  linkInternetAndRadio: 'Internet and radio',
+  linkCommandPostAndRadio: 'Post and radio',
+  linkConnecting: 'Connecting…',
+  linkNone: 'No connection',
+  internetTitle: 'Internet',
+  internetNoGroup: 'Choose or create a group to connect with your team.',
   switchLanguage: 'Español',
   offlineAreas: 'Offline maps',
   close: 'Close',
@@ -102,13 +109,12 @@ export const en = {
   messageTooLong: 'Too long to send over radio: shorten it.',
   locationDenied: 'Location permission is off. Turn it on for this app in the browser settings.',
   locationUnavailable: 'Your position is not available right now.',
-  syncSynced: 'Synced',
+  syncSynced: 'Synced with the group’s server.',
   syncViaCommandPost:
     'Synced through a command post. It passes everything on to the rest of the group when it has internet.',
   syncConnecting: 'Connecting to the server…',
   syncDisconnected: 'No connection to the server; messages wait and go later',
-  syncLocalOnly: 'No server',
-  needGroup: 'Create or join a group first.',
+  syncLocalOnly: 'This group uses no server: radio only.',
   members: 'Members ({count})',
   you: 'you',
   positionLive: 'sharing position',
@@ -175,7 +181,6 @@ export const en = {
   acknowledge: 'Acknowledge',
   cancelSos: 'Cancel SOS',
   confirmCancelSos: 'Cancel this SOS for the whole group?',
-  sosCancelled: '{name}’s SOS was cancelled by {by}.',
   alert: 'Alert',
   alertInfo: 'Information',
   alertWarning: 'Warning',
@@ -191,7 +196,6 @@ export const en = {
   positionStateSharing: 'Sharing position',
   positionStatePaused: 'Position paused',
   positionStateHidden: 'Position hidden',
-  radio: 'Radio',
   radioTitle: 'LoRa radio',
   radioIntro:
     'Pair a MeshCore radio (Companion Bluetooth firmware, v1.18 or later) to keep in touch without internet.',

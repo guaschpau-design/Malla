@@ -3,7 +3,8 @@
 //   pnpm --filter @tesel/web icons
 //
 // Writes apps/web/public/icons: the PWA icons (any and maskable), the Apple touch icon and the
-// favicons. The mark sits on the ink of the app's top bar; maskable icons keep it inside the
+// favicons. Then stamps the favicon's version in the pages that link the icons (lib/ui/icon-links.ts),
+// so browsers fetch the new ones. The mark sits on the ink of the app's top bar; maskable icons keep it inside the
 // safe zone (80 % of the width) that launchers may crop to a circle.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -11,10 +12,15 @@ import { fileURLToPath } from 'node:url';
 
 import { chromium } from '@playwright/test';
 
-const here = dirname(fileURLToPath(import.meta.url));
+import { iconVersion, PAGES_WITH_ICONS, stampIconLinks } from '../src/lib/ui/icon-links.ts';
 
-const INK = '#10202c';
-const mark = readFileSync(join(here, '..', '..', '..', 'brand', 'mark.svg'), 'utf8');
+const here = dirname(fileURLToPath(import.meta.url));
+const root = join(here, '..', '..', '..');
+
+const { ink: INK, pale: PALE } = JSON.parse(
+  readFileSync(join(root, 'brand', 'colors.json'), 'utf8'),
+);
+const mark = readFileSync(join(root, 'brand', 'mark.svg'), 'utf8');
 const out = join(here, '..', 'public', 'icons');
 
 /** An icon page: the mark at `scale` of the square, on ink, with rounded corners when asked. */
@@ -46,9 +52,12 @@ await (async () => {
   }
   await browser.close();
   // The SVG favicon: the mark on a rounded ink square, crisp at any size.
-  writeFileSync(
-    join(out, 'favicon.svg'),
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="${INK}"/><g transform="translate(5 5) scale(0.9)" color="#e6ebe8">${mark.replace(/<svg[^>]*>|<\/svg>/g, '')}</g></svg>`,
-  );
-  console.warn(`${icons.length} icons and favicon.svg written to ${out}`);
+  const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="${INK}"/><g transform="translate(5 5) scale(0.9)" color="${PALE}">${mark.replace(/<svg[^>]*>|<\/svg>/g, '')}</g></svg>`;
+  writeFileSync(join(out, 'favicon.svg'), favicon);
+  const version = iconVersion(favicon);
+  for (const page of PAGES_WITH_ICONS) {
+    const path = join(root, page);
+    writeFileSync(path, stampIconLinks(readFileSync(path, 'utf8'), version));
+  }
+  console.warn(`${icons.length} icons and favicon.svg written to ${out}, version ${version}`);
 })();

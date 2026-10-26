@@ -10,7 +10,7 @@ test('a downloaded area keeps working after going offline and reloading', async 
 }) => {
   await page.goto('/#map=13/39.47/-0.36');
   await chooseAlias(page, 'Ana');
-  await expect(page.getByRole('status').filter({ hasText: 'En línea' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Conexiones: Internet' })).toBeVisible();
 
   // The service worker must be active before we go offline.
   await expect
@@ -29,7 +29,7 @@ test('a downloaded area keeps working after going offline and reloading', async 
   await context.setOffline(true);
   await page.reload();
 
-  await expect(page.getByText('Sin conexión', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Conexiones: Sin conexión' })).toBeVisible();
   // Tiles come from IndexedDB: the map reports its sources as loaded, with no network.
   await expect
     .poll(

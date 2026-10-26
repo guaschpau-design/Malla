@@ -1,7 +1,8 @@
 <!-- A map symbol as it appears on the map (symbol-images.ts), for forms and lists. -->
 <script lang="ts">
   import { symbolInfo } from './catalog.ts';
-  import { GLYPH_GRID, GLYPH_STROKE, GLYPHS, tilePath } from './glyphs.ts';
+  import { GLYPH_GRID, TILE_GLYPH_SIZE, TILE_RADIUS, tilePath } from './glyphs.ts';
+  import GlyphPaths from './GlyphPaths.svelte';
 
   interface Props {
     code: number;
@@ -11,15 +12,12 @@
 
   let { code, size = 32 }: Props = $props();
 
-  const RADIUS = 17;
-  const WIDTH = Math.sqrt(3) * RADIUS + 4;
-  const HEIGHT = 2 * RADIUS + 4;
-  const GLYPH_SIZE = 19;
-  const TILE = tilePath(WIDTH / 2, HEIGHT / 2, RADIUS);
-  const GLYPH_AT = `translate(${String((WIDTH - GLYPH_SIZE) / 2)} ${String((HEIGHT - GLYPH_SIZE) / 2)}) scale(${String(GLYPH_SIZE / GLYPH_GRID)})`;
+  const WIDTH = Math.sqrt(3) * TILE_RADIUS + 4;
+  const HEIGHT = 2 * TILE_RADIUS + 4;
+  const TILE = tilePath(WIDTH / 2, HEIGHT / 2, TILE_RADIUS);
+  const GLYPH_AT = `translate(${String((WIDTH - TILE_GLYPH_SIZE) / 2)} ${String((HEIGHT - TILE_GLYPH_SIZE) / 2)}) scale(${String(TILE_GLYPH_SIZE / GLYPH_GRID)})`;
 
   const symbol = $derived(symbolInfo(code));
-  const glyph = $derived(GLYPHS[symbol.glyph]);
 </script>
 
 <svg
@@ -30,13 +28,8 @@
   style:--tile="var(--tone-{symbol.tone})"
 >
   <path d={TILE} class="tile" />
-  <g transform={GLYPH_AT}>
-    {#each glyph.strokes as d (d)}
-      <path {d} class="stroke" stroke-width={GLYPH_STROKE} />
-    {/each}
-    {#each glyph.fills as d (d)}
-      <path {d} class="fill" />
-    {/each}
+  <g transform={GLYPH_AT} class="glyph">
+    <GlyphPaths name={symbol.glyph} />
   </g>
 </svg>
 
@@ -53,14 +46,8 @@
     stroke-linejoin: round;
   }
 
-  .stroke {
-    fill: none;
-    stroke: #fff;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .fill {
-    fill: #fff;
+  /* The pictogram is white on every family's colour, as on the map. */
+  .glyph {
+    color: #fff;
   }
 </style>

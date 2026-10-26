@@ -1,6 +1,6 @@
 // Which side panel is open. Only one is open at a time, wherever it is opened from.
 
-export type PanelName = 'offline' | 'groups' | 'chat' | 'object' | 'radio';
+export type PanelName = 'offline' | 'groups' | 'chat' | 'object' | 'connections';
 
 export const panels = $state({ open: null as PanelName | null });
 

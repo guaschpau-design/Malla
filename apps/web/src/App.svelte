@@ -14,6 +14,9 @@
   import { invitationInAddress } from './lib/groups/join-link.ts';
   import { detectLocale, translator, type Locale, type MessageKey } from './lib/i18n/index.ts';
   import Onboarding from './lib/identity/Onboarding.svelte';
+  import ConnectionsPanel from './lib/links/ConnectionsPanel.svelte';
+  import LinkButton from './lib/links/LinkButton.svelte';
+  import { linkOf, radioLinkOf, serverDetail } from './lib/links/links.ts';
   import MapView from './lib/map/MapView.svelte';
   import type { MapTheme } from './lib/map/style.ts';
   import { pmtilesArchive, registerTileProtocol } from './lib/map/tile-source.ts';
@@ -21,11 +24,10 @@
   import OfflineAreasPanel from './lib/offline/OfflineAreasPanel.svelte';
   import { loadPositionMode, PositionSharing } from './lib/position/position-sharing.svelte.ts';
   import UpdatePrompt from './lib/pwa/UpdatePrompt.svelte';
-  import RadioPanel from './lib/radio/RadioPanel.svelte';
   import { RadioSession } from './lib/radio/radio.svelte.ts';
   import { Session } from './lib/session.svelte.ts';
   import { openAppDb, type AppDb } from './lib/storage/app-db.ts';
-  import { GroupFeed, type FeedStatus } from './lib/sync/group-feed.svelte.ts';
+  import { GroupFeed } from './lib/sync/group-feed.svelte.ts';
   import { closePanel, panels, togglePanel } from './lib/ui/panels.svelte.ts';
   import Toast from './lib/ui/Toast.svelte';
   import MapWorkspace from './lib/workspace/MapWorkspace.svelte';
@@ -50,15 +52,15 @@
   let feed: GroupFeed | undefined = $state.raw();
   let map: MapLibreMap | undefined = $state();
   const radio = new RadioSession();
+  /** How this device reaches its group now (lib/links). */
+  const linkInput = $derived({
+    server: feed?.status ?? null,
+    viaCommandPost: feed?.viaCommandPost ?? false,
+    radio: radioLinkOf(radio),
+    browserOnline: connection.online,
+  });
+  const link = $derived(linkOf(linkInput));
   let notice: string | null = $state(null);
-
-  const SYNC_LABELS: Readonly<Record<FeedStatus, MessageKey>> = {
-    synced: 'syncSynced',
-    connecting: 'syncConnecting',
-    syncing: 'syncConnecting',
-    disconnected: 'syncDisconnected',
-    'local-only': 'syncLocalOnly',
-  };
 
   const JOIN_NOTICES: Readonly<Record<JoinOutcome, MessageKey>> = {
     joined: 'joined',
@@ -171,19 +173,15 @@
       <img class="lockup" src={lockupUrl} alt="Tesel" />
       <img class="mark" src={markUrl} alt="Tesel" />
     </span>
-    <span
-      class="status"
-      class:offline={!connection.online}
-      class:post={feed?.viaCommandPost}
-      role="status"
-    >
-      <span class="dot" aria-hidden="true"></span>
-      <span class="status-text">
-        {#if feed?.viaCommandPost}{t('commandPost')}{:else if connection.online}{t(
-            'online',
-          )}{:else}{t('offline')}{/if}
-      </span>
-    </span>
+    <LinkButton
+      {t}
+      {link}
+      detail={t(serverDetail(linkInput))}
+      expanded={panels.open === 'connections'}
+      onclick={() => {
+        togglePanel('connections');
+      }}
+    />
     {#if session?.identity}
       {@const groupLabel = session.activeGroup?.name ?? t('noGroup')}
       <button
@@ -193,33 +191,8 @@
         }}
         aria-expanded={panels.open === 'groups'}
         aria-label="{t('groups')}: {groupLabel}"
-        title={feed
-          ? t(feed.viaCommandPost ? 'syncViaCommandPost' : SYNC_LABELS[feed.status])
-          : undefined}
       >
-        {#if feed}<span class="sync {feed.status}" aria-hidden="true"></span>{/if}
         {groupLabel}
-      </button>
-    {/if}
-    {#if session?.identity}
-      <button
-        class="radio"
-        onclick={() => {
-          togglePanel('radio');
-        }}
-        aria-expanded={panels.open === 'radio'}
-        aria-label="{t('radio')}: {radio.linked
-          ? t('radioConnected', { name: radio.name ?? t('radioUnnamed') })
-          : t('radioConnect')}"
-      >
-        <span
-          class="sync"
-          class:synced={radio.linked}
-          class:connecting={radio.state === 'connecting' ||
-            (radio.state === 'ready' && !radio.linked)}
-          aria-hidden="true"
-        ></span>
-        LoRa
       </button>
     {/if}
     <button
@@ -245,8 +218,14 @@
       <OfflineAreasPanel {t} {locale} {map} {store} {archive} onclose={closePanel} />
     {/if}
 
-    {#if panels.open === 'radio'}
-      <RadioPanel {t} {radio} groupName={session?.activeGroup?.name ?? null} onclose={closePanel} />
+    {#if panels.open === 'connections'}
+      <ConnectionsPanel
+        {t}
+        internet={t(serverDetail(linkInput))}
+        {radio}
+        groupName={session?.activeGroup?.name ?? null}
+        onclose={closePanel}
+      />
     {/if}
 
     {#if session && panels.open === 'groups'}
@@ -314,44 +293,12 @@
     display: none;
   }
 
-  .status {
-    display: inline-flex;
-    white-space: nowrap;
-    gap: 0.4rem;
-    align-items: center;
-    margin-right: auto;
-    font-size: 0.85rem;
-  }
-
-  .dot {
-    width: 0.55rem;
-    height: 0.55rem;
-    background: var(--signal);
-    border-radius: 50%;
-  }
-
-  .status.offline .dot {
-    background: var(--danger);
-  }
-
-  /* Connected, but only as far as the command post: online for the group, not for the world. */
-  .status.post .dot {
-    background: var(--info);
-  }
-
   main {
     position: relative;
     overflow: hidden;
   }
 
-  .radio {
-    flex-shrink: 0;
-    color: inherit;
-    white-space: nowrap;
-    border-color: rgb(248 250 252 / 35%);
-  }
-
-  /* On narrow screens the dot says it all, and the mark stands for the name. */
+  /* On narrow screens the mark stands for the name. */
   @media (max-width: 30rem) {
     .brand .lockup {
       display: none;
@@ -360,14 +307,6 @@
     .brand .mark {
       display: block;
       height: 1.7rem;
-    }
-
-    .status-text {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip-path: inset(50%);
     }
   }
 
@@ -378,29 +317,6 @@
     color: inherit;
     text-overflow: ellipsis;
     white-space: nowrap;
-    border-color: rgb(248 250 252 / 35%);
-  }
-
-  .sync {
-    display: inline-block;
-    width: 0.5rem;
-    height: 0.5rem;
-    margin-right: 0.4rem;
-    vertical-align: middle;
-    background: var(--muted);
-    border-radius: 50%;
-  }
-
-  .sync.synced {
-    background: var(--signal);
-  }
-
-  .sync.connecting,
-  .sync.syncing {
-    background: var(--warning);
-  }
-
-  .sync.disconnected {
-    background: var(--danger);
+    border-color: rgb(230 235 232 / 25%);
   }
 </style>

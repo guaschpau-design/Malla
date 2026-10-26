@@ -5,14 +5,17 @@ import type { Map as MapLibreMap } from 'maplibre-gl';
 
 import { toneColor } from '../ui/theme.ts';
 import { SYMBOLS, symbolImageName } from './catalog.ts';
-import { GLYPH_GRID, GLYPH_STROKE, GLYPHS, tilePath } from './glyphs.ts';
+import {
+  GLYPH_GRID,
+  GLYPH_STROKE,
+  GLYPHS,
+  TILE_GLYPH_SIZE,
+  TILE_RADIUS,
+  tilePath,
+} from './glyphs.ts';
 
 /** Drawn at twice the size, for sharp icons on high-density screens. */
 const PIXEL_RATIO = 2;
-/** Distance from the centre of the tile to its corners, in CSS pixels. */
-const TILE_RADIUS = 17;
-/** Size of the pictogram on the tile, in CSS pixels. */
-const GLYPH_SIZE = 19;
 /** Room around the tile for its edge and shadow. */
 const MARGIN = 4;
 const EDGE = 2;
@@ -48,8 +51,8 @@ export function addSymbolImages(map: MapLibreMap): void {
     context.stroke(tile);
 
     const glyph = GLYPHS[symbol.glyph];
-    const scale = GLYPH_SIZE / GLYPH_GRID;
-    context.translate((WIDTH - GLYPH_SIZE) / 2, (HEIGHT - GLYPH_SIZE) / 2);
+    const scale = TILE_GLYPH_SIZE / GLYPH_GRID;
+    context.translate((WIDTH - TILE_GLYPH_SIZE) / 2, (HEIGHT - TILE_GLYPH_SIZE) / 2);
     context.scale(scale, scale);
     context.strokeStyle = WHITE;
     context.fillStyle = WHITE;
