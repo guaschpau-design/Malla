@@ -1,14 +1,33 @@
 // Our own GeoJSON sources and layers on top of the base map. A new style (theme or language
 // change) removes them, and the style may still be loading when they are first added, so they are
 // installed again on every style change and whenever the map settles. Data and visibility set
-// while they are not installed are kept and applied when they are.
+// while they are not installed are kept and applied when they are. Each overlay has a level, so
+// the stacking is the same whatever order they were installed in.
 
 import type { FeatureCollection } from 'geojson';
 import type { GeoJSONSource, LayerSpecification, Map as MapLibreMap } from 'maplibre-gl';
+import { untrack } from 'svelte';
 
 const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] };
 
+/** Our overlays from bottom to top: each is drawn above every one listed before it. */
+export const OVERLAY_LEVELS = [
+  'trails',
+  'objects',
+  'members',
+  'sos',
+  'self',
+  'navigation',
+  'point',
+  'draft',
+] as const;
+export type OverlayLevel = (typeof OVERLAY_LEVELS)[number];
+
+/** Where a layer records its overlay's level, in MapLibre's free-form layer metadata. */
+const LEVEL_KEY = 'tesel:level';
+
 export interface OverlaySpec<Source extends string> {
+  readonly level: OverlayLevel;
   /** The names of the sources, unique on the map. Each starts empty until `setData`. */
   readonly sources: readonly Source[];
   /**
@@ -45,11 +64,6 @@ export class Overlay<Source extends string> {
     map.on('styledata', this.#install);
     map.on('idle', this.#install);
     if (map.isStyleLoaded()) this.#installNow();
-  }
-
-  /** The ids of the layers, for querying what was tapped. */
-  get layerIds(): readonly string[] {
-    return this.#layerIds;
   }
 
   setData(source: Source, data: FeatureCollection): void {
@@ -97,12 +111,29 @@ export class Overlay<Source extends string> {
     for (const source of this.#spec.sources) {
       this.#map.addSource(source, { type: 'geojson', data: this.#data[source] });
     }
+    const level = OVERLAY_LEVELS.indexOf(this.#spec.level);
+    // Below the first layer of a higher overlay already on the map, if any.
+    const before = this.#map.getStyle().layers.find((layer) => levelOf(layer) > level)?.id;
     const layers = this.#spec.layers();
     for (const layer of layers) {
-      this.#map.addLayer({ ...layer, layout: { ...layer.layout, visibility: this.#visibility } });
+      this.#map.addLayer(
+        {
+          ...layer,
+          layout: { ...layer.layout, visibility: this.#visibility },
+          metadata: { [LEVEL_KEY]: level },
+        },
+        before,
+      );
     }
     this.#layerIds = layers.map((layer) => layer.id);
   }
+}
+
+/** The overlay level of a layer of the map; base map layers have none. */
+function levelOf(layer: LayerSpecification): number {
+  const metadata = layer.metadata as Record<string, unknown> | undefined;
+  const level = metadata?.[LEVEL_KEY];
+  return typeof level === 'number' ? level : -1;
 }
 
 export interface OverlayUse<Source extends string> extends Omit<OverlaySpec<Source>, 'sources'> {
@@ -122,7 +153,9 @@ export function useOverlay<Source extends string>(
 ): void {
   $effect(() => {
     const sources = Object.keys(use.data) as Source[];
-    const overlay = new Overlay(map(), { ...use, sources });
+    const target = map();
+    // Building the overlay reads the layers' colours; nothing in it should rerun this effect.
+    const overlay = untrack(() => new Overlay(target, { ...use, sources }));
     $effect(() => {
       for (const source of sources) overlay.setData(source, use.data[source]());
     });

@@ -2,7 +2,7 @@
 
 import { COORDINATE_FORMATS, type CoordinateFormat } from '../coordinates/coordinates.ts';
 import { MAP_LAYERS, type MapLayer } from '../map/layers.ts';
-import { POSITION_MODES } from '../position/position-mode.ts';
+import { POSITION_MODES, type PositionMode } from '../position/position-mode.ts';
 import type { AppDb } from '../storage/app-db.ts';
 import { choice, flag, Preference, subset } from './preference.svelte.ts';
 
@@ -19,6 +19,7 @@ export const PREFERENCES = {
 
 /** The preferences the interface reads and changes as the user works. */
 export interface Preferences {
+  readonly positionMode: Preference<PositionMode>;
   readonly coordinateFormat: Preference<CoordinateFormat>;
   readonly hiddenLayers: Preference<readonly MapLayer[]>;
   readonly keepScreenOn: Preference<boolean>;
@@ -26,6 +27,7 @@ export interface Preferences {
 
 export async function loadPreferences(db: AppDb): Promise<Preferences> {
   return {
+    positionMode: await Preference.load(db, PREFERENCES.positionMode),
     coordinateFormat: await Preference.load(db, PREFERENCES.coordinateFormat),
     hiddenLayers: await Preference.load(db, PREFERENCES.hiddenLayers),
     keepScreenOn: await Preference.load(db, PREFERENCES.keepScreenOn),

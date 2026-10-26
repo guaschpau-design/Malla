@@ -1,5 +1,6 @@
 <!-- Guides this device to the navigation target: the GPS stays on, a line leads there on the map
-     and, unless something else is using the top of the map, a card says how far and which way. -->
+     and a card says how far and which way, with the button to stop. The card stays even while
+     drawing or measuring, so the GPS never runs without saying why. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
   import type { Map as MapLibreMap } from 'maplibre-gl';
@@ -17,11 +18,9 @@
     map: MapLibreMap;
     location: DeviceLocation;
     groupState: GroupState | null;
-    /** False while drawing or measuring, which use the top of the map themselves. */
-    showCard: boolean;
   }
 
-  let { t, locale, map, location, groupState, showCard }: Props = $props();
+  let { t, locale, map, location, groupState }: Props = $props();
 
   const target = $derived(navigation.target);
   const at = $derived(target && targetPosition(target, groupState));
@@ -33,15 +32,13 @@
 
 {#if target}
   <NavigationLayer {map} from={location.fix?.at ?? null} to={at} />
-  {#if showCard}
-    <NavigationBar
-      {t}
-      {locale}
-      {map}
-      name={target.name}
-      target={at}
-      fix={location.fix}
-      onstop={stopNavigating}
-    />
-  {/if}
+  <NavigationBar
+    {t}
+    {locale}
+    {map}
+    name={target.name}
+    target={at}
+    fix={location.fix}
+    onstop={stopNavigating}
+  />
 {/if}

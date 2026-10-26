@@ -22,6 +22,7 @@
 
   // A drawing in progress: an ink dashed line, with this device's lime on its points.
   useOverlay(() => map, {
+    level: 'draft',
     data: { [SOURCE]: () => data },
     layers: () => {
       const ink = themeColor('ink');

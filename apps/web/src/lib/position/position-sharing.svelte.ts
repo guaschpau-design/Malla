@@ -1,35 +1,34 @@
 // Shares this device's position with the active group in the mode the user chose
 // (position-mode.ts). The choice is remembered, so sharing resumes after the app restarts.
 
-import { savePreference } from '../settings/preference.svelte.ts';
-import { PREFERENCES } from '../settings/preferences.ts';
-import type { AppDb } from '../storage/app-db.ts';
+import type { Preference } from '../settings/preference.svelte.ts';
 import type { GroupFeed } from '../sync/group-feed.svelte.ts';
 import type { DeviceFix, DeviceLocation } from './device-location.svelte.ts';
 import type { PositionMode } from './position-mode.ts';
 import { shouldReport, type Report } from './report-policy.ts';
 
 export class PositionSharing {
-  mode: PositionMode = $state('hidden');
-
-  readonly #db: AppDb;
+  readonly #mode: Preference<PositionMode>;
   readonly #location: DeviceLocation;
   #feed: GroupFeed | null = null;
   /** Lets go of the GPS; set while sharing. */
   #release: (() => void) | null = null;
   #last: Report | null = null;
 
-  constructor(db: AppDb, location: DeviceLocation) {
-    this.#db = db;
+  constructor(mode: Preference<PositionMode>, location: DeviceLocation) {
+    this.#mode = mode;
     this.#location = location;
   }
 
+  get mode(): PositionMode {
+    return this.#mode.value;
+  }
+
   /** Starts serving a group's feed with the remembered mode. Publishes nothing by itself. */
-  attach(feed: GroupFeed, mode: PositionMode): void {
+  attach(feed: GroupFeed): void {
     this.detach();
     this.#feed = feed;
-    this.mode = mode;
-    if (mode === 'sharing') this.#startReporting();
+    if (this.mode === 'sharing') this.#startReporting();
   }
 
   /** Stops reporting, for instance when the active group changes. */
@@ -39,9 +38,7 @@ export class PositionSharing {
   }
 
   async setMode(mode: PositionMode): Promise<void> {
-    // Stored first, so what the screen shows is what the app will resume with.
-    await savePreference(this.#db, PREFERENCES.positionMode, mode);
-    this.mode = mode;
+    await this.#mode.set(mode);
     if (mode === 'sharing') {
       this.#startReporting();
       return;

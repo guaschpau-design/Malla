@@ -1,7 +1,9 @@
 // What this device has heard from each member, and through which channel: the time of the newest
 // event of theirs that arrived by radio, through the group's server or through a command post.
-// It tells who can be reached by radio directly. Duplicates count: an event already in the log
-// that arrives again by radio still shows that the member's radio is heard.
+// It tells what reaches this device and how. By radio does not mean from the member's own radio:
+// a bridge may have put their event on the air (ARCHITECTURE.md §4.3), and the radio cannot tell
+// who transmitted. Duplicates count: an event already in the log that arrives again by radio
+// still shows that the radio brings that member's news.
 
 import type { NodeId } from '@tesel/protocol';
 

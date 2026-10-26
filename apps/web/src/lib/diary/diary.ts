@@ -56,12 +56,18 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
         return t('diaryAlert', { level: t(ALERT_LEVELS[event.level]), text: event.text });
       case 'sos':
         return withText(t('diarySos', { kind: t(SOS_KINDS[event.kind]) }), event.text);
-      case 'sos-cancel':
-        return t('diarySosCancelled', { name: authorOf(eventRefKey(event.sos)) });
+      case 'sos-cancel': {
+        const sos = state.sos.get(eventRefKey(event.sos));
+        return sos ? t('diarySosCancelled', { name: aliasOf(state, sos.origin) }) : null;
+      }
       case 'ack': {
+        // What was received, once it has arrived here too; until then the line waits.
         const target = eventRefKey(event.target);
-        if (state.sos.has(target)) return t('diaryAckSos', { name: authorOf(target) });
-        return t('diaryAckAlert', { name: authorOf(target) });
+        const sos = state.sos.get(target);
+        if (sos) return t('diaryAckSos', { name: aliasOf(state, sos.origin) });
+        const alert = state.alerts.find((item) => eventRefKey(item) === target);
+        if (alert) return t('diaryAckAlert', { name: aliasOf(state, alert.origin) });
+        return null;
       }
       case 'marker':
       case 'shape': {
@@ -80,12 +86,6 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
   function objectName(object: MarkerEvent | ShapeEvent): string {
     const kind = t(objectKind(object));
     return object.label ? `${kind} «${object.label}»` : kind;
-  }
-
-  /** Who sent an SOS or an alert, by its reference key. */
-  function authorOf(key: string): string {
-    const event = state.sos.get(key) ?? state.alerts.find((alert) => eventRefKey(alert) === key);
-    return event ? aliasOf(state, event.origin) : '?';
   }
 }
 

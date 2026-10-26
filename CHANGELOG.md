@@ -16,7 +16,7 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 - Members on the map can be tapped for who they are, their last position and the way there.
 - Trails: where each member has been in the last hours, drawn from the positions they share. Hiding one's position hides the trail up to that moment too.
 - Map layers: members, trails and markers and zones can each be hidden; the choice is remembered. This device and SOS calls are always shown.
-- What reaches this device from each member, and how: a member's details say when something of theirs last arrived by radio, through the server or through a command post, and the members list marks those the radio hears.
+- What reaches this device from each member, and how: a member's details say when something of theirs last arrived by radio, through the server or through a command post, and the members list marks those whose news arrives by radio.
 - Keep the screen on, as an option, and always while guiding to a target.
 - The operation diary: everything that happened in the group, in order and in plain words, downloadable as text for the report ([ADR-0022](docs/decisions/0022-log-files.md)).
 - The group's log can be saved to a file, encrypted for the group, and loaded on another device of the group to bring it what it is missing (protocol §10).

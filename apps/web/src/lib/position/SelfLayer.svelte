@@ -17,6 +17,7 @@
   const SOURCE = 'tesel-self';
 
   useOverlay(() => map, {
+    level: 'self',
     data: { [SOURCE]: () => selfFeatures(location.fix) },
     layers: () => {
       const self = themeColor('self');

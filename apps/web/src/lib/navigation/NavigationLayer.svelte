@@ -34,6 +34,7 @@
   }
 
   useOverlay(() => map, {
+    level: 'navigation',
     data: { [SOURCE]: () => features(from, to) },
     layers: () => {
       const ink = themeColor('ink');

@@ -20,6 +20,7 @@
   const SOURCE = 'tesel-trails';
 
   useOverlay(() => map, {
+    level: 'trails',
     data: { [SOURCE]: () => trailFeatures(groupState, self) },
     visible: () => visible,
     layers: () => [

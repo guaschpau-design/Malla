@@ -23,6 +23,7 @@
   }
 
   useOverlay(() => map, {
+    level: 'point',
     data: { [SOURCE]: () => features(point) },
     layers: () => [
       {

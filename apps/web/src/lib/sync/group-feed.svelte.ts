@@ -24,7 +24,6 @@ import {
   type AlertLevel,
   type EventHeader,
   type EventRef,
-  type EventType,
   type GroupKeys,
   type LatLon,
   type ObjectRef,
@@ -49,6 +48,7 @@ import type { AppDb, OutboxEntry } from '../storage/app-db.ts';
 import { defaultServerUrl } from '../config.ts';
 import { loadCursor, saveCursor } from './cursor-store.ts';
 import { RelayClient, type ReceivedEnvelope, type RelayStatus } from './relay-client.ts';
+import { loraEventOf, peekType } from './lora-events.ts';
 import { relaysFor } from './relays.ts';
 
 /** `local-only` when the group has no server: events stay on this device (and LoRa, later). */
@@ -343,19 +343,4 @@ export class GroupFeed {
     if (events.length > 0) this.state = reduceAll(this.state, events);
     return events;
   }
-}
-
-/** An encoded event as the radio sees it: decoded, or only its header if its type is unknown. */
-function loraEventOf(bytes: Uint8Array): LoraEvent | null {
-  const event = decodeEvent(bytes);
-  if (event.ok) return event.value;
-  const header = peekHeader(bytes);
-  if (!header.ok) return null;
-  const { origin, seq, time } = header.value;
-  return { type: null, origin, seq, time };
-}
-
-/** The type of an encoded event, or null if this version does not know it. */
-function peekType(bytes: Uint8Array): EventType | null {
-  return loraEventOf(bytes)?.type ?? null;
 }

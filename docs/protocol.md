@@ -328,6 +328,10 @@ All command posts of a server share one base URL, whose name each post resolves 
 
 Cursors belong to one relay: a client keeps one cursor per group and relay URL. Its outbox is satisfied by `stored` from any of them, since a command post replicates what it stores.
 
+## 9. Versioning
+
+This document describes protocol version 1. Adding event types, symbol codes or style codes does not change the version. Version 1 is frozen with the first release, v0.1.0; until then it still changed in place (the `env` message gained `key`, and §8.1–8.3 were added, for command posts). Changing any existing layout, derivation or transport rule requires version 2, a new ADR and a migration plan.
+
 ## 10. Log files
 
 A device can save a group's log to a file and another device of the group can read it back: a backup, or a way to carry events between devices that never shared a link (a phone that worked by radio only, handing its log to the command post on a memory stick). The file is UTF-8 JSON:
@@ -342,10 +346,6 @@ A device can save a group's log to a file and another device of the group can re
 ```
 
 - `group` is the group ID (§5); a reader MUST refuse a file of another group.
-- Each envelope seals one event exactly as for the internet transport (§5.1), so the file reveals no more than a relay sees: the number and size of events. Envelopes are in no particular order and may repeat events the reader has; it MUST discard those that do not open and keep the rest as if received from a relay.
+- Each envelope seals one event exactly as for the internet transport (§5.1), so the file reveals no more than a relay sees: the number and size of events. Envelopes are in no particular order and may repeat events the reader has; it MUST discard those that do not open and keep the rest as if received from a relay. A reader with a server SHOULD pass the new ones on to it, as a bridge does with events heard on the radio, so the group's server ends up with them too.
 - Base64url is without padding, as in invitations (§6).
 - `version` is this file layout's version, separate from the protocol version. A reader MUST refuse versions it does not know.
-
-## 9. Versioning
-
-This document describes protocol version 1. Adding event types, symbol codes or style codes does not change the version. Version 1 is frozen with the first release, v0.1.0; until then it still changed in place (the `env` message gained `key`, and §8.1–8.3 were added, for command posts). Changing any existing layout, derivation or transport rule requires version 2, a new ADR and a migration plan.

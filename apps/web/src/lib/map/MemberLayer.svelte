@@ -31,6 +31,7 @@
   const data = $derived(memberFeatures(groupState, self, now.seconds));
 
   useOverlay(() => map, {
+    level: 'members',
     data: { [SOURCE]: () => data },
     visible: () => visible,
     layers: () => {

@@ -38,15 +38,11 @@ export function subset<const T extends string>(
   };
 }
 
-export async function loadPreference<T>(db: AppDb, spec: PreferenceSpec<T>): Promise<T> {
+async function loadPreference<T>(db: AppDb, spec: PreferenceSpec<T>): Promise<T> {
   return spec.read(await db.get('settings', spec.key)) ?? spec.fallback;
 }
 
-export async function savePreference<T>(
-  db: AppDb,
-  spec: PreferenceSpec<T>,
-  value: T,
-): Promise<void> {
+async function savePreference<T>(db: AppDb, spec: PreferenceSpec<T>, value: T): Promise<void> {
   await db.put('settings', value, spec.key);
 }
 

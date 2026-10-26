@@ -31,6 +31,7 @@
   const data = $derived(mapObjects(groupState));
 
   useOverlay(() => map, {
+    level: 'objects',
     data: { [SHAPES]: () => data.shapes, [MARKERS]: () => data.markers },
     visible: () => visible,
     prepare: () => {
@@ -87,6 +88,7 @@
   });
 
   useOverlay(() => map, {
+    level: 'sos',
     data: { [SOS]: () => data.sos },
     layers: () => {
       const danger = themeColor('danger');

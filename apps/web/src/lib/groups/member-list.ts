@@ -15,7 +15,7 @@ export interface MemberRow {
   readonly role: Role | null;
   readonly self: boolean;
   readonly position: PositionStatus;
-  /** Heard by this device's radio lately: reachable by radio directly. */
+  /** Their news reaches this device's radio lately, from their radio or through a bridge. */
   readonly byRadio: boolean;
 }
 

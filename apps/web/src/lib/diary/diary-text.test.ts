@@ -37,6 +37,6 @@ describe('the diary as a text file', () => {
     expect(fileName('Equipo Turia · Riada', now, 'txt')).toBe(
       'tesel-equipo-turia-riada-2026-10-26.txt',
     );
-    expect(fileName('¡¡!!', now, 'tesel')).toBe('tesel-grupo-2026-10-26.tesel');
+    expect(fileName('¡¡!!', now, 'tesel')).toBe('tesel-2026-10-26.tesel');
   });
 });

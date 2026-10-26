@@ -26,8 +26,7 @@
   import { PositionSharing } from './lib/position/position-sharing.svelte.ts';
   import UpdatePrompt from './lib/pwa/UpdatePrompt.svelte';
   import { RadioSession } from './lib/radio/radio.svelte.ts';
-  import { loadPreference } from './lib/settings/preference.svelte.ts';
-  import { loadPreferences, PREFERENCES, type Preferences } from './lib/settings/preferences.ts';
+  import { loadPreferences, type Preferences } from './lib/settings/preferences.ts';
   import { Session } from './lib/session.svelte.ts';
   import { openAppDb, type AppDb } from './lib/storage/app-db.ts';
   import { GroupFeed } from './lib/sync/group-feed.svelte.ts';
@@ -84,9 +83,9 @@
     });
     void openAppDb().then(async (opened) => {
       db = opened;
-      sharing = new PositionSharing(opened, location);
       void radio.useStorage(opened);
       preferences = await loadPreferences(opened);
+      sharing = new PositionSharing(preferences.positionMode, location);
       session = await Session.load(opened);
     });
 
@@ -118,15 +117,14 @@
     const positions = sharing;
     let opened: GroupFeed | undefined;
     let cancelled = false;
-    void GroupFeed.open(database, group, identity).then(async (created) => {
-      const mode = await loadPreference(database, PREFERENCES.positionMode);
+    void GroupFeed.open(database, group, identity).then((created) => {
       if (cancelled) {
         created.close();
         return;
       }
       opened = created;
       feed = created;
-      positions.attach(created, mode);
+      positions.attach(created);
     });
     return () => {
       cancelled = true;

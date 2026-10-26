@@ -4,17 +4,14 @@
   alone: this device, coordinates, measuring, navigating to a point and offline maps.
 -->
 <script lang="ts">
-  import type { AlertLevel, EventRef, LatLon, NodeId, Role, SosKind } from '@tesel/protocol';
+  import type { EventRef, LatLon, NodeId, Role, SosKind } from '@tesel/protocol';
   import type { Map as MapLibreMap } from 'maplibre-gl';
 
   import { onMount } from 'svelte';
 
-  import ChatPanel from '../chat/ChatPanel.svelte';
   import CoordinatesPanel from '../coordinates/CoordinatesPanel.svelte';
   import PointLayer from '../coordinates/PointLayer.svelte';
   import type { Locale, Translate } from '../i18n/index.ts';
-  import DiaryPanel from '../diary/DiaryPanel.svelte';
-  import MemberDetails from '../groups/MemberDetails.svelte';
   import IncidentBanners from '../incidents/IncidentBanners.svelte';
   import SosDialog from '../incidents/SosDialog.svelte';
   import { onLongPress } from '../map/long-press.ts';
@@ -28,7 +25,6 @@
   import DrawBar from '../objects/DrawBar.svelte';
   import { Drawing } from '../objects/drawing.svelte.ts';
   import DrawLayer from '../objects/DrawLayer.svelte';
-  import ObjectDetails from '../objects/ObjectDetails.svelte';
   import ObjectForm from '../objects/ObjectForm.svelte';
   import ObjectLayer from '../objects/ObjectLayer.svelte';
   import type { DeviceLocation } from '../position/device-location.svelte.ts';
@@ -41,6 +37,7 @@
   import Toast from '../ui/Toast.svelte';
   import { closePanel, panels } from '../ui/panels.svelte.ts';
   import { keepScreenAwake } from '../ui/screen-awake.svelte.ts';
+  import GroupPanels from './GroupPanels.svelte';
   import Toolbar from './Toolbar.svelte';
 
   interface Props {
@@ -161,14 +158,6 @@
   async function cancelSos(sos: EventRef): Promise<void> {
     await group?.feed.cancelSos(sos);
   }
-
-  async function sendChat(text: string): Promise<void> {
-    await group?.feed.sendChat(text);
-  }
-
-  async function sendAlert(level: AlertLevel, text: string): Promise<void> {
-    await group?.feed.sendAlert(level, text);
-  }
 </script>
 
 {#if group}
@@ -201,61 +190,18 @@
     />
   {/if}
 
-  {#if panels.open === 'object' && selected}
-    {@const key = selected}
-    <ObjectDetails
-      {t}
-      {locale}
-      groupState={feed.state}
-      objectKey={key}
-      format={preferences.coordinateFormat}
-      {location}
-      onnavigate={(name: string) => {
-        navigateTo({ kind: 'object', key, name });
-      }}
-      ondelete={async () => {
-        const record = feed.state.objects.get(key);
-        if (record) await feed.deleteObject(record.object);
-      }}
-      onclose={closePanel}
-    />
-  {/if}
-
-  {#if panels.open === 'member' && selectedMember}
-    {@const id = selectedMember}
-    <MemberDetails
-      {t}
-      {locale}
-      groupState={feed.state}
-      heard={feed.heard}
-      {id}
-      format={preferences.coordinateFormat}
-      {location}
-      onnavigate={(name: string) => {
-        navigateTo({ kind: 'member', id, name });
-      }}
-      onclose={closePanel}
-    />
-  {/if}
-
-  {#if panels.open === 'diary'}
-    <DiaryPanel {t} {locale} {feed} format={preferences.coordinateFormat} onclose={closePanel} />
-  {/if}
-
-  {#if panels.open === 'chat'}
-    <ChatPanel
-      {t}
-      {locale}
-      groupState={feed.state}
-      {self}
-      canAlert={role === 'coordinator'}
-      onsend={sendChat}
-      onalert={sendAlert}
-      radioTexts={radio.texts}
-      showRadioTab={radio.state !== 'disconnected' || radio.texts.length > 0}
-      onclose={closePanel}
-    />
-  {/if}
+  <GroupPanels
+    {t}
+    {locale}
+    {feed}
+    {self}
+    {role}
+    {radio}
+    {location}
+    {preferences}
+    objectKey={selected}
+    memberId={selectedMember}
+  />
 
   {#if sosOpen}
     <SosDialog
@@ -321,14 +267,7 @@
   {:else if measuring}
     <Measuring {t} {locale} {map} onclose={() => (measuring = false)} />
   {/if}
-  <Navigation
-    {t}
-    {locale}
-    {map}
-    {location}
-    groupState={group?.feed.state ?? null}
-    showCard={!tapping}
-  />
+  <Navigation {t} {locale} {map} {location} groupState={group?.feed.state ?? null} />
   {#if group && !tapping}
     <IncidentBanners
       {t}

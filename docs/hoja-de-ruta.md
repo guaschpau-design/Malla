@@ -13,7 +13,7 @@ Todo funciona en el dispositivo con los eventos que ya existen: no cambia el for
 | 1.3 | Medir y navegar              | Distancia y rumbo desde uno mismo a cualquier punto, objeto o miembro; «Ir aquí» con una barra que guía hasta el destino; herramienta de medir distancias sobre el mapa.  |
 | 1.4 | Recorridos                   | El rastro reciente de cada miembro, a partir de las posiciones que ya comparte. Si alguien oculta su posición, su rastro desaparece también.                              |
 | 1.5 | Capas                        | Mostrar u ocultar miembros, recorridos y objetos del mapa; la elección se recuerda.                                                                                       |
-| 1.6 | Por dónde llega cada miembro | En la ficha de cada miembro: lo último que llegó de él por radio y por internet, y cuándo. Sirve para saber a quién se alcanza por radio directamente.                    |
+| 1.6 | Por dónde llega cada miembro | En la ficha de cada miembro: lo último que llegó de él por radio y por internet, y cuándo. Sirve para saber de quién se tienen noticias por radio aunque caiga internet.  |
 | 1.7 | Pantalla encendida           | Opción para que la pantalla no se apague mientras se trabaja con el mapa.                                                                                                 |
 | 1.8 | Diario de la operación       | Todo lo que ha pasado en el grupo, en orden: mensajes, alertas, SOS, objetos. Se exporta como texto para el informe, y el registro completo se exporta e importa cifrado. |
 

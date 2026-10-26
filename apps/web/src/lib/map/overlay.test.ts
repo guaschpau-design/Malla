@@ -3,10 +3,17 @@ import { describe, expect, it } from 'vitest';
 
 import { Overlay } from './overlay.svelte.ts';
 
+interface Layer {
+  id: string;
+  layout?: Record<string, unknown>;
+  metadata?: unknown;
+}
+
 /** Just enough of a map: sources, layers and events, fired at once like MapLibre does. */
 class FakeMap {
   readonly sources = new Map<string, unknown>();
-  readonly layers = new Map<string, { layout?: Record<string, unknown> }>();
+  /** In drawing order, bottom first. */
+  readonly layers = new Map<string, Layer>();
   readonly #handlers = new Map<string, Set<() => void>>();
 
   on(type: string, handler: () => void): void {
@@ -45,8 +52,16 @@ class FakeMap {
     return this.layers.get(id);
   }
 
-  addLayer(layer: { id: string; layout?: Record<string, unknown> }): void {
-    this.layers.set(layer.id, layer);
+  addLayer(layer: Layer, before?: string): void {
+    const ordered = [...this.layers.values()];
+    const at = before === undefined ? ordered.length : ordered.findIndex((l) => l.id === before);
+    ordered.splice(at, 0, layer);
+    this.layers.clear();
+    for (const item of ordered) this.layers.set(item.id, item);
+  }
+
+  getStyle(): { layers: Layer[] } {
+    return { layers: [...this.layers.values()] };
   }
 
   removeLayer(id: string): void {
@@ -60,6 +75,7 @@ class FakeMap {
 }
 
 const spec = (map: FakeMap) => ({
+  level: 'members' as const,
   sources: ['a', 'b'] as const,
   // Adding an image announces a style change straight away.
   prepare: () => {
@@ -84,6 +100,19 @@ describe('map overlays', () => {
     map.layers.clear();
     map.fire('styledata');
     expect(map.layers.get('a-dots')?.layout).toEqual({ visibility: 'none' });
+  });
+
+  it('stacks overlays by level, whatever order they come in', () => {
+    const map = new FakeMap();
+    const overlay = (level: 'trails' | 'self', id: string) =>
+      new Overlay(map as unknown as MapLibreMap, {
+        level,
+        sources: [id],
+        layers: () => [{ id: `${id}-line`, type: 'line' as const, source: id }],
+      });
+    overlay('self', 'me');
+    overlay('trails', 'trails');
+    expect([...map.layers.keys()]).toEqual(['trails-line', 'me-line']);
   });
 
   it('takes everything away when removed', () => {
