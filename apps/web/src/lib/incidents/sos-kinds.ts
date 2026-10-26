@@ -1,4 +1,4 @@
-import type { AlertLevel, SosKind } from '@teselia/protocol';
+import type { AlertLevel, SosKind } from '@tesel/protocol';
 
 import type { MessageKey } from '../i18n/index.ts';
 

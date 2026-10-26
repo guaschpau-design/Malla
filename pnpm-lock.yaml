@@ -50,10 +50,10 @@ importers:
       '@fastify/websocket':
         specifier: 11.3.4
         version: 11.3.4
-      '@teselia/core':
+      '@tesel/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@teselia/protocol':
+      '@tesel/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
       fastify:
@@ -72,13 +72,13 @@ importers:
       '@protomaps/basemaps':
         specifier: ^5.7.2
         version: 5.7.2
-      '@teselia/core':
+      '@tesel/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@teselia/meshcore':
+      '@tesel/meshcore':
         specifier: workspace:*
         version: link:../../packages/meshcore
-      '@teselia/protocol':
+      '@tesel/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
       idb:
@@ -127,7 +127,7 @@ importers:
 
   packages/core:
     dependencies:
-      '@teselia/protocol':
+      '@tesel/protocol':
         specifier: workspace:*
         version: link:../protocol
 
@@ -136,7 +136,7 @@ importers:
       '@liamcottle/meshcore.js':
         specifier: 1.15.0
         version: 1.15.0
-      '@teselia/protocol':
+      '@tesel/protocol':
         specifier: workspace:*
         version: link:../protocol
 

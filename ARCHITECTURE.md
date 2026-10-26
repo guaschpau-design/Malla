@@ -1,8 +1,8 @@
 # Architecture
 
-This document explains how Teselia is put together: the pieces, what each one owns, and how they talk. Read it before changing code. Decisions and their reasons live in [`docs/decisions/`](docs/decisions/); the wire format lives in [`docs/protocol.md`](docs/protocol.md).
+This document explains how Tesel is put together: the pieces, what each one owns, and how they talk. Read it before changing code. Decisions and their reasons live in [`docs/decisions/`](docs/decisions/); the wire format lives in [`docs/protocol.md`](docs/protocol.md).
 
-> Product scope and goals are in [`docs/briefing.md`](docs/briefing.md) (Spanish). The name was chosen in [ADR-0014](docs/decisions/0014-name-teselia.md).
+> Product scope and goals are in [`docs/briefing.md`](docs/briefing.md) (Spanish). The name was chosen in [ADR-0019](docs/decisions/0019-name-tesel.md).
 
 ## 1. The idea in one paragraph
 
@@ -35,7 +35,7 @@ A group shares a map. Every change to that map — a position, a chat line, a ma
 | `packages/meshcore` | Talking to a MeshCore companion radio: connect, configure channel, send and receive datagrams | `packages/core`, the UI                              |
 | `apps/web`          | UI, map, persistence in IndexedDB (event log, outbox, cursors), wiring transports to `core`   | Server code                                          |
 | `apps/server`       | Storing and relaying encrypted envelopes; serving the landing page and the web app (ADR-0017) | Plaintext event contents (it can never decrypt them) |
-| `apps/site`         | The landing page at teselia.eu: static HTML and CSS, Spanish and English                      | Any build step or third-party request                |
+| `apps/site`         | The landing page at tesel.eu: static HTML and CSS, Spanish and English                        | Any build step or third-party request                |
 
 The dependency direction is strictly downwards in the diagram. `protocol` and `core` are pure TypeScript with no I/O, so they run unchanged in the browser, in Node and in tests. This is what keeps the hard parts testable.
 
@@ -110,7 +110,7 @@ The web app keeps a WebSocket to the active group's server; groups that are not 
 
 ### 4.2 LoRa (MeshCore)
 
-The web app connects to a MeshCore companion radio over Web Bluetooth (Chrome and Edge only), stores the group secret in one of the radio's channel slots, and sends each event's raw bytes as a **channel data datagram** with Teselia's `data_type`. The radio floods it through the mesh and encrypts it with the channel key; other radios on the same channel deliver it to their apps. See [ADR-0006](docs/decisions/0006-meshcore-first-channel-datagrams.md).
+The web app connects to a MeshCore companion radio over Web Bluetooth (Chrome and Edge only), stores the group secret in one of the radio's channel slots, and sends each event's raw bytes as a **channel data datagram** with Tesel's `data_type`. The radio floods it through the mesh and encrypts it with the channel key; other radios on the same channel deliver it to their apps. See [ADR-0006](docs/decisions/0006-meshcore-first-channel-datagrams.md).
 
 LoRa is slow and legally limited to 10 % airtime in the EU 869.4–869.65 MHz sub-band, so outgoing LoRa traffic goes through a **scheduler** in `packages/core` ([ADR-0015](docs/decisions/0015-lora-airtime-policy.md)) that:
 
@@ -120,7 +120,7 @@ LoRa is slow and legally limited to 10 % airtime in the EU 869.4–869.65 MHz su
 4. Repeats an own `SOS` with back-off (30 s, doubling to 5 minutes) until an `ACK` or a `SOS_CANCEL` arrives over any transport.
 5. Applies the protocol's ACK rule: an own `ACK` waits 2–30 s and is dropped if another member's `ACK` is heard first.
 
-When a radio is linked to a group, the device also queues its own latest `MEMBER_INFO`, so members who only hear the radio learn its alias. While connected, Teselia reads every message the radio holds. Text messages of other MeshCore apps are kept on the device and shown, read-only, in a MeshCore tab of the chat, so they are not lost.
+When a radio is linked to a group, the device also queues its own latest `MEMBER_INFO`, so members who only hear the radio learn its alias. While connected, Tesel reads every message the radio holds. Text messages of other MeshCore apps are kept on the device and shown, read-only, in a MeshCore tab of the chat, so they are not lost.
 
 ### 4.3 Bridging
 
@@ -135,11 +135,11 @@ A device connected to both the server and a radio is a **bridge**, with no confi
 
 The code is the same in every mode; what differs is what is reachable.
 
-| Mode         | Reachable            | Behaviour                                                                                                                                                                                                                                      |
-| ------------ | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Connected    | Server               | Sync through the VPS; LoRa as fallback if paired                                                                                                                                                                                               |
-| Mesh         | Radio only           | Events flow radio to radio; each device keeps its own log                                                                                                                                                                                      |
-| Command post | Post's Wi-Fi + radio | A laptop or Raspberry Pi runs `apps/server` with `TESELIA_UPSTREAM` and its own Wi-Fi; phones without a radio (including iPhones) sync through it; a browser on the post bridges to LoRa; the post replicates the VPS whenever it has internet |
+| Mode         | Reachable            | Behaviour                                                                                                                                                                                                                                    |
+| ------------ | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Connected    | Server               | Sync through the VPS; LoRa as fallback if paired                                                                                                                                                                                             |
+| Mesh         | Radio only           | Events flow radio to radio; each device keeps its own log                                                                                                                                                                                    |
+| Command post | Post's Wi-Fi + radio | A laptop or Raspberry Pi runs `apps/server` with `TESEL_UPSTREAM` and its own Wi-Fi; phones without a radio (including iPhones) sync through it; a browser on the post bridges to LoRa; the post replicates the VPS whenever it has internet |
 
 A command post is found by name and replicates by protocol ([ADR-0018](docs/decisions/0018-command-post.md), protocol §8.2–8.3):
 
@@ -149,16 +149,16 @@ A command post is found by name and replicates by protocol ([ADR-0018](docs/deci
 
 ## 6. Persistence
 
-| Where   | What                                                                                 | Technology                                                                 |
-| ------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| Browser | Identity keys, groups, settings, each group's event log, the outbox and sync cursors | IndexedDB database `teselia`                                               |
-| Browser | Offline map tiles, with the areas they belong to                                     | IndexedDB database `teselia-map`, separate so it can be cleared on its own |
-| Server  | Encrypted envelopes per group, with retention limit                                  | SQLite through `node:sqlite`                                               |
-| Server  | Base map                                                                             | One PMTiles file, served as a static file with range requests              |
+| Where   | What                                                                                 | Technology                                                               |
+| ------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| Browser | Identity keys, groups, settings, each group's event log, the outbox and sync cursors | IndexedDB database `tesel`                                               |
+| Browser | Offline map tiles, with the areas they belong to                                     | IndexedDB database `tesel-map`, separate so it can be cleared on its own |
+| Server  | Encrypted envelopes per group, with retention limit                                  | SQLite through `node:sqlite`                                             |
+| Server  | Base map                                                                             | One PMTiles file, served as a static file with range requests            |
 
 ## 7. Maps
 
-The base map is OpenStreetMap data rendered as vector tiles from a single PMTiles file that **we host**. The public OpenStreetMap tile servers forbid bulk downloading, so they cannot be used for offline maps. To prepare for an incident, the web app downloads every tile of an area, up to zoom 14, straight from that file and stores it in IndexedDB. MapLibre reads tiles through a `teselia-tiles://` protocol that answers from IndexedDB first and the network second. Glyphs and sprites ship inside the app. See [ADR-0007](docs/decisions/0007-self-hosted-vector-maps.md) and [ADR-0011](docs/decisions/0011-client-side-area-download.md).
+The base map is OpenStreetMap data rendered as vector tiles from a single PMTiles file that **we host**. The public OpenStreetMap tile servers forbid bulk downloading, so they cannot be used for offline maps. To prepare for an incident, the web app downloads every tile of an area, up to zoom 14, straight from that file and stores it in IndexedDB. MapLibre reads tiles through a `tesel-tiles://` protocol that answers from IndexedDB first and the network second. Glyphs and sprites ship inside the app. See [ADR-0007](docs/decisions/0007-self-hosted-vector-maps.md) and [ADR-0011](docs/decisions/0011-client-side-area-download.md).
 
 ## 8. Security model
 

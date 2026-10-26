@@ -1,4 +1,4 @@
-import type { NodeId } from '@teselia/protocol';
+import type { NodeId } from '@tesel/protocol';
 import { describe, expect, it } from 'vitest';
 
 import { createGroup, invitationFor } from './group.ts';
@@ -10,11 +10,11 @@ const invitation = invitationFor(createGroup('Grupo', null, 0), 'member', ISSUER
 
 describe('join links', () => {
   it('builds the link under the base path the app is served from', () => {
-    expect(appBaseUrl('https://example.github.io', '/Teselia/')).toBe(
-      'https://example.github.io/Teselia/',
+    expect(appBaseUrl('https://example.github.io', '/Tesel/')).toBe(
+      'https://example.github.io/Tesel/',
     );
-    const link = invitationLink('https://example.github.io', '/Teselia/', invitation);
-    expect(link.ok && new URL(link.value).pathname).toBe('/Teselia/join');
+    const link = invitationLink('https://example.github.io', '/Tesel/', invitation);
+    expect(link.ok && new URL(link.value).pathname).toBe('/Tesel/join');
   });
 
   it('reads the invitation of a join link the app was opened with', () => {

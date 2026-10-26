@@ -1,6 +1,6 @@
-# HTTPS for the Teselia server. Caddy gets a Let's Encrypt certificate for TESELIA_DOMAIN, serves
+# HTTPS for the Tesel server. Caddy gets a Let's Encrypt certificate for TESEL_DOMAIN, serves
 # the base map built by maps.sh and passes everything else, WebSockets included, to the server.
-{$TESELIA_DOMAIN} {
+{$TESEL_DOMAIN} {
 	header {
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options "nosniff"
@@ -19,6 +19,6 @@
 	# The server keeps no access logs: who connects when is nobody's business.
 	handle {
 		encode zstd gzip
-		reverse_proxy teselia:8080
+		reverse_proxy tesel:8080
 	}
 }

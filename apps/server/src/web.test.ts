@@ -9,9 +9,9 @@ import { EnvelopeStore } from './envelope-store.ts';
 import { Relay } from './relay.ts';
 
 function site(): string {
-  const root = mkdtempSync(join(tmpdir(), 'teselia-web-'));
+  const root = mkdtempSync(join(tmpdir(), 'tesel-web-'));
   mkdirSync(join(root, 'app', 'assets'), { recursive: true });
-  writeFileSync(join(root, 'index.html'), '<h1>Teselia</h1>');
+  writeFileSync(join(root, 'index.html'), '<h1>Tesel</h1>');
   writeFileSync(join(root, 'app', 'index.html'), '<div id="app"></div>');
   writeFileSync(join(root, 'app', 'assets', 'main-abc123.js'), 'console.log(1)');
   return root;
@@ -27,7 +27,7 @@ const app = () =>
 describe('web serving', () => {
   it('serves the landing page at the root and the app under /app/', async () => {
     const server = await app();
-    expect((await server.inject('/')).body).toContain('Teselia');
+    expect((await server.inject('/')).body).toContain('Tesel');
     const appPage = await server.inject('/app/');
     expect(appPage.body).toContain('id="app"');
     expect(appPage.headers['cache-control']).toBe('no-cache');

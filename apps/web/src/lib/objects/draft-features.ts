@@ -1,6 +1,6 @@
 // The object being drawn, as GeoJSON for its preview on the map.
 
-import { distanceMeters } from '@teselia/core';
+import { distanceMeters } from '@tesel/core';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 
 import { circleRing, toPosition } from '../map/geometry.ts';

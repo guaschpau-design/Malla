@@ -3,7 +3,7 @@
   and the toolbar. Without an active group only the offline maps button is shown.
 -->
 <script lang="ts">
-  import type { AlertLevel, EventRef, LatLon, NodeId, Role, SosKind } from '@teselia/protocol';
+  import type { AlertLevel, EventRef, LatLon, NodeId, Role, SosKind } from '@tesel/protocol';
   import type { Map as MapLibreMap } from 'maplibre-gl';
 
   import ChatPanel from '../chat/ChatPanel.svelte';

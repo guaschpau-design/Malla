@@ -1,9 +1,9 @@
 // When to publish this device's position over the internet. LoRa has its own, much stricter
 // thinning in the airtime scheduler (ARCHITECTURE.md §4.2).
 
-import type { LatLon } from '@teselia/protocol';
+import type { LatLon } from '@tesel/protocol';
 
-import { distanceMeters } from '@teselia/core';
+import { distanceMeters } from '@tesel/core';
 
 /** Never more often than this, however fast the device moves. */
 export const MIN_INTERVAL_S = 5;

@@ -66,7 +66,7 @@ export const EVENT_KEY_SIZE = 16;
 export const EVENT_KEY_MAC_KEY_SIZE = 32;
 
 /** §5 HKDF salt and info strings. */
-export const KDF_SALT = 'teselia/v1';
+export const KDF_SALT = 'tesel/v1';
 export const KDF_INFO_GROUP_ID = 'group-id';
 export const KDF_INFO_CONTENT_KEY = 'content-key';
 export const KDF_INFO_EVENT_KEY = 'event-key';

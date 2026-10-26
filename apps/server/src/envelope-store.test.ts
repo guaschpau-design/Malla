@@ -91,7 +91,7 @@ describe('envelope store', () => {
   });
 
   it('opens a database written by the first version', () => {
-    const path = join(mkdtempSync(join(tmpdir(), 'teselia-store-')), 'old.db');
+    const path = join(mkdtempSync(join(tmpdir(), 'tesel-store-')), 'old.db');
     const old = new DatabaseSync(path);
     old.exec(`
       CREATE TABLE envelopes (

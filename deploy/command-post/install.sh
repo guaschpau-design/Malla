@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Turns a Debian, Ubuntu or Raspberry Pi OS computer with Wi-Fi into a Teselia command post:
+# Turns a Debian, Ubuntu or Raspberry Pi OS computer with Wi-Fi into a Tesel command post:
 # its own Wi-Fi network, the app and a relay that replicates the group's server whenever the
 # computer has internet (docs/decisions/0018-command-post.md).
 #
 #   sudo env IONOS_API_KEY=prefix.secret bash install.sh \
-#     --domain puesto.teselia.eu --upstream https://teselia.eu \
+#     --domain puesto.tesel.eu --upstream https://tesel.eu \
 #     --dns ionos --dns-var IONOS_API_KEY --email you@example.eu
 #
 # Run it with internet, by cable or USB tethering if possible: it downloads everything the post
@@ -12,9 +12,9 @@
 
 set -euo pipefail
 
-REPO_RAW="https://raw.githubusercontent.com/guaschpau-design/Malla"
+REPO_RAW="https://raw.githubusercontent.com/guaschpau-design/Tesel"
 REF="main"
-INSTALL_DIR="/opt/teselia-post"
+INSTALL_DIR="/opt/tesel-post"
 POST_ADDRESS="10.42.0.1"
 LEGO_IMAGE="goacme/lego:latest"
 DOMAIN=""
@@ -22,7 +22,7 @@ UPSTREAM=""
 DNS_PROVIDER=""
 DNS_VARS=()
 EMAIL=""
-WIFI_NAME="Teselia"
+WIFI_NAME="Tesel"
 WIFI_PASSWORD=""
 WIFI_INTERFACE=""
 
@@ -32,8 +32,8 @@ Usage: install.sh --domain NAME --upstream URL --dns PROVIDER --dns-var VARIABLE
                   [--wifi-name NAME] [--wifi-password PASSWORD] [--wifi-interface IFACE]
                   [--ref GIT_REF]
 
-  --domain     Name of the post, the same for every post of a server, e.g. puesto.teselia.eu
-  --upstream   The group's server, e.g. https://teselia.eu
+  --domain     Name of the post, the same for every post of a server, e.g. puesto.tesel.eu
+  --upstream   The group's server, e.g. https://tesel.eu
   --dns        lego DNS provider of the domain, e.g. ionos (go-acme.github.io/lego/dns)
   --dns-var    Name of an environment variable holding a DNS API credential; repeat as needed
   --email      Contact address for the certificate authority
@@ -73,7 +73,7 @@ for variable in "${DNS_VARS[@]}"; do
 done
 if [[ -z "$WIFI_PASSWORD" ]]; then
   # Keep the password of an earlier run, so phones that already joined stay joined.
-  WIFI_PASSWORD="$(nmcli -s -g 802-11-wireless-security.psk connection show teselia-post 2>/dev/null || true)"
+  WIFI_PASSWORD="$(nmcli -s -g 802-11-wireless-security.psk connection show tesel-post 2>/dev/null || true)"
 fi
 if [[ -z "$WIFI_PASSWORD" ]]; then
   random="$(head -c 256 /dev/urandom | LC_ALL=C tr -dc 'a-z0-9')"
@@ -112,8 +112,8 @@ for file in compose.yaml Caddyfile; do
   curl -fsSL "$REPO_RAW/$REF/deploy/command-post/$file" -o "$INSTALL_DIR/$file"
 done
 cat > "$INSTALL_DIR/.env" <<CONF
-TESELIA_DOMAIN=$DOMAIN
-TESELIA_UPSTREAM=$UPSTREAM
+TESEL_DOMAIN=$DOMAIN
+TESEL_UPSTREAM=$UPSTREAM
 LEGO_EMAIL=$EMAIL
 LEGO_DNS=$DNS_PROVIDER
 CONF
@@ -133,9 +133,9 @@ cd "$INSTALL_DIR" || exit 1
 . ./.env
 lego() {
   docker run --rm --env-file dns.env -v "$INSTALL_DIR/certs:/certs" $LEGO_IMAGE \\
-    --path /certs --email "\$LEGO_EMAIL" --accept-tos --dns "\$LEGO_DNS" --domains "\$TESELIA_DOMAIN" "\$@"
+    --path /certs --email "\$LEGO_EMAIL" --accept-tos --dns "\$LEGO_DNS" --domains "\$TESEL_DOMAIN" "\$@"
 }
-certificate="certs/certificates/\$TESELIA_DOMAIN.crt"
+certificate="certs/certificates/\$TESEL_DOMAIN.crt"
 if [[ -f "\$certificate" ]]; then
   # Caddy only reloads the certificate on a restart; restart it only when lego renewed it.
   before="\$(stat -c %Y "\$certificate")"
@@ -148,7 +148,7 @@ docker compose pull --quiet && docker compose up --detach --remove-orphans
 docker image prune --force >/dev/null
 # The upstream's base map, so phones on the post's Wi-Fi see the whole area; only when it changed.
 mkdir -p maps
-curl -fsS -z maps/basemap.pmtiles -o maps/basemap.pmtiles.new "\${TESELIA_UPSTREAM%/}/maps/basemap.pmtiles" &&
+curl -fsS -z maps/basemap.pmtiles -o maps/basemap.pmtiles.new "\${TESEL_UPSTREAM%/}/maps/basemap.pmtiles" &&
   [[ -s maps/basemap.pmtiles.new ]] && mv maps/basemap.pmtiles.new maps/basemap.pmtiles
 rm -f maps/basemap.pmtiles.new
 SCRIPT
@@ -160,9 +160,9 @@ docker pull --quiet "$LEGO_IMAGE" >/dev/null
 [[ -f "$INSTALL_DIR/certs/certificates/$DOMAIN.crt" ]] ||
   fail "no certificate for $DOMAIN. Check the DNS provider name and its credentials, then run this again."
 
-cat > /etc/systemd/system/teselia-post-refresh.service <<CONF
+cat > /etc/systemd/system/tesel-post-refresh.service <<CONF
 [Unit]
-Description=Renew the command post certificate and update Teselia when there is internet
+Description=Renew the command post certificate and update Tesel when there is internet
 After=docker.service network-online.target
 Wants=network-online.target
 
@@ -170,9 +170,9 @@ Wants=network-online.target
 Type=oneshot
 ExecStart=$INSTALL_DIR/refresh.sh
 CONF
-cat > /etc/systemd/system/teselia-post-refresh.timer <<'CONF'
+cat > /etc/systemd/system/tesel-post-refresh.timer <<'CONF'
 [Unit]
-Description=Try to refresh the Teselia command post every 6 hours
+Description=Try to refresh the Tesel command post every 6 hours
 
 [Timer]
 OnBootSec=10min
@@ -183,7 +183,7 @@ RandomizedDelaySec=10min
 WantedBy=timers.target
 CONF
 systemctl daemon-reload
-systemctl enable --now teselia-post-refresh.timer >/dev/null
+systemctl enable --now tesel-post-refresh.timer >/dev/null
 
 step "Configuring the firewall: phones on the post's Wi-Fi reach the post and nothing else"
 ufw default deny incoming >/dev/null
@@ -200,17 +200,17 @@ ufw --force enable >/dev/null
 
 step "Making $DOMAIN point to this post on its Wi-Fi"
 install -m 0755 -d /etc/NetworkManager/dnsmasq-shared.d
-echo "address=/$DOMAIN/$POST_ADDRESS" > /etc/NetworkManager/dnsmasq-shared.d/teselia.conf
-sed -i "/# teselia-post$/d" /etc/hosts
-echo "$POST_ADDRESS $DOMAIN # teselia-post" >> /etc/hosts
+echo "address=/$DOMAIN/$POST_ADDRESS" > /etc/NetworkManager/dnsmasq-shared.d/tesel.conf
+sed -i "/# tesel-post$/d" /etc/hosts
+echo "$POST_ADDRESS $DOMAIN # tesel-post" >> /etc/hosts
 
 step "Starting the post's Wi-Fi \"$WIFI_NAME\" on $WIFI_INTERFACE"
-nmcli connection delete teselia-post >/dev/null 2>&1 || true
-nmcli connection add type wifi ifname "$WIFI_INTERFACE" con-name teselia-post autoconnect yes \
+nmcli connection delete tesel-post >/dev/null 2>&1 || true
+nmcli connection add type wifi ifname "$WIFI_INTERFACE" con-name tesel-post autoconnect yes \
   ssid "$WIFI_NAME" 802-11-wireless.mode ap 802-11-wireless.band bg \
   ipv4.method shared ipv4.addresses "$POST_ADDRESS/24" ipv6.method disabled \
   wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$WIFI_PASSWORD" >/dev/null
-nmcli connection up teselia-post >/dev/null ||
+nmcli connection up tesel-post >/dev/null ||
   fail "the Wi-Fi could not start as an access point. Some Wi-Fi chips cannot; try a USB Wi-Fi adapter."
 
 step "Checking the post"
@@ -220,7 +220,7 @@ for _ in $(seq 1 30); do
     echo "  Wi-Fi:     $WIFI_NAME"
     echo "  Password:  $WIFI_PASSWORD"
     echo "  Address:   https://$DOMAIN/app/"
-    echo "Phones join the Wi-Fi and open Teselia as usual, or the address above."
+    echo "Phones join the Wi-Fi and open Tesel as usual, or the address above."
     exit 0
   fi
   sleep 2

@@ -2,8 +2,8 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// TESELIA_BASE lets the app be served from a sub-path, e.g. "/teselia/" on GitHub Pages.
-const base = process.env['TESELIA_BASE'] ?? '/';
+// TESEL_BASE lets the app be served from a sub-path, e.g. "/tesel/" on GitHub Pages.
+const base = process.env['TESEL_BASE'] ?? '/';
 
 export default defineConfig({
   base,
@@ -13,8 +13,8 @@ export default defineConfig({
       // Updates wait for the user to accept them (see UpdatePrompt.svelte).
       registerType: 'prompt',
       manifest: {
-        name: 'Teselia',
-        short_name: 'Teselia',
+        name: 'Tesel',
+        short_name: 'Tesel',
         description:
           'Consciencia situacional para equipos civiles: posiciones, mensajes, alertas e incidentes en un mapa común, con internet, por radio LoRa o desde un puesto de mando.',
         lang: 'es',

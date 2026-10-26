@@ -1,4 +1,4 @@
-import { parseServerInfo } from '@teselia/protocol';
+import { parseServerInfo } from '@tesel/protocol';
 import { describe, expect, it } from 'vitest';
 
 import { buildApp } from './app.ts';
@@ -23,14 +23,14 @@ describe('server', () => {
   it('tells clients about its command posts and its upstream', async () => {
     const app = await buildApp(relay(), {
       webRoot: null,
-      upstream: 'https://teselia.example/',
-      commandPost: 'https://post.teselia.example/',
+      upstream: 'https://tesel.example/',
+      commandPost: 'https://post.tesel.example/',
     });
     const response = await app.inject({ method: 'GET', url: '/healthz' });
     expect(parseServerInfo(response.body)).toEqual({
       protocolVersion: 1,
-      upstream: 'https://teselia.example/',
-      commandPost: 'https://post.teselia.example/',
+      upstream: 'https://tesel.example/',
+      commandPost: 'https://post.tesel.example/',
     });
     await app.close();
   });

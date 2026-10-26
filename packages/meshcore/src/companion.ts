@@ -1,4 +1,4 @@
-// The part of meshcore.js's companion connection that Teselia uses, typed. Keeping it small
+// The part of meshcore.js's companion connection that Tesel uses, typed. Keeping it small
 // makes the library easy to replace and the radio easy to fake in tests.
 
 export interface ChannelInfo {

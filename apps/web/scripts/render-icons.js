@@ -1,6 +1,6 @@
 // Renders the app icons from brand/mark.svg with the Chromium that Playwright provides:
 //
-//   pnpm --filter @teselia/web icons
+//   pnpm --filter @tesel/web icons
 //
 // Writes apps/web/public/icons: the PWA icons (any and maskable), the Apple touch icon and the
 // favicons. The mark sits on the ink of the app's top bar; maskable icons keep it inside the

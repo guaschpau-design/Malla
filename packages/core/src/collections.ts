@@ -1,12 +1,12 @@
 // Immutable, idempotent updates of the collections in the group state. Each returns the input
 // collection itself when the event changes nothing, so callers can detect "no change" cheaply.
 
-import type { TeseliaEvent } from '@teselia/protocol';
+import type { TeselEvent } from '@tesel/protocol';
 
 import { compareEvents, newerOf } from './ordering.ts';
 
 /** Keeps, per key, the newest event by (time, origin, seq). */
-export function keepNewest<K, T extends TeseliaEvent>(
+export function keepNewest<K, T extends TeselEvent>(
   current: ReadonlyMap<K, T>,
   key: K,
   event: T,
@@ -17,7 +17,7 @@ export function keepNewest<K, T extends TeseliaEvent>(
 }
 
 /** Keeps, per key, the oldest event by (time, origin, seq). */
-export function keepOldest<K, T extends TeseliaEvent>(
+export function keepOldest<K, T extends TeselEvent>(
   current: ReadonlyMap<K, T>,
   key: K,
   event: T,
@@ -28,7 +28,7 @@ export function keepOldest<K, T extends TeseliaEvent>(
 }
 
 /** Inserts keeping (time, origin, seq) order; an event already present changes nothing. */
-export function insertOrdered<T extends TeseliaEvent>(list: readonly T[], event: T): readonly T[] {
+export function insertOrdered<T extends TeselEvent>(list: readonly T[], event: T): readonly T[] {
   let low = 0;
   let high = list.length;
   while (low < high) {

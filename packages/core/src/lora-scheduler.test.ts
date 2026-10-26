@@ -1,4 +1,4 @@
-import type { NodeId, TeseliaEvent } from '@teselia/protocol';
+import type { NodeId, TeselEvent } from '@tesel/protocol';
 import { describe, expect, it } from 'vitest';
 
 import { LIMITS, LoraScheduler, type LoraPacket } from './lora-scheduler.ts';
@@ -9,9 +9,9 @@ const T0 = 1_761_350_400;
 const VALENCIA = { lat: 39.4699, lon: -0.3763 };
 
 let seq = 0;
-function packet(event: Omit<TeseliaEvent, 'seq' | 'time'> & Partial<TeseliaEvent>): LoraPacket {
+function packet(event: Omit<TeselEvent, 'seq' | 'time'> & Partial<TeselEvent>): LoraPacket {
   seq++;
-  return { event: { seq, time: T0, ...event } as TeseliaEvent, bytes: new Uint8Array(40) };
+  return { event: { seq, time: T0, ...event } as TeselEvent, bytes: new Uint8Array(40) };
 }
 
 const chat = (origin = ME) => packet({ type: 'chat', origin, text: 'hola' });

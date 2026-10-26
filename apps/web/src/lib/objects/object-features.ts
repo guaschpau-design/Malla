@@ -1,7 +1,7 @@
 // Map objects and active SOS calls as GeoJSON for the map layers.
 
-import type { GroupState } from '@teselia/core';
-import type { LatLon, ShapeEvent } from '@teselia/protocol';
+import type { GroupState } from '@tesel/core';
+import type { LatLon, ShapeEvent } from '@tesel/protocol';
 import type { Feature, FeatureCollection, Geometry, Point } from 'geojson';
 
 import { circleRing, toPosition } from '../map/geometry.ts';

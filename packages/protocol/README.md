@@ -1,4 +1,4 @@
-# @teselia/protocol
+# @tesel/protocol
 
 The single implementation of [`docs/protocol.md`](../../docs/protocol.md): event encoding and decoding, group key derivation, internet envelopes and invitation links.
 
@@ -21,5 +21,5 @@ Pure TypeScript. No DOM, no Node APIs, no network. Runs unchanged in the browser
 To inspect an encoded event:
 
 ```sh
-pnpm --filter @teselia/protocol decode 0104a1b2c3d4010000000013fc68486f6c61
+pnpm --filter @tesel/protocol decode 0104a1b2c3d4010000000013fc68486f6c61
 ```

@@ -33,9 +33,9 @@ export const es: Messages = {
   updateAvailable: 'Hay una versión nueva.',
   update: 'Actualizar',
   readyOffline: 'La app ya funciona sin conexión.',
-  welcomeTitle: 'Te damos la bienvenida a Teselia',
+  welcomeTitle: 'Te damos la bienvenida a Tesel',
   welcomeIntro:
-    'Teselia funciona sin cuentas. Elige el nombre que verá tu grupo. Este dispositivo recibe su propia clave, que nunca sale de él.',
+    'Tesel funciona sin cuentas. Elige el nombre que verá tu grupo. Este dispositivo recibe su propia clave, que nunca sale de él.',
   aliasLabel: 'Tu nombre en el grupo',
   aliasHint: 'Corto: un nombre o un apodo.',
   nameInvalid: 'Escribe un nombre más corto.',
@@ -49,7 +49,7 @@ export const es: Messages = {
   join: 'Unirme',
   notNow: 'Ahora no',
   invitationDamaged: 'Esta invitación está dañada o incompleta. Pide una nueva.',
-  notAnInvitation: 'Eso no es una invitación de Teselia.',
+  notAnInvitation: 'Eso no es una invitación de Tesel.',
   joined: 'Te has unido a «{group}».',
   promoted: 'Ahora coordinas «{group}».',
   alreadyMember: 'Ya formas parte de «{group}».',
@@ -82,7 +82,7 @@ export const es: Messages = {
   inviteTitle: 'Invitar a «{group}»',
   inviteRole: 'Se une como',
   inviteHowTo:
-    'La persona invitada lo escanea desde Teselia (Grupos → Escanear código QR) o con la cámara del móvil. En iPhone, mejor desde Teselia.',
+    'La persona invitada lo escanea desde Tesel (Grupos → Escanear código QR) o con la cámara del móvil. En iPhone, mejor desde Tesel.',
   inviteWarning:
     'Quien tenga este código o este enlace entra en el grupo. Compártelo en persona o por un canal de confianza.',
   invitationNeedsHttps:
@@ -207,7 +207,7 @@ export const es: Messages = {
   radioSnr: 'Última señal: {snr} dB SNR',
   radioAirtime: 'Tiempo de emisión en la última hora: {percent} % del límite legal',
   radioUnsupported:
-    'Este navegador no puede usar Bluetooth. Usa Chrome o Edge en Android o en un ordenador. En iPhone, Teselia funciona por internet o a través de un puesto de mando.',
+    'Este navegador no puede usar Bluetooth. Usa Chrome o Edge en Android o en un ordenador. En iPhone, Tesel funciona por internet o a través de un puesto de mando.',
   radioNoFreeChannel:
     'La radio no tiene ningún canal libre. Borra uno en la app de MeshCore y vuelve a intentarlo.',
   radioNoAnswer:
@@ -216,7 +216,7 @@ export const es: Messages = {
   chatGroup: 'Grupo',
   chatMeshcore: 'MeshCore',
   meshcoreIntro:
-    'Mensajes de personas cercanas que usan la app MeshCore con sus radios. Teselia los guarda aquí para que no se pierdan. Para responder, usa la app MeshCore.',
+    'Mensajes de personas cercanas que usan la app MeshCore con sus radios. Tesel los guarda aquí para que no se pierdan. Para responder, usa la app MeshCore.',
   noMeshcoreMessages: 'Todavía no ha llegado ningún mensaje de MeshCore.',
   meshcoreChannel: 'Canal {name}',
   meshcoreUnknownChannel: 'de radio',

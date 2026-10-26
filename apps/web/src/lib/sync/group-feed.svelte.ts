@@ -8,7 +8,7 @@ import {
   type LoraEvent,
   type LoraPacket,
   type LoraSource,
-} from '@teselia/core';
+} from '@tesel/core';
 import {
   decodeEvent,
   deriveGroupKeys,
@@ -28,8 +28,8 @@ import {
   type ObjectRef,
   type ShapeGeometry,
   type SosKind,
-  type TeseliaEvent,
-} from '@teselia/protocol';
+  type TeselEvent,
+} from '@tesel/protocol';
 
 import {
   confirmStored,
@@ -231,7 +231,7 @@ export class GroupFeed {
     }));
   }
 
-  async #publish(build: (header: EventHeader) => TeseliaEvent): Promise<void> {
+  async #publish(build: (header: EventHeader) => TeselEvent): Promise<void> {
     const header = { origin: this.#identity.nodeId, time: Math.floor(Date.now() / 1000) };
     const { entry, bytes } = await publishEvent(this.#db, this.#group.id, build, header);
     const event = this.#apply(bytes);
@@ -275,7 +275,7 @@ export class GroupFeed {
   }
 
   /** Adds an event to the picture; events of unknown types are kept in the log only. */
-  #apply(bytes: Uint8Array): TeseliaEvent | null {
+  #apply(bytes: Uint8Array): TeselEvent | null {
     const event = decodeEvent(bytes);
     if (!event.ok) return null;
     this.state = reduce(this.state, event.value);

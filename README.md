@@ -1,4 +1,4 @@
-# Teselia
+# Tesel
 
 **Consciencia situacional para equipos civiles.** Posiciones, mensajes, alertas e incidentes de todo el equipo en un mapa común y en tiempo real: con internet, por radio LoRa (MeshCore) o desde un puesto de mando cuando la red cae. Software libre, cifrado de extremo a extremo y sin cuentas.
 
@@ -8,7 +8,7 @@
 >
 > El nombre viene de las **teselas**, las piezas de un mosaico y de un mapa digital: muchas pequeñas que solo juntas forman la imagen. · The name comes from **tesserae**: the small tiles of a mosaic, and of a digital map.
 
-**Pruébala · Try it:** <https://teselia.eu> — se publica sola con cada cambio que pasa las pruebas · published automatically on every change that passes CI.
+**Pruébala · Try it:** <https://tesel.eu> — se publica sola con cada cambio que pasa las pruebas · published automatically on every change that passes CI.
 
 ## Principios · Principles
 

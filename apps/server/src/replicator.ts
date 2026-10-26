@@ -3,14 +3,14 @@
 // stored and relayed to the post's clients, and what the post's clients pushed goes up, one
 // envelope at a time and under the upstream's rate limits, until the upstream confirms it.
 
-import { TokenBucket } from '@teselia/core';
+import { TokenBucket } from '@tesel/core';
 import {
   encodeRelayMessage,
   parseServerMessage,
   relayUrl,
   toBase64url,
   type ServerMessage,
-} from '@teselia/protocol';
+} from '@tesel/protocol';
 import WebSocket from 'ws';
 
 import type { EnvelopeStore } from './envelope-store.ts';

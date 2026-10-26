@@ -1,6 +1,6 @@
 // Server configuration, read once from the environment.
 
-import { isSecureUrl, serverBaseUrl } from '@teselia/protocol';
+import { isSecureUrl, serverBaseUrl } from '@tesel/protocol';
 
 export interface ServerConfig {
   readonly host: string;
@@ -19,13 +19,13 @@ export interface ServerConfig {
 
 export function readConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
   return {
-    host: env['TESELIA_HOST'] ?? '0.0.0.0',
-    port: integer(env, 'TESELIA_PORT', 8080, 1, 65535),
-    databasePath: env['TESELIA_DB'] ?? 'data/teselia.db',
-    retentionDays: integer(env, 'TESELIA_RETENTION_DAYS', 30, 1, 3650),
-    webRoot: env['TESELIA_WEB_ROOT'] || null,
-    upstream: serverUrl(env, 'TESELIA_UPSTREAM'),
-    commandPost: serverUrl(env, 'TESELIA_COMMAND_POST'),
+    host: env['TESEL_HOST'] ?? '0.0.0.0',
+    port: integer(env, 'TESEL_PORT', 8080, 1, 65535),
+    databasePath: env['TESEL_DB'] ?? 'data/tesel.db',
+    retentionDays: integer(env, 'TESEL_RETENTION_DAYS', 30, 1, 3650),
+    webRoot: env['TESEL_WEB_ROOT'] || null,
+    upstream: serverUrl(env, 'TESEL_UPSTREAM'),
+    commandPost: serverUrl(env, 'TESEL_COMMAND_POST'),
   };
 }
 

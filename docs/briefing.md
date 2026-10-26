@@ -1,12 +1,12 @@
 # Briefing del proyecto
 
-> Nombre: **Teselia** (antes, provisionalmente, Malla). Viene de las teselas: las piezas de un mosaico y de un mapa digital. Decisión en `docs/decisions/0014-name-teselia.md`.
+> Nombre: **Tesel** (antes Teselia y, provisionalmente, Malla). Viene de las teselas: las piezas de un mosaico y de un mapa digital. Decisión en `docs/decisions/0019-name-tesel.md`.
 >
 > Estado: aprobado para desarrollo · Fecha: 25 de octubre de 2026 · Versión objetivo: v0.1
 
 ## 1. Qué es
 
-Teselia es una aplicación libre, gratuita y de código abierto de **consciencia situacional para la sociedad civil europea**: un mapa compartido en tiempo real donde un grupo ve a sus miembros, se comunica y marca lo que ocurre sobre el terreno, **también cuando no hay internet**, gracias a las redes de radio LoRa (MeshCore y, más adelante, Meshtastic).
+Tesel es una aplicación libre, gratuita y de código abierto de **consciencia situacional para la sociedad civil europea**: un mapa compartido en tiempo real donde un grupo ve a sus miembros, se comunica y marca lo que ocurre sobre el terreno, **también cuando no hay internet**, gracias a las redes de radio LoRa (MeshCore y, más adelante, Meshtastic).
 
 Es la respuesta europea y abierta a lo que ATAK hace en Estados Unidos, con tres diferencias de principio:
 
@@ -45,7 +45,7 @@ Para toda la sociedad civil, sin excluir a nadie:
 | Radios soportadas v0.1    | Elecrow ThinkNode M9, SenseCAP MeshTracker X1, LilyGO T-Deck Plus y SenseCAP T1000-E, con firmware MeshCore Companion Bluetooth (detalle en `docs/hardware.md`) |
 | Comunicaciones después    | LoRa Meshtastic; compatibilidad con ATAK (protocolo CoT)                                                                                                        |
 | Infraestructura           | Funciona sin servidor; si hay servidor, sincroniza con él                                                                                                       |
-| Servidor de pruebas       | VPS en IONOS (España), `teselia.eu`                                                                                                                             |
+| Servidor de pruebas       | VPS en IONOS (España), `tesel.eu`                                                                                                                               |
 | Código                    | GitHub                                                                                                                                                          |
 | Idiomas                   | Español e inglés                                                                                                                                                |
 | Grupos                    | Coordinador y miembros                                                                                                                                          |
@@ -149,15 +149,19 @@ El día 5 es el de más riesgo: la integración con la radio solo se valida con 
 
 ## 11. Lo que necesito de Pau
 
-- [x] Repositorio en GitHub conectado a la sesión con permiso de escritura (`guaschpau-design/Malla`), con publicación automática en `https://teselia.eu`.
-- [x] VPS europeo (IONOS, plan M, Debian 13, centro de datos en España) y dominio `teselia.eu`; servidor en marcha en `https://teselia.eu`.
+- [x] Repositorio en GitHub conectado a la sesión con permiso de escritura (`guaschpau-design/Tesel`), con publicación automática en `https://tesel.eu`.
+- [x] VPS europeo (IONOS, plan M, Debian 13, centro de datos en España) y dominio `tesel.eu`; servidor en marcha en `https://tesel.eu`. El dominio anterior, `teselia.eu`, redirige a `tesel.eu`: conviene mantenerlo registrado al menos un año.
 - [ ] Modelos de las radios MeshCore y Meshtastic disponibles; radios MeshCore con firmware Companion BLE v1.18 o superior.
 - [ ] Unos 30 minutos diarios de pruebas con un Android con Chrome, un PC y, si es posible, un iPhone.
-- [x] Mapa propio en el VPS: volver a ejecutar una vez el comando de instalación (prepara el mapa de España, Portugal y las islas; tarda hasta media hora):
+- [x] Mapa propio en el VPS (España, Portugal y las islas).
+- [ ] Cambio de nombre a Tesel en el VPS: ejecutar una vez el comando de instalación. Pasa el servidor a `tesel.eu`, conserva el mapa y hace que `teselia.eu` redirija ([ADR-0019](decisions/0019-name-tesel.md)):
 
   ```sh
-  ssh -t root@31.70.148.92 "curl -fsSL https://raw.githubusercontent.com/guaschpau-design/Malla/main/deploy/vps/install.sh | bash -s -- --domain teselia.eu"
+  ssh -t root@31.70.148.92 "curl -fsSL https://raw.githubusercontent.com/guaschpau-design/Tesel/main/deploy/vps/install.sh | bash -s -- --domain tesel.eu --redirect-from teselia.eu"
   ```
+
+- [ ] Hacer pública la imagen del servidor con el nombre nuevo, si GitHub la crea privada: github.com/guaschpau-design → Packages → `tesel-server` → Package settings → Change visibility → Public.
+- [ ] Búsqueda de la marca TESEL en EUIPO (TMview), clases 9 y 42.
 
 - [ ] Opcional, para el puesto de mando: un portátil con Linux o una Raspberry Pi 4 o 5, una clave de la API de DNS de IONOS y seguir [`deploy/command-post/README.md`](../deploy/command-post/README.md).
 - [ ] Día 7: dos o tres personas con radio para la [prueba de campo](prueba-de-campo.md).

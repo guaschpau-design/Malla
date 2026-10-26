@@ -1,7 +1,7 @@
 // Each group's event log on this device (ARCHITECTURE.md §3): every event received or created,
 // kept as the bytes that travel on the wire so they can be forwarded unchanged.
 
-import { encodeEvent, peekHeader, type EventHeader, type TeseliaEvent } from '@teselia/protocol';
+import { encodeEvent, peekHeader, type EventHeader, type TeselEvent } from '@tesel/protocol';
 
 import type { AppDb, EventKey, OutboxEntry } from '../storage/app-db.ts';
 import { groupCursors } from '../sync/cursor-store.ts';
@@ -49,7 +49,7 @@ export async function loadEvents(db: AppDb, groupId: string): Promise<Uint8Array
 export async function publishEvent(
   db: AppDb,
   groupId: string,
-  build: (header: EventHeader) => TeseliaEvent,
+  build: (header: EventHeader) => TeselEvent,
   header: Omit<EventHeader, 'seq'>,
 ): Promise<{ entry: OutboxEntry; bytes: Uint8Array }> {
   const tx = db.transaction(['sequence', 'events', 'outbox'], 'readwrite');

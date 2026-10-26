@@ -12,8 +12,8 @@ import {
   type EventHeader,
   type LatLon,
   type NodeId,
-  type TeseliaEvent,
-} from '@teselia/protocol';
+  type TeselEvent,
+} from '@tesel/protocol';
 
 import { eventAirtimeMs } from './airtime.ts';
 import { distanceMeters } from './geo.ts';
@@ -30,7 +30,7 @@ export interface OpaqueEvent extends EventHeader {
   readonly type: null;
 }
 
-export type LoraEvent = TeseliaEvent | OpaqueEvent;
+export type LoraEvent = TeselEvent | OpaqueEvent;
 
 export interface LoraPacket {
   readonly event: LoraEvent;
@@ -42,7 +42,7 @@ const MINUTE = 60_000;
 export const LIMITS = {
   /** The duty-cycle window. */
   windowMs: 60 * MINUTE,
-  /** Teselia uses half the legal 10 %, leaving room for repeaters and other traffic... */
+  /** Tesel uses half the legal 10 %, leaving room for repeaters and other traffic... */
   normalBudgetMs: 0.05 * 60 * MINUTE,
   /** ...except for the most urgent events, which may use all of it. */
   urgentBudgetMs: 0.1 * 60 * MINUTE,

@@ -1,5 +1,5 @@
 // Replaces the service worker of the app that used to live here, so phones that installed it stop
-// serving the old copy and follow the redirect to teselia.eu.
+// serving the old copy and follow the redirect to tesel.eu.
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => {
   event.waitUntil(

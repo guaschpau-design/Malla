@@ -1,6 +1,6 @@
-# @teselia/web
+# @tesel/web
 
-The Teselia progressive web app: map and offline areas, identity and groups, the event log and its sync with the group's server, live positions, chat, map objects, SOS and alerts.
+The Tesel progressive web app: map and offline areas, identity and groups, the event log and its sync with the group's server, live positions, chat, map objects, SOS and alerts.
 
 | Path                        | Content                                                                                                                                      |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -29,7 +29,7 @@ The Teselia progressive web app: map and offline areas, identity and groups, the
 | ------------------ | --------------------------------------------------------------------------------------------------------------- |
 | `VITE_BASEMAP_URL` | PMTiles base map, absolute or relative to the app. Defaults to the Protomaps demo archive, for development only |
 | `VITE_SERVER_URL`  | Server proposed for new groups, absolute or relative to the app; empty for none                                 |
-| `TESELIA_BASE`     | Base path when served from a sub-folder, e.g. `/Teselia/` on GitHub Pages                                       |
+| `TESEL_BASE`       | Base path when served from a sub-folder, e.g. `/Tesel/` on GitHub Pages                                         |
 
 ```sh
 pnpm dev        # development server

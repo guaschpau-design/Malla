@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # Builds the base map the server publishes at /maps/basemap.pmtiles: an extract of the latest
-# Protomaps daily build of OpenStreetMap (ADR-0007), for the area in TESELIA_MAP_BBOX.
+# Protomaps daily build of OpenStreetMap (ADR-0007), for the area in TESEL_MAP_BBOX.
 #
 #   maps.sh [DIRECTORY]
 #
 # The new file replaces the old one only once complete, so the map never disappears. Run by
-# install.sh the first time and by teselia-maps.timer every month after.
+# install.sh the first time and by tesel-maps.timer every month after.
 
 set -euo pipefail
 
-DIR="${1:-/opt/teselia/maps}"
+DIR="${1:-/opt/tesel/maps}"
 # West, south, east, north. Default: Spain and Portugal, Balearic and Canary Islands.
-BBOX="${TESELIA_MAP_BBOX:--18.4,27.4,4.6,44.0}"
+BBOX="${TESEL_MAP_BBOX:--18.4,27.4,4.6,44.0}"
 IMAGE="protomaps/go-pmtiles:latest"
 
 # Daily builds are kept for a while; take the newest one that exists.

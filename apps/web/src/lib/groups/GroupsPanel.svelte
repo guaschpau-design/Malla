@@ -1,7 +1,7 @@
 <!-- Who this device is, its groups, and the ways to create, join, invite and leave. -->
 <script lang="ts">
-  import type { GroupState } from '@teselia/core';
-  import { GROUP_NAME_MAX_BYTES, parseInvitationUrl, type Invitation } from '@teselia/protocol';
+  import type { GroupState } from '@tesel/core';
+  import { GROUP_NAME_MAX_BYTES, parseInvitationUrl, type Invitation } from '@tesel/protocol';
 
   import { defaultServerUrl, guideUrl } from '../config.ts';
   import type { Translate } from '../i18n/index.ts';

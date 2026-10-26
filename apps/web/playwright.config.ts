@@ -31,16 +31,16 @@ export default defineConfig({
     {
       // The relay server, with its database in memory so every run starts empty.
       command:
-        `TESELIA_PORT=${SERVER_PORT} TESELIA_DB=:memory: ` +
-        `TESELIA_COMMAND_POST=http://localhost:${POST_PORT} node ../server/src/main.ts`,
+        `TESEL_PORT=${SERVER_PORT} TESEL_DB=:memory: ` +
+        `TESEL_COMMAND_POST=http://localhost:${POST_PORT} node ../server/src/main.ts`,
       url: `http://localhost:${SERVER_PORT}/healthz`,
       reuseExistingServer: false,
       timeout: 30_000,
     },
     {
       command:
-        `TESELIA_PORT=${POST_PORT} TESELIA_DB=:memory: ` +
-        `TESELIA_UPSTREAM=http://localhost:${SERVER_PORT} node ../server/src/main.ts`,
+        `TESEL_PORT=${POST_PORT} TESEL_DB=:memory: ` +
+        `TESEL_UPSTREAM=http://localhost:${SERVER_PORT} node ../server/src/main.ts`,
       url: `http://localhost:${POST_PORT}/healthz`,
       reuseExistingServer: false,
       timeout: 30_000,

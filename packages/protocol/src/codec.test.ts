@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import { decodeEvent, encodeEvent, peekHeader } from './codec.ts';
 import { MAX_EVENT_SIZE } from './constants.ts';
-import type { NodeId, ShapeEvent, TeseliaEvent } from './events.ts';
+import type { NodeId, ShapeEvent, TeselEvent } from './events.ts';
 import { ALICE, BOB, CAROL, hex, SAMPLE_EVENTS, seededRandom, T0, toHex } from './test-helpers.ts';
 
-function encodeOrFail(event: TeseliaEvent): Uint8Array {
+function encodeOrFail(event: TeselEvent): Uint8Array {
   const result = encodeEvent(event);
   if (!result.ok) throw new Error(`encoding failed: ${result.error.detail}`);
   return result.value;
@@ -28,12 +28,12 @@ describe('event codec', () => {
   );
 
   it('matches the chat test vector computed independently from the spec', () => {
-    const event: TeseliaEvent = { type: 'chat', origin: ALICE, seq: 1, time: T0, text: 'Hola' };
+    const event: TeselEvent = { type: 'chat', origin: ALICE, seq: 1, time: T0, text: 'Hola' };
     expect(toHex(encodeOrFail(event))).toBe('0104a1b2c3d4010000000013fc68486f6c61');
   });
 
   it('matches the position test vector computed independently from the spec', () => {
-    const event: TeseliaEvent = {
+    const event: TeselEvent = {
       type: 'position',
       origin: ALICE,
       seq: 7,
@@ -51,7 +51,7 @@ describe('event codec', () => {
 
   describe('encoding limits', () => {
     it('accepts a chat text that fills the event exactly', () => {
-      const event: TeseliaEvent = {
+      const event: TeselEvent = {
         type: 'chat',
         origin: BOB,
         seq: 1,
@@ -62,7 +62,7 @@ describe('event codec', () => {
     });
 
     it('refuses a chat text one byte too long', () => {
-      const event: TeseliaEvent = {
+      const event: TeselEvent = {
         type: 'chat',
         origin: BOB,
         seq: 1,
@@ -74,7 +74,7 @@ describe('event codec', () => {
     });
 
     it('counts text limits in UTF-8 bytes, not characters', () => {
-      const event: TeseliaEvent = {
+      const event: TeselEvent = {
         type: 'chat',
         origin: BOB,
         seq: 1,
@@ -85,12 +85,12 @@ describe('event codec', () => {
     });
 
     it('refuses sequence number 0', () => {
-      const event: TeseliaEvent = { type: 'position-hidden', origin: BOB, seq: 0, time: T0 };
+      const event: TeselEvent = { type: 'position-hidden', origin: BOB, seq: 0, time: T0 };
       expect(encodeEvent(event).ok).toBe(false);
     });
 
     it('saturates huge measurements below the unknown marker', () => {
-      const event: TeseliaEvent = {
+      const event: TeselEvent = {
         type: 'position',
         origin: BOB,
         seq: 1,
@@ -258,7 +258,7 @@ const polygonAt = (points: ShapeEvent['geometry']): ShapeEvent => ({
 
 describe('text fields', () => {
   it('keeps a leading byte-order mark instead of silently dropping it', () => {
-    const event: TeseliaEvent = { type: 'chat', origin: ALICE, seq: 1, time: T0, text: '﻿hi' };
+    const event: TeselEvent = { type: 'chat', origin: ALICE, seq: 1, time: T0, text: '﻿hi' };
     expect(decodeEvent(encodeOrFail(event))).toEqual({ ok: true, value: event });
   });
 });
@@ -311,7 +311,7 @@ describe('polygon closure', () => {
 
 describe('member info', () => {
   const publicKey = Uint8Array.from({ length: 32 }, (_, i) => i);
-  const member: TeseliaEvent = {
+  const member: TeselEvent = {
     type: 'member-info',
     origin: CAROL,
     seq: 1,
@@ -367,7 +367,7 @@ describe('reserved values and unknown types', () => {
 
 describe('input validation', () => {
   it('refuses a malformed node ID instead of encoding zeros', () => {
-    const event: TeseliaEvent = {
+    const event: TeselEvent = {
       type: 'position-hidden',
       origin: 'zz' as NodeId,
       seq: 1,

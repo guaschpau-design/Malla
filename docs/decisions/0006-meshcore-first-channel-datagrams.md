@@ -16,7 +16,7 @@ Only one LoRa stack fits in the first week. MeshCore companion firmware (v1.18, 
 
 ## Consequences
 
-- Teselia traffic coexists with ordinary MeshCore chat on the same radios.
+- Tesel traffic coexists with ordinary MeshCore chat on the same radios.
 - Datagrams carry no delivery acknowledgement; reliability for critical events (SOS) is handled in `packages/core` with application-level `ACK` events and retries.
 - Requires companion firmware with channel data support; older firmware is detected and the user is told to update.
 - Swapping or forking the library later only touches `packages/meshcore`.

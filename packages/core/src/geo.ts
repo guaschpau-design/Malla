@@ -1,6 +1,6 @@
 // Distances on the Earth, for position thinning and drawing.
 
-import type { LatLon } from '@teselia/protocol';
+import type { LatLon } from '@tesel/protocol';
 
 /** Mean Earth radius in metres. */
 export const EARTH_RADIUS_M = 6_371_000;

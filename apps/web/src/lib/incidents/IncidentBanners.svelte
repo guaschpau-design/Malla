@@ -1,7 +1,7 @@
 <!-- Active SOS calls and recent alerts, on top of the map until they are dealt with. -->
 <script lang="ts">
-  import type { GroupState } from '@teselia/core';
-  import type { EventRef, LatLon, NodeId } from '@teselia/protocol';
+  import type { GroupState } from '@tesel/core';
+  import type { EventRef, LatLon, NodeId } from '@tesel/protocol';
   import { SvelteSet } from 'svelte/reactivity';
 
   import { formatTime } from '../format.ts';

@@ -3,8 +3,8 @@
 // an SOS behind a backlog of positions. A push the server refuses for going too fast goes again
 // a little later; the outbox keeps everything until the server confirms it.
 
-import { TokenBucket, urgencyOf } from '@teselia/core';
-import { toBase64url, type EventType } from '@teselia/protocol';
+import { TokenBucket, urgencyOf } from '@tesel/core';
+import { toBase64url, type EventType } from '@tesel/protocol';
 
 /** Below the server's 30 pushes at once and 3 per second (apps/server/src/relay.ts). */
 const PUSH_BURST = 20;

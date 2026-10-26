@@ -1,6 +1,6 @@
 <!-- What a map object is, who last changed it, and deleting it for the whole group. -->
 <script lang="ts">
-  import type { GroupState } from '@teselia/core';
+  import type { GroupState } from '@tesel/core';
 
   import { formatTime } from '../format.ts';
   import type { Locale, Translate } from '../i18n/index.ts';

@@ -5,7 +5,7 @@ import {
   parseServerMessage,
   type ClientMessage,
   type ServerMessage,
-} from '@teselia/protocol';
+} from '@tesel/protocol';
 import WebSocket from 'ws';
 
 /** A test client that queues every message the server sends. */

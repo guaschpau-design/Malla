@@ -5,10 +5,10 @@ import { existsSync } from 'node:fs';
 import { extname, join, resolve, sep } from 'node:path';
 
 import fastifyStatic from '@fastify/static';
-import { RELAY_PATH, SERVER_INFO_PATH } from '@teselia/protocol';
+import { RELAY_PATH, SERVER_INFO_PATH } from '@tesel/protocol';
 import type { FastifyInstance } from 'fastify';
 
-/** Where the web app lives under the site (TESELIA_BASE when it is built). */
+/** Where the web app lives under the site (TESEL_BASE when it is built). */
 export const APP_PREFIX = '/app/';
 
 export async function serveWeb(app: FastifyInstance, root: string): Promise<void> {

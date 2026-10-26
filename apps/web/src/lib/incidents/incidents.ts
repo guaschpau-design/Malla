@@ -1,13 +1,13 @@
 // SOS calls and alerts as the interface shows them: who, what, and who has acknowledged.
 
-import type { GroupState } from '@teselia/core';
+import type { GroupState } from '@tesel/core';
 import {
   eventRefKey,
   type AlertEvent,
   type NodeId,
   type SosCancelEvent,
   type SosEvent,
-} from '@teselia/protocol';
+} from '@tesel/protocol';
 
 export interface Acknowledgement {
   /** Members who acknowledged, by alias. */

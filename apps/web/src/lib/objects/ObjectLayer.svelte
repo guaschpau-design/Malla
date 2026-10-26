@@ -1,6 +1,6 @@
 <!-- Draws the group's markers, shapes and active SOS calls, and reports taps on objects. -->
 <script lang="ts">
-  import type { GroupState } from '@teselia/core';
+  import type { GroupState } from '@tesel/core';
   import type { GeoJSONSource, Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
   import { onMount } from 'svelte';
 
@@ -18,9 +18,9 @@
 
   let { map, groupState, interactive, onselect }: Props = $props();
 
-  const MARKERS = 'teselia-markers';
-  const SHAPES = 'teselia-shapes';
-  const SOS = 'teselia-sos';
+  const MARKERS = 'tesel-markers';
+  const SHAPES = 'tesel-shapes';
+  const SOS = 'tesel-sos';
   const TAPPABLE = [`${MARKERS}-icon`, `${SHAPES}-fill`, `${SHAPES}-line`];
   const LAYERS = [
     `${SHAPES}-fill`,

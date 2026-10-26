@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 
-import { decodeEvent, encodeEvent, type NodeId } from '@teselia/protocol';
+import { decodeEvent, encodeEvent, type NodeId } from '@tesel/protocol';
 import { describe, expect, it } from 'vitest';
 
 import { openAppDb } from '../storage/app-db.ts';

@@ -1,7 +1,7 @@
 // How urgent each kind of event is, for every transport that has to choose what goes first: the
 // LoRa scheduler, and the outbox when it catches up with a server (ARCHITECTURE.md §4.2).
 
-import type { EventType } from '@teselia/protocol';
+import type { EventType } from '@tesel/protocol';
 
 /** Lower is more urgent. `POSITION_HIDDEN` is high so hiding is never delayed by positions. */
 export const URGENCY: Readonly<Record<EventType, number>> = {

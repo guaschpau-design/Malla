@@ -1,8 +1,8 @@
 {
-  "name": "@teselia/meshcore",
+  "name": "@tesel/meshcore",
   "version": "0.0.0",
   "private": true,
-  "description": "Adapter between Teselia and a MeshCore companion radio over Web Bluetooth.",
+  "description": "Adapter between Tesel and a MeshCore companion radio over Web Bluetooth.",
   "license": "EUPL-1.2",
   "type": "module",
   "exports": {
@@ -13,6 +13,6 @@
   },
   "dependencies": {
     "@liamcottle/meshcore.js": "1.15.0",
-    "@teselia/protocol": "workspace:*"
+    "@tesel/protocol": "workspace:*"
   }
 }

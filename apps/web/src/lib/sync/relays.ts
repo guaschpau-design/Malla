@@ -8,7 +8,7 @@ import {
   serverBaseUrl,
   serverInfoUrl,
   type ServerInfo,
-} from '@teselia/protocol';
+} from '@tesel/protocol';
 
 import type { AppDb } from '../storage/app-db.ts';
 

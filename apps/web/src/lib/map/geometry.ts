@@ -1,7 +1,7 @@
-// Geometry helpers for drawing on the map. Distances come from @teselia/core.
+// Geometry helpers for drawing on the map. Distances come from @tesel/core.
 
-import { EARTH_RADIUS_M } from '@teselia/core';
-import type { LatLon } from '@teselia/protocol';
+import { EARTH_RADIUS_M } from '@tesel/core';
+import type { LatLon } from '@tesel/protocol';
 
 /** A circle as a closed ring of [lon, lat] positions, for drawing. */
 export function circleRing(center: LatLon, radius: number, steps = 48): [number, number][] {

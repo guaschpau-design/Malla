@@ -1,6 +1,6 @@
-# Teselia server image: the relay, the landing page at / and the web app at /app/. Build from the
+# Tesel server image: the relay, the landing page at / and the web app at /app/. Build from the
 # repository root:
-#   docker build -f apps/server/Dockerfile -t teselia-server .
+#   docker build -f apps/server/Dockerfile -t tesel-server .
 #
 # Node runs the server's TypeScript sources directly (type stripping), so only the web app has a
 # build step. The workspace layout is kept because Node only strips types outside node_modules.
@@ -10,11 +10,11 @@ FROM --platform=$BUILDPLATFORM node:24-slim AS web
 RUN npm install --global pnpm@10.28.0
 WORKDIR /src
 COPY . .
-RUN pnpm install --frozen-lockfile --filter @teselia/web...
+RUN pnpm install --frozen-lockfile --filter @tesel/web...
 # VITE_SERVER_URL "/" makes every server propose itself for new groups, and the base map is the
 # one Caddy serves next to it (deploy/vps/maps.sh).
-RUN TESELIA_BASE=/app/ VITE_SERVER_URL=/ VITE_BASEMAP_URL=/maps/basemap.pmtiles \
-    pnpm --filter @teselia/web build
+RUN TESEL_BASE=/app/ VITE_SERVER_URL=/ VITE_BASEMAP_URL=/maps/basemap.pmtiles \
+    pnpm --filter @tesel/web build
 
 FROM node:24-slim AS install
 RUN npm install --global pnpm@10.28.0
@@ -23,16 +23,16 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/protocol/package.json packages/protocol/
 COPY packages/core/package.json packages/core/
 COPY apps/server/package.json apps/server/
-RUN pnpm install --prod --frozen-lockfile --filter @teselia/server...
+RUN pnpm install --prod --frozen-lockfile --filter @tesel/server...
 
 FROM node:24-slim
-LABEL org.opencontainers.image.title="Teselia server" \
-      org.opencontainers.image.description="Zero-knowledge relay for Teselia groups, with the web app" \
+LABEL org.opencontainers.image.title="Tesel server" \
+      org.opencontainers.image.description="Zero-knowledge relay for Tesel groups, with the web app" \
       org.opencontainers.image.licenses="EUPL-1.2"
 ENV NODE_ENV=production \
-    TESELIA_DB=/data/teselia.db \
-    TESELIA_PORT=8080 \
-    TESELIA_WEB_ROOT=/app/web
+    TESEL_DB=/data/tesel.db \
+    TESEL_PORT=8080 \
+    TESEL_WEB_ROOT=/app/web
 WORKDIR /app
 COPY --from=install /app ./
 COPY packages/protocol/src packages/protocol/src

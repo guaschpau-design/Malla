@@ -1,4 +1,4 @@
-import { MESHCORE_DATA_TYPE } from '@teselia/protocol';
+import { MESHCORE_DATA_TYPE } from '@tesel/protocol';
 import { describe, expect, it, vi } from 'vitest';
 
 import { channelName, chooseChannelSlot } from './channel-slot.ts';
@@ -106,7 +106,7 @@ describe('channel slots', () => {
 });
 
 describe('MeshCore radio', () => {
-  it('stores the group secret in a free slot and floods events with Teselia’s data type', async () => {
+  it('stores the group secret in a free slot and floods events with Tesel’s data type', async () => {
     const fake = new FakeCompanion(slots(['Public', EMPTY], ['', EMPTY]));
     const radio = await connected(fake);
     expect(radio.state).toBe('ready');
@@ -130,7 +130,7 @@ describe('MeshCore radio', () => {
     expect(await radio.send(new Uint8Array([1]))).toMatchObject({ status: 'failed' });
   });
 
-  it('passes on Teselia datagrams of the group channel only', async () => {
+  it('passes on Tesel datagrams of the group channel only', async () => {
     const fake = new FakeCompanion(slots(['Public', EMPTY], ['Rescate', SECRET]));
     const radio = await connected(fake);
     const frames: ReceivedFrame[] = [];

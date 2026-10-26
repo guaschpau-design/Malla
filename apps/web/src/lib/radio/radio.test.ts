@@ -1,4 +1,4 @@
-import { encodeEvent, type NodeId, type TeseliaEvent } from '@teselia/protocol';
+import { encodeEvent, type NodeId, type TeselEvent } from '@tesel/protocol';
 import 'fake-indexeddb/auto';
 
 import type {
@@ -7,7 +7,7 @@ import type {
   RadioText,
   ReceivedFrame,
   SendOutcome,
-} from '@teselia/meshcore';
+} from '@tesel/meshcore';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { LoraSink } from '../sync/group-feed.svelte.ts';
@@ -85,7 +85,7 @@ class FakeFeed implements RadioFeed {
   }
 }
 
-const chat: TeseliaEvent = {
+const chat: TeselEvent = {
   type: 'chat',
   origin: 'a1b2c3d4' as NodeId,
   seq: 1,

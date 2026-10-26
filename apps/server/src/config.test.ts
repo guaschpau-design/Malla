@@ -7,7 +7,7 @@ describe('configuration', () => {
     expect(readConfig({})).toEqual({
       host: '0.0.0.0',
       port: 8080,
-      databasePath: 'data/teselia.db',
+      databasePath: 'data/tesel.db',
       retentionDays: 30,
       webRoot: null,
       upstream: null,
@@ -17,18 +17,16 @@ describe('configuration', () => {
 
   it('reads the command post settings as server base URLs', () => {
     const config = readConfig({
-      TESELIA_UPSTREAM: 'https://teselia.example',
-      TESELIA_COMMAND_POST: 'https://post.teselia.example/',
+      TESEL_UPSTREAM: 'https://tesel.example',
+      TESEL_COMMAND_POST: 'https://post.tesel.example/',
     });
-    expect(config.upstream).toBe('https://teselia.example/');
-    expect(config.commandPost).toBe('https://post.teselia.example/');
-    expect(() => readConfig({ TESELIA_UPSTREAM: 'http://teselia.example' })).toThrow(
-      /TESELIA_UPSTREAM/,
-    );
+    expect(config.upstream).toBe('https://tesel.example/');
+    expect(config.commandPost).toBe('https://post.tesel.example/');
+    expect(() => readConfig({ TESEL_UPSTREAM: 'http://tesel.example' })).toThrow(/TESEL_UPSTREAM/);
   });
 
   it('rejects an invalid port or retention', () => {
-    expect(() => readConfig({ TESELIA_PORT: 'eighty' })).toThrow(/TESELIA_PORT/);
-    expect(() => readConfig({ TESELIA_RETENTION_DAYS: '0' })).toThrow(/TESELIA_RETENTION_DAYS/);
+    expect(() => readConfig({ TESEL_PORT: 'eighty' })).toThrow(/TESEL_PORT/);
+    expect(() => readConfig({ TESEL_RETENTION_DAYS: '0' })).toThrow(/TESEL_RETENTION_DAYS/);
   });
 });

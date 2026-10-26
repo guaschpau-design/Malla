@@ -1,13 +1,13 @@
 import 'fake-indexeddb/auto';
 
-import type { ServerInfo } from '@teselia/protocol';
+import type { ServerInfo } from '@tesel/protocol';
 import { describe, expect, it } from 'vitest';
 
 import { openAppDb } from '../storage/app-db.ts';
 import { proposedServer, relayOrder, serverInfo } from './relays.ts';
 
-const SERVER = 'https://teselia.example/';
-const POST = 'https://post.teselia.example/';
+const SERVER = 'https://tesel.example/';
+const POST = 'https://post.tesel.example/';
 const info = (fields: Partial<ServerInfo> = {}): ServerInfo => ({
   protocolVersion: 1,
   upstream: null,
@@ -17,7 +17,7 @@ const info = (fields: Partial<ServerInfo> = {}): ServerInfo => ({
 
 describe('relay order', () => {
   it('uses only the group’s server when it has no command post', () => {
-    expect(relayOrder('https://teselia.example', info(), null)).toEqual([SERVER]);
+    expect(relayOrder('https://tesel.example', info(), null)).toEqual([SERVER]);
   });
 
   it('falls back to the command post the server announced', () => {
@@ -44,7 +44,7 @@ describe('server information', () => {
       );
     const offline = () => Promise.reject(new TypeError('Failed to fetch'));
     expect(await serverInfo(db, SERVER, online)).toEqual(info({ commandPost: POST }));
-    expect(await serverInfo(db, 'https://teselia.example', offline)).toEqual(
+    expect(await serverInfo(db, 'https://tesel.example', offline)).toEqual(
       info({ commandPost: POST }),
     );
     expect(await serverInfo(db, 'https://unknown.example/', offline)).toBeNull();

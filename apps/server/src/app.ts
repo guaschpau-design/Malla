@@ -1,7 +1,7 @@
 // Builds the HTTP application. Kept separate from main.ts so tests can run it in memory.
 
 import fastifyWebsocket from '@fastify/websocket';
-import { PROTOCOL_VERSION, RELAY_PATH, SERVER_INFO_PATH } from '@teselia/protocol';
+import { PROTOCOL_VERSION, RELAY_PATH, SERVER_INFO_PATH } from '@tesel/protocol';
 import Fastify, { type FastifyInstance } from 'fastify';
 import type WebSocket from 'ws';
 

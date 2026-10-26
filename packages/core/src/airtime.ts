@@ -48,7 +48,7 @@ export function timeOnAirMs(payloadBytes: number, preset: LoraPreset = EU_NARROW
   return (preambleSymbols + 4.25 + payloadSymbols) * symbolMs;
 }
 
-/** Time on air of one Teselia event sent through MeshCore. */
+/** Time on air of one Tesel event sent through MeshCore. */
 export function eventAirtimeMs(eventBytes: number, preset: LoraPreset = EU_NARROW): number {
   return timeOnAirMs(meshcorePacketSize(eventBytes), preset);
 }

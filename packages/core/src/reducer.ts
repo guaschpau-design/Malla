@@ -18,8 +18,8 @@ import {
   type ShapeEvent,
   type SosCancelEvent,
   type SosEvent,
-  type TeseliaEvent,
-} from '@teselia/protocol';
+  type TeselEvent,
+} from '@tesel/protocol';
 
 import { insertOrdered, keepNewest, keepOldest } from './collections.ts';
 
@@ -57,7 +57,7 @@ export const EMPTY_STATE: GroupState = {
 };
 
 /** The state after one more event. Returns `state` itself when nothing changes. */
-export function reduce(state: GroupState, event: TeseliaEvent): GroupState {
+export function reduce(state: GroupState, event: TeselEvent): GroupState {
   switch (event.type) {
     case 'member-info':
       return update(state, 'members', keepNewest(state.members, event.origin, event));
@@ -86,7 +86,7 @@ export function reduce(state: GroupState, event: TeseliaEvent): GroupState {
 }
 
 /** The state of a set of events, in any order. */
-export function stateOf(events: Iterable<TeseliaEvent>): GroupState {
+export function stateOf(events: Iterable<TeselEvent>): GroupState {
   let state = EMPTY_STATE;
   for (const event of events) state = reduce(state, event);
   return state;

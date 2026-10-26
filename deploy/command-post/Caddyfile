@@ -1,8 +1,8 @@
 # HTTPS for a command post. Its name resolves to the post only on the post's own Wi-Fi, so no
 # certificate authority can reach it: the certificate comes from lego beforehand (DNS challenge)
 # and Caddy only serves it.
-{$TESELIA_DOMAIN} {
-	tls /certs/certificates/{$TESELIA_DOMAIN}.crt /certs/certificates/{$TESELIA_DOMAIN}.key
+{$TESEL_DOMAIN} {
+	tls /certs/certificates/{$TESEL_DOMAIN}.crt /certs/certificates/{$TESEL_DOMAIN}.key
 
 	header {
 		Strict-Transport-Security "max-age=31536000"
@@ -21,6 +21,6 @@
 
 	handle {
 		encode zstd gzip
-		reverse_proxy teselia:8080
+		reverse_proxy tesel:8080
 	}
 }

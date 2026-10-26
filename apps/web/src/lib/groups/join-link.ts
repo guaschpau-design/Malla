@@ -7,7 +7,7 @@ import {
   type Invitation,
   type ProtocolError,
   type Result,
-} from '@teselia/protocol';
+} from '@tesel/protocol';
 
 /** Where the app is served from, ending in `/`; `base` is Vite's BASE_URL. */
 export function appBaseUrl(origin: string, base: string): string {

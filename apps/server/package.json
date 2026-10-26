@@ -1,8 +1,8 @@
 {
-  "name": "@teselia/server",
+  "name": "@tesel/server",
   "version": "0.0.0",
   "private": true,
-  "description": "Teselia relay and storage server. Runs on a VPS or as a local command post.",
+  "description": "Tesel relay and storage server. Runs on a VPS or as a local command post.",
   "license": "EUPL-1.2",
   "type": "module",
   "scripts": {
@@ -13,8 +13,8 @@
   "dependencies": {
     "@fastify/static": "10.1.7",
     "@fastify/websocket": "11.3.4",
-    "@teselia/core": "workspace:*",
-    "@teselia/protocol": "workspace:*",
+    "@tesel/core": "workspace:*",
+    "@tesel/protocol": "workspace:*",
     "fastify": "^5.12.7",
     "ws": "^8.22.0"
   },

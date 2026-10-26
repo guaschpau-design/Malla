@@ -1,6 +1,6 @@
 <!-- While drawing: every tap on the map adds a point, and the drawing so far is previewed. -->
 <script lang="ts">
-  import type { LatLon } from '@teselia/protocol';
+  import type { LatLon } from '@tesel/protocol';
   import type { GeoJSONSource, Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
   import { onMount } from 'svelte';
 
@@ -16,7 +16,7 @@
 
   let { map, draft, onpoint }: Props = $props();
 
-  const SOURCE = 'teselia-draft';
+  const SOURCE = 'tesel-draft';
   const LAYERS = [`${SOURCE}-line`, `${SOURCE}-point`];
   const data = $derived(draftFeatures(draft));
 

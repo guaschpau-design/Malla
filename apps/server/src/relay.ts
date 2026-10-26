@@ -2,13 +2,13 @@
 // other connections of the same group. One connection carries one group. On a command post the
 // replicator (replicator.ts) hands in what the upstream has and learns what clients push.
 
-import { TokenBucket } from '@teselia/core';
+import { TokenBucket } from '@tesel/core';
 import {
   encodeRelayMessage,
   parseClientMessage,
   toBase64url,
   type ServerMessage,
-} from '@teselia/protocol';
+} from '@tesel/protocol';
 import WebSocket from 'ws';
 
 import type { EnvelopeSource, EnvelopeStore, StoredEnvelope } from './envelope-store.ts';

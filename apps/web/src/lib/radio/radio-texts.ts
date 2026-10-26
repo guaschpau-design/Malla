@@ -1,7 +1,7 @@
 // Text messages of other MeshCore apps that the radio heard (see RadioText). They are kept on
-// the device so they are not lost while Teselia holds the radio.
+// the device so they are not lost while Tesel holds the radio.
 
-import type { RadioText } from '@teselia/meshcore';
+import type { RadioText } from '@tesel/meshcore';
 
 import type { AppDb } from '../storage/app-db.ts';
 

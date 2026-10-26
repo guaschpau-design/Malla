@@ -6,7 +6,7 @@
 
 ## Context
 
-Teselia is meant for the general public, not only technical users. Three limits of a web-only client matter in an emergency:
+Tesel is meant for the general public, not only technical users. Three limits of a web-only client matter in an emergency:
 
 1. **Background.** With the screen locked or the app closed, a web page stops: it neither reports the position nor warns of an SOS. In an emergency the phone is in a pocket.
 2. **iPhone and radios.** No browser on iOS supports Web Bluetooth (third-party browsers such as Bluefy are a workaround for technical users).
@@ -26,4 +26,4 @@ Rewriting the client natively would throw away the interface and multiply the wo
 
 - An Apple developer account (about 99 USD a year, built on the owner's Mac) and a Google Play account (about 25 USD once) are needed.
 - `apps/mobile` holds the native projects; CI builds them.
-- The landing page at teselia.eu links to the stores as the apps become available.
+- The landing page at tesel.eu links to the stores as the apps become available.

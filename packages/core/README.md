@@ -1,4 +1,4 @@
-# @teselia/core
+# @tesel/core
 
 Application logic shared by every client, independent of the UI and of any transport: deriving the current picture from events, the LoRa airtime scheduler and the bridge rules described in [`ARCHITECTURE.md`](../../ARCHITECTURE.md) §3.4 and §4.
 

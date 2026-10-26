@@ -15,11 +15,11 @@ When the mobile network fails, members without a radio, iPhones among them, are 
 
 ## Decision
 
-- **One name for all posts of a server**, e.g. `puesto.teselia.eu`. Each post answers it on its own Wi-Fi: NetworkManager's shared mode hands out addresses and its DNS resolves the name to the post (`10.42.0.1`). A public `A` record to the same private address helps phones that use their own DNS.
+- **One name for all posts of a server**, e.g. `puesto.tesel.eu`. Each post answers it on its own Wi-Fi: NetworkManager's shared mode hands out addresses and its DNS resolves the name to the post (`10.42.0.1`). A public `A` record to the same private address helps phones that use their own DNS.
 - **Certificate by DNS challenge.** The post obtains a Let's Encrypt certificate for the name with lego while it has internet, proving control of the domain through the DNS provider's API, and renews it whenever it is online. Caddy serves it. Every post of a server holds the same certificate; whoever runs a post needs DNS credentials for that domain, so posts are run by the server's operators.
-- **Replication** (protocol §8.2): the post is an ordinary server with `TESELIA_UPSTREAM`. For each group it stores it keeps a client connection to the upstream, takes in what the upstream has and pushes what its own clients pushed. It moves envelopes only and never holds a group secret.
+- **Replication** (protocol §8.2): the post is an ordinary server with `TESEL_UPSTREAM`. For each group it stores it keeps a client connection to the upstream, takes in what the upstream has and pushes what its own clients pushed. It moves envelopes only and never holds a group secret.
 - **Discovery** (protocol §8.3): the internet server announces the post's name in `healthz`; apps remember it and try it when the server does not answer. An app opened from the post itself prefers the post for the groups of the post's upstream.
-- **Radio**: the post's own browser, with Teselia open and a radio connected by Bluetooth, bridges the post and the LoRa mesh exactly as any member's phone does. A radio bridge inside the server is left for later.
+- **Radio**: the post's own browser, with Tesel open and a radio connected by Bluetooth, bridges the post and the LoRa mesh exactly as any member's phone does. A radio bridge inside the server is left for later.
 - **Isolation**: the post's firewall lets Wi-Fi clients reach the post's web server, DNS and DHCP only, and forwards nothing. Phones on the post's Wi-Fi do not get internet through it, and cannot see the network the post is plugged into.
 - The kit (`deploy/command-post/install.sh`) supports Debian, Ubuntu and Raspberry Pi OS with a Wi-Fi chip that can be an access point.
 

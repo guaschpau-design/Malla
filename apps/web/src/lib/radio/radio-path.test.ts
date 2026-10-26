@@ -2,7 +2,7 @@
 
 import 'fake-indexeddb/auto';
 
-import type { RadioLink, RadioLinkState, ReceivedFrame, SendOutcome } from '@teselia/meshcore';
+import type { RadioLink, RadioLinkState, ReceivedFrame, SendOutcome } from '@tesel/meshcore';
 import { describe, expect, it, vi } from 'vitest';
 
 import { applyInvitation, createGroup, invitationFor } from '../groups/group.ts';

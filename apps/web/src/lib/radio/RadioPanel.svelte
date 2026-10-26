@@ -1,6 +1,6 @@
 <!-- Pairing the LoRa radio and seeing how it is doing. -->
 <script lang="ts">
-  import { isWebBluetoothAvailable } from '@teselia/meshcore';
+  import { isWebBluetoothAvailable } from '@tesel/meshcore';
 
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import Panel from '../ui/Panel.svelte';

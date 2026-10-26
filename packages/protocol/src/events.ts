@@ -114,7 +114,7 @@ export interface AckEvent extends EventHeader {
   readonly target: EventRef;
 }
 
-export type TeseliaEvent =
+export type TeselEvent =
   | MemberInfoEvent
   | PositionEvent
   | PositionHiddenEvent
@@ -127,4 +127,4 @@ export type TeseliaEvent =
   | AlertEvent
   | AckEvent;
 
-export type EventType = TeseliaEvent['type'];
+export type EventType = TeselEvent['type'];

@@ -1,6 +1,6 @@
 # 0014. The project is called Teselia
 
-- Status: Accepted
+- Status: Superseded by [0019](0019-name-tesel.md)
 - Date: 2026-10-25
 - Supersedes: the provisional name "Malla"
 

@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
-# Installs a Teselia server on a fresh Debian or Ubuntu VPS, hardened and updating itself.
+# Installs a Tesel server on a fresh Debian or Ubuntu VPS, hardened and updating itself.
 #
-#   curl -fsSL https://raw.githubusercontent.com/guaschpau-design/Malla/main/deploy/vps/install.sh \
-#     | sudo bash -s -- --domain teselia.example.eu
+#   curl -fsSL https://raw.githubusercontent.com/guaschpau-design/Tesel/main/deploy/vps/install.sh \
+#     | sudo bash -s -- --domain tesel.example.eu
 #
 # Safe to run again: it converges to the same setup, which is also how configuration changes
 # in this folder reach an existing server. See deploy/README.md for what it does and why.
 
 set -euo pipefail
 
-REPO_RAW="https://raw.githubusercontent.com/guaschpau-design/Malla"
+REPO_RAW="https://raw.githubusercontent.com/guaschpau-design/Tesel"
 REF="main"
 DOMAIN=""
 COMMAND_POST=""
 SKIP_DNS_CHECK=false
-INSTALL_DIR="/opt/teselia"
+INSTALL_DIR="/opt/tesel"
 
 usage() {
   echo "Usage: install.sh --domain DOMAIN [--command-post URL] [--ref GIT_REF] [--skip-dns-check]" >&2
@@ -64,7 +64,7 @@ APT::Periodic::Update-Package-Lists "1";
 APT::Periodic::Unattended-Upgrade "1";
 CONF
 # Kernel updates only take effect after a reboot; do it at night. Containers come back alone.
-cat > /etc/apt/apt.conf.d/52teselia-reboot <<'CONF'
+cat > /etc/apt/apt.conf.d/52tesel-reboot <<'CONF'
 Unattended-Upgrade::Automatic-Reboot "true";
 Unattended-Upgrade::Automatic-Reboot-Time "04:00";
 CONF
@@ -79,7 +79,7 @@ ufw allow 443/udp >/dev/null
 ufw --force enable >/dev/null
 
 step "Blocking repeated failed SSH logins"
-cat > /etc/fail2ban/jail.d/teselia.local <<'CONF'
+cat > /etc/fail2ban/jail.d/tesel.local <<'CONF'
 [DEFAULT]
 backend = systemd
 bantime = 1h
@@ -100,7 +100,7 @@ has_ssh_key() {
 if has_ssh_key; then
   # sshd keeps the first value it reads, and drop-ins are read in name order: "10-" goes before
   # cloud images' "50-cloud-init.conf", which turns passwords back on.
-  cat > /etc/ssh/sshd_config.d/10-teselia.conf <<'CONF'
+  cat > /etc/ssh/sshd_config.d/10-tesel.conf <<'CONF'
 PasswordAuthentication no
 KbdInteractiveAuthentication no
 PermitRootLogin prohibit-password
@@ -124,40 +124,40 @@ https://download.docker.com/linux/$ID $VERSION_CODENAME stable" > /etc/apt/sourc
 fi
 systemctl enable --now docker >/dev/null
 
-step "Installing Teselia in $INSTALL_DIR"
+step "Installing Tesel in $INSTALL_DIR"
 install -m 0755 -d "$INSTALL_DIR"
 for file in compose.yaml Caddyfile maps.sh; do
   curl -fsSL "$REPO_RAW/$REF/deploy/vps/$file" -o "$INSTALL_DIR/$file"
 done
 chmod 0755 "$INSTALL_DIR/maps.sh"
 # Settings live in .env; each run updates its own and keeps any other an operator added there
-# (TESELIA_RETENTION_DAYS, TESELIA_MAP_BBOX...). A command post set before stays unless replaced.
+# (TESEL_RETENTION_DAYS, TESEL_MAP_BBOX...). A command post set before stays unless replaced.
 set_setting() {
   touch "$INSTALL_DIR/.env"
   sed -i "/^$1=/d" "$INSTALL_DIR/.env"
   echo "$1=$2" >> "$INSTALL_DIR/.env"
 }
-set_setting TESELIA_DOMAIN "$DOMAIN"
-if [[ -n "$COMMAND_POST" ]] || ! grep -q '^TESELIA_COMMAND_POST=' "$INSTALL_DIR/.env" 2>/dev/null; then
-  set_setting TESELIA_COMMAND_POST "$COMMAND_POST"
+set_setting TESEL_DOMAIN "$DOMAIN"
+if [[ -n "$COMMAND_POST" ]] || ! grep -q '^TESEL_COMMAND_POST=' "$INSTALL_DIR/.env" 2>/dev/null; then
+  set_setting TESEL_COMMAND_POST "$COMMAND_POST"
 fi
 
-cat > /etc/systemd/system/teselia-update.service <<'CONF'
+cat > /etc/systemd/system/tesel-update.service <<'CONF'
 [Unit]
-Description=Update Teselia to the latest published version
+Description=Update Tesel to the latest published version
 After=docker.service network-online.target
 Wants=network-online.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=/opt/teselia
+WorkingDirectory=/opt/tesel
 ExecStart=/usr/bin/docker compose pull --quiet
 ExecStart=/usr/bin/docker compose up --detach --remove-orphans
 ExecStart=/usr/bin/docker image prune --force
 CONF
-cat > /etc/systemd/system/teselia-update.timer <<'CONF'
+cat > /etc/systemd/system/tesel-update.timer <<'CONF'
 [Unit]
-Description=Check for a new Teselia version every 15 minutes
+Description=Check for a new Tesel version every 15 minutes
 
 [Timer]
 OnBootSec=5min
@@ -167,20 +167,20 @@ RandomizedDelaySec=2min
 [Install]
 WantedBy=timers.target
 CONF
-cat > /etc/systemd/system/teselia-maps.service <<'CONF'
+cat > /etc/systemd/system/tesel-maps.service <<'CONF'
 [Unit]
-Description=Rebuild the Teselia base map from the latest OpenStreetMap data
+Description=Rebuild the Tesel base map from the latest OpenStreetMap data
 After=docker.service network-online.target
 Wants=network-online.target
 
 [Service]
 Type=oneshot
-EnvironmentFile=-/opt/teselia/.env
-ExecStart=/opt/teselia/maps.sh /opt/teselia/maps
+EnvironmentFile=-/opt/tesel/.env
+ExecStart=/opt/tesel/maps.sh /opt/tesel/maps
 CONF
-cat > /etc/systemd/system/teselia-maps.timer <<'CONF'
+cat > /etc/systemd/system/tesel-maps.timer <<'CONF'
 [Unit]
-Description=Rebuild the Teselia base map every month
+Description=Rebuild the Tesel base map every month
 
 [Timer]
 OnCalendar=monthly
@@ -191,29 +191,29 @@ Persistent=true
 WantedBy=timers.target
 CONF
 systemctl daemon-reload
-systemctl enable --now teselia-update.timer >/dev/null
+systemctl enable --now tesel-update.timer >/dev/null
 
 if [[ ! -f "$INSTALL_DIR/maps/basemap.pmtiles" ]]; then
   step "Building the base map (only the first time; it can take half an hour)"
   # shellcheck source=/dev/null
   (set -a && . "$INSTALL_DIR/.env" && "$INSTALL_DIR/maps.sh" "$INSTALL_DIR/maps") ||
-    echo "The base map could not be built now; teselia-maps.timer will try again."
+    echo "The base map could not be built now; tesel-maps.timer will try again."
 fi
 # Enabled only now, so its first run cannot overlap the build above.
-systemctl enable --now teselia-maps.timer >/dev/null
+systemctl enable --now tesel-maps.timer >/dev/null
 
-step "Starting Teselia"
+step "Starting Tesel"
 cd "$INSTALL_DIR"
 if ! docker compose pull --quiet; then
-  fail "could not download the Teselia image. If the package on GitHub is private, make it public:
-github.com/guaschpau-design → Packages → teselia-server → Package settings → Change visibility."
+  fail "could not download the Tesel image. If the package on GitHub is private, make it public:
+github.com/guaschpau-design → Packages → tesel-server → Package settings → Change visibility."
 fi
 docker compose up --detach --remove-orphans
 
 step "Waiting for https://$DOMAIN"
 for _ in $(seq 1 60); do
   if curl -fsS "https://$DOMAIN/healthz" >/dev/null 2>&1; then
-    printf '\n\033[32mTeselia is running at https://%s\033[0m\n' "$DOMAIN"
+    printf '\n\033[32mTesel is running at https://%s\033[0m\n' "$DOMAIN"
     echo "The app is at https://$DOMAIN/app/ and creates its groups on this server."
     exit 0
   fi

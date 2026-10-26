@@ -1,8 +1,8 @@
 // A map object being drawn: the points tapped so far and what they will become.
 
-import type { LatLon, ShapeGeometry } from '@teselia/protocol';
+import type { LatLon, ShapeGeometry } from '@tesel/protocol';
 
-import { distanceMeters } from '@teselia/core';
+import { distanceMeters } from '@tesel/core';
 
 export type DraftKind = 'marker' | 'line' | 'area' | 'circle';
 

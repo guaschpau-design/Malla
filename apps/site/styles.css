@@ -1,4 +1,4 @@
-/* Teselia site. Plain CSS, no build step, no third-party requests (ADR-0017).
+/* Tesel site. Plain CSS, no build step, no third-party requests (ADR-0017).
    The design: a night map and paper. Two surfaces (ink and paper) alternate down the page; the
    photograph and the screenshots of the app are the loud elements, the rest is type set with care.
    Signal orange is kept for what is urgent and for the one action on each screen. */

@@ -1,8 +1,8 @@
 {
-  "name": "@teselia/web",
+  "name": "@tesel/web",
   "version": "0.0.0",
   "private": true,
-  "description": "Teselia progressive web app.",
+  "description": "Tesel progressive web app.",
   "license": "EUPL-1.2",
   "type": "module",
   "scripts": {
@@ -15,9 +15,9 @@
   },
   "dependencies": {
     "@protomaps/basemaps": "^5.7.2",
-    "@teselia/core": "workspace:*",
-    "@teselia/meshcore": "workspace:*",
-    "@teselia/protocol": "workspace:*",
+    "@tesel/core": "workspace:*",
+    "@tesel/meshcore": "workspace:*",
+    "@tesel/protocol": "workspace:*",
     "idb": "^8.0.4",
     "jsqr": "1.4.0",
     "maplibre-gl": "^6.15.0",

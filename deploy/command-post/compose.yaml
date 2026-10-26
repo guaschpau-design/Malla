@@ -1,18 +1,18 @@
-# A Teselia command post: the same server as the VPS, replicating it (TESELIA_UPSTREAM), behind
+# A Tesel command post: the same server as the VPS, replicating it (TESEL_UPSTREAM), behind
 # Caddy with a certificate obtained beforehand by lego (see install.sh). Installed into
-# /opt/teselia-post with its settings in /opt/teselia-post/.env.
+# /opt/tesel-post with its settings in /opt/tesel-post/.env.
 
-name: teselia-post
+name: tesel-post
 
 services:
-  teselia:
-    image: ${TESELIA_IMAGE:-ghcr.io/guaschpau-design/teselia-server:latest}
+  tesel:
+    image: ${TESEL_IMAGE:-ghcr.io/guaschpau-design/tesel-server:latest}
     restart: unless-stopped
     environment:
-      TESELIA_UPSTREAM: ${TESELIA_UPSTREAM:?set TESELIA_UPSTREAM in .env}
-      TESELIA_RETENTION_DAYS: ${TESELIA_RETENTION_DAYS:-30}
+      TESEL_UPSTREAM: ${TESEL_UPSTREAM:?set TESEL_UPSTREAM in .env}
+      TESEL_RETENTION_DAYS: ${TESEL_RETENTION_DAYS:-30}
     volumes:
-      - teselia-data:/data
+      - tesel-data:/data
     read_only: true
     tmpfs:
       - /tmp
@@ -24,7 +24,7 @@ services:
     image: caddy:2
     restart: unless-stopped
     environment:
-      TESELIA_DOMAIN: ${TESELIA_DOMAIN:?set TESELIA_DOMAIN in .env}
+      TESEL_DOMAIN: ${TESEL_DOMAIN:?set TESEL_DOMAIN in .env}
     ports:
       - '80:80'
       - '443:443'
@@ -36,10 +36,10 @@ services:
       - caddy-config:/config
     security_opt: [no-new-privileges:true]
     networks: [internal]
-    depends_on: [teselia]
+    depends_on: [tesel]
 
 volumes:
-  teselia-data:
+  tesel-data:
   caddy-data:
   caddy-config:
 

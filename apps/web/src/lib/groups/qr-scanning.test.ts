@@ -21,7 +21,7 @@ function render(text: string, scale: number): Frame {
 
 describe('QR scanning', () => {
   it('reads back an invitation link drawn by the app', () => {
-    const link = `https://example.github.io/teselia/join#${'AQEHBwcHBwcHBwcHBwcHBwcH'.repeat(8)}`;
+    const link = `https://example.github.io/tesel/join#${'AQEHBwcHBwcHBwcHBwcHBwcH'.repeat(8)}`;
     expect(decodeQr(render(link, 4))).toBe(link);
   });
 

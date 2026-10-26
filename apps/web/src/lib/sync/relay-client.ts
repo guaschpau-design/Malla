@@ -9,7 +9,7 @@ import {
   relayUrl,
   type EventType,
   type ServerMessage,
-} from '@teselia/protocol';
+} from '@tesel/protocol';
 
 import { PushQueue } from './push-queue.ts';
 

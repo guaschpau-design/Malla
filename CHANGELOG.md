@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Teselia. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/). Protocol versions are separate: see [`docs/protocol.md`](docs/protocol.md) §9.
+All notable changes to Tesel. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/). Protocol versions are separate: see [`docs/protocol.md`](docs/protocol.md) §9.
 
 ## [0.1.0] - Unreleased
 
@@ -37,8 +37,9 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 
 - Server image with the relay, the landing page and the web app, for amd64 and arm64 ([ADR-0017](docs/decisions/0017-server-serves-site-and-app.md)).
 - One-command, hardened, self-updating VPS install ([ADR-0013](docs/decisions/0013-self-updating-vps.md)) and command post kit.
-- Landing page and user guide at teselia.eu, in Spanish and English, with annotated screenshots of the app and diagrams of how it connects.
+- Landing page and user guide at tesel.eu, in Spanish and English, with annotated screenshots of the app and diagrams of how it connects.
 - Brand: a mark of three hexagonal tiles and an Archivo wordmark, used on the site, the app and its icons.
+- The project is called Tesel, formerly Teselia ([ADR-0019](docs/decisions/0019-name-tesel.md)); `tesel.eu` is its domain and the VPS redirects `teselia.eu` to it.
 
 ### Known limits
 

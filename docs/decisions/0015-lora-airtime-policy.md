@@ -5,7 +5,7 @@
 
 ## Context
 
-EU rules allow a transmitter at most 10 % airtime in the 869.4–869.65 MHz sub-band that MeshCore's EU/UK Narrow preset uses. By the conservative estimate below, a Teselia event takes 0.4 to 1.6 s on the air at SF8 and 62.5 kHz, so one device can send only a few hundred events an hour, and every repeater in the mesh spends airtime on each flood too. Without a policy, positions alone would use the budget and an SOS could be stuck behind them.
+EU rules allow a transmitter at most 10 % airtime in the 869.4–869.65 MHz sub-band that MeshCore's EU/UK Narrow preset uses. By the conservative estimate below, a Tesel event takes 0.4 to 1.6 s on the air at SF8 and 62.5 kHz, so one device can send only a few hundred events an hour, and every repeater in the mesh spends airtime on each flood too. Without a policy, positions alone would use the budget and an SOS could be stuck behind them.
 
 ## Decision
 

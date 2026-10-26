@@ -34,9 +34,9 @@ export const en = {
   update: 'Update',
   readyOffline: 'The app is ready to work offline.',
 
-  welcomeTitle: 'Welcome to Teselia',
+  welcomeTitle: 'Welcome to Tesel',
   welcomeIntro:
-    'Teselia works without accounts. Choose the name your group will see. This device gets its own key, which never leaves it.',
+    'Tesel works without accounts. Choose the name your group will see. This device gets its own key, which never leaves it.',
   aliasLabel: 'Your name in the group',
   aliasHint: 'Short: a name or a nickname.',
   nameInvalid: 'Write a shorter name.',
@@ -49,7 +49,7 @@ export const en = {
   join: 'Join',
   notNow: 'Not now',
   invitationDamaged: 'This invitation is damaged or incomplete. Ask for a new one.',
-  notAnInvitation: 'That is not a Teselia invitation.',
+  notAnInvitation: 'That is not a Tesel invitation.',
   joined: 'You joined “{group}”.',
   promoted: 'You now coordinate “{group}”.',
   alreadyMember: 'You already belong to “{group}”.',
@@ -82,7 +82,7 @@ export const en = {
   inviteTitle: 'Invite to “{group}”',
   inviteRole: 'They join as',
   inviteHowTo:
-    'The person you invite scans this code from Teselia (Groups → Scan QR code) or with the phone camera. On iPhone, scan it from Teselia.',
+    'The person you invite scans this code from Tesel (Groups → Scan QR code) or with the phone camera. On iPhone, scan it from Tesel.',
   inviteWarning:
     'Whoever has this code or link joins the group. Share it in person or through a channel you trust.',
   invitationNeedsHttps:
@@ -205,7 +205,7 @@ export const en = {
   radioSnr: 'Last signal: {snr} dB SNR',
   radioAirtime: 'Airtime used in the last hour: {percent} % of the legal limit',
   radioUnsupported:
-    'This browser cannot use Bluetooth. Use Chrome or Edge on Android or a computer. On iPhone, Teselia works over the internet or through a command post.',
+    'This browser cannot use Bluetooth. Use Chrome or Edge on Android or a computer. On iPhone, Tesel works over the internet or through a command post.',
   radioNoFreeChannel:
     'The radio has no free channel. Delete one in the MeshCore app and try again.',
   radioNoAnswer:
@@ -214,7 +214,7 @@ export const en = {
   chatGroup: 'Group',
   chatMeshcore: 'MeshCore',
   meshcoreIntro:
-    'Messages from people nearby who use the MeshCore app with their radios. Teselia keeps them here so they are not lost. To reply, use the MeshCore app.',
+    'Messages from people nearby who use the MeshCore app with their radios. Tesel keeps them here so they are not lost. To reply, use the MeshCore app.',
   noMeshcoreMessages: 'No MeshCore messages have arrived yet.',
   meshcoreChannel: 'Channel {name}',
   meshcoreUnknownChannel: '(unknown)',

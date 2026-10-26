@@ -1,6 +1,6 @@
 <!-- Sends an SOS with this device's position, or the map centre if there is no fix. -->
 <script lang="ts">
-  import { SOS_TEXT_MAX_BYTES, utf8ByteLength, type LatLon, type SosKind } from '@teselia/protocol';
+  import { SOS_TEXT_MAX_BYTES, utf8ByteLength, type LatLon, type SosKind } from '@tesel/protocol';
   import { onMount } from 'svelte';
 
   import type { Translate } from '../i18n/index.ts';

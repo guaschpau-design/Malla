@@ -1,5 +1,5 @@
-import { stateOf } from '@teselia/core';
-import type { NodeId } from '@teselia/protocol';
+import { stateOf } from '@tesel/core';
+import type { NodeId } from '@tesel/protocol';
 import { describe, expect, it } from 'vitest';
 
 import { activeSos, cancelledSos, recentAlerts } from './incidents.ts';

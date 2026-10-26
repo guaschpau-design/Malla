@@ -6,7 +6,7 @@
 
 ## Context
 
-Until our own server runs, the web app is published on GitHub Pages at `https://{user}.github.io/teselia/`. Under a sub-path an invitation link is `/teselia/join`, which the original rule rejected. Static hosts also have no way to rewrite `/teselia/join` to the app's `index.html`.
+Until our own server runs, the web app is published on GitHub Pages at `https://{user}.github.io/tesel/`. Under a sub-path an invitation link is `/tesel/join`, which the original rule rejected. Static hosts also have no way to rewrite `/tesel/join` to the app's `index.html`.
 
 ## Decision
 

@@ -51,5 +51,5 @@ export function styleInfo(code: number): StyleInfo {
 
 /** Name of the map image drawn for a symbol (see symbol-images.ts). */
 export function symbolImageName(code: number): string {
-  return `teselia-symbol-${String(symbolInfo(code).code)}`;
+  return `tesel-symbol-${String(symbolInfo(code).code)}`;
 }

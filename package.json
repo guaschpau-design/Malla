@@ -1,5 +1,5 @@
 {
-  "name": "teselia",
+  "name": "tesel",
   "private": true,
   "description": "Open-source situational awareness for civilian teams: positions, messages, alerts and incidents on one shared map, online, over LoRa radio or through a command post.",
   "license": "EUPL-1.2",
@@ -18,7 +18,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
-    "test:e2e": "pnpm --filter @teselia/web test:e2e"
+    "test:e2e": "pnpm --filter @tesel/web test:e2e"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",

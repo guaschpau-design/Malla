@@ -1,18 +1,18 @@
-# Teselia on a VPS: the relay server behind Caddy, which obtains and renews the HTTPS certificate.
-# Installed by install.sh into /opt/teselia, with TESELIA_DOMAIN set in /opt/teselia/.env.
+# Tesel on a VPS: the relay server behind Caddy, which obtains and renews the HTTPS certificate.
+# Installed by install.sh into /opt/tesel, with TESEL_DOMAIN set in /opt/tesel/.env.
 
-name: teselia
+name: tesel
 
 services:
-  teselia:
-    image: ${TESELIA_IMAGE:-ghcr.io/guaschpau-design/teselia-server:latest}
+  tesel:
+    image: ${TESEL_IMAGE:-ghcr.io/guaschpau-design/tesel-server:latest}
     restart: unless-stopped
     environment:
-      TESELIA_RETENTION_DAYS: ${TESELIA_RETENTION_DAYS:-30}
+      TESEL_RETENTION_DAYS: ${TESEL_RETENTION_DAYS:-30}
       # Name shared by this server's command posts, announced to apps (protocol §8.3).
-      TESELIA_COMMAND_POST: ${TESELIA_COMMAND_POST:-}
+      TESEL_COMMAND_POST: ${TESEL_COMMAND_POST:-}
     volumes:
-      - teselia-data:/data
+      - tesel-data:/data
     # Locked down: read-only system, no Linux capabilities, no privilege escalation. The server
     # only needs to write its database and talk to Caddy on the internal network.
     read_only: true
@@ -26,7 +26,7 @@ services:
     image: caddy:2
     restart: unless-stopped
     environment:
-      TESELIA_DOMAIN: ${TESELIA_DOMAIN:?set TESELIA_DOMAIN in .env}
+      TESEL_DOMAIN: ${TESEL_DOMAIN:?set TESEL_DOMAIN in .env}
     ports:
       - '80:80'
       - '443:443'
@@ -38,10 +38,10 @@ services:
       - caddy-config:/config
     security_opt: [no-new-privileges:true]
     networks: [internal]
-    depends_on: [teselia]
+    depends_on: [tesel]
 
 volumes:
-  teselia-data:
+  tesel-data:
   caddy-data:
   caddy-config:
 

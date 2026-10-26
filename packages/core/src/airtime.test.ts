@@ -14,7 +14,7 @@ describe('LoRa airtime', () => {
     expect(ms).toBeCloseTo(56.58, 1);
   });
 
-  it('puts the largest Teselia event at well over a second on the narrow EU preset', () => {
+  it('puts the largest Tesel event at well over a second on the narrow EU preset', () => {
     expect(eventAirtimeMs(165)).toBeGreaterThan(1000);
     expect(eventAirtimeMs(165)).toBeLessThan(2500);
     expect(eventAirtimeMs(28)).toBeLessThan(eventAirtimeMs(165));

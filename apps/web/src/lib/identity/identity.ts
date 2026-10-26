@@ -8,7 +8,7 @@ import {
   utf8ByteLength,
   type Identity,
   type RandomSource,
-} from '@teselia/protocol';
+} from '@tesel/protocol';
 
 import type { AppDb } from '../storage/app-db.ts';
 

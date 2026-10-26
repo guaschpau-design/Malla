@@ -1,7 +1,7 @@
 // Chat lines and alerts, merged in the order every device agrees on.
 
-import { compareEvents, type GroupState } from '@teselia/core';
-import { eventRefKey, type AlertEvent, type ChatEvent } from '@teselia/protocol';
+import { compareEvents, type GroupState } from '@tesel/core';
+import { eventRefKey, type AlertEvent, type ChatEvent } from '@tesel/protocol';
 
 export type TimelineEntry = { readonly key: string } & (
   | { readonly kind: 'chat'; readonly event: ChatEvent }

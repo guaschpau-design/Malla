@@ -36,7 +36,7 @@ process.on('SIGINT', () => void shutdown());
 
 try {
   await app.listen({ host: config.host, port: config.port });
-  console.warn(`Teselia server listening on ${config.host}:${config.port}`);
+  console.warn(`Tesel server listening on ${config.host}:${config.port}`);
 } catch (error) {
   console.error(error);
   process.exit(1);

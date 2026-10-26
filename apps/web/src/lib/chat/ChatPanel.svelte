@@ -1,13 +1,13 @@
 <!-- The active group's chat, with alerts in the same timeline. Coordinators can send alerts. -->
 <script lang="ts">
-  import type { GroupState } from '@teselia/core';
+  import type { GroupState } from '@tesel/core';
   import {
     ALERT_TEXT_MAX_BYTES,
     CHAT_MAX_BYTES,
     utf8ByteLength,
     type AlertLevel,
     type NodeId,
-  } from '@teselia/protocol';
+  } from '@tesel/protocol';
   import { tick } from 'svelte';
 
   import { formatTime } from '../format.ts';

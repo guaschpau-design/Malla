@@ -1,6 +1,6 @@
 // How far this device has read each group's envelopes on each relay (protocol §8.3).
 
-import { serverBaseUrl } from '@teselia/protocol';
+import { serverBaseUrl } from '@tesel/protocol';
 
 import type { AppDb } from '../storage/app-db.ts';
 

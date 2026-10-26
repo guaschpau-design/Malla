@@ -1,5 +1,5 @@
-import { stateOf } from '@teselia/core';
-import type { NodeId } from '@teselia/protocol';
+import { stateOf } from '@tesel/core';
+import type { NodeId } from '@tesel/protocol';
 import { describe, expect, it } from 'vitest';
 
 import { mapObjects } from './object-features.ts';
@@ -90,8 +90,8 @@ describe('map objects', () => {
 
   it('draws markers with their symbol, unknown symbols as the generic one, and no deleted ones', () => {
     expect(objects.markers.features.map((f) => [f.properties.label, f.properties.icon])).toEqual([
-      ['Fuego', 'teselia-symbol-3'],
-      ['Raro', 'teselia-symbol-0'],
+      ['Fuego', 'tesel-symbol-3'],
+      ['Raro', 'tesel-symbol-0'],
     ]);
   });
 

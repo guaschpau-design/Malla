@@ -41,7 +41,7 @@ interface MapDb extends DBSchema {
   areas: { key: string; value: OfflineArea };
 }
 
-const DB_NAME = 'teselia-map';
+const DB_NAME = 'tesel-map';
 const DB_VERSION = 1;
 
 export async function openTileStore(name: string = DB_NAME): Promise<TileStore> {

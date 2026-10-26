@@ -1,14 +1,14 @@
 // The LoRa radio of this device: connecting it, giving it the active group's channel, and
 // feeding the group's events through the airtime scheduler (ARCHITECTURE.md §4.2–4.3).
 
-import { LIMITS, LoraScheduler } from '@teselia/core';
+import { LIMITS, LoraScheduler } from '@tesel/core';
 import {
   MeshCoreRadio,
   RadioError,
   webBleConnector,
   type RadioLink,
   type RadioLinkState,
-} from '@teselia/meshcore';
+} from '@tesel/meshcore';
 
 import type { AppDb } from '../storage/app-db.ts';
 import type { GroupFeed, LoraSink } from '../sync/group-feed.svelte.ts';

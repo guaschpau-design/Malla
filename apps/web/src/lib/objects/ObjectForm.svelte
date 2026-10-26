@@ -1,6 +1,6 @@
 <!-- Describes a drawn object (label and symbol or style) before it is shared with the group. -->
 <script lang="ts">
-  import { MARKER_LABEL_MAX_BYTES, SHAPE_LABEL_MAX_BYTES, utf8ByteLength } from '@teselia/protocol';
+  import { MARKER_LABEL_MAX_BYTES, SHAPE_LABEL_MAX_BYTES, utf8ByteLength } from '@tesel/protocol';
 
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import Panel from '../ui/Panel.svelte';

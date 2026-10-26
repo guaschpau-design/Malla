@@ -1,4 +1,4 @@
-// The contract between Teselia and a LoRa radio (ADR-0006). The app depends only on this; the
+// The contract between Tesel and a LoRa radio (ADR-0006). The app depends only on this; the
 // MeshCore implementation is in meshcore-radio.ts.
 
 export type RadioLinkState = 'disconnected' | 'connecting' | 'ready';
@@ -11,7 +11,7 @@ export interface ReceivedFrame {
 }
 
 /**
- * A text message of another MeshCore app that reached this radio. Teselia reads every message the
+ * A text message of another MeshCore app that reached this radio. Tesel reads every message the
  * radio holds, so it keeps these instead of losing them.
  */
 export interface RadioText {

@@ -82,7 +82,7 @@ describe('relay messages', () => {
   });
 
   it('derives the WebSocket URL from the server base URL', () => {
-    expect(relayUrl('https://teselia.example')).toBe('wss://teselia.example/v1/ws');
+    expect(relayUrl('https://tesel.example')).toBe('wss://tesel.example/v1/ws');
     expect(relayUrl('https://example.org/relay/')).toBe('wss://example.org/relay/v1/ws');
     expect(relayUrl('http://localhost:8787')).toBe('ws://localhost:8787/v1/ws');
   });
@@ -93,13 +93,13 @@ describe('server information', () => {
     const text = JSON.stringify({
       status: 'ok',
       protocolVersion: 1,
-      upstream: 'https://teselia.example',
+      upstream: 'https://tesel.example',
       commandPost: null,
       extra: true,
     });
     expect(parseServerInfo(text)).toEqual({
       protocolVersion: 1,
-      upstream: 'https://teselia.example/',
+      upstream: 'https://tesel.example/',
       commandPost: null,
     });
   });
@@ -118,9 +118,9 @@ describe('server information', () => {
   });
 
   it('compares server URLs regardless of the trailing slash', () => {
-    expect(sameServer('https://teselia.example', 'https://teselia.example/')).toBe(true);
-    expect(sameServer('https://Teselia.example/', 'https://teselia.example')).toBe(true);
-    expect(sameServer('https://teselia.example', 'https://post.teselia.example')).toBe(false);
+    expect(sameServer('https://tesel.example', 'https://tesel.example/')).toBe(true);
+    expect(sameServer('https://Tesel.example/', 'https://tesel.example')).toBe(true);
+    expect(sameServer('https://tesel.example', 'https://post.tesel.example')).toBe(false);
     expect(sameServer('not a url', 'not a url')).toBe(false);
   });
 

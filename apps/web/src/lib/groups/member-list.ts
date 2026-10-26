@@ -1,7 +1,7 @@
 // The members of a group as the panel lists them.
 
-import type { GroupState } from '@teselia/core';
-import type { NodeId, Role } from '@teselia/protocol';
+import type { GroupState } from '@tesel/core';
+import type { NodeId, Role } from '@tesel/protocol';
 
 import { STALE_AFTER_S } from '../map/member-features.ts';
 

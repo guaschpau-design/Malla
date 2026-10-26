@@ -1,4 +1,4 @@
-# Builds the Teselia mark, wordmark and lockup as SVG, into this folder.
+# Builds the Tesel mark, wordmark and lockup as SVG, into this folder.
 #
 #   python3 brand/build.py
 #
@@ -48,7 +48,7 @@ def mark():
     ])
 
 
-def wordmark(text='Teselia'):
+def wordmark(text='Tesel'):
     font = instantiateVariableFont(TTFont(FONT), {'wght': WEIGHT, 'wdth': WIDTH})
     font.flavor = None
     upem = font['head'].unitsPerEm
@@ -88,9 +88,12 @@ def main():
         f'<g transform="translate({mark_h + gap:.1f} {(height - word_h) / 2:.2f})" fill="currentColor">{word}</g></svg>'
     )
     write('lockup.svg', lockup)
-    # The site's header is always ink, so it takes a pale copy as an image (no inline SVG to keep in sync).
-    write(os.path.join('..', 'apps', 'site', 'img', 'lockup-pale.svg'), lockup.replace(f'color="{INK}"', f'color="{PALE}"'))
-    print('mark.svg, wordmark.svg, lockup.svg and the site\'s lockup-pale.svg written')
+    # The headers of the app and the site are always ink, so both show a pale copy as an image. The
+    # site is static and cannot reach this folder, so it gets its own copy.
+    pale = lockup.replace(f'color="{INK}"', f'color="{PALE}"')
+    write('lockup-pale.svg', pale)
+    write(os.path.join('..', 'apps', 'site', 'img', 'lockup-pale.svg'), pale)
+    print('mark.svg, wordmark.svg, lockup.svg, lockup-pale.svg and the site\'s copy written')
 
 
 def write(name, svg):
