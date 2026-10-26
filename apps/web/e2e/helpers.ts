@@ -40,7 +40,11 @@ export async function twoMembers(
   const berta = await device(browser, 'Berta', path);
   await berta.goto(link);
   await berta.getByRole('dialog').getByRole('button', { name: 'Unirme' }).click();
-  await expect(berta.getByTitle('Conectado al servidor del grupo')).toBeVisible();
+  // A new member first chooses a relay (protocol §8.3), which can take a few seconds when the
+  // machine running the whole suite is busy.
+  await expect(berta.getByTitle('Conectado al servidor del grupo')).toBeVisible({
+    timeout: 15_000,
+  });
   // The invitation link replaced the map view; put Berta's map where Ana's is.
   await berta.goto(path);
   await expect(berta.getByTitle('Conectado al servidor del grupo')).toBeVisible();

@@ -45,6 +45,9 @@ with open(out,'wb') as f:
         if roads: layers.append({'name':'roads','features':roads})
         p=Point(-0.3763,39.4699)
         if tb.contains(p): layers.append({'name':'places','features':[{'geometry':p,'properties':{'kind':'locality','name':'Valencia','name:es':'Valencia','min_zoom':4,'population_rank':12}}]})
+        # One public service, for the services layer: a hospital a little north-east of the centre.
+        h=Point(-0.3700,39.4750)
+        if z>=14 and tb.contains(h): layers.append({'name':'pois','features':[{'geometry':h,'properties':{'kind':'hospital','name':'Hospital de Prueba','min_zoom':14}}]})
         mvt=mapbox_vector_tile.encode(layers, default_options={'quantize_bounds':b,'extents':4096})
         entries.append((zxy_to_tileid(z,x,y), gzip.compress(mvt)))
     for tid,data in sorted(entries):

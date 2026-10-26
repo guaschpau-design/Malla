@@ -32,3 +32,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0024](0024-terrain-tiles-for-relief.md)           | Relief from the open Terrain Tiles, read by the browser                  | Accepted                      |
 | [0025](0025-tasks.md)                              | Tasks as one event type, changed by anyone, last writer wins             | Accepted                      |
 | [0026](0026-one-kind-of-alert.md)                  | The app sends one kind of alert                                          | Accepted                      |
+| [0027](0027-public-services-from-the-base-map.md)  | Public services from the base map                                        | Accepted                      |

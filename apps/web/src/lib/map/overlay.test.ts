@@ -115,6 +115,23 @@ describe('map overlays', () => {
     expect([...map.layers.keys()]).toEqual(['trails-line', 'me-line']);
   });
 
+  it('waits for the base map source its layers read, and comes back after a new style', () => {
+    const map = new FakeMap();
+    new Overlay(map as unknown as MapLibreMap, {
+      level: 'services',
+      sources: [],
+      baseSource: 'protomaps',
+      layers: () => [{ id: 'services-icons', type: 'symbol' as const, source: 'protomaps' }],
+    });
+    expect(map.layers.size).toBe(0);
+    map.sources.set('protomaps', {});
+    map.fire('idle');
+    expect([...map.layers.keys()]).toEqual(['services-icons']);
+    map.layers.clear();
+    map.fire('styledata');
+    expect([...map.layers.keys()]).toEqual(['services-icons']);
+  });
+
   it('takes everything away when removed', () => {
     const map = new FakeMap();
     new Overlay(map as unknown as MapLibreMap, spec(map)).remove();

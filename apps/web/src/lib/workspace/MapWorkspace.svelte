@@ -1,7 +1,8 @@
 <!--
-  Everything on top of the map: this device, the group's members, objects, tasks and incidents,
-  drawing, measuring and navigating, the panels and the dock. Without an active group, only what works
-  alone: this device, coordinates, measuring, navigating to a point and offline maps.
+  Everything on top of the map: public services, this device, the group's members, objects, tasks
+  and incidents, drawing, measuring and navigating, the panels and the dock. Without an active
+  group, only what works alone: services, this device, coordinates, measuring, navigating to a
+  point and offline maps.
 -->
 <script lang="ts">
   import type { EventRef, LatLon, NodeId, Role, SosKind } from '@tesel/protocol';
@@ -15,6 +16,7 @@
   import type { Locale, Translate } from '../i18n/index.ts';
   import IncidentBanners from '../incidents/IncidentBanners.svelte';
   import SosDialog from '../incidents/SosDialog.svelte';
+  import { MAP_LAYERS, type MapLayer } from '../map/layers.ts';
   import { onLongPress } from '../map/long-press.ts';
   import LayersPanel from '../map/LayersPanel.svelte';
   import MapControl from '../map/MapControl.svelte';
@@ -35,6 +37,8 @@
   import SelfLayer from '../position/SelfLayer.svelte';
   import type { RadioSession } from '../radio/radio.svelte.ts';
   import type { PositionSharing } from '../position/position-sharing.svelte.ts';
+  import type { TappedService } from '../services/services.ts';
+  import ServicesLayer from '../services/ServicesLayer.svelte';
   import type { Preferences } from '../settings/preferences.ts';
   import type { GroupFeed } from '../sync/group-feed.svelte.ts';
   import MapTasks from '../tasks/MapTasks.svelte';
@@ -68,16 +72,16 @@
   let measuring: { readonly from: LatLon | null } | null = $state.raw(null);
   /** Drawing or measuring: taps on the map add points instead of opening what they hit. */
   const tapping = $derived(drawing.draft !== null || measuring !== null);
-  const shown = $derived({
-    members: !preferences.hiddenLayers.value.includes('members'),
-    trails: !preferences.hiddenLayers.value.includes('trails'),
-    objects: !preferences.hiddenLayers.value.includes('objects'),
-    tasks: !preferences.hiddenLayers.value.includes('tasks'),
-  });
+  /** Which map layers are shown, by layer. */
+  const shown = $derived(
+    Object.fromEntries(
+      MAP_LAYERS.map((layer) => [layer, !preferences.hiddenLayers.value.includes(layer)]),
+    ) as Record<MapLayer, boolean>,
+  );
   let selected: string | null = $state(null);
   let selectedMember: NodeId | null = $state(null);
-  /** The point shown in the point panel. */
-  let point: LatLon | null = $state.raw(null);
+  /** The point shown in the point panel, and what to call it: a service's name, or "map point". */
+  let point: { readonly at: LatLon; readonly name: string } | null = $state.raw(null);
   let sosOpen = $state(false);
   let notice: string | null = $state(null);
 
@@ -98,9 +102,14 @@
     drawing.add(at);
   }
 
-  function inspect(at: LatLon): void {
-    point = at;
+  function inspect(at: LatLon, name = t('mapPoint')): void {
+    point = { at, name };
     panels.open = 'point';
+  }
+
+  /** A service of the base map tapped: its point, under its name or its kind. */
+  function inspectService(service: TappedService): void {
+    inspect(service.at, service.name ?? t(service.kind.label));
   }
 
   /** A coordinate typed in the panel: shown on the map. */
@@ -169,6 +178,14 @@
     await group?.feed.cancelSos(sos);
   }
 </script>
+
+<ServicesLayer
+  {map}
+  {locale}
+  interactive={!tapping}
+  visible={shown.services}
+  onselect={inspectService}
+/>
 
 {#if group}
   {@const { feed, self, role } = group}
@@ -240,16 +257,17 @@
 {/if}
 
 {#if panels.open === 'point' && point}
-  {@const at = point}
+  {@const { at, name } = point}
   <PointLayer {map} point={at} />
   <PointPanel
     {t}
     {locale}
+    title={name}
     {at}
     {location}
     format={preferences.coordinateFormat}
     onnavigate={() => {
-      navigateTo({ kind: 'point', at, name: t('mapPoint') });
+      navigateTo({ kind: 'point', at, name });
     }}
     onmeasure={() => {
       startMeasuring(at);

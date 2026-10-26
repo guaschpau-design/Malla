@@ -32,6 +32,7 @@
     trails: { label: 'layerTrails', icon: 'trail' },
     objects: { label: 'layerObjects', icon: 'pin' },
     tasks: { label: 'layerTasks', icon: 'task' },
+    services: { label: 'layerServices', icon: 'cross' },
   };
 
   async function toggle(layer: MapLayer): Promise<void> {

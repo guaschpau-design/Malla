@@ -1,4 +1,5 @@
-// Our own GeoJSON sources and layers on top of the base map. A new style (theme or language
+// Our own layers on top of the base map, drawing our GeoJSON sources or, for places the base map
+// already knows (services), one of its sources. A new style (theme or language
 // change) removes them, and the style may still be loading when they are first added, so they are
 // installed again on every style change and whenever the map settles. Data and visibility set
 // while they are not installed are kept and applied when they are. Each overlay has a level, so
@@ -12,6 +13,7 @@ const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] };
 
 /** Our overlays from bottom to top: each is drawn above every one listed before it. */
 export const OVERLAY_LEVELS = [
+  'services',
   'trails',
   'objects',
   'tasks',
@@ -29,8 +31,13 @@ const LEVEL_KEY = 'tesel:level';
 
 export interface OverlaySpec<Source extends string> {
   readonly level: OverlayLevel;
-  /** The names of the sources, unique on the map. Each starts empty until `setData`. */
+  /**
+   * The names of our own sources, unique on the map. Each starts empty until `setData`. None for an
+   * overlay whose layers read only the base map (`baseSource`).
+   */
   readonly sources: readonly Source[];
+  /** A source of the base map the layers read: they are installed once the style has it. */
+  readonly baseSource?: string;
   /**
    * The layers, bottom to top. Built on each install, so they take the colours of the current
    * theme (ui/theme.ts).
@@ -94,11 +101,16 @@ export class Overlay<Source extends string> {
     return this.#visible ? 'visible' : 'none';
   }
 
+  /** Our first layer is on the map: a new style has not swept the overlay away. */
+  get #installed(): boolean {
+    const [first] = this.#layerIds;
+    return first !== undefined && this.#map.getLayer(first) !== undefined;
+  }
+
   #installNow(): void {
-    const [first] = this.#spec.sources;
-    if (this.#installing || first === undefined || this.#map.getSource(first) !== undefined) {
-      return;
-    }
+    if (this.#installing || this.#installed) return;
+    const { baseSource } = this.#spec;
+    if (baseSource !== undefined && this.#map.getSource(baseSource) === undefined) return;
     this.#installing = true;
     try {
       this.#addEverything();
@@ -110,6 +122,7 @@ export class Overlay<Source extends string> {
   #addEverything(): void {
     this.#spec.prepare?.();
     for (const source of this.#spec.sources) {
+      if (this.#map.getSource(source) !== undefined) continue;
       this.#map.addSource(source, { type: 'geojson', data: this.#data[source] });
     }
     const level = OVERLAY_LEVELS.indexOf(this.#spec.level);

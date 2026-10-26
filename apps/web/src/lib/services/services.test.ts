@@ -1,0 +1,21 @@
+import { describe, expect, it } from 'vitest';
+
+import { SERVICE_KINDS, serviceKindOf } from './services.ts';
+
+describe('services', () => {
+  it('groups the base map kinds into a few services', () => {
+    expect(serviceKindOf('hospital')?.id).toBe('health');
+    expect(serviceKindOf('clinic')?.id).toBe('health');
+    expect(serviceKindOf('fire_station')?.id).toBe('fire');
+    expect(serviceKindOf('police')?.id).toBe('police');
+  });
+
+  it('leaves out everything else', () => {
+    expect(serviceKindOf('supermarket')).toBeUndefined();
+  });
+
+  it('gives each base map kind to one service only', () => {
+    const all = SERVICE_KINDS.flatMap((kind) => kind.osmKinds);
+    expect(new Set(all).size).toBe(all.length);
+  });
+});

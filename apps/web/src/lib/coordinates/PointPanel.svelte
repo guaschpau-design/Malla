@@ -1,5 +1,5 @@
-<!-- A point of the map, picked by a long press or found by its coordinates: where it is, how far
-     from here, and what can be done there. -->
+<!-- A point of the map, picked by a long press, found by its coordinates or tapped as a public
+     service: where it is, how far from here, and what can be done there. -->
 <script lang="ts">
   import type { LatLon } from '@tesel/protocol';
 
@@ -15,6 +15,8 @@
   interface Props {
     t: Translate;
     locale: Locale;
+    /** "Map point", or the name of the service tapped. */
+    title: string;
     at: LatLon;
     location: DeviceLocation;
     format: Preference<CoordinateFormat>;
@@ -27,11 +29,22 @@
     onclose: () => void;
   }
 
-  let { t, locale, at, location, format, onnavigate, onmeasure, onmark, ontask, onclose }: Props =
-    $props();
+  let {
+    t,
+    locale,
+    title,
+    at,
+    location,
+    format,
+    onnavigate,
+    onmeasure,
+    onmark,
+    ontask,
+    onclose,
+  }: Props = $props();
 </script>
 
-<Panel title={t('mapPoint')} closeLabel={t('close')} {onclose}>
+<Panel {title} closeLabel={t('close')} {onclose}>
   <div class="stack section">
     <CoordinateBlock {t} {at} {format} />
     <FromHere {t} {locale} {at} {location} />

@@ -30,6 +30,9 @@ export type BaseMap = (typeof BASE_MAPS)[number];
 /** Highest zoom of the vector base map we download and request; MapLibre over-zooms beyond it. */
 export const BASEMAP_MAX_ZOOM = 14;
 
+/** The style's name for the vector base map, in the Protomaps schema. Every style has it. */
+export const BASEMAP_SOURCE = 'protomaps';
+
 const OSM_ATTRIBUTION =
   '<a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap</a> · ' +
   '<a href="https://protomaps.com" target="_blank">Protomaps</a>';
@@ -71,8 +74,8 @@ function baseStyle({ base, theme, lang }: StyleChoice, assetsUrl: string): Style
   if (raster === null) {
     return {
       ...common,
-      sources: { protomaps: vector },
-      layers: layers('protomaps', namedFlavor(theme), { lang }),
+      sources: { [BASEMAP_SOURCE]: vector },
+      layers: layers(BASEMAP_SOURCE, namedFlavor(theme), { lang }),
     };
   }
   const rasterSource: RasterSourceSpecification = {
@@ -83,13 +86,22 @@ function baseStyle({ base, theme, lang }: StyleChoice, assetsUrl: string): Style
     attribution: IGN_ATTRIBUTION[raster],
   };
   const rasterLayer: RasterLayerSpecification = { id: raster, type: 'raster', source: raster };
-  // The topographic map carries its own names; the photographs get ours.
-  if (base === 'topo')
-    return { ...common, sources: { [raster]: rasterSource }, layers: [rasterLayer] };
+  // The topographic map carries its own names; the photographs get ours. Every style has the
+  // vector source, which the services read (services/ServicesLayer.svelte).
+  if (base === 'topo') {
+    return {
+      ...common,
+      sources: { [raster]: rasterSource, [BASEMAP_SOURCE]: vector },
+      layers: [rasterLayer],
+    };
+  }
   return {
     ...common,
-    sources: { [raster]: rasterSource, protomaps: vector },
-    layers: [rasterLayer, ...layers('protomaps', namedFlavor(flavor), { lang, labelsOnly: true })],
+    sources: { [raster]: rasterSource, [BASEMAP_SOURCE]: vector },
+    layers: [
+      rasterLayer,
+      ...layers(BASEMAP_SOURCE, namedFlavor(flavor), { lang, labelsOnly: true }),
+    ],
   };
 }
 

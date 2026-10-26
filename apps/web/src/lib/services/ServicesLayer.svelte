@@ -1,0 +1,101 @@
+<!-- The public services of the base map (health, fire, police, helipads, town halls) as round icons
+     with their names, from zoom 14, and taps on them. They come with the base map, so they also
+     work offline in downloaded areas. -->
+<script lang="ts">
+  import type { Map as MapLibreMap, MapGeoJSONFeature, MapMouseEvent } from 'maplibre-gl';
+  import { onMount } from 'svelte';
+
+  import type { Locale } from '../i18n/index.ts';
+  import { addGlyphImage } from '../map/glyph-images.ts';
+  import { useOverlay } from '../map/overlay.svelte.ts';
+  import { BASEMAP_SOURCE } from '../map/style.ts';
+  import { tappedFeature } from '../map/taps.ts';
+  import { GLYPHS } from '../ui/glyphs.ts';
+  import { themeColor, toneColor } from '../ui/theme.ts';
+  import {
+    SERVICE_KINDS,
+    serviceIconExpression,
+    serviceImageName,
+    serviceKindOf,
+    type TappedService,
+  } from './services.ts';
+
+  interface Props {
+    map: MapLibreMap;
+    locale: Locale;
+    /** False while drawing or measuring, so taps go there instead. */
+    interactive: boolean;
+    visible: boolean;
+    onselect: (service: TappedService) => void;
+  }
+
+  let { map, locale, interactive, visible, onselect }: Props = $props();
+
+  const LAYER = 'tesel-services';
+  /** Services appear from this zoom: the base map carries most of them only at its last level. */
+  const MIN_ZOOM = 14;
+
+  useOverlay(() => map, {
+    level: 'services',
+    data: {},
+    baseSource: BASEMAP_SOURCE,
+    visible: () => visible,
+    prepare: () => {
+      for (const kind of SERVICE_KINDS) {
+        addGlyphImage(map, serviceImageName(kind), {
+          glyph: GLYPHS[kind.glyph],
+          colour: toneColor(kind.tone),
+          shape: 'circle',
+        });
+      }
+    },
+    layers: () => [
+      {
+        id: LAYER,
+        type: 'symbol',
+        source: BASEMAP_SOURCE,
+        'source-layer': 'pois',
+        minzoom: MIN_ZOOM,
+        filter: ['in', ['get', 'kind'], ['literal', SERVICE_KINDS.flatMap((k) => k.osmKinds)]],
+        layout: {
+          'icon-image': serviceIconExpression(),
+          'icon-allow-overlap': true,
+          'text-field': ['coalesce', ['get', `name:${locale}`], ['get', 'name']],
+          'text-font': ['Noto Sans Medium'],
+          'text-size': 11,
+          'text-offset': [0, 1.4],
+          'text-anchor': 'top',
+          'text-optional': true,
+        },
+        paint: {
+          'text-color': themeColor('map-text'),
+          'text-halo-color': themeColor('map-halo'),
+          'text-halo-width': 1.5,
+        },
+      },
+    ],
+  });
+
+  function tapped(feature: MapGeoJSONFeature): TappedService | null {
+    const properties = feature.properties as Record<string, unknown>;
+    const kind = serviceKindOf(String(properties['kind']));
+    if (kind === undefined || feature.geometry.type !== 'Point') return null;
+    const [lon, lat] = feature.geometry.coordinates as [number, number];
+    const name = properties[`name:${locale}`] ?? properties['name'];
+    return { at: { lat, lon }, name: typeof name === 'string' ? name : null, kind };
+  }
+
+  function onClick(event: MapMouseEvent): void {
+    if (!interactive) return;
+    const feature = tappedFeature(map, event, [LAYER]);
+    const service = feature ? tapped(feature) : null;
+    if (service !== null) onselect(service);
+  }
+
+  onMount(() => {
+    map.on('click', onClick);
+    return () => {
+      map.off('click', onClick);
+    };
+  });
+</script>
