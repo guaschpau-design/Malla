@@ -54,14 +54,17 @@
   let list: HTMLOListElement | undefined = $state();
   const entries = $derived(timeline(groupState));
   const size = $derived(utf8ByteLength(text.trim()));
-  const canSend = $derived(size > 0 && size <= CHAT_MAX_BYTES);
-  const canAlertNow = $derived(size > 0 && size <= ALERT_TEXT_MAX_BYTES);
+  const fits = $derived({
+    message: size > 0 && size <= CHAT_MAX_BYTES,
+    alert: size > 0 && size <= ALERT_TEXT_MAX_BYTES,
+  });
 
-  async function send(asAlert: boolean): Promise<void> {
-    if (!(asAlert ? canAlertNow : canSend)) return;
+  /** Sends the text typed, as a message or as an alert. */
+  async function send(as: 'message' | 'alert'): Promise<void> {
+    if (!fits[as]) return;
     const message = text.trim();
     text = '';
-    if (asAlert) await onalert(message);
+    if (as === 'alert') await onalert(message);
     else await onsend(message);
   }
 
@@ -132,7 +135,7 @@
       class="compose section"
       onsubmit={(event) => {
         event.preventDefault();
-        void send(false);
+        void send('message');
       }}
     >
       <input
@@ -141,14 +144,14 @@
         placeholder={t('message')}
         autocomplete="off"
       />
-      <button type="submit" class="primary" disabled={!canSend}>{t('send')}</button>
+      <button type="submit" class="primary" disabled={!fits.message}>{t('send')}</button>
       {#if canAlert}
         <button
           type="button"
-          class="alert-button"
-          disabled={!canAlertNow}
+          class="danger alert-button"
+          disabled={!fits.alert}
           title={t('sendAlertHint')}
-          onclick={() => send(true)}
+          onclick={() => send('alert')}
         >
           <Pictogram name="warning" size={18} />
           {t('sendAlert')}
@@ -253,13 +256,5 @@
     gap: 0.4rem;
     align-items: center;
     justify-content: center;
-    font-weight: 600;
-    color: #fff;
-    background: var(--danger);
-    border-color: var(--danger);
-  }
-
-  .alert-button:disabled {
-    opacity: 0.45;
   }
 </style>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { translator } from '../i18n/index.ts';
 import {
   channelName,
   linkOf,
@@ -44,21 +45,26 @@ describe('link', () => {
 });
 
 describe('channel names', () => {
+  const t = translator('es');
+  const name = (type: string | undefined, effectiveType = '4g') =>
+    t(networkName({ type, effectiveType }));
+
   it('names the network by its medium where the browser tells it', () => {
-    expect(networkName({ type: 'wifi', effectiveType: '4g' })).toBe('WiFi');
-    expect(networkName({ type: 'cellular', effectiveType: '4g' })).toBe('4G/5G');
-    expect(networkName({ type: 'cellular', effectiveType: '3g' })).toBe('3G');
-    expect(networkName({ type: 'cellular', effectiveType: 'slow-2g' })).toBe('2G');
+    expect(name('wifi')).toBe('WiFi');
+    expect(name('ethernet')).toBe('Cable');
+    expect(name('cellular')).toBe('4G/5G');
+    expect(name('cellular', '3g')).toBe('3G');
+    expect(name('cellular', 'slow-2g')).toBe('2G');
   });
 
   it('says WiFi/5G where the browser does not tell', () => {
-    expect(networkName({ type: undefined, effectiveType: '4g' })).toBe('WiFi/5G');
+    expect(name(undefined)).toBe('WiFi/5G');
   });
 
   it('calls a command post WiFi and the radio LoRa', () => {
     const network = { type: 'cellular', effectiveType: '4g' };
-    expect(channelName('command-post', network)).toBe('WiFi');
-    expect(channelName('radio', network)).toBe('LoRa');
+    expect(t(channelName('command-post', network))).toBe('WiFi');
+    expect(t(channelName('radio', network))).toBe('LoRa');
   });
 });
 

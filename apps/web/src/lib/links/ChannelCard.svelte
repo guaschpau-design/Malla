@@ -5,7 +5,8 @@
 
   import type { GlyphName } from '../ui/glyphs.ts';
   import Pictogram from '../ui/Pictogram.svelte';
-  import type { Link } from './links.ts';
+  import StatusDot from '../ui/StatusDot.svelte';
+  import { LEVEL_TONES, type Link } from './links.ts';
 
   interface Props {
     icon: GlyphName;
@@ -22,7 +23,7 @@
   <span class="sign"><Pictogram name={icon} size={28} /></span>
   <div class="body">
     <strong>{name}</strong>
-    <span class="status"><span class="dot" aria-hidden="true"></span>{status}</span>
+    <span class="status"><StatusDot tone={LEVEL_TONES[level]} />{status}</span>
     {@render children?.()}
   </div>
 </section>
@@ -70,21 +71,5 @@
     gap: 0.45rem;
     align-items: center;
     font-size: 0.9rem;
-  }
-
-  .dot {
-    flex-shrink: 0;
-    width: 0.6rem;
-    height: 0.6rem;
-    background: var(--danger);
-    border-radius: 50%;
-  }
-
-  .ok .dot {
-    background: var(--signal-deep);
-  }
-
-  .connecting .dot {
-    background: var(--warning);
   }
 </style>

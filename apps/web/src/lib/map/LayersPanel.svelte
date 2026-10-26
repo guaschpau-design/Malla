@@ -35,9 +35,9 @@
   };
 
   async function toggle(layer: MapLayer): Promise<void> {
-    const shown = hidden.value.includes(layer);
+    const wasHidden = hidden.value.includes(layer);
     const others = hidden.value.filter((name) => name !== layer);
-    await hidden.set(shown ? others : [...others, layer]);
+    await hidden.set(wasHidden ? others : [...others, layer]);
   }
 </script>
 

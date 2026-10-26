@@ -15,6 +15,14 @@ export const en = {
   radioSignal: 'Signal {snr} dB',
   radioUnsupported: 'This browser cannot use radios: use Chrome or Edge on Android or a computer.',
   linkNone: 'No connection',
+  mediumWifi: 'WiFi',
+  mediumCable: 'Ethernet',
+  mediumMobile: '4G/5G',
+  mediumMobile3g: '3G',
+  mediumMobile2g: '2G',
+  mediumUnknown: 'WiFi/5G',
+  mediumLora: 'LoRa',
+  radioUnnamed: 'unnamed radio',
   switchLanguage: 'Español',
   offlineAreas: 'Offline maps',
   close: 'Close',
@@ -147,7 +155,7 @@ export const en = {
   baseMapAerial: 'Satellite',
   downloadAlso: 'Also download',
   downloadAlsoHint:
-    'Topographic and aerial, Spain only. They take several times the space of the street map.',
+    'Topographic and satellite, Spain only. They take several times the space of the street map.',
   keepScreenOn: 'Screen always on',
   diary: 'Operation diary',
   diaryIntro:

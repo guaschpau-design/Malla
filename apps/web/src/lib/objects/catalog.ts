@@ -48,6 +48,11 @@ export const SHAPE_STYLES: readonly StyleInfo[] = [
   { code: 0x0005, label: 'styleRoute', tone: 'blue' },
 ];
 
+/** The styles offered when drawing an area: all but the route, which is for lines (§4.2). */
+export const AREA_STYLES: readonly StyleInfo[] = SHAPE_STYLES.filter(
+  (style) => style.label !== 'styleRoute',
+);
+
 export function symbolInfo(code: number): SymbolInfo {
   return SYMBOLS.find((symbol) => symbol.code === code) ?? (SYMBOLS[0] as SymbolInfo);
 }

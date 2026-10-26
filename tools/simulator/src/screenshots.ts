@@ -90,7 +90,7 @@ try {
   // Ana, who coordinates, tells everyone.
   await openChat(page);
   await page.getByLabel('Mensaje').fill('Reagrupamos en el punto de encuentro en 30 minutos');
-  await page.getByRole('button', { name: 'Enviar' }).click();
+  await page.getByRole('button', { name: 'Enviar', exact: true }).click();
 
   await showView(page, VIEWS.tabletMap);
   await page.screenshot({ path: join(values.out, 'tablet-map.png') });

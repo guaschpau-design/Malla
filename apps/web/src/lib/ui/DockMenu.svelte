@@ -1,6 +1,6 @@
 <!-- A dock button that opens a menu above the dock, aligned with the dock's right edge so it stays
-     on screen. The menu closes when an item is chosen, when the user taps elsewhere or presses
-     Escape. -->
+     on screen. The menu closes when an item that does something calls `close`, when the user taps
+     elsewhere or presses Escape; a switch in it leaves it open, so its change is seen. -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
@@ -10,7 +10,7 @@
   interface Props {
     icon: GlyphName;
     label: string;
-    /** The items; each calls `close` once chosen. */
+    /** The items; those that do something call `close` once chosen. */
     items: Snippet<[close: () => void]>;
   }
 

@@ -4,7 +4,7 @@
 
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import Panel from '../ui/Panel.svelte';
-  import { SHAPE_STYLES, SYMBOLS } from './catalog.ts';
+  import { AREA_STYLES, SYMBOLS } from './catalog.ts';
   import type { DraftKind } from './draft.ts';
   import SymbolIcon from './SymbolIcon.svelte';
 
@@ -66,7 +66,7 @@
             </label>
           {/each}
         {:else}
-          {#each SHAPE_STYLES as style (style.code)}
+          {#each AREA_STYLES as style (style.code)}
             <label class="choice">
               <input type="radio" name="code" value={style.code} bind:group={code} />
               <span class="swatch" style:--swatch="var(--tone-{style.tone})"></span>

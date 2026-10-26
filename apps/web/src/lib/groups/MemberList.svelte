@@ -1,5 +1,6 @@
-<!-- The members of the active group, each with an initial, a name and two signs: whether their
-     position is on the map and whether their news reaches this device by radio. -->
+<!-- The members of the active group, each with an initial, a name (and "coordinator" for those who
+     coordinate) and two signs: whether their position is on the map and whether their news reaches
+     this device by radio. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
   import type { NodeId } from '@tesel/protocol';
@@ -10,6 +11,7 @@
   import { useNow } from '../ui/now.svelte.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import { memberRows, type PositionStatus } from './member-list.ts';
+  import { ROLE_LABELS } from './role-label.ts';
 
   interface Props {
     t: Translate;
@@ -39,6 +41,8 @@
       </span>
       <span class="name">
         {row.alias}{#if row.self}&nbsp;({t('you')}){/if}
+        {#if row.role === 'coordinator'}<span class="hint">· {t(ROLE_LABELS.coordinator)}</span
+          >{/if}
       </span>
       <span class="signs">
         {#if row.byRadio}

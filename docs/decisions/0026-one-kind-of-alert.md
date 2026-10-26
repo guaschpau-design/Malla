@@ -9,7 +9,7 @@ Coordinators could send a chat message as an alert at three levels: information,
 
 ## Decision
 
-- The chat has one way to write and two ways to send: **Send**, for everyone, and **Alert**, for coordinators. An alert is always `ALERT` with level critical (protocol §3.9).
+- The chat has one way to write and two ways to send: **Send**, for everyone, and **Send as alert**, for coordinators. An alert is always `ALERT` with level critical (protocol §3.9).
 - Anything less than an alert is a message.
 - The protocol keeps its three levels. Alerts of other levels, from other or older clients, are still shown as before.
 

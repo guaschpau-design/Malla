@@ -13,6 +13,7 @@ In the field a street map is not enough: off-road a team needs contour lines and
 - The browser reads the IGN services itself (WMTS, Web Mercator grid, JPEG tiles) through the same tile protocol as the street map, which answers from downloaded tiles first. Nothing passes through our server.
 - An offline area can include either or both IGN maps, three zoom levels deeper than the street map, since raster tiles cannot be enlarged without blurring. Downloaded tiles are kept by source in the map database (version 2, which moved the street map's tiles under their source).
 - Each IGN map shows the attribution its service asks for.
+- The interface calls the orthophotos "Satellite" («Satélite»), the name people know for a photograph of the ground from above, although PNOA is flown by aircraft. In code and documentation they stay `aerial`.
 
 ## Consequences
 

@@ -26,17 +26,22 @@
     failed: 'radioFailed',
   };
 
+  /** How the radio is doing: paired and on the group's channel, waiting for a group, or not yet. */
   const card = $derived.by((): { level: Link['level']; status: string } => {
-    const name = radio.name ?? 'MeshCore';
+    const name = radio.name ?? t('radioUnnamed');
     if (!supported) return { level: 'none', status: t('radioUnsupported') };
     if (radio.state === 'disconnected') return { level: 'none', status: t('radioOff') };
-    if (radio.state === 'connecting') return { level: 'connecting', status: t('linkConnecting') };
-    if (radio.linked && groupName) return { level: 'ok', status: t('radioLinked', { name }) };
-    return { level: 'connecting', status: t('radioWaiting', { name }) };
+    if (radio.state === 'ready' && !groupName) {
+      return { level: 'connecting', status: t('radioWaiting', { name }) };
+    }
+    if (radio.state === 'ready' && radio.linked) {
+      return { level: 'ok', status: t('radioLinked', { name }) };
+    }
+    return { level: 'connecting', status: t('linkConnecting') };
   });
 </script>
 
-<ChannelCard icon="mast" name="LoRa" level={card.level} status={card.status}>
+<ChannelCard icon="mast" name={t('mediumLora')} level={card.level} status={card.status}>
   {#if supported && radio.state === 'ready'}
     <span class="hint">
       {t('radioDetails', { percent: Math.round(radio.airtimeUsed * 100) })}

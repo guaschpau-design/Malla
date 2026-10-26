@@ -5,6 +5,8 @@
 import type { RadioLinkState } from '@tesel/meshcore';
 
 import type { MessageKey } from '../i18n/index.ts';
+import type { GlyphName } from '../ui/glyphs.ts';
+import type { StatusTone } from '../ui/status-tone.ts';
 import type { FeedStatus } from '../sync/group-feed.svelte.ts';
 
 export type Channel = 'internet' | 'command-post' | 'radio';
@@ -33,6 +35,13 @@ export interface Link {
   readonly level: 'ok' | 'connecting' | 'none';
 }
 
+/** The colour of the dot for each level. */
+export const LEVEL_TONES: Readonly<Record<Link['level'], StatusTone>> = {
+  ok: 'good',
+  connecting: 'fair',
+  none: 'poor',
+};
+
 export function linkOf(input: LinkInput): Link {
   const channels: Channel[] = [];
   const relayUp = input.server === null ? input.browserOnline : input.server === 'synced';
@@ -46,28 +55,33 @@ export function linkOf(input: LinkInput): Link {
 
 /**
  * The medium of the internet channel. Browsers do not tell 4G from 5G, so the fastest mobile data is
- * "4G/5G"; where the browser says nothing (iPhone, computers) it is "WiFi/5G".
+ * "4G/5G"; where the browser says nothing (iPhone, most computers) it is "WiFi/5G".
  */
-export function networkName(network: Network): string {
-  if (network.type === 'wifi') return 'WiFi';
-  if (network.type === 'cellular') {
-    if (network.effectiveType === '3g') return '3G';
-    if (network.effectiveType === '2g' || network.effectiveType === 'slow-2g') return '2G';
-    return '4G/5G';
-  }
-  return 'WiFi/5G';
+export function networkName(network: Network): MessageKey {
+  if (network.type === 'wifi') return 'mediumWifi';
+  if (network.type === 'ethernet') return 'mediumCable';
+  if (network.type !== 'cellular') return 'mediumUnknown';
+  if (network.effectiveType === '3g') return 'mediumMobile3g';
+  if (network.effectiveType === '2g' || network.effectiveType === 'slow-2g')
+    return 'mediumMobile2g';
+  return 'mediumMobile';
 }
 
 /** The medium of each channel, as the header names it. A command post is a WiFi network. */
-export function channelName(channel: Channel, network: Network): string {
+export function channelName(channel: Channel, network: Network): MessageKey {
   switch (channel) {
     case 'internet':
       return networkName(network);
     case 'command-post':
-      return 'WiFi';
+      return 'mediumWifi';
     case 'radio':
-      return 'LoRa';
+      return 'mediumLora';
   }
+}
+
+/** The sign of the network channel: bars of signal on mobile data, WiFi waves otherwise. */
+export function networkSign(channel: Channel, network: Network): GlyphName {
+  return channel === 'internet' && network.type === 'cellular' ? 'signal' : 'wifi';
 }
 
 /** What the radio contributes: off, on its way (pairing, or paired but not on the group yet), or linked. */

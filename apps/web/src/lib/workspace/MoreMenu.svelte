@@ -59,7 +59,7 @@
       <button
         role="menuitemcheckbox"
         aria-checked={keepScreenOn.value}
-        onclick={() => keepScreenOn.set(!keepScreenOn.value)}
+        onclick={() => void keepScreenOn.set(!keepScreenOn.value)}
       >
         <Pictogram name="screen" size={20} />
         {t('keepScreenOn')}

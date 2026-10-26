@@ -2,7 +2,8 @@
      coloured dot. Opens the connections panel. -->
 <script lang="ts">
   import type { Translate } from '../i18n/index.ts';
-  import { channelName, type Link, type Network } from './links.ts';
+  import StatusDot from '../ui/StatusDot.svelte';
+  import { channelName, LEVEL_TONES, type Link, type Network } from './links.ts';
 
   interface Props {
     t: Translate;
@@ -19,23 +20,26 @@
   const label = $derived.by(() => {
     if (link.level === 'connecting') return t('linkConnecting');
     if (link.level === 'none') return t('linkNone');
-    return link.channels.map((channel) => channelName(channel, network)).join(' · ');
+    return link.channels.map((channel) => t(channelName(channel, network))).join(' · ');
   });
 </script>
 
 <button
-  class="link {link.level}"
+  class="link"
   {onclick}
   aria-expanded={expanded}
   aria-label="{t('connections')}: {label}"
   title={detail}
 >
-  <span class="dot" aria-hidden="true"></span>
+  <StatusDot tone={LEVEL_TONES[link.level]} />
   {label}
 </button>
 
 <style>
   .link {
+    /* The dark bar needs the bright lime for "good". */
+    --status-good: var(--signal);
+
     display: inline-flex;
     flex-shrink: 0;
     gap: 0.45rem;
@@ -47,23 +51,5 @@
     color: inherit;
     white-space: nowrap;
     border-color: rgb(230 235 232 / 25%);
-  }
-
-  .dot {
-    width: 0.55rem;
-    height: 0.55rem;
-    border-radius: 50%;
-  }
-
-  .ok .dot {
-    background: var(--signal);
-  }
-
-  .connecting .dot {
-    background: var(--warning);
-  }
-
-  .none .dot {
-    background: var(--danger);
   }
 </style>

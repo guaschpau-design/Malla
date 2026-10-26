@@ -12,7 +12,9 @@
   import type { GlyphName } from '../ui/glyphs.ts';
   import Panel from '../ui/Panel.svelte';
   import Pictogram from '../ui/Pictogram.svelte';
-  import { accuracyQuality, type AccuracyQuality } from './accuracy.ts';
+  import StatusDot from '../ui/StatusDot.svelte';
+  import type { StatusTone } from '../ui/status-tone.ts';
+  import { accuracyQuality } from './accuracy.ts';
   import type { DeviceLocation } from './device-location.svelte.ts';
   import { POSITION_MODES, type PositionMode } from './position-mode.ts';
   import type { PositionSharing } from './position-sharing.svelte.ts';
@@ -37,7 +39,7 @@
     hidden: { label: 'positionHide', hint: 'positionHideHint', icon: 'hidden' },
   };
 
-  const QUALITY: Readonly<Record<AccuracyQuality, MessageKey>> = {
+  const QUALITY: Readonly<Record<StatusTone, MessageKey>> = {
     good: 'accuracyGood',
     fair: 'accuracyFair',
     poor: 'accuracyPoor',
@@ -49,7 +51,7 @@
 <Panel title={t('me')} closeLabel={t('close')} {onclose}>
   {#if sharing}
     {@const current = sharing}
-    <section class="stack section" aria-label={t('positionTitle')}>
+    <section class="stack section">
       <div class="modes" role="radiogroup" aria-label={t('positionTitle')}>
         {#each POSITION_MODES as mode (mode)}
           <button
@@ -73,8 +75,8 @@
       <CoordinateBlock {t} at={location.fix.at} {format} />
       {#if location.fix.accuracy !== null}
         {@const quality = accuracyQuality(location.fix.accuracy)}
-        <p class="accuracy {quality}">
-          <span class="dot" aria-hidden="true"></span>
+        <p class="accuracy">
+          <StatusDot tone={quality} />
           {t('accuracyWithin', { distance: formatDistance(location.fix.accuracy, locale) })}
           · {t(QUALITY[quality])}
         </p>
@@ -121,23 +123,5 @@
     gap: 0.45rem;
     align-items: center;
     margin: 0;
-  }
-
-  .dot {
-    width: 0.65rem;
-    height: 0.65rem;
-    border-radius: 50%;
-  }
-
-  .good .dot {
-    background: var(--signal-deep);
-  }
-
-  .fair .dot {
-    background: var(--warning);
-  }
-
-  .poor .dot {
-    background: var(--danger);
   }
 </style>

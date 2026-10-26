@@ -71,7 +71,7 @@
           oninvite={() => (view = { kind: 'invite', group })}
           onleave={() => leave(group)}
         />
-      {:else}
+      {:else if session.groups.length === 0}
         <p class="hint">{t('noGroups')}</p>
       {/if}
 

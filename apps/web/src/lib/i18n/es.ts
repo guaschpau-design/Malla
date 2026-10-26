@@ -16,6 +16,14 @@ export const es: Messages = {
   radioUnsupported:
     'Este navegador no puede usar radios: usa Chrome o Edge en Android o en un ordenador.',
   linkNone: 'Sin conexión',
+  mediumWifi: 'WiFi',
+  mediumCable: 'Cable',
+  mediumMobile: '4G/5G',
+  mediumMobile3g: '3G',
+  mediumMobile2g: '2G',
+  mediumUnknown: 'WiFi/5G',
+  mediumLora: 'LoRa',
+  radioUnnamed: 'radio sin nombre',
   switchLanguage: 'English',
   offlineAreas: 'Mapas sin conexión',
   close: 'Cerrar',
@@ -148,7 +156,7 @@ export const es: Messages = {
   baseMapTopo: 'Topográfico',
   baseMapAerial: 'Satélite',
   downloadAlso: 'Descargar también',
-  downloadAlsoHint: 'Topográfico y ortofoto, solo España. Ocupan varias veces lo que el callejero.',
+  downloadAlsoHint: 'Topográfico y satélite, solo España. Ocupan varias veces lo que el callejero.',
   keepScreenOn: 'Pantalla siempre encendida',
   diary: 'Diario de la operación',
   diaryIntro:
