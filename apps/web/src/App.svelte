@@ -70,8 +70,10 @@
   const radio = new RadioSession();
   const location = new DeviceLocation();
   /** How this device reaches its group now (lib/links). */
+  // A practice syncs with nothing: the indicator shows this device's own connection, as without a
+  // group.
   const linkInput = $derived({
-    server: feed?.status ?? null,
+    server: session?.activeGroup?.practice ? null : (feed?.status ?? null),
     viaCommandPost: feed?.viaCommandPost ?? false,
     radio: radioLinkOf(radio),
     browserOnline: connection.online,

@@ -20,12 +20,12 @@ export interface Network {
 }
 
 export interface LinkInput {
-  /** The active group's sync with its relay, or null without a group. */
+  /** The active group's sync with its relay, or null without a group or in a practice. */
   readonly server: FeedStatus | null;
   /** True when that relay is a command post rather than the group's server (protocol §8.3). */
   readonly viaCommandPost: boolean;
   readonly radio: 'off' | 'connecting' | 'linked';
-  /** Whether the browser believes it is online; it only matters without a group. */
+  /** Whether the browser believes it is online; it only matters when `server` is null. */
   readonly browserOnline: boolean;
 }
 
