@@ -243,8 +243,11 @@ Receivers MUST display unknown codes as a generic point.
 | `0x0003` | Search area, cleared  |
 | `0x0004` | Safe area             |
 | `0x0005` | Route                 |
+| `0x0006` | Operation area        |
 
 Receivers MUST display unknown codes as neutral.
+
+An operation area is the area the group works in. Receivers MAY offer to download its map for use without a connection.
 
 ## 5. Group cryptography
 

@@ -27,6 +27,7 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 - Tasks: a short text and, if wanted, who should do it and a place on the map; to do, in progress or done. Anyone can add one from the Tasks button or with "Task here" on a point or an object, take it, finish it or hand it on. The dock counts this device's tasks and a notice says when someone hands one over; tasks with a place show on the map, and the diary tells how each moved along. A new event type, `TASK`, carries each change in one radio message (protocol §3.11, [ADR-0025](docs/decisions/0025-tasks.md)).
 - Public services on the map: health centres and hospitals, fire stations, police, helipads and town halls from the base map, with round icons from zoom 14, a «Servicios» layer switch, and their point with guidance when tapped. They work offline in downloaded areas ([ADR-0027](docs/decisions/0027-public-services-from-the-base-map.md)).
 - Areas downloaded tile by tile for offline use ([ADR-0011](docs/decisions/0011-client-side-area-download.md)).
+- The operation area: a coordinator draws an area with the operation area style, and every member is offered its map to download, with its size, in one tap ([ADR-0029](docs/decisions/0029-operation-area.md), protocol §4.2).
 - The base map (Spain, Portugal and the islands) is built from OpenStreetMap by our own server and served by it and by command posts.
 
 ### Groups

@@ -4,19 +4,21 @@
 
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import Panel from '../ui/Panel.svelte';
-  import { AREA_STYLES, SYMBOLS } from './catalog.ts';
+  import { areaStyles, SYMBOLS } from './catalog.ts';
   import type { DraftKind } from './draft.ts';
   import SymbolIcon from './SymbolIcon.svelte';
 
   interface Props {
     t: Translate;
     kind: DraftKind;
+    /** This device coordinates: its areas can mark the operation area. */
+    coordinator: boolean;
     /** Saves the object; rejects if it does not fit in a radio message. */
     onsave: (code: number, label: string) => Promise<void>;
     oncancel: () => void;
   }
 
-  let { t, kind, onsave, oncancel }: Props = $props();
+  let { t, kind, coordinator, onsave, oncancel }: Props = $props();
 
   const TITLES: Readonly<Record<DraftKind, MessageKey>> = {
     marker: 'newMarker',
@@ -66,7 +68,7 @@
             </label>
           {/each}
         {:else}
-          {#each AREA_STYLES as style (style.code)}
+          {#each areaStyles(coordinator) as style (style.code)}
             <label class="choice">
               <input type="radio" name="code" value={style.code} bind:group={code} />
               <span class="swatch" style:--swatch="var(--tone-{style.tone})"></span>

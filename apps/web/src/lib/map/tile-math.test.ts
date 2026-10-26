@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { countTiles, latToTileY, lonToTileX, tileKey, tilesInBounds } from './tile-math.ts';
+import {
+  boundsAround,
+  containsBounds,
+  countTiles,
+  latToTileY,
+  lonToTileX,
+  tileKey,
+  tilesInBounds,
+} from './tile-math.ts';
 
 const valencia = { west: -0.42, south: 39.44, east: -0.33, north: 39.5 };
 
@@ -30,5 +38,23 @@ describe('tile arithmetic', () => {
     const at14 = countTiles(valencia, 14, 14);
     expect(at14 / at13).toBeGreaterThan(3);
     expect(at14 / at13).toBeLessThan(5);
+  });
+});
+
+describe('bounds', () => {
+  it('wraps a set of points', () => {
+    const points = [
+      { lat: 39.44, lon: -0.33 },
+      { lat: 39.5, lon: -0.42 },
+      { lat: 39.47, lon: -0.4 },
+    ];
+    expect(boundsAround(points)).toEqual(valencia);
+  });
+
+  it('tells whether one area holds another', () => {
+    expect(containsBounds(valencia, { west: -0.4, south: 39.45, east: -0.35, north: 39.49 })).toBe(
+      true,
+    );
+    expect(containsBounds(valencia, { ...valencia, east: -0.3 })).toBe(false);
   });
 });

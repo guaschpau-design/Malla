@@ -8,6 +8,7 @@ Lista para probar Tesel en condiciones reales antes de publicar la v0.1. Las pru
 - [ ] En cada móvil: Tesel abierta desde `https://tesel.eu/app/`, añadida a la pantalla de inicio, con nombre elegido.
 - [ ] Mapa de la zona de la prueba descargado en cada móvil («Más» → «Mapas sin conexión»).
 - [ ] Un grupo creado por quien coordina y todos unidos con el QR.
+- [ ] Quien coordina dibuja la zona del operativo; a cada uno le sale «Descargar» y la descarga termina.
 
 ## 1. Con internet (10 minutos)
 

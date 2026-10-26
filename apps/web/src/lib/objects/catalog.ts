@@ -33,6 +33,9 @@ export const SYMBOLS: readonly SymbolInfo[] = [
   { code: 0x000c, label: 'symbolCommandPost', glyph: 'mast', tone: 'ink' },
 ];
 
+/** §4.2: the area the group works in, whose map members are offered to download. */
+export const OPERATION_AREA_STYLE = 0x0006;
+
 export interface StyleInfo {
   readonly code: number;
   readonly label: MessageKey;
@@ -46,12 +49,18 @@ export const SHAPE_STYLES: readonly StyleInfo[] = [
   { code: 0x0003, label: 'styleSearchCleared', tone: 'green' },
   { code: 0x0004, label: 'styleSafe', tone: 'teal' },
   { code: 0x0005, label: 'styleRoute', tone: 'blue' },
+  { code: OPERATION_AREA_STYLE, label: 'styleOperationArea', tone: 'ink' },
 ];
 
-/** The styles offered when drawing an area: all but the route, which is for lines (§4.2). */
-export const AREA_STYLES: readonly StyleInfo[] = SHAPE_STYLES.filter(
-  (style) => style.label !== 'styleRoute',
-);
+/**
+ * The styles offered when drawing an area: all but the route, which is for lines, and the
+ * operation area only for coordinators (a UI rule, like alerts: ADR-0005).
+ */
+export function areaStyles(coordinator: boolean): StyleInfo[] {
+  return SHAPE_STYLES.filter(
+    (style) => style.label !== 'styleRoute' && (coordinator || style.code !== OPERATION_AREA_STYLE),
+  );
+}
 
 export function symbolInfo(code: number): SymbolInfo {
   return SYMBOLS.find((symbol) => symbol.code === code) ?? (SYMBOLS[0] as SymbolInfo);

@@ -1,4 +1,7 @@
-// Web Mercator tile arithmetic (XYZ scheme, as used by MapLibre and PMTiles).
+// Web Mercator tile arithmetic (XYZ scheme, as used by MapLibre and PMTiles), and the bounds it
+// works on.
+
+import type { LatLon } from '@tesel/protocol';
 
 export interface Bounds {
   readonly west: number;
@@ -67,4 +70,24 @@ export function* tilesInBounds(
 
 export function tileKey(tile: TileCoord): string {
   return `${tile.z}/${tile.x}/${tile.y}`;
+}
+
+/** The smallest bounds around some points; they must not cross the antimeridian. */
+export function boundsAround(points: readonly LatLon[]): Bounds {
+  return {
+    west: Math.min(...points.map((point) => point.lon)),
+    south: Math.min(...points.map((point) => point.lat)),
+    east: Math.max(...points.map((point) => point.lon)),
+    north: Math.max(...points.map((point) => point.lat)),
+  };
+}
+
+/** Whether `outer` holds all of `inner`. */
+export function containsBounds(outer: Bounds, inner: Bounds): boolean {
+  return (
+    outer.west <= inner.west &&
+    outer.south <= inner.south &&
+    outer.east >= inner.east &&
+    outer.north >= inner.north
+  );
 }

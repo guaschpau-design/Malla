@@ -38,6 +38,10 @@ export const es: Messages = {
   detailRegion: 'Comarca (zoom 12)',
   estimate: '{tiles} teselas, unos {size}',
   areaTooLarge: 'La zona es demasiado grande. Acerca el mapa o elige menos detalle.',
+  operationAreaTitle: 'Zona del operativo «{name}»',
+  operationAreaOffer: 'Descarga su mapa para tenerlo sin conexión (unos {size}).',
+  operationAreaTooLarge:
+    'La zona es demasiado grande para descargarla de una vez. Descarga por partes desde «Más» → «Mapas sin conexión».',
   download: 'Descargar',
   cancel: 'Cancelar',
   downloading: 'Descargando… {done} de {total}',
@@ -230,6 +234,7 @@ export const es: Messages = {
   styleSearchCleared: 'Zona de búsqueda despejada',
   styleSafe: 'Zona segura',
   styleRoute: 'Ruta',
+  styleOperationArea: 'Zona del operativo',
   drawMarker: 'Marcador',
   drawArea: 'Zona',
   drawHintMarker: 'Toca el mapa donde va el marcador.',

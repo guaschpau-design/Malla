@@ -2,7 +2,7 @@
 
 import { expect, test } from '@playwright/test';
 
-import { chooseAlias, openMore } from './helpers.ts';
+import { chooseAlias, openMore, twoMembers } from './helpers.ts';
 
 test('a downloaded area keeps working after going offline and reloading', async ({
   page,
@@ -46,4 +46,30 @@ test('a downloaded area keeps working after going offline and reloading', async 
     maxDiffPixelRatio: 0.05,
     mask: [page.locator('.maplibregl-ctrl'), page.locator('.fab'), page.locator('button.sos')],
   });
+});
+
+test('members are offered the map of the operation area their coordinator marks', async ({
+  browser,
+}) => {
+  const { ana, berta } = await twoMembers(browser, '/#map=15/39.47/-0.37');
+  const box = await ana.locator('.maplibregl-canvas').boundingBox();
+  if (!box) throw new Error('no map');
+  const at = (dx: number, dy: number) =>
+    ana.mouse.click(box.x + box.width / 2 + dx, box.y + box.height / 2 + dy);
+
+  await ana.getByRole('button', { name: 'Añadir' }).click();
+  await ana.getByRole('menuitem', { name: 'Zona' }).click();
+  await at(-60, -60);
+  await at(60, -60);
+  await at(0, 60);
+  await ana.getByRole('button', { name: 'Terminar' }).click();
+  await ana.getByRole('radio', { name: 'Zona del operativo' }).check();
+  await ana.getByLabel('Etiqueta (opcional)').fill('Sector norte');
+  await ana.getByRole('button', { name: 'Guardar' }).click();
+
+  const offer = berta.getByRole('status').filter({ hasText: 'Zona del operativo «Sector norte»' });
+  await offer.getByRole('button', { name: 'Descargar' }).click();
+  await expect(offer).toBeHidden();
+  await openMore(berta, 'Mapas sin conexión');
+  await expect(berta.getByText('Sector norte')).toBeVisible();
 });

@@ -20,7 +20,8 @@
   import MapView from './lib/map/MapView.svelte';
   import type { MapTheme } from './lib/map/style.ts';
   import { findTile, registerTileProtocol, tileArchives } from './lib/map/tile-source.ts';
-  import { openTileStore, type TileStore } from './lib/map/tile-store.ts';
+  import { openTileStore } from './lib/map/tile-store.ts';
+  import type { OfflineMaps } from './lib/offline/offline-maps.ts';
   import OfflineAreasPanel from './lib/offline/OfflineAreasPanel.svelte';
   import { DeviceLocation } from './lib/position/device-location.svelte.ts';
   import { PositionSharing } from './lib/position/position-sharing.svelte.ts';
@@ -55,7 +56,8 @@
       return preferences?.relief.value ? elevations : null;
     },
   });
-  let store: TileStore | undefined = $state();
+  /** Downloaded maps, once their database is open. */
+  let offline: OfflineMaps | undefined = $state.raw();
   let db: AppDb | undefined;
   let session: Session | undefined = $state();
   let preferences: Preferences | undefined = $state.raw();
@@ -88,7 +90,7 @@
     void openTileStore().then((opened) => {
       registerTileProtocol(opened, archives);
       elevations = new ElevationReader((tile) => findTile('terrain', tile, opened, archives));
-      store = opened;
+      offline = { store: opened, archives };
     });
     void openAppDb().then(async (opened) => {
       db = opened;
@@ -220,7 +222,7 @@
   </header>
 
   <main>
-    {#if store && preferences}
+    {#if offline && preferences}
       <MapView
         choice={{
           base: preferences.baseMap.value,
@@ -232,12 +234,21 @@
       />
     {/if}
 
-    {#if map && preferences}
-      <MapWorkspace {t} {locale} {map} group={workspaceGroup} {radio} {location} {preferences} />
+    {#if map && offline && preferences}
+      <MapWorkspace
+        {t}
+        {locale}
+        {map}
+        group={workspaceGroup}
+        {radio}
+        {location}
+        {preferences}
+        {offline}
+      />
     {/if}
 
-    {#if map && store && panels.open === 'offline'}
-      <OfflineAreasPanel {t} {locale} {map} {store} {archives} onclose={closePanel} />
+    {#if map && offline && panels.open === 'offline'}
+      <OfflineAreasPanel {t} {locale} {map} {offline} onclose={closePanel} />
     {/if}
 
     {#if panels.open === 'connections'}

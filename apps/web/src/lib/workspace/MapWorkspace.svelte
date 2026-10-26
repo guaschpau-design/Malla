@@ -31,6 +31,8 @@
   import DrawLayer from '../objects/DrawLayer.svelte';
   import ObjectForm from '../objects/ObjectForm.svelte';
   import ObjectLayer from '../objects/ObjectLayer.svelte';
+  import type { OfflineMaps } from '../offline/offline-maps.ts';
+  import OperationAreaOffer from '../offline/OperationAreaOffer.svelte';
   import type { DeviceLocation } from '../position/device-location.svelte.ts';
   import LocateButton from '../position/LocateButton.svelte';
   import MePanel from '../position/MePanel.svelte';
@@ -60,9 +62,11 @@
     radio: RadioSession;
     location: DeviceLocation;
     preferences: Preferences;
+    /** Downloaded maps: the operation area is offered for download. */
+    offline: OfflineMaps;
   }
 
-  let { t, locale, map, group, radio, location, preferences }: Props = $props();
+  let { t, locale, map, group, radio, location, preferences, offline }: Props = $props();
 
   // Kept on when the user asks, and always while guiding to a target.
   keepScreenAwake(() => preferences.keepScreenOn.value || navigation.target !== null);
@@ -220,6 +224,7 @@
     <ObjectForm
       {t}
       kind={drawing.draft.kind}
+      coordinator={role === 'coordinator'}
       onsave={saveDraft}
       oncancel={() => {
         drawing.stop();
@@ -338,6 +343,9 @@
   {/if}
   <Navigation {t} {locale} {map} {location} groupState={group?.feed.state ?? null} />
   {#if group && !tapping}
+    {#key group.feed}
+      <OperationAreaOffer {t} {locale} groupState={group.feed.state} {offline} />
+    {/key}
     <IncidentBanners
       {t}
       {locale}

@@ -37,6 +37,10 @@ export const en = {
   detailRegion: 'Region (zoom 12)',
   estimate: '{tiles} tiles, about {size}',
   areaTooLarge: 'This area is too large. Zoom in or choose less detail.',
+  operationAreaTitle: 'Operation area “{name}”',
+  operationAreaOffer: 'Download its map to have it without a connection (about {size}).',
+  operationAreaTooLarge:
+    'This area is too large to download at once. Download it in parts from “More” → “Offline maps”.',
   download: 'Download',
   cancel: 'Cancel',
   downloading: 'Downloading… {done} of {total}',
@@ -229,6 +233,7 @@ export const en = {
   styleSearchCleared: 'Search area, cleared',
   styleSafe: 'Safe area',
   styleRoute: 'Route',
+  styleOperationArea: 'Operation area',
   drawMarker: 'Marker',
   drawArea: 'Area',
   drawHintMarker: 'Tap the map where the marker goes.',
