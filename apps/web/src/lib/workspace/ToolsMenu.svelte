@@ -19,6 +19,7 @@
         onmeasure();
       },
     },
+    { label: 'layers', run: () => (panels.open = 'layers') },
     { label: 'offlineAreas', run: () => (panels.open = 'offline') },
   ];
 </script>

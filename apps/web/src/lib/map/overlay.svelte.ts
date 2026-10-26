@@ -26,6 +26,11 @@ export class Overlay<Source extends string> {
   readonly #data: Record<Source, FeatureCollection>;
   #layerIds: readonly string[] = [];
   #visible = true;
+  /**
+   * Adding images or sources makes the map announce a style change at once, which calls
+   * `#install` again before the first call is done.
+   */
+  #installing = false;
   readonly #install = () => {
     this.#installNow();
   };
@@ -76,7 +81,18 @@ export class Overlay<Source extends string> {
 
   #installNow(): void {
     const [first] = this.#spec.sources;
-    if (first === undefined || this.#map.getSource(first) !== undefined) return;
+    if (this.#installing || first === undefined || this.#map.getSource(first) !== undefined) {
+      return;
+    }
+    this.#installing = true;
+    try {
+      this.#addEverything();
+    } finally {
+      this.#installing = false;
+    }
+  }
+
+  #addEverything(): void {
     this.#spec.prepare?.();
     for (const source of this.#spec.sources) {
       this.#map.addSource(source, { type: 'geojson', data: this.#data[source] });

@@ -1,4 +1,5 @@
-<!-- Draws the group's markers, shapes and active SOS calls, and reports taps on objects. -->
+<!-- Draws the group's markers, shapes and active SOS calls, and reports taps on objects. Objects
+     can be hidden; SOS calls never are. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
   import type { Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
@@ -13,12 +14,14 @@
   interface Props {
     map: MapLibreMap;
     groupState: GroupState;
-    /** False while drawing, so taps go to the drawing instead. */
+    /** False while drawing or measuring, so taps go there instead. */
     interactive: boolean;
+    /** Whether markers and shapes are shown. */
+    visible: boolean;
     onselect: (key: string) => void;
   }
 
-  let { map, groupState, interactive, onselect }: Props = $props();
+  let { map, groupState, interactive, visible, onselect }: Props = $props();
 
   const MARKERS = 'tesel-markers';
   const SHAPES = 'tesel-shapes';
@@ -28,13 +31,13 @@
   const data = $derived(mapObjects(groupState));
 
   useOverlay(() => map, {
-    data: { [SHAPES]: () => data.shapes, [MARKERS]: () => data.markers, [SOS]: () => data.sos },
+    data: { [SHAPES]: () => data.shapes, [MARKERS]: () => data.markers },
+    visible: () => visible,
     prepare: () => {
       addSymbolImages(map);
     },
     layers: () => {
       const tone = toneExpression();
-      const danger = themeColor('danger');
       const text = themeColor('map-text');
       const halo = themeColor('map-halo');
       return [
@@ -79,6 +82,16 @@
           },
           paint: { 'text-color': text, 'text-halo-color': halo, 'text-halo-width': 1.5 },
         },
+      ];
+    },
+  });
+
+  useOverlay(() => map, {
+    data: { [SOS]: () => data.sos },
+    layers: () => {
+      const danger = themeColor('danger');
+      const halo = themeColor('map-halo');
+      return [
         {
           id: `${SOS}-halo`,
           type: 'circle',

@@ -17,10 +17,11 @@
     self: NodeId;
     /** False while drawing or measuring, so taps go there instead. */
     interactive: boolean;
+    visible: boolean;
     onselect: (id: NodeId) => void;
   }
 
-  let { map, groupState, self, interactive, onselect }: Props = $props();
+  let { map, groupState, self, interactive, visible, onselect }: Props = $props();
 
   const SOURCE = 'tesel-members';
   /** Stale markers are re-evaluated this often even when no event arrives. */
@@ -30,6 +31,7 @@
 
   useOverlay(() => map, {
     data: { [SOURCE]: () => data },
+    visible: () => visible,
     layers: () => {
       const halo = themeColor('map-halo');
       return [

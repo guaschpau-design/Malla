@@ -118,6 +118,11 @@ button:disabled {
   opacity: 0.5;
 }
 
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--accent-line);
+}
+
 button:focus-visible,
 input:focus-visible,
 select:focus-visible {

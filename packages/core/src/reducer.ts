@@ -14,11 +14,13 @@ import { objects } from './state/objects.ts';
 import { positions } from './state/positions.ts';
 import type { Slice } from './state/slice.ts';
 import { sos, sosCancels } from './state/sos.ts';
+import { trails } from './state/trails.ts';
 
 export type { ObjectRecord } from './state/objects.ts';
+export type { Trail } from './state/trails.ts';
 
 /** Every slice of the group state, by its name in the state. */
-const SLICES = { members, positions, chat, objects, sos, sosCancels, alerts, acks };
+const SLICES = { members, positions, trails, chat, objects, sos, sosCancels, alerts, acks };
 
 type SliceName = keyof typeof SLICES;
 

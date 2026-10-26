@@ -96,6 +96,7 @@ An event has a fixed 14-byte header — protocol version, type, origin node ID, 
 The current picture is a pure function of the event log, computed by the reducer in `packages/core`. The state is composed of **slices**, one module per domain in `packages/core/src/state/`: each declares the event types it reads, its empty value and how one more event changes it. The reducer routes each event to the slices that read it and leaves the others untouched, so unchanged slices keep their identity and the UI only recomputes what changed.
 
 - **Positions:** latest `POSITION` or `POSITION_HIDDEN` per origin.
+- **Trails:** the newest positions of each origin, in order, for drawing where members have been. A `POSITION_HIDDEN` cuts the trail: positions up to it are dropped, so hiding also hides where one went.
 - **Map objects:** identified by the `(origin, seq)` of the event that created them. Later `MARKER`/`SHAPE` events for the same object replace it; `OBJECT_DELETE` removes it. Conflicts resolve by **last writer wins**, ordering by `(timestamp, origin, seq)`.
 - **Chat and alerts:** append-only, ordered by `(timestamp, origin, seq)` so every device shows the same order.
 - **SOS:** every `SOS` is kept; one is active until a `SOS_CANCEL` for it arrives, and the first cancellation (by the same order) says who cancelled it.

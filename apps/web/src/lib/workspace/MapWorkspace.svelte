@@ -17,7 +17,9 @@
   import IncidentBanners from '../incidents/IncidentBanners.svelte';
   import SosDialog from '../incidents/SosDialog.svelte';
   import { onLongPress } from '../map/long-press.ts';
+  import LayersPanel from '../map/LayersPanel.svelte';
   import MemberLayer from '../map/MemberLayer.svelte';
+  import TrailLayer from '../map/TrailLayer.svelte';
   import Measuring from '../measure/Measuring.svelte';
   import Navigation from '../navigation/Navigation.svelte';
   import { navigateTo } from '../navigation/navigation.svelte.ts';
@@ -56,6 +58,11 @@
   let measuring = $state(false);
   /** Drawing or measuring: taps on the map add points instead of opening what they hit. */
   const tapping = $derived(drawing.draft !== null || measuring);
+  const shown = $derived({
+    members: !preferences.hiddenLayers.value.includes('members'),
+    trails: !preferences.hiddenLayers.value.includes('trails'),
+    objects: !preferences.hiddenLayers.value.includes('objects'),
+  });
   let selected: string | null = $state(null);
   let selectedMember: NodeId | null = $state(null);
   /** The point shown in the coordinates panel. */
@@ -161,14 +168,22 @@
 
 {#if group}
   {@const { feed, self, role } = group}
+  <TrailLayer {map} groupState={feed.state} {self} visible={shown.trails} />
+  <ObjectLayer
+    {map}
+    groupState={feed.state}
+    interactive={!tapping}
+    visible={shown.objects}
+    onselect={select}
+  />
   <MemberLayer
     {map}
     groupState={feed.state}
     {self}
     interactive={!tapping}
+    visible={shown.members}
     onselect={selectMember}
   />
-  <ObjectLayer {map} groupState={feed.state} interactive={!tapping} onselect={select} />
 
   {#if drawing.draft && drawing.describing}
     <ObjectForm
@@ -265,6 +280,10 @@
 {/if}
 
 <SelfLayer {map} {location} />
+
+{#if panels.open === 'layers'}
+  <LayersPanel {t} hidden={preferences.hiddenLayers} onclose={closePanel} />
+{/if}
 
 <!-- The top of the map: what is going on now, then the incidents. -->
 <div class="top">

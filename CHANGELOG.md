@@ -14,7 +14,9 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 - Distance and bearing from this device to any point, marker, circle or member, and guidance to it: a card with the distance, the bearing and an arrow that points the way on the map, and a line to follow. The target moves with a member and the guidance ends if it leaves the map.
 - A measuring tool for distances along a path and the area it encloses; lines, areas and circles show their length, area or radius.
 - Members on the map can be tapped for who they are, their last position and the way there.
-- A tools menu gathers coordinates, measuring and offline maps.
+- Trails: where each member has been in the last hours, drawn from the positions they share. Hiding one's position hides the trail up to that moment too.
+- Map layers: members, trails and markers and zones can each be hidden; the choice is remembered. This device and SOS calls are always shown.
+- A tools menu gathers coordinates, measuring, map layers and offline maps.
 - Areas downloaded tile by tile for offline use ([ADR-0011](docs/decisions/0011-client-side-area-download.md)).
 - The base map (Spain, Portugal and the islands) is built from OpenStreetMap by our own server and served by it and by command posts.
 

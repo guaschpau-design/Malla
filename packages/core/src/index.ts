@@ -6,7 +6,9 @@ export {
   stateOf,
   type GroupState,
   type ObjectRecord,
+  type Trail,
 } from './reducer.ts';
+export { TRAIL_POINTS } from './state/trails.ts';
 export { EU_NARROW, eventAirtimeMs, timeOnAirMs, type LoraPreset } from './airtime.ts';
 export {
   areaSquareMeters,
