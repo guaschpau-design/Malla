@@ -9,11 +9,12 @@
   interface Props {
     t: Translate;
     base: Preference<BaseMap>;
+    relief: Preference<boolean>;
     hidden: Preference<readonly MapLayer[]>;
     onclose: () => void;
   }
 
-  let { t, base, hidden, onclose }: Props = $props();
+  let { t, base, relief, hidden, onclose }: Props = $props();
 
   const BASE_NAMES: Readonly<Record<BaseMap, { label: MessageKey; hint: MessageKey }>> = {
     streets: { label: 'baseMapStreets', hint: 'baseMapStreetsHint' },
@@ -56,6 +57,17 @@
         </span>
       </label>
     {/each}
+    <label class="layer">
+      <input
+        type="checkbox"
+        checked={relief.value}
+        onchange={(event) => relief.set(event.currentTarget.checked)}
+      />
+      <span>
+        <strong>{t('layerRelief')}</strong>
+        <span class="hint">{t('layerReliefHint')}</span>
+      </span>
+    </label>
     <p class="hint">{t('layersAlways')}</p>
   </div>
 </Panel>

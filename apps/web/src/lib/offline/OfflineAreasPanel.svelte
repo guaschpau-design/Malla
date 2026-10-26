@@ -14,7 +14,7 @@
   import type { Bounds } from '../map/tile-math.ts';
   import type { TileArchives } from '../map/tile-source.ts';
   import type { OfflineArea, TileStore } from '../map/tile-store.ts';
-  import type { RasterSourceId, TileSourceId } from '../map/tile-sources.ts';
+  import { TERRAIN_MAX_ZOOM, type TileSourceId } from '../map/tile-sources.ts';
   import Panel from '../ui/Panel.svelte';
 
   interface Props {
@@ -33,6 +33,7 @@
     basemap: 25 * 1024,
     'ign-topo': 18 * 1024,
     'ign-ortho': 18 * 1024,
+    terrain: 110 * 1024,
   };
   /** Photographs and topographic maps need three zooms more than the vector map for the same
       detail: their tiles cannot be enlarged without blurring. */
@@ -41,8 +42,10 @@
     basemap: 'baseMapStreets',
     'ign-topo': 'baseMapTopo',
     'ign-ortho': 'baseMapAerial',
+    terrain: 'layerRelief',
   };
-  const RASTERS: readonly RasterSourceId[] = ['ign-topo', 'ign-ortho'];
+  /** What can be downloaded as well as the street map. */
+  const EXTRAS: readonly Exclude<TileSourceId, 'basemap'>[] = ['ign-topo', 'ign-ortho', 'terrain'];
 
   const detailOptions = [
     { zoom: BASEMAP_MAX_ZOOM, label: 'detailStreets' },
@@ -60,14 +63,14 @@
   let storage: { used: number; quota: number } | null = $state(null);
   let controller: AbortController | null = null;
 
-  /** The raster maps to download as well as the street map. */
-  let extras: RasterSourceId[] = $state([]);
+  let extras: Exclude<TileSourceId, 'basemap'>[] = $state([]);
   const layers: DownloadLayer[] = $derived([
     { source: 'basemap', archive: archives.basemap, maxZoom },
     ...extras.map((source) => ({
       source,
       archive: archives[source],
-      maxZoom: maxZoom + RASTER_EXTRA_ZOOM,
+      // Elevation is coarse: deeper tiles hold no more of it.
+      maxZoom: source === 'terrain' ? TERRAIN_MAX_ZOOM : maxZoom + RASTER_EXTRA_ZOOM,
     })),
   ]);
   const tileCount = $derived(countAreaTiles(bounds, layers));
@@ -165,7 +168,7 @@
 
     <fieldset class="extras" disabled={progress !== null}>
       <legend>{t('downloadAlso')}</legend>
-      {#each RASTERS as source (source)}
+      {#each EXTRAS as source (source)}
         <label class="check">
           <input type="checkbox" value={source} bind:group={extras} />
           {t(SOURCE_NAMES[source])}

@@ -8,16 +8,15 @@
   import { onMount } from 'svelte';
 
   import { mapAssetsUrl } from '../config.ts';
-  import { buildStyle, type BaseMap, type MapTheme } from './style.ts';
+  import { buildStyle, type StyleChoice } from './style.ts';
 
   interface Props {
-    base: BaseMap;
-    theme: MapTheme;
-    lang: string;
+    /** What the map looks like: base map, relief, theme and the language of its names. */
+    choice: StyleChoice;
     onready: (map: MapLibreMap) => void;
   }
 
-  let { base, theme, lang, onready }: Props = $props();
+  let { choice, onready }: Props = $props();
 
   let container: HTMLDivElement;
   let map: MapLibreMap | undefined = $state();
@@ -28,10 +27,10 @@
 
   onMount(() => {
     setWorkerUrl(maplibreWorkerUrl);
-    appliedStyle = `${base}/${theme}/${lang}`;
+    appliedStyle = JSON.stringify(choice);
     const instance = new MapLibreMap({
       container,
-      style: buildStyle(base, theme, lang, mapAssetsUrl()),
+      style: buildStyle(choice, mapAssetsUrl()),
       ...INITIAL_VIEW,
       attributionControl: { compact: true },
       // Keeps the view in the URL (#map=zoom/lat/lon), so a reload or a shared link keeps it.
@@ -46,12 +45,12 @@
     };
   });
 
-  // Restyle when the base map, the theme or the label language changes.
+  // Restyle when any of the choice changes.
   $effect(() => {
-    const wanted = `${base}/${theme}/${lang}`;
+    const wanted = JSON.stringify(choice);
     if (map && wanted !== appliedStyle) {
       appliedStyle = wanted;
-      map.setStyle(buildStyle(base, theme, lang, mapAssetsUrl()));
+      map.setStyle(buildStyle(choice, mapAssetsUrl()));
     }
   });
 </script>

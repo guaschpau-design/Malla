@@ -265,6 +265,7 @@
   <LayersPanel
     {t}
     base={preferences.baseMap}
+    relief={preferences.relief}
     hidden={preferences.hiddenLayers}
     onclose={closePanel}
   />

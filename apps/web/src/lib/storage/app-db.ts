@@ -26,6 +26,7 @@ export type SettingKey =
   | 'positionMode'
   | 'coordinateFormat'
   | 'baseMap'
+  | 'relief'
   | 'hiddenLayers'
   | 'keepScreenOn';
 

@@ -18,6 +18,7 @@ const everywhere = (archive: TileArchive): TileArchives => ({
   basemap: archive,
   'ign-topo': archive,
   'ign-ortho': archive,
+  terrain: archive,
 });
 const online = everywhere({ getTile: () => Promise.resolve(remote) });
 const offline = everywhere({ getTile: () => Promise.reject(new TypeError('Failed to fetch')) });
@@ -38,6 +39,9 @@ describe('tile loading', () => {
     expect(vector.byteLength).toBe(0);
     const raster = await loadTile('tesel-tiles://ign-topo/5/1/3', store, offline, signal);
     expect(new Uint8Array(raster).slice(1, 4)).toEqual(new Uint8Array([0x50, 0x4e, 0x47]));
+    const terrain = await loadTile('tesel-tiles://terrain/5/1/3', store, offline, signal);
+    expect(terrain).not.toBe(raster);
+    expect(new Uint8Array(terrain).slice(1, 4)).toEqual(new Uint8Array([0x50, 0x4e, 0x47]));
   });
 
   it('rejects URLs that are not ours', async () => {

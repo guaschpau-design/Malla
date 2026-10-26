@@ -29,3 +29,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0021](0021-coordinate-formats.md)                 | Write coordinates in four formats, converted by our own code             | Accepted                      |
 | [0022](0022-log-files.md)                          | Carry a group's log in files of sealed envelopes                         | Accepted                      |
 | [0023](0023-ign-base-maps.md)                      | Topographic and aerial base maps from Spain's IGN, read by the browser   | Accepted                      |
+| [0024](0024-terrain-tiles-for-relief.md)           | Relief from the open Terrain Tiles, read by the browser                  | Accepted                      |

@@ -44,6 +44,7 @@
   --member: #3e7bfa;
   --map-text: var(--ink);
   --map-halo: #ffffff;
+  --map-relief: #3d4a52;
 
   /* Families of map symbols and shapes (objects/catalog.ts). */
   --tone-slate: #56656f;
@@ -66,6 +67,7 @@
     --bar-bg: #050c12;
     --accent-line: var(--signal);
     --danger: #ff5c5f;
+    --map-relief: #000000;
   }
 }
 

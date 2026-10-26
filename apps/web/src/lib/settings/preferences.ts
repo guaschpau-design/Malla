@@ -14,6 +14,8 @@ export const PREFERENCES = {
   coordinateFormat: choice('coordinateFormat', COORDINATE_FORMATS, 'decimal'),
   /** The map under everything: the street map, which covers everywhere and is the lightest. */
   baseMap: choice('baseMap', BASE_MAPS, 'streets'),
+  /** Shading of the terrain: off at first, as it downloads elevation data. */
+  relief: flag('relief', false),
   /** Map layers the user has hidden: none at first. */
   hiddenLayers: subset('hiddenLayers', MAP_LAYERS, []),
   /** Keep the screen on while the app is open: off, to spare the battery. */
@@ -25,6 +27,7 @@ export interface Preferences {
   readonly positionMode: Preference<PositionMode>;
   readonly coordinateFormat: Preference<CoordinateFormat>;
   readonly baseMap: Preference<BaseMap>;
+  readonly relief: Preference<boolean>;
   readonly hiddenLayers: Preference<readonly MapLayer[]>;
   readonly keepScreenOn: Preference<boolean>;
 }
@@ -34,6 +37,7 @@ export async function loadPreferences(db: AppDb): Promise<Preferences> {
     positionMode: await Preference.load(db, PREFERENCES.positionMode),
     coordinateFormat: await Preference.load(db, PREFERENCES.coordinateFormat),
     baseMap: await Preference.load(db, PREFERENCES.baseMap),
+    relief: await Preference.load(db, PREFERENCES.relief),
     hiddenLayers: await Preference.load(db, PREFERENCES.hiddenLayers),
     keepScreenOn: await Preference.load(db, PREFERENCES.keepScreenOn),
   };

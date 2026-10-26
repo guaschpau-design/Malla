@@ -1,0 +1,76 @@
+import { describe, expect, it } from 'vitest';
+
+import { climbOf, samplesAlong } from './climb.ts';
+import { ElevationReader, terrariumMetres, tileAt, type Pixels } from './elevation.ts';
+
+const A = { lat: 39.47, lon: -0.37 };
+const B = { lat: 39.48, lon: -0.37 }; // about 1112 m north
+
+describe('elevation tiles', () => {
+  it('decodes Terrarium pixels', () => {
+    expect(terrariumMetres(128, 0, 0)).toBe(0);
+    expect(terrariumMetres(128, 100, 128)).toBe(100.5);
+    expect(terrariumMetres(127, 255, 0)).toBe(-1);
+  });
+
+  it('finds the tile and the place in it of a point', () => {
+    const { tile, u, v } = tileAt({ lat: 0, lon: 0 }, 1);
+    expect(tile).toEqual({ z: 1, x: 1, y: 1 });
+    expect(u).toBeCloseTo(0);
+    expect(v).toBeCloseTo(0);
+  });
+
+  it('reads elevations, and says null where the tiles cannot be had', async () => {
+    // Every pixel of the fake tile is 250.5 m, except where it is "offline".
+    const pixels: Pixels = {
+      width: 2,
+      height: 2,
+      data: new Uint8ClampedArray([
+        128, 250, 128, 255, 128, 250, 128, 255, 128, 250, 128, 255, 128, 250, 128, 255,
+      ]),
+    };
+    let loads = 0;
+    const reader = new ElevationReader(
+      (tile) => {
+        loads++;
+        return Promise.resolve(tile.y % 2 === 0 ? new ArrayBuffer(1) : undefined);
+      },
+      () => Promise.resolve(pixels),
+    );
+    const near = { lat: 39.47, lon: -0.37 };
+    const [first] = await reader.elevations([near, near]);
+    const { tile } = tileAt(near, 12);
+    expect(first).toBe(tile.y % 2 === 0 ? 250.5 : null);
+    expect(loads).toBe(1);
+  });
+});
+
+describe('climb along a way', () => {
+  it('samples about every 30 m, both ends included', () => {
+    const samples = samplesAlong(A, B);
+    expect(samples.length).toBe(39);
+    expect(samples[0]).toEqual(A);
+    expect(samples.at(-1)).toEqual(B);
+  });
+
+  it('adds up ups and downs and finds the steepest stretch', () => {
+    const samples = samplesAlong(A, B);
+    // Up 60 m over the first 290 m, then down 10 m, then flat.
+    const elevations = samples.map((_, i) => (i <= 10 ? i * 6 : i <= 15 ? 60 - (i - 10) * 2 : 50));
+    const climb = climbOf(samples, elevations);
+    expect(climb?.up).toBeCloseTo(60);
+    expect(climb?.down).toBeCloseTo(10);
+    // 6 m every 29.3 m.
+    expect(climb?.steepest).toBeCloseTo(20.5, 0);
+  });
+
+  it('gives no climb when any elevation is unknown', () => {
+    const samples = samplesAlong(A, B);
+    expect(
+      climbOf(
+        samples,
+        samples.map((_, i) => (i === 3 ? null : 0)),
+      ),
+    ).toBeNull();
+  });
+});

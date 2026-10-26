@@ -174,7 +174,7 @@ A command post is found by name and replicates by protocol ([ADR-0018](docs/deci
 
 The base map is OpenStreetMap data rendered as vector tiles from a single PMTiles file that **we host**. The public OpenStreetMap tile servers forbid bulk downloading, so they cannot be used for offline maps. To prepare for an incident, the web app downloads every tile of an area, up to zoom 14, straight from that file and stores it in IndexedDB. MapLibre reads tiles through a `tesel-tiles://` protocol that answers from IndexedDB first and the network second. Glyphs and sprites ship inside the app. See [ADR-0007](docs/decisions/0007-self-hosted-vector-maps.md) and [ADR-0011](docs/decisions/0011-client-side-area-download.md).
 
-Two more base maps cover Spain: the topographic map and the orthophotos of the Instituto Geográfico Nacional, open web map services the browser reads directly through the same protocol. An offline area can include them; every downloaded tile is kept under its source ([ADR-0023](docs/decisions/0023-ign-base-maps.md)).
+Two more base maps cover Spain: the topographic map and the orthophotos of the Instituto Geográfico Nacional, open web map services the browser reads directly through the same protocol. An offline area can include them; every downloaded tile is kept under its source ([ADR-0023](docs/decisions/0023-ign-base-maps.md)). The relief — shading and the climb of a way — comes from the open Terrain Tiles, read the same way ([ADR-0024](docs/decisions/0024-terrain-tiles-for-relief.md)).
 
 ## 8. Security model
 

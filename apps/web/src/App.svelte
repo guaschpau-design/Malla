@@ -19,7 +19,7 @@
   import { linkOf, radioLinkOf, serverDetail } from './lib/links/links.ts';
   import MapView from './lib/map/MapView.svelte';
   import type { MapTheme } from './lib/map/style.ts';
-  import { registerTileProtocol, tileArchives } from './lib/map/tile-source.ts';
+  import { findTile, registerTileProtocol, tileArchives } from './lib/map/tile-source.ts';
   import { openTileStore, type TileStore } from './lib/map/tile-store.ts';
   import OfflineAreasPanel from './lib/offline/OfflineAreasPanel.svelte';
   import { DeviceLocation } from './lib/position/device-location.svelte.ts';
@@ -28,6 +28,8 @@
   import { RadioSession } from './lib/radio/radio.svelte.ts';
   import { loadPreferences, type Preferences } from './lib/settings/preferences.ts';
   import { Session } from './lib/session.svelte.ts';
+  import { ElevationReader } from './lib/terrain/elevation.ts';
+  import { provideTerrain } from './lib/terrain/terrain-context.ts';
   import { openAppDb, type AppDb } from './lib/storage/app-db.ts';
   import { GroupFeed } from './lib/sync/group-feed.svelte.ts';
   import { closePanel, panels, togglePanel } from './lib/ui/panels.svelte.ts';
@@ -47,6 +49,12 @@
   let incoming: Result<Invitation, ProtocolError> | null = $state.raw(fromAddress);
 
   const archives = tileArchives(basemapUrl());
+  let elevations: ElevationReader | null = $state.raw(null);
+  provideTerrain({
+    get reader() {
+      return preferences?.relief.value ? elevations : null;
+    },
+  });
   let store: TileStore | undefined = $state();
   let db: AppDb | undefined;
   let session: Session | undefined = $state();
@@ -79,6 +87,7 @@
 
     void openTileStore().then((opened) => {
       registerTileProtocol(opened, archives);
+      elevations = new ElevationReader((tile) => findTile('terrain', tile, opened, archives));
       store = opened;
     });
     void openAppDb().then(async (opened) => {
@@ -211,7 +220,15 @@
 
   <main>
     {#if store && preferences}
-      <MapView base={preferences.baseMap.value} {theme} lang={locale} onready={onMapReady} />
+      <MapView
+        choice={{
+          base: preferences.baseMap.value,
+          relief: preferences.relief.value,
+          theme,
+          lang: locale,
+        }}
+        onready={onMapReady}
+      />
     {/if}
 
     {#if map && preferences}

@@ -9,6 +9,8 @@
   import type { DeviceFix } from '../position/device-location.svelte.ts';
   import MapCard from '../ui/MapCard.svelte';
   import Pictogram from '../ui/Pictogram.svelte';
+  import ClimbLine from '../terrain/ClimbLine.svelte';
+  import { terrainContext } from '../terrain/terrain-context.ts';
   import { legBetween } from './leg.ts';
 
   interface Props {
@@ -23,6 +25,8 @@
   }
 
   let { t, locale, map, name, target, fix, onstop }: Props = $props();
+
+  const terrain = terrainContext();
 
   /** The map may be turned; the arrow points the way on the map as it is shown. */
   let mapBearing = $state(0);
@@ -63,6 +67,9 @@
           )}
         {/if}
       </p>
+      {#if terrain.reader && fix && target && leg && !leg.arrived}
+        <div class="hint"><ClimbLine {t} from={fix.at} to={target} terrain={terrain.reader} /></div>
+      {/if}
     </div>
     <button onclick={onstop}>{t('navigationStop')}</button>
   </div>
