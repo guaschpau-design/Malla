@@ -68,17 +68,9 @@ Para toda la sociedad civil, sin excluir a nadie:
 7. **Internet y LoRa MeshCore** como medios de transporte.
 8. **Modo puesto de mando local** (ver sección 6).
 
-### Después de la v0.1, por orden
+### Después de la v0.1
 
-0. Apps de Android e iPhone (Google Play, App Store y F-Droid) con el mismo código: segundo plano, radio en iPhone y avisos con la app cerrada.
-1. Fotos adjuntas (solo por internet; LoRa no da para imágenes).
-2. Tareas asignadas a personas o equipos.
-3. Rutas y tracks.
-4. Partes rápidos (situación, heridos, daños).
-5. Mapas satélite, topográfico y náutico.
-6. Simbología OTAN APP-6.
-7. LoRa Meshtastic.
-8. Compatibilidad con ATAK (CoT).
+En la [hoja de ruta](hoja-de-ruta.md), fase a fase.
 
 ### No entra (por ahora)
 

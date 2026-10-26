@@ -18,14 +18,15 @@
 
 ## Documentación · Documentation
 
-| Documento                            | Contenido                                |
-| ------------------------------------ | ---------------------------------------- |
-| [docs/briefing.md](docs/briefing.md) | Visión, alcance y planning (español)     |
-| [ARCHITECTURE.md](ARCHITECTURE.md)   | How the system is built                  |
-| [docs/protocol.md](docs/protocol.md) | Wire format specification                |
-| [docs/hardware.md](docs/hardware.md) | Supported radios and how to flash them   |
-| [docs/decisions/](docs/decisions/)   | Architecture decision records            |
-| [CONTRIBUTING.md](CONTRIBUTING.md)   | Rules for every contributor, human or AI |
+| Documento                                    | Contenido                                |
+| -------------------------------------------- | ---------------------------------------- |
+| [docs/briefing.md](docs/briefing.md)         | Visión, alcance y planning (español)     |
+| [docs/hoja-de-ruta.md](docs/hoja-de-ruta.md) | Qué viene después, por fases (español)   |
+| [ARCHITECTURE.md](ARCHITECTURE.md)           | How the system is built                  |
+| [docs/protocol.md](docs/protocol.md)         | Wire format specification                |
+| [docs/hardware.md](docs/hardware.md)         | Supported radios and how to flash them   |
+| [docs/decisions/](docs/decisions/)           | Architecture decision records            |
+| [CONTRIBUTING.md](CONTRIBUTING.md)           | Rules for every contributor, human or AI |
 
 ## Desarrollo · Development
 
