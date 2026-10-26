@@ -8,13 +8,12 @@ import {
   encodeEvent,
   encodeRelayMessage,
   eventKey,
-  generateIdentity,
   parseClientMessage,
   sealEnvelope,
   type ServerMessage,
-  type TeselEvent,
 } from '@tesel/protocol';
 import { expect, test, type Page } from '@playwright/test';
+import { syntheticOperation } from '@tesel/simulator';
 
 import { device } from './helpers.ts';
 
@@ -52,36 +51,16 @@ test('a device catches up with thousands of waiting events in seconds', async ({
   await expect(ana.getByText(`Miembros (${String(MEMBERS + 1)})`)).toBeVisible();
 });
 
-/** Fifty members announce themselves and share their position every ten seconds. */
+/** Fifty members sharing their position every ten seconds, as the relay would send them. */
 function backlogFor(secret: Uint8Array): ServerMessage[] {
   const keys = deriveGroupKeys(secret);
-  const members = Array.from({ length: MEMBERS }, () => generateIdentity());
-  const start = Math.floor(Date.now() / 1000) - 8 * 3600;
-  const events: TeselEvent[] = members.map((member, index) => ({
-    type: 'member-info',
-    origin: member.nodeId,
-    seq: 1,
-    time: start,
-    role: 'member',
-    publicKey: member.publicKey,
-    alias: `Miembro ${String(index + 1)}`,
-  }));
-  for (let index = 0; events.length < EVENTS; index++) {
-    const member = members[index % MEMBERS];
-    if (member === undefined) throw new Error('no member');
-    const round = Math.floor(index / MEMBERS);
-    events.push({
-      type: 'position',
-      origin: member.nodeId,
-      seq: 2 + round,
-      time: start + 10 * round,
-      lat: 39.47 + (index % 97) / 10_000,
-      lon: -0.37,
-      accuracy: 8,
-      heading: null,
-      speed: null,
-    });
-  }
+  const { events } = syntheticOperation({
+    members: MEMBERS,
+    events: EVENTS,
+    positionEvery: 10,
+    start: Math.floor(Date.now() / 1000) - 8 * 3600,
+    center: { lat: 39.47, lon: -0.37 },
+  });
   return events.map((event, index) => {
     const bytes = encodeEvent(event);
     if (!bytes.ok) throw new Error(bytes.error.detail);

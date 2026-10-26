@@ -1,0 +1,25 @@
+{
+  "name": "@tesel/simulator",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Plays a staged operation on a Tesel group: simulated members talking to the relay like real devices, for demos, tests and the site's screenshots.",
+  "license": "EUPL-1.2",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "node src/cli.ts",
+    "screenshots": "node src/screenshots.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@tesel/core": "workspace:*",
+    "@tesel/protocol": "workspace:*",
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/ws": "^8.18.2"
+  }
+}

@@ -28,14 +28,15 @@ A group shares a map. Every change to that map — a position, a chat line, a ma
    local command post)                  ⇄ LoRa mesh ⇄ other radios
 ```
 
-| Path                | Owns                                                                                          | Must not depend on                                   |
-| ------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `packages/protocol` | Binary event format, key derivation, envelope encryption, invitation links                    | Anything else in the repo; the DOM; Node APIs        |
-| `packages/core`     | State reducer, LoRa airtime scheduler, bridge rules                                           | The DOM, Svelte, BLE, network APIs                   |
-| `packages/meshcore` | Talking to a MeshCore companion radio: connect, configure channel, send and receive datagrams | `packages/core`, the UI                              |
-| `apps/web`          | UI, map, persistence in IndexedDB (event log, outbox, cursors), wiring transports to `core`   | Server code                                          |
-| `apps/server`       | Storing and relaying encrypted envelopes; serving the landing page and the web app (ADR-0017) | Plaintext event contents (it can never decrypt them) |
-| `apps/site`         | The landing page at tesel.eu: static HTML and CSS, Spanish and English                        | Any build step or third-party request                |
+| Path                | Owns                                                                                                   | Must not depend on                                   |
+| ------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| `packages/protocol` | Binary event format, key derivation, envelope encryption, invitation links                             | Anything else in the repo; the DOM; Node APIs        |
+| `packages/core`     | State reducer, LoRa airtime scheduler, bridge rules                                                    | The DOM, Svelte, BLE, network APIs                   |
+| `packages/meshcore` | Talking to a MeshCore companion radio: connect, configure channel, send and receive datagrams          | `packages/core`, the UI                              |
+| `apps/web`          | UI, map, persistence in IndexedDB (event log, outbox, cursors), wiring transports to `core`            | Server code                                          |
+| `apps/server`       | Storing and relaying encrypted envelopes; serving the landing page and the web app (ADR-0017)          | Plaintext event contents (it can never decrypt them) |
+| `apps/site`         | The landing page at tesel.eu: static HTML and CSS, Spanish and English                                 | Any build step or third-party request                |
+| `tools/simulator`   | Staged operations played by simulated devices through the relay, for demos, load tests and screenshots | The apps: it reaches them only through the protocol  |
 
 The dependency direction is strictly downwards in the diagram. `protocol` and `core` are pure TypeScript with no I/O, so they run unchanged in the browser, in Node and in tests. This is what keeps the hard parts testable.
 
@@ -192,6 +193,7 @@ brand/               Mark, wordmark and lockup (SVG) and the script that builds 
 packages/protocol/   Wire format, crypto, invitations (pure TS)
 packages/core/       Reducer, scheduler, bridge rules (pure TS)
 packages/meshcore/   MeshCore radio adapter
+tools/simulator/     Staged operations played by simulated devices: demos, load tests, screenshots
 docs/                Briefing, protocol spec, decisions
 deploy/              VPS, command post kit, GitHub Pages redirect
 ```
