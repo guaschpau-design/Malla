@@ -67,9 +67,10 @@ try {
   await welcome.getByLabel('Tu nombre en el grupo').fill('Ana');
   await welcome.getByRole('button', { name: 'Continuar' }).click();
   await page.getByRole('button', { name: 'Grupos: Sin grupo' }).click();
+  await page.getByRole('button', { name: 'Crear grupo' }).click();
   await page.getByLabel('Nombre del grupo').fill('Equipo Turia');
   await page.getByRole('button', { name: 'Crear', exact: true }).click();
-  await page.getByTitle('Sincronizado').waitFor();
+  await page.getByTitle('Conectado al servidor del grupo').waitFor();
   await page.getByRole('button', { name: 'Invitar' }).click();
   const link = await page.getByLabel('Enlace de invitación').inputValue();
   await page.getByRole('button', { name: 'Cerrar' }).click();
@@ -86,9 +87,8 @@ try {
     positionEvery: 60,
   });
 
-  // Ana, who coordinates, warns everyone.
+  // Ana, who coordinates, tells everyone.
   await openChat(page);
-  await page.getByLabel('Enviar como').selectOption('warning');
   await page.getByLabel('Mensaje').fill('Reagrupamos en el punto de encuentro en 30 minutos');
   await page.getByRole('button', { name: 'Enviar' }).click();
 

@@ -29,20 +29,21 @@ export async function twoMembers(
 ): Promise<{ ana: Page; berta: Page }> {
   const ana = await device(browser, 'Ana', path);
   await ana.getByRole('button', { name: 'Grupos: Sin grupo' }).click();
+  await ana.getByRole('button', { name: 'Crear grupo' }).click();
   await ana.getByLabel('Nombre del grupo').fill('Rescate Valencia');
   await ana.getByRole('button', { name: 'Crear', exact: true }).click();
   await ana.getByRole('button', { name: 'Invitar' }).click();
   const link = await ana.getByLabel('Enlace de invitación').inputValue();
   await ana.getByRole('button', { name: 'Cerrar' }).click();
-  await expect(ana.getByTitle('Sincronizado')).toBeVisible();
+  await expect(ana.getByTitle('Conectado al servidor del grupo')).toBeVisible();
 
   const berta = await device(browser, 'Berta', path);
   await berta.goto(link);
   await berta.getByRole('dialog').getByRole('button', { name: 'Unirme' }).click();
-  await expect(berta.getByTitle('Sincronizado')).toBeVisible();
+  await expect(berta.getByTitle('Conectado al servidor del grupo')).toBeVisible();
   // The invitation link replaced the map view; put Berta's map where Ana's is.
   await berta.goto(path);
-  await expect(berta.getByTitle('Sincronizado')).toBeVisible();
+  await expect(berta.getByTitle('Conectado al servidor del grupo')).toBeVisible();
   return { ana, berta };
 }
 

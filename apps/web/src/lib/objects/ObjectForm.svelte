@@ -20,9 +20,7 @@
 
   const TITLES: Readonly<Record<DraftKind, MessageKey>> = {
     marker: 'newMarker',
-    line: 'newLine',
     area: 'newArea',
-    circle: 'newCircle',
   };
 
   const isMarker = $derived(kind === 'marker');

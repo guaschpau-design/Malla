@@ -6,19 +6,21 @@
 
   import { useOverlay } from '../map/overlay.svelte.ts';
   import { themeColor } from '../ui/theme.ts';
-  import type { Draft } from './draft.ts';
   import { draftFeatures } from './draft-features.ts';
 
   interface Props {
     map: MapLibreMap;
-    draft: Draft;
+    /** The points tapped so far. */
+    points: readonly LatLon[];
+    /** Whether the path closes on itself, as an area's does. */
+    closed: boolean;
     onpoint: (at: LatLon) => void;
   }
 
-  let { map, draft, onpoint }: Props = $props();
+  let { map, points, closed, onpoint }: Props = $props();
 
   const SOURCE = 'tesel-draft';
-  const data = $derived(draftFeatures(draft));
+  const data = $derived(draftFeatures(points, closed));
 
   // A drawing in progress: an ink dashed line, with this device's lime on its points.
   useOverlay(() => map, {

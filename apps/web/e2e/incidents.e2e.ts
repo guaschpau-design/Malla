@@ -65,9 +65,8 @@ test('a critical alert stays on screen until each member acknowledges it', async
   const { ana, berta } = await twoMembers(browser, VIEW);
 
   await ana.getByRole('button', { name: 'Chat' }).click();
-  await ana.getByLabel('Enviar como').selectOption({ label: 'Alerta: Alerta crítica' });
   await ana.getByLabel('Mensaje').fill('Evacuad la zona norte');
-  await ana.getByRole('button', { name: 'Enviar' }).click();
+  await ana.getByRole('button', { name: 'Enviar como alerta' }).click();
 
   const alert = berta.getByRole('region', { name: 'Alerta crítica' });
   await expect(alert).toContainText('Evacuad la zona norte');

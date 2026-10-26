@@ -1,36 +1,25 @@
-// The object being drawn, as GeoJSON for its preview on the map.
+// The points tapped so far, as GeoJSON for their preview on the map: the points, and the path
+// through them once there are two, closed for an area.
 
-import { distanceMeters } from '@tesel/core';
-import type { Feature, FeatureCollection, Geometry } from 'geojson';
+import type { LatLon } from '@tesel/protocol';
+import type { Feature, FeatureCollection } from 'geojson';
 
-import { circleRing, toPosition } from '../map/geometry.ts';
-import type { Draft } from './draft.ts';
+import { toPosition } from '../map/geometry.ts';
 
-export function draftFeatures(draft: Draft): FeatureCollection {
-  const features: Feature[] = draft.points.map((point) => ({
+export function draftFeatures(points: readonly LatLon[], closed: boolean): FeatureCollection {
+  const features: Feature[] = points.map((point) => ({
     type: 'Feature',
     geometry: { type: 'Point', coordinates: toPosition(point) },
     properties: {},
   }));
-  const outline = draftOutline(draft);
-  if (outline !== null) features.unshift({ type: 'Feature', geometry: outline, properties: {} });
-  return { type: 'FeatureCollection', features };
-}
-
-function draftOutline(draft: Draft): Geometry | null {
-  const [first, second] = draft.points;
-  if (first === undefined || second === undefined) return null;
-  switch (draft.kind) {
-    case 'marker':
-      return null;
-    case 'line':
-      return { type: 'LineString', coordinates: draft.points.map(toPosition) };
-    case 'area':
-      return {
-        type: 'LineString',
-        coordinates: [...draft.points, ...(draft.points.length > 2 ? [first] : [])].map(toPosition),
-      };
-    case 'circle':
-      return { type: 'LineString', coordinates: circleRing(first, distanceMeters(first, second)) };
+  const [first] = points;
+  if (first !== undefined && points.length >= 2) {
+    const path = closed && points.length > 2 ? [...points, first] : points;
+    features.unshift({
+      type: 'Feature',
+      geometry: { type: 'LineString', coordinates: path.map(toPosition) },
+      properties: {},
+    });
   }
+  return { type: 'FeatureCollection', features };
 }

@@ -1,6 +1,6 @@
 <!-- The panels about the active group: an object, a member, the diary, the chat and the tasks. -->
 <script lang="ts">
-  import type { AlertLevel, EventRef, LatLon, NodeId, Role } from '@tesel/protocol';
+  import type { EventRef, LatLon, NodeId, Role } from '@tesel/protocol';
 
   import ChatPanel from '../chat/ChatPanel.svelte';
   import DiaryPanel from '../diary/DiaryPanel.svelte';
@@ -98,7 +98,7 @@
     {self}
     canAlert={role === 'coordinator'}
     onsend={(text: string) => feed.sendChat(text)}
-    onalert={(level: AlertLevel, text: string) => feed.sendAlert(level, text)}
+    onalert={(text: string) => feed.sendAlert(text)}
     radioTexts={radio.texts}
     showRadioTab={radio.state !== 'disconnected' || radio.texts.length > 0}
     onclose={closePanel}

@@ -12,7 +12,7 @@ test('a dictated coordinate is found on the map and read in another format', asy
   const panel = page.getByRole('region', { name: 'Punto del mapa' });
   await expect(panel.locator('output')).toHaveText('39.46990, -0.37630');
 
-  await panel.getByRole('radio', { name: 'MGRS' }).click();
+  await panel.getByLabel('Formato de coordenadas').selectOption('MGRS');
   await expect(panel.locator('output')).toHaveText('30S YJ 25695 72210');
 
   // The format is remembered.

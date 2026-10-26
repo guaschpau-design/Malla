@@ -21,7 +21,6 @@ import {
   sameServer,
   sealEnvelope,
   toBase64url,
-  type AlertLevel,
   type EventHeader,
   type EventRef,
   type GroupKeys,
@@ -257,8 +256,9 @@ export class GroupFeed {
     await this.#publish((header) => ({ ...header, type: 'ack', target }));
   }
 
-  async sendAlert(level: AlertLevel, text: string): Promise<void> {
-    await this.#publish((header) => ({ ...header, type: 'alert', level, text }));
+  /** Sends a critical alert: the one kind the app sends (ADR-0026). */
+  async sendAlert(text: string): Promise<void> {
+    await this.#publish((header) => ({ ...header, type: 'alert', level: 'critical', text }));
   }
 
   /**

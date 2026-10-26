@@ -15,15 +15,15 @@ test('a member cut off from the server keeps talking to the group through the co
     void socket.close();
   });
   await berta.reload();
-  await expect(berta.getByTitle(/a través de un puesto de mando/)).toBeVisible();
+  await expect(berta.getByTitle('Conectado a un puesto de mando')).toBeVisible();
 
   await ana.getByRole('button', { name: 'Chat' }).click();
   await ana.getByLabel('Mensaje').fill('¿Llegáis al puesto?');
-  await ana.getByRole('button', { name: 'Enviar' }).click();
+  await ana.getByRole('button', { name: 'Enviar', exact: true }).click();
   await berta.getByRole('button', { name: 'Chat' }).click();
   await expect(berta.getByText('¿Llegáis al puesto?')).toBeVisible();
 
   await berta.getByLabel('Mensaje').fill('Sí, desde el puesto');
-  await berta.getByRole('button', { name: 'Enviar' }).click();
+  await berta.getByRole('button', { name: 'Enviar', exact: true }).click();
   await expect(ana.getByText('Sí, desde el puesto')).toBeVisible();
 });

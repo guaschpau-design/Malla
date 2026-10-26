@@ -7,7 +7,7 @@
   import lockupUrl from '../../../brand/lockup-pale.svg';
   import markUrl from '../../../brand/mark.svg';
   import { basemapUrl } from './lib/config.ts';
-  import { connection, watchConnection } from './lib/connection.svelte.ts';
+  import { connection, watchConnection } from './lib/links/connection.svelte.ts';
   import type { JoinOutcome } from './lib/groups/group.ts';
   import GroupsPanel from './lib/groups/GroupsPanel.svelte';
   import JoinDialog from './lib/groups/JoinDialog.svelte';
@@ -16,7 +16,7 @@
   import Onboarding from './lib/identity/Onboarding.svelte';
   import ConnectionsPanel from './lib/links/ConnectionsPanel.svelte';
   import LinkButton from './lib/links/LinkButton.svelte';
-  import { linkOf, radioLinkOf, serverDetail } from './lib/links/links.ts';
+  import { linkOf, networkStatus, radioLinkOf } from './lib/links/links.ts';
   import MapView from './lib/map/MapView.svelte';
   import type { MapTheme } from './lib/map/style.ts';
   import { findTile, registerTileProtocol, tileArchives } from './lib/map/tile-source.ts';
@@ -189,7 +189,8 @@
     <LinkButton
       {t}
       {link}
-      detail={t(serverDetail(linkInput))}
+      network={connection.network}
+      detail={t(networkStatus(linkInput).label)}
       expanded={panels.open === 'connections'}
       onclick={() => {
         togglePanel('connections');
@@ -242,7 +243,8 @@
     {#if panels.open === 'connections'}
       <ConnectionsPanel
         {t}
-        internet={t(serverDetail(linkInput))}
+        input={linkInput}
+        network={connection.network}
         {radio}
         groupName={session?.activeGroup?.name ?? null}
         onclose={closePanel}

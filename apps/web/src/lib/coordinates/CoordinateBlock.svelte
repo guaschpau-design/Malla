@@ -1,5 +1,5 @@
-<!-- A point's coordinates in the chosen format, which can be changed here, and a button to copy
-     them. -->
+<!-- A point's coordinates, large, with a button to copy them. The format (degrees, UTM…) is a small
+     drop-down beside it: chosen once and remembered everywhere. -->
 <script lang="ts">
   import type { LatLon } from '@tesel/protocol';
 
@@ -27,18 +27,17 @@
 </script>
 
 <div class="coordinate">
-  <div class="formats" role="radiogroup" aria-label={t('coordinateFormat')}>
-    {#each COORDINATE_FORMATS as option (option)}
-      <button
-        role="radio"
-        aria-checked={format.value === option}
-        class:current={format.value === option}
-        onclick={() => format.set(option)}>{t(NAMES[option])}</button
-      >
-    {/each}
-  </div>
-  <div class="row value">
-    <output>{text ?? t('formatOutOfRange')}</output>
+  <output>{text ?? t('formatOutOfRange')}</output>
+  <div class="tools">
+    <select
+      aria-label={t('coordinateFormat')}
+      value={format.value}
+      onchange={(event) => format.set(event.currentTarget.value as CoordinateFormat)}
+    >
+      {#each COORDINATE_FORMATS as option (option)}
+        <option value={option}>{t(NAMES[option])}</option>
+      {/each}
+    </select>
     {#if text !== null}
       <CopyButton {text} label={t('copy')} copiedLabel={t('copied')} />
     {/if}
@@ -48,33 +47,24 @@
 <style>
   .coordinate {
     display: grid;
-    gap: 0.5rem;
-  }
-
-  .formats {
-    display: flex;
-    gap: 0.25rem;
-  }
-
-  .formats button {
-    flex: 1;
-    padding: 0.3rem 0.4rem;
-    font-size: 0.85rem;
-  }
-
-  .formats button.current {
-    font-weight: 600;
-    border-color: var(--accent-line);
-  }
-
-  .value {
-    align-items: center;
-    justify-content: space-between;
+    gap: 0.4rem;
   }
 
   output {
     font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     font-variant-numeric: tabular-nums;
+  }
+
+  .tools {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  select {
+    width: auto;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.85rem;
   }
 </style>

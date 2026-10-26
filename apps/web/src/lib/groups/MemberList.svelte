@@ -1,13 +1,15 @@
+<!-- The members of the active group, each with an initial, a name and two signs: whether their
+     position is on the map and whether their news reaches this device by radio. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
   import type { NodeId } from '@tesel/protocol';
 
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import type { Heard } from '../links/heard.ts';
+  import { initialOf } from '../text.ts';
   import { useNow } from '../ui/now.svelte.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import { memberRows, type PositionStatus } from './member-list.ts';
-  import { ROLE_LABELS } from './role-label.ts';
 
   interface Props {
     t: Translate;
@@ -29,51 +31,84 @@
   const rows = $derived(memberRows(groupState, self, now.seconds, heard));
 </script>
 
-<h4>{t('members', { count: rows.length })}</h4>
-<ul class="members">
+<ul class="members" aria-label={t('members', { count: rows.length })}>
   {#each rows as row (row.id)}
     <li>
-      <span>
-        {row.alias}{#if row.self}&nbsp;({t('you')}){/if}
-        {#if row.role}<span class="hint">· {t(ROLE_LABELS[row.role])}</span>{/if}
+      <span class="initial {row.position}" aria-hidden="true">
+        {initialOf(row.alias)}
       </span>
-      <span class="hint status">
+      <span class="name">
+        {row.alias}{#if row.self}&nbsp;({t('you')}){/if}
+      </span>
+      <span class="signs">
         {#if row.byRadio}
           <span title={t('heardByRadio')} aria-label={t('heardByRadio')} role="img">
-            <Pictogram name="mast" size={14} />
+            <Pictogram name="mast" size={16} />
           </span>
         {/if}
-        {t(POSITION_LABELS[row.position])}
+        <span
+          class="where {row.position}"
+          title={t(POSITION_LABELS[row.position])}
+          aria-label={t(POSITION_LABELS[row.position])}
+          role="img"
+        >
+          <Pictogram name="pin" size={16} />
+        </span>
       </span>
     </li>
   {/each}
 </ul>
 
 <style>
-  h4 {
-    margin: 0.4rem 0 0;
-    font-size: 0.85rem;
-  }
-
   .members {
     display: grid;
-    gap: 0.2rem;
+    gap: 0.35rem;
     margin: 0;
     padding: 0;
     list-style: none;
-    font-size: 0.9rem;
-  }
-
-  .status {
-    display: flex;
-    gap: 0.3rem;
-    align-items: center;
   }
 
   li {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.6rem;
+    align-items: center;
+  }
+
+  /* The initial is ringed in lime while the member's position is live on the map. */
+  .initial {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    font-weight: 700;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 50%;
+  }
+
+  .initial.live {
+    border-color: var(--signal-deep);
+    box-shadow: 0 0 0 2px var(--signal);
+  }
+
+  .name {
+    overflow-wrap: anywhere;
+  }
+
+  .signs {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 0.75rem;
-    justify-content: space-between;
+    gap: 0.35rem;
+    align-items: center;
+    color: var(--muted);
+  }
+
+  .where.live {
+    color: var(--signal-deep);
+  }
+
+  .where.hidden,
+  .where.never {
+    opacity: 0.35;
   }
 </style>

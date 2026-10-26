@@ -1,24 +1,24 @@
-<!-- Who this device is, its groups, and the ways to create, join, invite and leave. -->
+<!-- The groups: the one in use, the others, and two big buttons to create or join one. Creating,
+     joining, inviting and scanning each open in the panel and come back here. -->
 <script lang="ts">
-  import type { GroupFeed } from '../sync/group-feed.svelte.ts';
-  import { GROUP_NAME_MAX_BYTES, parseInvitationUrl, type Invitation } from '@tesel/protocol';
+  import type { Invitation } from '@tesel/protocol';
 
-  import { defaultServerUrl, guideUrl } from '../config.ts';
+  import { guideUrl } from '../config.ts';
   import type { Translate } from '../i18n/index.ts';
   import type { Session } from '../session.svelte.ts';
-  import { proposedServer } from '../sync/relays.ts';
+  import type { GroupFeed } from '../sync/group-feed.svelte.ts';
   import Panel from '../ui/Panel.svelte';
-  import { canInvite, normalizeGroupName, normalizeServerUrl, type StoredGroup } from './group.ts';
+  import Pictogram from '../ui/Pictogram.svelte';
+  import ActiveGroup from './ActiveGroup.svelte';
+  import CreateGroupForm from './CreateGroupForm.svelte';
+  import type { StoredGroup } from './group.ts';
   import InviteView from './InviteView.svelte';
-  import MemberList from './MemberList.svelte';
-  import { canScanQr } from './qr-scanning.ts';
+  import JoinGroup from './JoinGroup.svelte';
   import QrScanner from './QrScanner.svelte';
-  import { ROLE_LABELS } from './role-label.ts';
 
   interface Props {
     t: Translate;
     session: Session;
-    /** State of the active group, to list its members. */
     /** The active group's feed, for its members. */
     activeFeed: GroupFeed | undefined;
     /** An invitation was pasted or scanned; the caller asks the user to confirm it. */
@@ -28,46 +28,19 @@
 
   let { t, session, activeFeed, oninvitation, onclose }: Props = $props();
 
-  type View = { kind: 'list' } | { kind: 'invite'; group: StoredGroup } | { kind: 'scan' };
-  let view: View = $state.raw({ kind: 'list' });
+  type View =
+    | { kind: 'home' }
+    | { kind: 'create' }
+    | { kind: 'join' }
+    | { kind: 'scan' }
+    | { kind: 'invite'; group: StoredGroup };
+  let view: View = $state.raw({ kind: 'home' });
 
-  let newName = $state('');
-  const groupName = $derived(normalizeGroupName(newName));
-  const nameTooLong = $derived(newName.trim() !== '' && groupName === null);
-  const homeServer = defaultServerUrl();
-  let serverText = $state(homeServer ?? '');
-  const server = $derived(normalizeServerUrl(serverText));
-
-  // Opened from a command post, new groups belong to the server the post replicates.
-  void proposedServer(homeServer).then((proposed) => {
-    if (proposed !== null && serverText === (homeServer ?? '')) serverText = proposed;
-  });
-
-  let pasted = $state('');
-  let pastedInvalid = $state(false);
-  const scanAvailable = canScanQr();
-
-  async function create(): Promise<void> {
-    if (groupName === null || server === undefined) return;
-    await session.createGroup(groupName, server);
-    newName = '';
-  }
-
-  function serverLabel(url: string | null): string {
-    return url === null ? t('noServer') : new URL(url).host;
-  }
-
-  function joinPasted(): void {
-    const invitation = parseInvitationUrl(pasted.trim());
-    pastedInvalid = !invitation.ok;
-    if (invitation.ok) {
-      pasted = '';
-      oninvitation(invitation.value);
-    }
-  }
+  const home = () => (view = { kind: 'home' });
+  const others = $derived(session.groups.filter((group) => group.id !== session.activeGroupId));
 
   function scanned(invitation: Invitation): void {
-    view = { kind: 'list' };
+    home();
     oninvitation(invitation);
   }
 
@@ -78,127 +51,97 @@
 </script>
 
 <Panel title={t('groups')} closeLabel={t('close')} {onclose}>
-  {#if view.kind === 'invite' && session.identity}
-    <InviteView
-      {t}
-      group={view.group}
-      issuer={session.identity.nodeId}
-      onback={() => (view = { kind: 'list' })}
-    />
+  {#if view.kind === 'create'}
+    <CreateGroupForm {t} {session} onback={home} />
+  {:else if view.kind === 'join'}
+    <JoinGroup {t} {oninvitation} onscan={() => (view = { kind: 'scan' })} onback={home} />
   {:else if view.kind === 'scan'}
-    <QrScanner {t} onresult={scanned} oncancel={() => (view = { kind: 'list' })} />
+    <QrScanner {t} onresult={scanned} oncancel={home} />
+  {:else if view.kind === 'invite' && session.identity}
+    <InviteView {t} group={view.group} issuer={session.identity.nodeId} onback={home} />
   {:else}
-    {#if session.identity}
-      <section class="section">
-        <h3>{t('thisDevice')}</h3>
-        <p>
-          <strong>{session.identity.alias}</strong><br />
-          <span class="hint">{t('deviceId', { node: session.identity.nodeId })}</span>
-        </p>
-        <a href={guideUrl(t('guidePath'))} target="_blank" rel="noopener">{t('guide')}</a>
-      </section>
-    {/if}
-
-    <section class="section">
-      <h3>{t('yourGroups')}</h3>
-      {#if session.groups.length === 0}
-        <p class="hint">{t('noGroups')}</p>
+    <div class="stack section">
+      {#if session.activeGroup && session.identity}
+        {@const group = session.activeGroup}
+        <ActiveGroup
+          {t}
+          {group}
+          feed={activeFeed}
+          self={session.identity.nodeId}
+          oninvite={() => (view = { kind: 'invite', group })}
+          onleave={() => leave(group)}
+        />
       {:else}
-        <ul class="cards">
-          {#each session.groups as group (group.id)}
-            {@const active = group.id === session.activeGroupId}
-            <li class:active>
-              <div>
-                <strong>{group.name}</strong>
-                <span class="badge role">{t(ROLE_LABELS[group.role])}</span>
-                {#if active}<span class="badge">{t('active')}</span>{/if}
-                <span class="hint server">{serverLabel(group.server)}</span>
-              </div>
-              {#if active && activeFeed && session.identity}
-                <MemberList
-                  {t}
-                  groupState={activeFeed.state}
-                  heard={activeFeed.heard}
-                  self={session.identity.nodeId}
-                />
-              {/if}
-              <div class="row">
-                {#if !active}
-                  <button onclick={() => session.activate(group.id)}>{t('use')}</button>
-                {/if}
-                {#if canInvite(group)}
-                  <button onclick={() => (view = { kind: 'invite', group })}>{t('invite')}</button>
-                {/if}
-                <button onclick={() => leave(group)}>{t('leave')}</button>
-              </div>
+        <p class="hint">{t('noGroups')}</p>
+      {/if}
+
+      {#if others.length > 0}
+        <ul class="others" aria-label={t('otherGroups')}>
+          {#each others as group (group.id)}
+            <li>
+              <span>{group.name}</span>
+              <button onclick={() => session.activate(group.id)}>{t('use')}</button>
             </li>
           {/each}
         </ul>
       {/if}
-    </section>
 
-    <form
-      class="section stack"
-      onsubmit={(event) => {
-        event.preventDefault();
-        void create();
-      }}
-    >
-      <h3>{t('createGroup')}</h3>
-      <label>
-        {t('groupName')}
-        <input bind:value={newName} maxlength={GROUP_NAME_MAX_BYTES} />
-      </label>
-      {#if nameTooLong}<p class="warning">{t('nameInvalid')}</p>{/if}
-      <label>
-        {t('server')}
-        <input bind:value={serverText} inputmode="url" autocomplete="off" placeholder="https://" />
-      </label>
-      <p class:warning={server === undefined} class:hint={server !== undefined}>
-        {server === undefined ? t('serverInvalid') : t('serverHint')}
-      </p>
-      <button type="submit" class="primary" disabled={groupName === null || server === undefined}>
-        {t('create')}
-      </button>
-    </form>
-
-    <form
-      class="section stack"
-      onsubmit={(event) => {
-        event.preventDefault();
-        joinPasted();
-      }}
-    >
-      <h3>{t('joinWithInvitation')}</h3>
-      <label>
-        {t('invitationLink')}
-        <input bind:value={pasted} inputmode="url" autocomplete="off" />
-      </label>
-      {#if pastedInvalid}<p class="warning">{t('notAnInvitation')}</p>{/if}
-      <div class="row">
-        <button type="submit" disabled={pasted.trim() === ''}>{t('join')}</button>
-        {#if scanAvailable}
-          <button type="button" onclick={() => (view = { kind: 'scan' })}>{t('scanQr')}</button>
-        {/if}
+      <div class="actions">
+        <button onclick={() => (view = { kind: 'create' })}>
+          <Pictogram name="plus" size={26} />
+          {t('createGroup')}
+        </button>
+        <button onclick={() => (view = { kind: 'join' })}>
+          <Pictogram name="qr" size={26} />
+          {t('joinGroup')}
+        </button>
       </div>
-    </form>
+
+      {#if session.identity}
+        <p class="hint device">
+          {session.identity.alias} · {t('deviceId', { node: session.identity.nodeId })} ·
+          <a href={guideUrl(t('guidePath'))} target="_blank" rel="noopener">{t('guide')}</a>
+        </p>
+      {/if}
+    </div>
   {/if}
 </Panel>
 
 <style>
-  section > h3 {
-    margin-bottom: 0.5rem;
+  .others {
+    display: grid;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
-  .cards > li.active {
-    border-color: var(--accent-line);
+  .others li {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 0.4rem 0.4rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
   }
 
-  .role {
-    text-transform: capitalize;
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
   }
 
-  .server {
-    display: block;
+  .actions button {
+    display: grid;
+    gap: 0.35rem;
+    place-items: center;
+    padding: 0.9rem 0.5rem;
+    font-weight: 600;
+  }
+
+  .device {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
   }
 </style>

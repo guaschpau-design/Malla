@@ -25,9 +25,10 @@ const CATCH_UP_LIMIT_MS = 30_000;
 test('a device catches up with thousands of waiting events in seconds', async ({ browser }) => {
   const ana = await device(browser, 'Ana');
   await ana.getByRole('button', { name: 'Grupos: Sin grupo' }).click();
+  await ana.getByRole('button', { name: 'Crear grupo' }).click();
   await ana.getByLabel('Nombre del grupo').fill('Operativo largo');
   await ana.getByRole('button', { name: 'Crear', exact: true }).click();
-  await expect(ana.getByTitle('Sincronizado')).toBeVisible();
+  await expect(ana.getByTitle('Conectado al servidor del grupo')).toBeVisible();
   const backlog = backlogFor(await groupSecret(ana));
 
   // From now on the relay is the test: it answers a join with the whole backlog.
@@ -46,9 +47,9 @@ test('a device catches up with thousands of waiting events in seconds', async ({
     .poll(() => storedEvents(ana), { timeout: CATCH_UP_LIMIT_MS, intervals: [250] })
     .toBeGreaterThanOrEqual(EVENTS);
   expect(Date.now() - start).toBeLessThan(CATCH_UP_LIMIT_MS);
-  await expect(ana.getByTitle('Sincronizado')).toBeVisible();
+  await expect(ana.getByTitle('Conectado al servidor del grupo')).toBeVisible();
   await ana.getByRole('button', { name: 'Grupos: Operativo largo' }).click();
-  await expect(ana.getByText(`Miembros (${String(MEMBERS + 1)})`)).toBeVisible();
+  await expect(ana.getByRole('list', { name: `Miembros (${String(MEMBERS + 1)})` })).toBeVisible();
 });
 
 /** Fifty members sharing their position every ten seconds, as the relay would send them. */

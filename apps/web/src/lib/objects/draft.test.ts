@@ -15,17 +15,11 @@ const B = { lat: 39.471, lon: -0.37 };
 const C = { lat: 39.471, lon: -0.369 };
 
 describe('drawing drafts', () => {
-  it('needs one point for a marker, two for a line, three for an area', () => {
-    expect(isComplete(addPoint(startDraft('marker'), A))).toBe(true);
-    expect(isComplete(addPoint(startDraft('line'), A))).toBe(false);
-    expect(isComplete(addPoint(addPoint(startDraft('line'), A), B))).toBe(true);
+  it('needs one point for a marker and three for an area', () => {
+    const marker = addPoint(startDraft('marker'), A);
+    expect(isComplete(marker)).toBe(true);
+    expect(isFull(marker)).toBe(true);
     expect(isComplete(addPoint(addPoint(startDraft('area'), A), B))).toBe(false);
-  });
-
-  it('turns a centre and a rim point into a circle with a radius in metres', () => {
-    const draft = addPoint(addPoint(startDraft('circle'), A), B);
-    expect(isFull(draft)).toBe(true);
-    expect(draftGeometry(draft)).toEqual({ kind: 'circle', center: A, radius: 111 });
   });
 
   it('builds polygons from the tapped points and lets the last one be undone', () => {
@@ -36,7 +30,7 @@ describe('drawing drafts', () => {
   });
 
   it('stops taking points at the most a radio message can carry', () => {
-    let draft = startDraft('line');
+    let draft = startDraft('area');
     for (let i = 0; i < MAX_SHAPE_POINTS + 5; i++)
       draft = addPoint(draft, { lat: 39 + i / 1000, lon: 0 });
     expect(draft.points).toHaveLength(MAX_SHAPE_POINTS);

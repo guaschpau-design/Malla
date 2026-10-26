@@ -296,7 +296,8 @@
   {#if drawing.draft && drawing.tapping}
     <DrawLayer
       {map}
-      draft={drawing.draft}
+      points={drawing.draft.points}
+      closed={drawing.draft.kind === 'area'}
       onpoint={(at: LatLon) => {
         drawing.add(at);
       }}

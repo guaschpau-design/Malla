@@ -23,10 +23,10 @@
   let points: readonly LatLon[] = $state.raw(untrack(() => (from ? [from] : [])));
 </script>
 
-<!-- A measured path is drawn as a line being drawn would be. -->
 <DrawLayer
   {map}
-  draft={{ kind: 'line', points }}
+  {points}
+  closed={false}
   onpoint={(at: LatLon) => {
     points = [...points, at];
   }}

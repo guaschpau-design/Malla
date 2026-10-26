@@ -2,29 +2,23 @@
 
 import type { LatLon, ShapeGeometry } from '@tesel/protocol';
 
-import { distanceMeters } from '@tesel/core';
-
-export type DraftKind = 'marker' | 'line' | 'area' | 'circle';
+/** What can be drawn: a marker or an area. Lines and circles drawn by older versions still show. */
+export type DraftKind = 'marker' | 'area';
 
 export interface Draft {
   readonly kind: DraftKind;
-  /** Marker: its point. Line and area: their vertices. Circle: centre, then a point on the rim. */
+  /** Marker: its point. Area: its corners. */
   readonly points: readonly LatLon[];
 }
 
 /**
- * Most points a line or area may have. A shape holds up to 33 points with an empty label but 25
+ * Most points an area may have. A shape holds up to 33 points with an empty label but 25
  * with the longest one (protocol §3.7); 25 keeps every label possible.
  */
 export const MAX_SHAPE_POINTS = 25;
 
-const NEEDED: Readonly<Record<DraftKind, number>> = { marker: 1, line: 2, area: 3, circle: 2 };
-const MAXIMUM: Readonly<Record<DraftKind, number>> = {
-  marker: 1,
-  line: MAX_SHAPE_POINTS,
-  area: MAX_SHAPE_POINTS,
-  circle: 2,
-};
+const NEEDED: Readonly<Record<DraftKind, number>> = { marker: 1, area: 3 };
+const MAXIMUM: Readonly<Record<DraftKind, number>> = { marker: 1, area: MAX_SHAPE_POINTS };
 
 export function startDraft(kind: DraftKind): Draft {
   return { kind, points: [] };
@@ -49,23 +43,8 @@ export function isFull(draft: Draft): boolean {
   return draft.points.length >= MAXIMUM[draft.kind];
 }
 
-/** The shape a complete line, area or circle draft describes. Null for markers and drafts. */
+/** The polygon a complete area draft describes. Null for markers and unfinished areas. */
 export function draftGeometry(draft: Draft): ShapeGeometry | null {
-  if (!isComplete(draft)) return null;
-  const [first, second] = draft.points;
-  switch (draft.kind) {
-    case 'marker':
-      return null;
-    case 'line':
-      return { kind: 'polyline', points: draft.points };
-    case 'area':
-      return { kind: 'polygon', points: draft.points };
-    case 'circle':
-      if (first === undefined || second === undefined) return null;
-      return {
-        kind: 'circle',
-        center: first,
-        radius: Math.max(1, Math.round(distanceMeters(first, second))),
-      };
-  }
+  if (draft.kind === 'marker' || !isComplete(draft)) return null;
+  return { kind: 'polygon', points: draft.points };
 }

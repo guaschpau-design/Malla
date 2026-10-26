@@ -16,9 +16,7 @@
 
   const HINTS: Readonly<Record<DraftKind, MessageKey>> = {
     marker: 'drawHintMarker',
-    line: 'drawHintLine',
     area: 'drawHintArea',
-    circle: 'drawHintCircle',
   };
 </script>
 
@@ -26,7 +24,7 @@
   <p>{t(HINTS[draft.kind])}</p>
   <div class="row">
     <button onclick={onundo} disabled={draft.points.length === 0}>{t('undo')}</button>
-    {#if draft.kind === 'line' || draft.kind === 'area'}
+    {#if draft.kind === 'area'}
       <button class="primary" onclick={onfinish} disabled={!isComplete(draft)}>{t('finish')}</button
       >
     {/if}

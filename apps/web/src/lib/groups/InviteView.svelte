@@ -1,4 +1,5 @@
-<!-- Shows a coordinator the invitation to a group as a QR code and a link. -->
+<!-- Shows a coordinator the invitation to a group: whether the person joins as member or
+     coordinator, the QR code to scan, and its link to copy or share. -->
 <script lang="ts">
   import type { NodeId, Role } from '@tesel/protocol';
 
@@ -18,6 +19,7 @@
 
   let { t, group, issuer, onback }: Props = $props();
 
+  const ROLES: readonly Role[] = ['member', 'coordinator'];
   let role: Role = $state('member');
   const canShare = 'share' in navigator;
 
@@ -40,29 +42,27 @@
 
 <div class="stack section">
   <h3>{t('inviteTitle', { group: group.name })}</h3>
-  <label>
-    {t('inviteRole')}
-    <select bind:value={role}>
-      {#each ['member', 'coordinator'] as const as option (option)}
-        <option value={option}>{t(ROLE_LABELS[option])}</option>
-      {/each}
-    </select>
-  </label>
+  <div class="roles" role="radiogroup" aria-label={t('inviteRole')}>
+    <span>{t('inviteRole')}</span>
+    {#each ROLES as option (option)}
+      <button role="radio" aria-checked={role === option} onclick={() => (role = option)}>
+        {t(ROLE_LABELS[option])}
+      </button>
+    {/each}
+  </div>
 
   {#if link.ok}
     <QrCode text={link.value} label={t('invitationQr')} />
-    <p class="hint">{t('inviteHowTo')}</p>
-    <p class="warning">{t('inviteWarning')}</p>
-    <label>
-      {t('invitationLink')}
-      <input
-        value={link.value}
-        readonly
-        onfocus={(event) => {
-          event.currentTarget.select();
-        }}
-      />
-    </label>
+    <p class="hint">{t('inviteWarning')}</p>
+    <input
+      class="link"
+      value={link.value}
+      aria-label={t('invitationLink')}
+      readonly
+      onfocus={(event) => {
+        event.currentTarget.select();
+      }}
+    />
     <div class="row">
       <CopyButton text={link.value} label={t('copyLink')} copiedLabel={t('copied')} />
       {#if canShare}
@@ -76,3 +76,29 @@
     <div class="row"><button onclick={onback}>{t('back')}</button></div>
   {/if}
 </div>
+
+<style>
+  .roles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+  }
+
+  .roles button {
+    padding: 0.35rem 0.8rem;
+    text-transform: capitalize;
+    border-radius: 999px;
+  }
+
+  .roles button[aria-checked='true'] {
+    font-weight: 600;
+    border-color: var(--accent-line);
+    box-shadow: inset 0 0 0 1px var(--accent-line);
+  }
+
+  .link {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+</style>

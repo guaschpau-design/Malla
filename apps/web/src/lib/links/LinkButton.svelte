@@ -1,52 +1,49 @@
-<!-- In the top bar: how this device reaches its group now, with the sign of each channel. Opens the
-     connections panel. -->
+<!-- In the top bar: how this device reaches its group now, by medium — WiFi, 4G/5G, LoRa — with a
+     coloured dot. Opens the connections panel. -->
 <script lang="ts">
   import type { Translate } from '../i18n/index.ts';
-  import type { GlyphName } from '../ui/glyphs.ts';
-  import Pictogram from '../ui/Pictogram.svelte';
-  import type { Channel, Link } from './links.ts';
+  import { channelName, type Link, type Network } from './links.ts';
 
   interface Props {
     t: Translate;
     link: Link;
-    /** A sentence on the internet link, shown on hover. */
+    network: Network;
+    /** How the network channel is doing, shown on hover. */
     detail: string;
     expanded: boolean;
     onclick: () => void;
   }
 
-  let { t, link, detail, expanded, onclick }: Props = $props();
+  let { t, link, network, detail, expanded, onclick }: Props = $props();
 
-  const SIGNS: Readonly<Record<Channel, GlyphName>> = {
-    internet: 'globe',
-    'command-post': 'wifi',
-    radio: 'mast',
-  };
+  const label = $derived.by(() => {
+    if (link.level === 'connecting') return t('linkConnecting');
+    if (link.level === 'none') return t('linkNone');
+    return link.channels.map((channel) => channelName(channel, network)).join(' · ');
+  });
 </script>
 
 <button
   class="link {link.level}"
   {onclick}
   aria-expanded={expanded}
-  aria-label="{t('connections')}: {t(link.label)}"
+  aria-label="{t('connections')}: {label}"
   title={detail}
 >
   <span class="dot" aria-hidden="true"></span>
-  {#each link.channels as channel (channel)}
-    <Pictogram name={SIGNS[channel]} size={16} />
-  {/each}
-  <span class="label">{t(link.label)}</span>
+  {label}
 </button>
 
 <style>
   .link {
     display: inline-flex;
     flex-shrink: 0;
-    gap: 0.4rem;
+    gap: 0.45rem;
     align-items: center;
     margin-right: auto;
-    padding: 0.3rem 0.6rem;
+    padding: 0.3rem 0.65rem;
     font-size: 0.85rem;
+    font-weight: 600;
     color: inherit;
     white-space: nowrap;
     border-color: rgb(230 235 232 / 25%);
@@ -68,16 +65,5 @@
 
   .none .dot {
     background: var(--danger);
-  }
-
-  /* On narrow screens the dot and the signs say it all; the words stay for screen readers. */
-  @media (max-width: 30rem) {
-    .label {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip-path: inset(50%);
-    }
   }
 </style>

@@ -7,6 +7,7 @@
   import { panels } from '../ui/panels.svelte.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import { screenWakeSupported } from '../ui/screen-awake.svelte.ts';
+  import Switch from '../ui/Switch.svelte';
 
   interface Props {
     t: Translate;
@@ -54,17 +55,15 @@
       </button>
     {/each}
     {#if screenWakeSupported}
+      <!-- The menu stays open, so the switch is seen to change. -->
       <button
         role="menuitemcheckbox"
         aria-checked={keepScreenOn.value}
-        onclick={async () => {
-          close();
-          await keepScreenOn.set(!keepScreenOn.value);
-        }}
+        onclick={() => keepScreenOn.set(!keepScreenOn.value)}
       >
         <Pictogram name="screen" size={20} />
         {t('keepScreenOn')}
-        <span>{t(keepScreenOn.value ? 'keepScreenOnYes' : 'keepScreenOnNo')}</span>
+        <Switch on={keepScreenOn.value} />
       </button>
     {/if}
   {/snippet}

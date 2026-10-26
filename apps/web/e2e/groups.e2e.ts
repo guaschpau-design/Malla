@@ -6,7 +6,7 @@ import { chooseAlias } from './helpers.ts';
 
 async function invitationLink(page: Page, role: 'miembro' | 'coordinador'): Promise<string> {
   await page.getByRole('button', { name: 'Invitar' }).click();
-  await page.getByLabel('Se une como').selectOption({ label: role });
+  await page.getByRole('radio', { name: role }).click();
   await expect(page.getByRole('img', { name: 'Código QR de la invitación' })).toBeVisible();
   const link = await page.getByLabel('Enlace de invitación').inputValue();
   await page.getByRole('button', { name: 'Volver' }).click();
@@ -18,6 +18,7 @@ test('a second device joins a group through its invitation link', async ({ brows
   await coordinator.goto('/');
   await chooseAlias(coordinator, 'Ana');
   await coordinator.getByRole('button', { name: 'Grupos: Sin grupo' }).click();
+  await coordinator.getByRole('button', { name: 'Crear grupo' }).click();
   await coordinator.getByLabel('Nombre del grupo').fill('Rescate Valencia');
   await coordinator.getByRole('button', { name: 'Crear', exact: true }).click();
   await expect(coordinator.getByRole('button', { name: 'Grupos: Rescate Valencia' })).toBeVisible();
@@ -46,8 +47,9 @@ test('a second device joins a group through its invitation link', async ({ brows
 
   // A coordinator invitation, pasted, promotes the member.
   const coordinatorLink = await invitationLink(coordinator, 'coordinador');
+  await member.getByRole('button', { name: 'Unirme a un grupo' }).click();
   await member.getByLabel('Enlace de invitación').fill(coordinatorLink);
-  await member.getByRole('button', { name: 'Unirme' }).click();
+  await member.getByRole('button', { name: 'Unirme', exact: true }).click();
   await member
     .getByRole('dialog', { name: 'Unirse a un grupo' })
     .getByRole('button', { name: 'Unirme' })

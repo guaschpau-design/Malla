@@ -66,23 +66,14 @@
     box-shadow: 0 4px 16px rgb(0 0 0 / 30%);
   }
 
-  /* Items are buttons with a pictogram, a name and, sometimes, a line of explanation. */
+  /* Items are buttons with a pictogram, a name and, for a choice, its switch. */
   .menu :global(button) {
     display: grid;
     grid-template-columns: auto 1fr;
+    grid-auto-flow: column;
     gap: 0.15rem 0.7rem;
     align-items: center;
     text-align: left;
     border-color: transparent;
-  }
-
-  .menu :global(button > span) {
-    grid-column: 2;
-    color: var(--muted);
-    font-size: 0.85rem;
-  }
-
-  .menu :global(button[aria-checked='true']) {
-    border-color: var(--accent-line);
   }
 </style>

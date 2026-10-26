@@ -12,7 +12,7 @@ test('the diary tells what happened and downloads as text for the report', async
   const { ana, berta } = await twoMembers(browser);
   await berta.getByRole('button', { name: 'Chat' }).click();
   await berta.getByLabel('Mensaje').fill('Llegamos al puente');
-  await berta.getByRole('button', { name: 'Enviar' }).click();
+  await berta.getByRole('button', { name: 'Enviar', exact: true }).click();
 
   await openDiary(ana);
   const diary = ana.getByRole('region', { name: 'Diario de la operación' });
