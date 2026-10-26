@@ -6,6 +6,7 @@
   import type { Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
   import { onMount } from 'svelte';
 
+  import { useNow } from '../ui/now.svelte.ts';
   import { themeColor } from '../ui/theme.ts';
   import { memberFeatures } from './member-features.ts';
   import { useOverlay } from './overlay.svelte.ts';
@@ -26,8 +27,8 @@
   const SOURCE = 'tesel-members';
   /** Stale markers are re-evaluated this often even when no event arrives. */
   const REFRESH_MS = 30_000;
-  let now = $state(Date.now() / 1000);
-  const data = $derived(memberFeatures(groupState, self, now));
+  const now = useNow(REFRESH_MS);
+  const data = $derived(memberFeatures(groupState, self, now.seconds));
 
   useOverlay(() => map, {
     data: { [SOURCE]: () => data },
@@ -77,10 +78,8 @@
   }
 
   onMount(() => {
-    const timer = setInterval(() => (now = Date.now() / 1000), REFRESH_MS);
     map.on('click', onClick);
     return () => {
-      clearInterval(timer);
       map.off('click', onClick);
     };
   });

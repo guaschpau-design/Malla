@@ -6,6 +6,7 @@
   import DrawMenu from '../objects/DrawMenu.svelte';
   import PositionControl from '../position/PositionControl.svelte';
   import type { PositionSharing } from '../position/position-sharing.svelte.ts';
+  import type { Preference } from '../settings/preference.svelte.ts';
   import { panels, togglePanel } from '../ui/panels.svelte.ts';
   import ToolsMenu from './ToolsMenu.svelte';
 
@@ -16,9 +17,10 @@
     onsos: () => void;
     ondraw: (kind: DraftKind) => void;
     onmeasure: () => void;
+    keepScreenOn: Preference<boolean>;
   }
 
-  let { t, sharing, onsos, ondraw, onmeasure }: Props = $props();
+  let { t, sharing, onsos, ondraw, onmeasure, keepScreenOn }: Props = $props();
 </script>
 
 <div class="toolbar">
@@ -39,7 +41,7 @@
         {t('chat')}
       </button>
     {/if}
-    <ToolsMenu {t} {onmeasure} />
+    <ToolsMenu {t} {onmeasure} {keepScreenOn} />
   </div>
 </div>
 

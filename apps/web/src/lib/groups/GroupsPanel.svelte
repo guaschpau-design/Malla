@@ -1,6 +1,6 @@
 <!-- Who this device is, its groups, and the ways to create, join, invite and leave. -->
 <script lang="ts">
-  import type { GroupState } from '@tesel/core';
+  import type { GroupFeed } from '../sync/group-feed.svelte.ts';
   import { GROUP_NAME_MAX_BYTES, parseInvitationUrl, type Invitation } from '@tesel/protocol';
 
   import { defaultServerUrl, guideUrl } from '../config.ts';
@@ -19,13 +19,14 @@
     t: Translate;
     session: Session;
     /** State of the active group, to list its members. */
-    activeState: GroupState | undefined;
+    /** The active group's feed, for its members. */
+    activeFeed: GroupFeed | undefined;
     /** An invitation was pasted or scanned; the caller asks the user to confirm it. */
     oninvitation: (invitation: Invitation) => void;
     onclose: () => void;
   }
 
-  let { t, session, activeState, oninvitation, onclose }: Props = $props();
+  let { t, session, activeFeed, oninvitation, onclose }: Props = $props();
 
   type View = { kind: 'list' } | { kind: 'invite'; group: StoredGroup } | { kind: 'scan' };
   let view: View = $state.raw({ kind: 'list' });
@@ -113,8 +114,13 @@
                 {#if active}<span class="badge">{t('active')}</span>{/if}
                 <span class="hint server">{serverLabel(group.server)}</span>
               </div>
-              {#if active && activeState && session.identity}
-                <MemberList {t} groupState={activeState} self={session.identity.nodeId} />
+              {#if active && activeFeed && session.identity}
+                <MemberList
+                  {t}
+                  groupState={activeFeed.state}
+                  heard={activeFeed.heard}
+                  self={session.identity.nodeId}
+                />
               {/if}
               <div class="row">
                 {#if !active}

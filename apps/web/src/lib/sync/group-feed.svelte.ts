@@ -40,6 +40,8 @@ import {
 } from '../events/event-log.ts';
 import type { StoredGroup } from '../groups/group.ts';
 import type { LocalIdentity } from '../identity/identity.ts';
+import { hear, NOTHING_HEARD, type Heard } from '../links/heard.ts';
+import type { Channel } from '../links/links.ts';
 import type { DeviceFix } from '../position/device-location.svelte.ts';
 import type { AppDb, OutboxEntry } from '../storage/app-db.ts';
 import { defaultServerUrl } from '../config.ts';
@@ -61,6 +63,8 @@ export class GroupFeed {
   status: FeedStatus = $state('local-only');
   /** True while synced through a command post instead of the group's server (protocol §8.3). */
   viaCommandPost = $state(false);
+  /** What this device has heard from each member, by channel, since the feed opened. */
+  heard: Heard = $state.raw(NOTHING_HEARD);
 
   readonly #db: AppDb;
   readonly #group: StoredGroup;
@@ -143,6 +147,7 @@ export class GroupFeed {
   async receiveFromRadio(bytes: Uint8Array): Promise<void> {
     const heard = loraEventOf(bytes);
     if (heard) this.#lora?.heard(heard);
+    this.#hear('radio', [bytes]);
     const forward = this.#client !== null;
     const [received] = await receiveEvents(this.#db, this.#group.id, [bytes], { forward });
     if (received === undefined) return;
@@ -245,6 +250,8 @@ export class GroupFeed {
     if (last === undefined) return;
     // An envelope that does not open was not sealed with this group's key: skip it.
     const opened = batch.flatMap(({ env }) => openEnvelope(this.#keys, env) ?? []);
+    const server = this.#group.server;
+    this.#hear(server !== null && sameServer(relay, server) ? 'internet' : 'command-post', opened);
     const readTo = { relay, cursor: last.cursor };
     const received = await receiveEvents(this.#db, this.#group.id, opened, { readTo });
     this.#apply(received.map(({ bytes }) => bytes));
@@ -253,6 +260,15 @@ export class GroupFeed {
       const event = loraEventOf(bytes);
       if (event) this.#lora?.offer({ event, bytes }, 'bridged');
     }
+  }
+
+  /** Notes the members heard through a channel; own events are not news about anyone. */
+  #hear(channel: Channel, batch: readonly Uint8Array[]): void {
+    const headers = batch.flatMap((bytes) => {
+      const header = peekHeader(bytes);
+      return header.ok && header.value.origin !== this.#identity.nodeId ? [header.value] : [];
+    });
+    this.heard = hear(this.heard, channel, headers);
   }
 
   async #flushOutbox(): Promise<void> {

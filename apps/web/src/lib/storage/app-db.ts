@@ -21,7 +21,8 @@ export interface OutboxEntry {
   readonly seq: number;
 }
 
-export type SettingKey = 'activeGroupId' | 'positionMode' | 'coordinateFormat' | 'hiddenLayers';
+export type SettingKey =
+  'activeGroupId' | 'positionMode' | 'coordinateFormat' | 'hiddenLayers' | 'keepScreenOn';
 
 export type EventKey = [groupId: string, origin: NodeId, seq: number];
 

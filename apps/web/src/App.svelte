@@ -235,13 +235,7 @@
     {/if}
 
     {#if session && panels.open === 'groups'}
-      <GroupsPanel
-        {t}
-        {session}
-        activeState={feed?.state}
-        oninvitation={received}
-        onclose={closePanel}
-      />
+      <GroupsPanel {t} {session} activeFeed={feed} oninvitation={received} onclose={closePanel} />
     {/if}
 
     {#if session && !session.identity}

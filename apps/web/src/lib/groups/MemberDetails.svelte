@@ -5,12 +5,14 @@
 
   import CoordinateBlock from '../coordinates/CoordinateBlock.svelte';
   import type { CoordinateFormat } from '../coordinates/coordinates.ts';
-  import { formatTime } from '../format.ts';
+  import { formatAgo, formatTime } from '../format.ts';
   import type { Locale, Translate } from '../i18n/index.ts';
   import { aliasOf } from '../incidents/incidents.ts';
   import FromHere from '../navigation/FromHere.svelte';
   import type { DeviceLocation } from '../position/device-location.svelte.ts';
+  import type { Heard } from '../links/heard.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
+  import { useNow } from '../ui/now.svelte.ts';
   import Panel from '../ui/Panel.svelte';
   import { ROLE_LABELS } from './role-label.ts';
 
@@ -18,6 +20,7 @@
     t: Translate;
     locale: Locale;
     groupState: GroupState;
+    heard: Heard;
     id: NodeId;
     format: Preference<CoordinateFormat>;
     location: DeviceLocation;
@@ -26,11 +29,14 @@
     onclose: () => void;
   }
 
-  let { t, locale, groupState, id, format, location, onnavigate, onclose }: Props = $props();
+  let { t, locale, groupState, heard, id, format, location, onnavigate, onclose }: Props = $props();
 
   const alias = $derived(aliasOf(groupState, id));
   const role = $derived(groupState.members.get(id)?.role);
   const report = $derived(groupState.positions.get(id));
+  const now = useNow(15_000);
+  const channels = $derived(heard.get(id) ?? {});
+  const ago = (time: number) => formatAgo(time, locale, now.seconds);
 </script>
 
 <Panel title={alias} closeLabel={t('close')} {onclose}>
@@ -53,4 +59,18 @@
       <p class="hint">{t('memberNoPosition')}</p>
     {/if}
   </div>
+  <section class="stack section" aria-label={t('heardTitle')}>
+    <h3>{t('heardTitle')}</h3>
+    <p>
+      {channels.radio === undefined
+        ? t('heardRadioNever')
+        : t('heardRadio', { ago: ago(channels.radio) })}
+    </p>
+    {#if channels.internet !== undefined}
+      <p>{t('heardInternet', { ago: ago(channels.internet) })}</p>
+    {/if}
+    {#if channels['command-post'] !== undefined}
+      <p>{t('heardCommandPost', { ago: ago(channels['command-post']) })}</p>
+    {/if}
+  </section>
 </Panel>

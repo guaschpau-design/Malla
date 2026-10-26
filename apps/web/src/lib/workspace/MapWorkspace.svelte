@@ -22,7 +22,7 @@
   import TrailLayer from '../map/TrailLayer.svelte';
   import Measuring from '../measure/Measuring.svelte';
   import Navigation from '../navigation/Navigation.svelte';
-  import { navigateTo } from '../navigation/navigation.svelte.ts';
+  import { navigateTo, navigation } from '../navigation/navigation.svelte.ts';
   import { draftGeometry, type DraftKind } from '../objects/draft.ts';
   import DrawBar from '../objects/DrawBar.svelte';
   import { Drawing } from '../objects/drawing.svelte.ts';
@@ -39,6 +39,7 @@
   import type { GroupFeed } from '../sync/group-feed.svelte.ts';
   import Toast from '../ui/Toast.svelte';
   import { closePanel, panels } from '../ui/panels.svelte.ts';
+  import { keepScreenAwake } from '../ui/screen-awake.svelte.ts';
   import Toolbar from './Toolbar.svelte';
 
   interface Props {
@@ -53,6 +54,9 @@
   }
 
   let { t, locale, map, group, radio, location, preferences }: Props = $props();
+
+  // Kept on when the user asks, and always while guiding to a target.
+  keepScreenAwake(() => preferences.keepScreenOn.value || navigation.target !== null);
 
   const drawing = new Drawing();
   let measuring = $state(false);
@@ -222,6 +226,7 @@
       {t}
       {locale}
       groupState={feed.state}
+      heard={feed.heard}
       {id}
       format={preferences.coordinateFormat}
       {location}
@@ -344,6 +349,7 @@
     onsos={() => (sosOpen = true)}
     ondraw={startDrawing}
     onmeasure={startMeasuring}
+    keepScreenOn={preferences.keepScreenOn}
   />
 {/if}
 

@@ -16,7 +16,9 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 - Members on the map can be tapped for who they are, their last position and the way there.
 - Trails: where each member has been in the last hours, drawn from the positions they share. Hiding one's position hides the trail up to that moment too.
 - Map layers: members, trails and markers and zones can each be hidden; the choice is remembered. This device and SOS calls are always shown.
-- A tools menu gathers coordinates, measuring, map layers and offline maps.
+- What reaches this device from each member, and how: a member's details say when something of theirs last arrived by radio, through the server or through a command post, and the members list marks those the radio hears.
+- Keep the screen on, as an option, and always while guiding to a target.
+- A tools menu gathers coordinates, measuring, map layers, offline maps and keeping the screen on.
 - Areas downloaded tile by tile for offline use ([ADR-0011](docs/decisions/0011-client-side-area-download.md)).
 - The base map (Spain, Portugal and the islands) is built from OpenStreetMap by our own server and served by it and by command posts.
 

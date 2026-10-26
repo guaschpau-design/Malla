@@ -56,3 +56,13 @@ export function formatBearing(degrees: number, locale: Locale): string {
   const point = COMPASS[locale][Math.round(whole / 45) % 8] ?? '';
   return `${String(whole).padStart(3, '0')}° ${point}`;
 }
+
+/** How long ago a moment was, in words: "hace 3 min", "2 h ago". Times in seconds. */
+export function formatAgo(time: number, locale: Locale, now: number): string {
+  const seconds = Math.max(0, Math.round(now - time));
+  const format = new Intl.RelativeTimeFormat(locale, { numeric: 'auto', style: 'short' });
+  if (seconds < 60) return format.format(-seconds, 'second');
+  if (seconds < 3600) return format.format(-Math.floor(seconds / 60), 'minute');
+  if (seconds < 86_400) return format.format(-Math.floor(seconds / 3600), 'hour');
+  return format.format(-Math.floor(seconds / 86_400), 'day');
+}

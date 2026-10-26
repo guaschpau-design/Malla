@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatArea, formatBearing, formatDistance } from './format.ts';
+import { formatAgo, formatArea, formatBearing, formatDistance } from './format.ts';
 
 describe('formatting measures', () => {
   it('writes distances in metres, then kilometres', () => {
@@ -20,5 +20,12 @@ describe('formatting measures', () => {
     expect(formatBearing(247, 'es')).toBe('247° SO');
     expect(formatBearing(247, 'en')).toBe('247° SW');
     expect(formatBearing(359.6, 'en')).toBe('000° N');
+  });
+
+  it('says how long ago something was, in the largest whole unit', () => {
+    const now = 1_761_350_400;
+    expect(formatAgo(now - 20, 'es', now)).toBe('hace 20 s');
+    expect(formatAgo(now - 185, 'es', now)).toBe('hace 3 min');
+    expect(formatAgo(now - 7300, 'en', now)).toBe('2 hr. ago');
   });
 });

@@ -2,6 +2,7 @@ import { stateOf } from '@tesel/core';
 import type { NodeId } from '@tesel/protocol';
 import { describe, expect, it } from 'vitest';
 
+import { hear, NOTHING_HEARD } from '../links/heard.ts';
 import { memberRows } from './member-list.ts';
 
 const ANA = 'a1b2c3d4' as NodeId;
@@ -45,14 +46,27 @@ describe('member list', () => {
       { type: 'position-hidden', origin: CARLA, seq: 2, time: T0 },
     ]);
     expect(
-      memberRows(state, CARLA, T0 + 30).map((row) => [row.alias, row.self, row.position]),
+      memberRows(state, CARLA, T0 + 30, NOTHING_HEARD).map((row) => [
+        row.alias,
+        row.self,
+        row.position,
+      ]),
     ).toEqual([
       ['Carla', true, 'hidden'],
       ['Ana', false, 'never'],
       ['Berta', false, 'live'],
     ]);
-    expect(memberRows(state, CARLA, T0 + 3600).find((row) => row.id === BERTA)?.position).toBe(
-      'stale',
-    );
+    expect(
+      memberRows(state, CARLA, T0 + 3600, NOTHING_HEARD).find((row) => row.id === BERTA)?.position,
+    ).toBe('stale');
+  });
+
+  it('marks the members this device’s radio has heard lately', () => {
+    const state = stateOf([{ type: 'position', origin: BERTA, seq: 2, time: T0, ...fix }]);
+    const heard = hear(NOTHING_HEARD, 'radio', [{ origin: BERTA, time: T0 }]);
+    const berta = (now: number) =>
+      memberRows(state, CARLA, now, heard).find((row) => row.id === BERTA)?.byRadio;
+    expect(berta(T0 + 60)).toBe(true);
+    expect(berta(T0 + 3600)).toBe(false);
   });
 });
