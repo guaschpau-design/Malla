@@ -1,8 +1,8 @@
 import { readFile } from 'node:fs/promises';
 
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
-import { openMore, twoMembers } from './helpers.ts';
+import { expect, openMore, test, twoMembers } from './helpers.ts';
 
 async function openDiary(page: Page): Promise<void> {
   await openMore(page, 'Diario de la operación');

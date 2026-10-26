@@ -1,8 +1,8 @@
 <!--
-  Everything on top of the map: public services, this device, the group's members, objects, tasks
-  and incidents, drawing, measuring and navigating, the panels and the dock. Without an active
-  group, only what works alone: services, this device, coordinates, measuring, navigating to a
-  point and offline maps.
+  Everything on top of the map: weather warnings, public services, this device, the group's
+  members, objects, tasks and incidents, drawing, measuring and navigating, the panels and the
+  dock. Without an active group, only what works alone: weather warnings, services, this device,
+  coordinates, measuring, navigating to a point and offline maps.
 -->
 <script lang="ts">
   import type { EventRef, LatLon, NodeId, Role, SosKind } from '@tesel/protocol';
@@ -39,6 +39,7 @@
   import SelfLayer from '../position/SelfLayer.svelte';
   import type { RadioSession } from '../radio/radio.svelte.ts';
   import type { PositionSharing } from '../position/position-sharing.svelte.ts';
+  import Practice from '../practice/Practice.svelte';
   import type { TappedService } from '../services/services.ts';
   import ServicesLayer from '../services/ServicesLayer.svelte';
   import type { Preferences } from '../settings/preferences.ts';
@@ -50,6 +51,11 @@
   import Toast from '../ui/Toast.svelte';
   import { closePanel, panels, togglePanel } from '../ui/panels.svelte.ts';
   import { keepScreenAwake } from '../ui/screen-awake.svelte.ts';
+  import WarningList from '../weather/WarningList.svelte';
+  import WeatherCard from '../weather/WeatherCard.svelte';
+  import type { WeatherFeed } from '../weather/weather-feed.svelte.ts';
+  import WeatherLayer from '../weather/WeatherLayer.svelte';
+  import { warningsAt } from '../weather/weather-warnings.ts';
   import Dock from './Dock.svelte';
   import GroupPanels from './GroupPanels.svelte';
 
@@ -57,16 +63,39 @@
     t: Translate;
     locale: Locale;
     map: MapLibreMap;
-    /** The active group's feed and this device's place in it, when there is an active group. */
-    group: { feed: GroupFeed; self: NodeId; role: Role; sharing: PositionSharing } | null;
+    /**
+     * The active group's feed and this device's place in it, when there is an active group; for a
+     * practice, its other members are simulated here.
+     */
+    group: {
+      feed: GroupFeed;
+      self: NodeId;
+      role: Role;
+      sharing: PositionSharing;
+      practice: boolean;
+    } | null;
     radio: RadioSession;
     location: DeviceLocation;
     preferences: Preferences;
     /** Downloaded maps: the operation area is offered for download. */
     offline: OfflineMaps;
+    /** Official weather warnings, when the app's server publishes them. */
+    weather: WeatherFeed | null;
+    onendpractice: () => void;
   }
 
-  let { t, locale, map, group, radio, location, preferences, offline }: Props = $props();
+  let {
+    t,
+    locale,
+    map,
+    group,
+    radio,
+    location,
+    preferences,
+    offline,
+    weather,
+    onendpractice,
+  }: Props = $props();
 
   // Kept on when the user asks, and always while guiding to a target.
   keepScreenAwake(() => preferences.keepScreenOn.value || navigation.target !== null);
@@ -183,6 +212,9 @@
   }
 </script>
 
+{#if weather}
+  <WeatherLayer {map} regions={weather.regions} visible={shown.weather} />
+{/if}
 <ServicesLayer
   {map}
   {locale}
@@ -263,6 +295,7 @@
 
 {#if panels.open === 'point' && point}
   {@const { at, name } = point}
+  {@const warnings = weather && shown.weather ? warningsAt(weather.regions, at) : []}
   <PointLayer {map} point={at} />
   <PointPanel
     {t}
@@ -288,7 +321,13 @@
         }
       : null}
     onclose={closePanel}
-  />
+  >
+    {#snippet about()}
+      {#if weather && warnings.length > 0}
+        <WarningList {t} {locale} {warnings} source={weather.source} />
+      {/if}
+    {/snippet}
+  </PointPanel>
 {:else if panels.open === 'find'}
   <FindCoordinatePanel {t} onfind={find} onclose={closePanel} />
 {:else if panels.open === 'me'}
@@ -342,6 +381,20 @@
     <Measuring {t} {locale} {map} from={measuring.from} onclose={() => (measuring = null)} />
   {/if}
   <Navigation {t} {locale} {map} {location} groupState={group?.feed.state ?? null} />
+  {#if weather && shown.weather && !tapping}
+    <WeatherCard {t} {locale} {weather} {location} />
+  {/if}
+  {#if group?.practice}
+    {#key group.feed}
+      <Practice
+        {t}
+        feed={group.feed}
+        self={group.self}
+        centre={location.fix?.at ?? mapCentre()}
+        onend={onendpractice}
+      />
+    {/key}
+  {/if}
   {#if group && !tapping}
     {#key group.feed}
       <OperationAreaOffer {t} {locale} groupState={group.feed.state} {offline} />

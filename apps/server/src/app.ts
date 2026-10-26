@@ -1,11 +1,17 @@
 // Builds the HTTP application. Kept separate from main.ts so tests can run it in memory.
 
 import fastifyWebsocket from '@fastify/websocket';
-import { PROTOCOL_VERSION, RELAY_PATH, SERVER_INFO_PATH } from '@tesel/protocol';
+import {
+  PROTOCOL_VERSION,
+  RELAY_PATH,
+  SERVER_INFO_PATH,
+  WEATHER_WARNINGS_PATH,
+} from '@tesel/protocol';
 import Fastify, { type FastifyInstance } from 'fastify';
 import type WebSocket from 'ws';
 
 import type { Relay } from './relay.ts';
+import type { WeatherWarningsService } from './weather/weather-warnings.ts';
 import { serveWeb } from './web.ts';
 
 /** Largest frame accepted: a push of the largest envelope is about 320 bytes of JSON. */
@@ -19,9 +25,13 @@ export interface AppOptions {
   /** What `healthz` tells clients (protocol §8.1). */
   readonly upstream: string | null;
   readonly commandPost: string | null;
+  /** The weather warnings it serves (protocol §8.4), or null if it gathers none. */
+  readonly weather: Pick<WeatherWarningsService, 'body'> | null;
 }
 
-const NO_OPTIONS: AppOptions = { webRoot: null, upstream: null, commandPost: null };
+const NO_OPTIONS: AppOptions = { webRoot: null, upstream: null, commandPost: null, weather: null };
+/** Warnings are gathered every 10 minutes; browsers may keep them a little. */
+const WEATHER_CACHE_CONTROL = 'public, max-age=300';
 
 export async function buildApp(
   relay: Relay,
@@ -40,6 +50,18 @@ export async function buildApp(
       commandPost: options.commandPost,
     };
   });
+  const { weather } = options;
+  if (weather !== null) {
+    app.get(`/${WEATHER_WARNINGS_PATH}`, (_request, reply) => {
+      void reply.header('Access-Control-Allow-Origin', '*');
+      const body = weather.body;
+      if (body === null) return reply.code(503).type('text/plain').send('Not gathered yet');
+      return reply
+        .header('Cache-Control', WEATHER_CACHE_CONTROL)
+        .type('application/json')
+        .send(body);
+    });
+  }
   if (options.webRoot !== null) await serveWeb(app, options.webRoot);
 
   const alive = new WeakSet<WebSocket>();

@@ -1,5 +1,6 @@
 // A staged operation as data, and the plan of events it produces. Planning is pure: the same
-// scenario always gives the same plan, which the runner (play.ts) then sends over the relay.
+// scenario always gives the same plan, which a runner then sends: the simulator over the relay,
+// the web app's practice mode straight into its own group.
 
 import { distanceMeters } from '@tesel/core';
 import type { AlertLevel, LatLon, Role, ShapeGeometry, SosKind } from '@tesel/protocol';

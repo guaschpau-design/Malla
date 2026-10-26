@@ -1,6 +1,4 @@
-import { expect, test } from '@playwright/test';
-
-import { device, openMore } from './helpers.ts';
+import { device, expect, openMore, test } from './helpers.ts';
 
 test('a point picked on the map is measured from here and navigated to', async ({ browser }) => {
   const page = await device(browser, 'Ana');

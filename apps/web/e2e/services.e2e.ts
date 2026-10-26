@@ -1,9 +1,9 @@
 // Public services of the base map: a hospital on the map opens its point, by name, to be guided
 // there; the services can be hidden like any layer.
 
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
-import { device } from './helpers.ts';
+import { device, expect, test } from './helpers.ts';
 
 /** The test base map's hospital, at the centre of this view. */
 const VIEW = '/#map=16/39.4750/-0.3700';

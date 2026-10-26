@@ -1,4 +1,21 @@
-import { expect, type Browser, type Page } from '@playwright/test';
+import { test as base, expect, type Browser, type Page } from '@playwright/test';
+
+export { expect };
+
+/**
+ * Playwright's `test`, closing every browser context a test opened once it ends. Tests open their
+ * devices with `browser.newContext()`, which Playwright leaves open until the browser closes:
+ * without this, every map of the suite would keep drawing until the end, slowing the last tests.
+ */
+export const test = base.extend<{ closeDevices: undefined }>({
+  closeDevices: [
+    async ({ browser }, use) => {
+      await use(undefined);
+      await Promise.all(browser.contexts().map((context) => context.close()));
+    },
+    { auto: true },
+  ],
+});
 
 const VALENCIA = { latitude: 39.4699, longitude: -0.3763 };
 

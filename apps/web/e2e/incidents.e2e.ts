@@ -1,8 +1,8 @@
 // Day 4: map objects, SOS calls and alerts reach the whole group.
 
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
-import { twoMembers } from './helpers.ts';
+import { expect, test, twoMembers } from './helpers.ts';
 
 const VIEW = '/#map=15/39.4699/-0.3763';
 

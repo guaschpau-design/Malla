@@ -6,7 +6,7 @@
   // The logo comes from brand/, built by brand/build.py; the header is always ink, hence pale.
   import lockupUrl from '../../../brand/lockup-pale.svg';
   import markUrl from '../../../brand/mark.svg';
-  import { basemapUrl } from './lib/config.ts';
+  import { basemapUrl, defaultServerUrl } from './lib/config.ts';
   import { connection, watchConnection } from './lib/links/connection.svelte.ts';
   import type { JoinOutcome } from './lib/groups/group.ts';
   import GroupsPanel from './lib/groups/GroupsPanel.svelte';
@@ -35,6 +35,7 @@
   import { GroupFeed } from './lib/sync/group-feed.svelte.ts';
   import { closePanel, panels, togglePanel } from './lib/ui/panels.svelte.ts';
   import Toast from './lib/ui/Toast.svelte';
+  import { WeatherFeed } from './lib/weather/weather-feed.svelte.ts';
   import MapWorkspace from './lib/workspace/MapWorkspace.svelte';
 
   let locale: Locale = $state(detectLocale(navigator.languages));
@@ -64,6 +65,8 @@
   let sharing: PositionSharing | undefined;
   let feed: GroupFeed | undefined = $state.raw();
   let map: MapLibreMap | undefined = $state();
+  /** Official weather warnings from the app's own server, once the database is open. */
+  let weather: WeatherFeed | null = $state.raw(null);
   const radio = new RadioSession();
   const location = new DeviceLocation();
   /** How this device reaches its group now (lib/links). */
@@ -92,8 +95,10 @@
       elevations = new ElevationReader((tile) => findTile('terrain', tile, opened, archives));
       offline = { store: opened, archives };
     });
+    const server = defaultServerUrl();
     void openAppDb().then(async (opened) => {
       db = opened;
+      if (server !== null) weather = WeatherFeed.start(opened, server);
       void radio.useStorage(opened);
       preferences = await loadPreferences(opened);
       sharing = new PositionSharing(preferences.positionMode, location);
@@ -102,6 +107,7 @@
 
     return () => {
       stopWatching();
+      weather?.stop();
       darkQuery.removeEventListener('change', onScheme);
     };
   });
@@ -145,14 +151,20 @@
     };
   });
 
-  // The radio follows the active group: its channel, its events.
+  // The radio follows the active group: its channel, its events. A practice stays on this device.
   $effect(() => {
-    void radio.useFeed(feed ?? null);
+    void radio.useFeed(session?.activeGroup?.practice ? null : (feed ?? null));
   });
 
   const workspaceGroup = $derived(
     feed && sharing && session?.identity && session.activeGroup
-      ? { feed, sharing, self: session.identity.nodeId, role: session.activeGroup.role }
+      ? {
+          feed,
+          sharing,
+          self: session.identity.nodeId,
+          role: session.activeGroup.role,
+          practice: session.activeGroup.practice === true,
+        }
       : null,
   );
 
@@ -244,6 +256,8 @@
         {location}
         {preferences}
         {offline}
+        {weather}
+        onendpractice={() => void session?.endPractice()}
       />
     {/if}
 

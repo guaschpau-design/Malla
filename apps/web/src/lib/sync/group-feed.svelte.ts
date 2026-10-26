@@ -167,6 +167,15 @@ export class GroupFeed {
     this.#push(received.entry, bytes);
   }
 
+  /**
+   * An event of a simulated member of a practice (lib/practice): applied like any other, and
+   * never sent anywhere, as a practice group has no server and no radio.
+   */
+  async receiveSimulated(bytes: Uint8Array): Promise<void> {
+    const received = await receiveEvents(this.#db, this.#group.id, [bytes], { forward: false });
+    if (received.length > 0) this.#apply([bytes]);
+  }
+
   /** The group's whole log as a log file, sealed so that only the group can read it. */
   async exportLog(): Promise<string> {
     const events = await loadEvents(this.#db, this.#group.id);

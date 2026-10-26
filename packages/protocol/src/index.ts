@@ -17,3 +17,4 @@ export * from './node-id.ts';
 export { EVENT_TYPES } from './payloads.ts';
 export type { ProtocolError, ProtocolErrorCode, Result } from './result.ts';
 export * from './relay.ts';
+export * from './weather.ts';

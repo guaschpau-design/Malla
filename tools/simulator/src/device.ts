@@ -10,17 +10,13 @@ import {
   relayUrl,
   sealEnvelope,
   toBase64url,
-  type EventHeader,
   type EventRef,
   type GroupKeys,
   type Identity,
   type NodeId,
-  type TeselEvent,
 } from '@tesel/protocol';
+import type { EventDraft } from '@tesel/scenario';
 import WebSocket from 'ws';
-
-/** An event without its header, which the device fills in. */
-export type EventDraft = (header: EventHeader) => TeselEvent;
 
 /** How long to wait before pushing again an envelope the relay refused for going too fast. */
 const RATE_LIMIT_RETRY_MS = 500;

@@ -1,9 +1,7 @@
 // Day 5: the radio, in the connections panel. Pairing needs a real radio, so this only checks what can be checked
 // without one; the radio path itself is covered by unit tests with radios in memory.
 
-import { expect, test } from '@playwright/test';
-
-import { device } from './helpers.ts';
+import { device, expect, test } from './helpers.ts';
 
 test('the connections panel offers to pair a radio, or explains why it cannot', async ({
   browser,

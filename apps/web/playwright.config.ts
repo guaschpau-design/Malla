@@ -29,9 +29,10 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      // The relay server, with its database in memory so every run starts empty.
+      // The relay server, with its database in memory so every run starts empty. It gathers no
+      // weather warnings: tests stand in for them (e2e/weather.e2e.ts).
       command:
-        `TESEL_PORT=${SERVER_PORT} TESEL_DB=:memory: ` +
+        `TESEL_PORT=${SERVER_PORT} TESEL_DB=:memory: TESEL_WEATHER=off ` +
         `TESEL_COMMAND_POST=http://localhost:${POST_PORT} node ../server/src/main.ts`,
       url: `http://localhost:${SERVER_PORT}/healthz`,
       reuseExistingServer: false,
@@ -39,7 +40,7 @@ export default defineConfig({
     },
     {
       command:
-        `TESEL_PORT=${POST_PORT} TESEL_DB=:memory: ` +
+        `TESEL_PORT=${POST_PORT} TESEL_DB=:memory: TESEL_WEATHER=off ` +
         `TESEL_UPSTREAM=http://localhost:${SERVER_PORT} node ../server/src/main.ts`,
       url: `http://localhost:${POST_PORT}/healthz`,
       reuseExistingServer: false,

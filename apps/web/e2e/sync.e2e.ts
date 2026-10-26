@@ -1,8 +1,6 @@
 // Day 3: two devices in a group see each other's messages and positions through the server.
 
-import { expect, test } from '@playwright/test';
-
-import { device, shareAs, twoMembers } from './helpers.ts';
+import { device, expect, shareAs, test, twoMembers } from './helpers.ts';
 
 test('new groups propose the build’s own server', async ({ browser }) => {
   const ana = await device(browser, 'Ana');

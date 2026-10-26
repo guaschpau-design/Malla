@@ -1,8 +1,6 @@
 // Phase 2.4: a task handed from one member to another, started and finished.
 
-import { expect, test } from '@playwright/test';
-
-import { twoMembers } from './helpers.ts';
+import { expect, test, twoMembers } from './helpers.ts';
 
 const VIEW = '/#map=15/39.4699/-0.3763';
 

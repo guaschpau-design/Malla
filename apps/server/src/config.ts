@@ -2,6 +2,8 @@
 
 import { isSecureUrl, serverBaseUrl } from '@tesel/protocol';
 
+import { FEED_URLS } from './weather/meteoalarm.ts';
+
 export interface ServerConfig {
   readonly host: string;
   readonly port: number;
@@ -15,6 +17,8 @@ export interface ServerConfig {
   readonly upstream: string | null;
   /** On an internet server, the base URL shared by its command posts (protocol §8.3). */
   readonly commandPost: string | null;
+  /** Countries whose weather warnings it gathers (protocol §8.4); none turns them off. */
+  readonly weatherCountries: readonly string[];
 }
 
 export function readConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
@@ -26,7 +30,21 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     webRoot: env['TESEL_WEB_ROOT'] || null,
     upstream: serverUrl(env, 'TESEL_UPSTREAM'),
     commandPost: serverUrl(env, 'TESEL_COMMAND_POST'),
+    weatherCountries: countries(env, 'TESEL_WEATHER', 'ES,PT'),
   };
+}
+
+/** A comma-separated list of country codes with a warnings feed; "off" or empty for none. */
+function countries(env: NodeJS.ProcessEnv, name: string, fallback: string): string[] {
+  const text = env[name] ?? fallback;
+  if (text === '' || text === 'off') return [];
+  const codes = text.split(',').map((code) => code.trim().toUpperCase());
+  const unknown = codes.filter((code) => !Object.hasOwn(FEED_URLS, code));
+  if (unknown.length > 0) {
+    const known = Object.keys(FEED_URLS).join(', ');
+    throw new Error(`${name} takes country codes among ${known}, or off; got "${text}"`);
+  }
+  return codes;
 }
 
 function serverUrl(env: NodeJS.ProcessEnv, name: string): string | null {

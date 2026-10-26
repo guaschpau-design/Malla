@@ -2,7 +2,7 @@
 // first-aid post and a closed path, a medical SOS acknowledged by a teammate, and the team's chat.
 // It is the operation the site's screenshots show; Ana, the coordinator, is the browser.
 
-import type { Scenario } from '../scenario.ts';
+import type { Scenario } from '@tesel/scenario';
 
 // Symbol and style codes: protocol §4.
 const BLOCKED_ROAD = 6;

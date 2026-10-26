@@ -12,7 +12,14 @@ describe('configuration', () => {
       webRoot: null,
       upstream: null,
       commandPost: null,
+      weatherCountries: ['ES', 'PT'],
     });
+  });
+
+  it('reads the countries whose weather warnings it gathers', () => {
+    expect(readConfig({ TESEL_WEATHER: 'es' }).weatherCountries).toEqual(['ES']);
+    expect(readConfig({ TESEL_WEATHER: 'off' }).weatherCountries).toEqual([]);
+    expect(() => readConfig({ TESEL_WEATHER: 'ES,XX' })).toThrow(/TESEL_WEATHER/);
   });
 
   it('reads the command post settings as server base URLs', () => {

@@ -12,10 +12,10 @@ import {
   sealEnvelope,
   type ServerMessage,
 } from '@tesel/protocol';
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { syntheticOperation } from '@tesel/simulator';
 
-import { device } from './helpers.ts';
+import { device, expect, test } from './helpers.ts';
 
 const MEMBERS = 50;
 const EVENTS = 5000;

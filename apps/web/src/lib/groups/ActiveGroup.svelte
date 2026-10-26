@@ -1,4 +1,5 @@
-<!-- The group in use: its name and this device's role, who is in it, and inviting or leaving. -->
+<!-- The group in use: its name and this device's role, who is in it, and inviting or leaving; for
+     a practice, ending it. -->
 <script lang="ts">
   import type { NodeId } from '@tesel/protocol';
 
@@ -16,6 +17,7 @@
     feed: GroupFeed | undefined;
     self: NodeId;
     oninvite: () => void;
+    /** Leaves the group, or ends the practice it is. */
     onleave: () => void;
   }
 
@@ -25,7 +27,7 @@
 <section class="group" aria-label={group.name}>
   <header>
     <strong>{group.name}</strong>
-    <span class="badge role">{t(ROLE_LABELS[group.role])}</span>
+    <span class="badge role">{t(group.practice ? 'practice' : ROLE_LABELS[group.role])}</span>
   </header>
   {#if feed}
     <MemberList {t} groupState={feed.state} heard={feed.heard} {self} />
@@ -37,7 +39,9 @@
         {t('invite')}
       </button>
     {/if}
-    <button class="leave" onclick={onleave}>{t('leave')}</button>
+    <button class="leave" onclick={onleave}>
+      {group.practice ? t('endPractice') : t('leave')}
+    </button>
   </div>
 </section>
 

@@ -13,12 +13,14 @@ Runs TypeScript directly with Node's built-in type stripping (Node 22.18 or late
 | `TESEL_WEB_ROOT`       | none            | Folder with the landing page and the built app under `app/`; the image sets it          |
 | `TESEL_UPSTREAM`       | none            | On a command post: the server it replicates (§8.2)                                      |
 | `TESEL_COMMAND_POST`   | none            | On an internet server: the name of its command posts, announced to apps (§8.3)          |
+| `TESEL_WEATHER`        | `ES,PT`         | Countries whose official weather warnings it gathers and serves (§8.4), or `off`        |
 
 | File                    | Job                                                         |
 | ----------------------- | ----------------------------------------------------------- |
 | `src/main.ts`           | Reads the configuration and starts everything               |
-| `src/app.ts`            | HTTP routes: `healthz`, the WebSocket relay, the web files  |
+| `src/app.ts`            | HTTP routes: `healthz`, the relay, weather, the web files   |
 | `src/relay.ts`          | Joins, pushes, fan-out and rate limits per connection/group |
 | `src/envelope-store.ts` | SQLite storage of envelopes and cursors                     |
 | `src/replicator.ts`     | A command post's connections to its upstream                |
 | `src/web.ts`            | The landing page at `/` and the app under `/app/`           |
+| `src/weather/`          | Official weather warnings from MeteoAlarm, served as §8.4   |

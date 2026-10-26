@@ -1,6 +1,4 @@
-import { expect, test } from '@playwright/test';
-
-import { device, openMore } from './helpers.ts';
+import { device, expect, openMore, test } from './helpers.ts';
 
 test('a dictated coordinate is found on the map and read in another format', async ({
   browser,

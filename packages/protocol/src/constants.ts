@@ -91,6 +91,9 @@ export const RELAY_PATH = 'v1/ws';
 /** §8.1 Server information endpoint, relative to the server base URL. */
 export const SERVER_INFO_PATH = 'healthz';
 
+/** §8.4 Weather warnings endpoint, relative to the server base URL. */
+export const WEATHER_WARNINGS_PATH = 'v1/weather-warnings';
+
 /** §7 MeshCore application identifier, in MeshCore's development range until registered. */
 export const MESHCORE_DATA_TYPE = 0xff4d;
 

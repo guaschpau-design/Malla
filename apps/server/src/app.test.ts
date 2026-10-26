@@ -25,6 +25,7 @@ describe('server', () => {
       webRoot: null,
       upstream: 'https://tesel.example/',
       commandPost: 'https://post.tesel.example/',
+      weather: null,
     });
     const response = await app.inject({ method: 'GET', url: '/healthz' });
     expect(parseServerInfo(response.body)).toEqual({

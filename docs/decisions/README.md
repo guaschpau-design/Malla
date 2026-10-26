@@ -35,3 +35,5 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0027](0027-public-services-from-the-base-map.md)  | Public services from the base map                                        | Accepted                      |
 | [0028](0028-roll-call.md)                          | Roll call: one event, answered with an ACK by each member                | Accepted                      |
 | [0029](0029-operation-area.md)                     | The operation area: an area style that offers its map                    | Accepted                      |
+| [0030](0030-weather-warnings.md)                   | Official weather warnings, gathered by the server from MeteoAlarm        | Accepted                      |
+| [0031](0031-practice-mode.md)                      | Practice mode: a simulated group played on the device                    | Accepted                      |

@@ -368,6 +368,28 @@ All command posts of a server share one base URL, whose name each post resolves 
 
 Cursors belong to one relay: a client keeps one cursor per group and relay URL. Its outbox is satisfied by `stored` from any of them, since a command post replicates what it stores.
 
+### 8.4 Weather warnings
+
+A server MAY publish the official weather warnings of its region, which it gathers itself. They are public information, not group data, and clients read them without joining anything. `GET v1/weather-warnings`, relative to the server base URL, answers a GeoJSON `FeatureCollection` with one feature per warning region, and these members besides:
+
+| Member    | Meaning                                                    |
+| --------- | ---------------------------------------------------------- |
+| `tesel`   | `"weather-warnings"`                                       |
+| `version` | `1`                                                        |
+| `updated` | Seconds since the epoch when the server last gathered them |
+| `source`  | Who issues the warnings, to be credited                    |
+
+Each feature has a `Polygon` or `MultiPolygon` geometry, coordinates rounded to 3 decimals, and these properties:
+
+| Property   | Meaning                                                                                                                                                                                                       |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `code`     | The region's code (MeteoAlarm `EMMA_ID`)                                                                                                                                                                      |
+| `name`     | The region's name                                                                                                                                                                                             |
+| `level`    | The highest level among its warnings                                                                                                                                                                          |
+| `warnings` | Its warnings, each `{ level, onset, expires, text }`: level `2` yellow, `3` orange, `4` red; onset and expiry in seconds since the epoch; `text` by language code (`es`, `en`), each `{ event, description }` |
+
+Only warnings that have not expired are listed. The response allows any origin (`Access-Control-Allow-Origin: *`). A server that does not gather warnings answers `404`; one that has not gathered them yet answers `503`.
+
 ## 9. Versioning
 
 This document describes protocol version 1. Adding event types, symbol codes or style codes does not change the version. Version 1 is frozen with the first release, v0.1.0; until then it still changed in place (the `env` message gained `key`, and §8.1–8.3 were added, for command posts). Changing any existing layout, derivation or transport rule requires version 2, a new ADR and a migration plan.

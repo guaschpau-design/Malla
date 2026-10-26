@@ -1,6 +1,4 @@
-import { expect, test } from '@playwright/test';
-
-import { device } from './helpers.ts';
+import { device, expect, test } from './helpers.ts';
 
 test('a hidden map layer stays hidden after the app restarts', async ({ browser }) => {
   const page = await device(browser, 'Ana');

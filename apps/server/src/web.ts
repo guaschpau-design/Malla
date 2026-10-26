@@ -5,7 +5,6 @@ import { existsSync } from 'node:fs';
 import { extname, join, resolve, sep } from 'node:path';
 
 import fastifyStatic from '@fastify/static';
-import { RELAY_PATH, SERVER_INFO_PATH } from '@tesel/protocol';
 import type { FastifyInstance } from 'fastify';
 
 /** Where the web app lives under the site (TESEL_BASE when it is built). */
@@ -15,9 +14,9 @@ export async function serveWeb(app: FastifyInstance, root: string): Promise<void
   await app.register(fastifyStatic, { root, wildcard: false, cacheControl: false });
 
   // Built assets carry a content hash in their name; everything else must be revalidated so a
-  // new release reaches phones at once.
+  // new release reaches phones at once. Routes that say how long to keep their answer keep it.
   app.addHook('onSend', async (request, reply) => {
-    if (request.url === `/${SERVER_INFO_PATH}` || request.url.startsWith(`/${RELAY_PATH}`)) return;
+    if (reply.hasHeader('Cache-Control')) return;
     reply.header(
       'Cache-Control',
       request.url.startsWith(`${APP_PREFIX}assets/`)

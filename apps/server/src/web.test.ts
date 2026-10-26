@@ -22,6 +22,7 @@ const app = () =>
     webRoot: site(),
     upstream: null,
     commandPost: null,
+    weather: null,
   });
 
 describe('web serving', () => {

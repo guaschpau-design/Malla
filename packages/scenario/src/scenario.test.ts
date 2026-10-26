@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { plan, whereAt, type Scenario } from './scenario.ts';
-import { SCENARIOS } from './scenarios/index.ts';
 
 const PATROL: Scenario = {
   name: 'patrol',
@@ -61,12 +60,6 @@ describe('scenario plan', () => {
       steps: [{ at: 1, by: 'Nobody', action: { type: 'chat', text: 'hola' } }],
     };
     expect(() => plan(broken, { positionEvery: 20 })).toThrow(/Nobody/);
-  });
-
-  it('plans every bundled scenario', () => {
-    for (const scenario of SCENARIOS.values()) {
-      expect(plan(scenario, { positionEvery: 10 }).length).toBeGreaterThan(scenario.steps.length);
-    }
   });
 });
 

@@ -29,6 +29,7 @@ describe('app database', () => {
       'sequence',
       'servers',
       'settings',
+      'weather',
     ]);
   });
 });

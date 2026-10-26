@@ -28,4 +28,4 @@ The relay limits pushes to three per second per device and thirty per group (`ap
 
 ## Writing a scenario
 
-A scenario is data (`src/scenario.ts`): members, each with a route they walk back and forth (one point to stand still), and timed steps — chat, alerts, markers, shapes, SOS calls and their acknowledgements. Objects and SOS calls get an `id` that later steps refer to. `plan()` turns it into the list of events, in order, without any I/O; `play()` sends them. Add new scenarios to `src/scenarios/` and to the list in `src/scenarios/index.ts`.
+A scenario is data ([`@tesel/scenario`](../../packages/scenario/README.md)): members, each with a route they walk back and forth (one point to stand still), and timed steps — chat, alerts, markers, shapes, SOS calls and their acknowledgements. Objects and SOS calls get an `id` that later steps refer to. `plan()` turns it into the list of events, in order, without any I/O; `play()` sends them. The web app's practice mode plays its own scenario the same way, on the device. Add new scenarios to `src/scenarios/` and to the list in `src/scenarios/index.ts`.

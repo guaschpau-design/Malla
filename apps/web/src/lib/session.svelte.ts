@@ -5,7 +5,7 @@ import type { Invitation } from '@tesel/protocol';
 
 import type { JoinOutcome, StoredGroup } from './groups/group.ts';
 import { getActiveGroupId, listGroups, setActiveGroupId } from './groups/group-store.ts';
-import { joinGroup, leaveGroup, startGroup } from './groups/membership.ts';
+import { joinGroup, leaveGroup, startGroup, startPractice } from './groups/membership.ts';
 import {
   createLocalIdentity,
   loadIdentity,
@@ -25,6 +25,8 @@ export class Session {
   );
 
   readonly #db: AppDb;
+  /** The group that was active before a practice started, to go back to when it ends. */
+  #beforePractice: string | undefined;
 
   private constructor(db: AppDb) {
     this.#db = db;
@@ -33,6 +35,10 @@ export class Session {
   static async load(db: AppDb): Promise<Session> {
     const session = new Session(db);
     session.identity = await loadIdentity(db);
+    // A practice lasts while the app is open: one left from before is over.
+    for (const group of await listGroups(db)) {
+      if (group.practice) await leaveGroup(db, group.id);
+    }
     await session.#refreshGroups();
     return session;
   }
@@ -47,6 +53,24 @@ export class Session {
     const group = await startGroup(this.#db, name, server, Date.now());
     await this.#refreshGroups();
     return group;
+  }
+
+  /** Starts a practice in a new practice group, which becomes the active group. */
+  async startPractice(name: string): Promise<void> {
+    await this.endPractice();
+    this.#beforePractice = this.activeGroupId;
+    await startPractice(this.#db, name, Date.now());
+    await this.#refreshGroups();
+  }
+
+  /** Ends the practice, if there is one: its group is forgotten and the one before is active again. */
+  async endPractice(): Promise<void> {
+    const practice = this.groups.find((group) => group.practice);
+    if (practice === undefined) return;
+    await leaveGroup(this.#db, practice.id);
+    if (this.#beforePractice !== undefined) await setActiveGroupId(this.#db, this.#beforePractice);
+    this.#beforePractice = undefined;
+    await this.#refreshGroups();
   }
 
   async join(invitation: Invitation): Promise<JoinOutcome> {

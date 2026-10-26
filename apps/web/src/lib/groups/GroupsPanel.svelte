@@ -1,5 +1,6 @@
-<!-- The groups: the one in use, the others, and two big buttons to create or join one. Creating,
-     joining, inviting and scanning each open in the panel and come back here. -->
+<!-- The groups: the one in use, the others, two big buttons to create or join one, and a practice
+     with a simulated group. Creating, joining, inviting and scanning each open in the panel and
+     come back here. -->
 <script lang="ts">
   import type { Invitation } from '@tesel/protocol';
 
@@ -45,8 +46,17 @@
   }
 
   async function leave(group: StoredGroup): Promise<void> {
+    if (group.practice) {
+      await session.endPractice();
+      return;
+    }
     if (!confirm(t('confirmLeave', { group: group.name }))) return;
     await session.leave(group.id);
+  }
+
+  async function practise(): Promise<void> {
+    await session.startPractice(t('practiceGroupName'));
+    onclose();
   }
 </script>
 
@@ -96,6 +106,9 @@
           {t('joinGroup')}
         </button>
       </div>
+      {#if !session.groups.some((group) => group.practice)}
+        <button class="practice" onclick={practise}>{t('startPractice')}</button>
+      {/if}
 
       {#if session.identity}
         <p class="hint device">
@@ -138,6 +151,12 @@
     place-items: center;
     padding: 0.9rem 0.5rem;
     font-weight: 600;
+  }
+
+  .practice {
+    justify-self: center;
+    font-size: 0.9rem;
+    border-color: transparent;
   }
 
   .device {

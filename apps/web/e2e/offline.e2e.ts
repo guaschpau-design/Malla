@@ -1,8 +1,6 @@
 // The core promise of v0.1: prepare while online, keep working when the network is gone.
 
-import { expect, test } from '@playwright/test';
-
-import { chooseAlias, openMore, twoMembers } from './helpers.ts';
+import { chooseAlias, expect, openMore, test, twoMembers } from './helpers.ts';
 
 test('a downloaded area keeps working after going offline and reloading', async ({
   page,

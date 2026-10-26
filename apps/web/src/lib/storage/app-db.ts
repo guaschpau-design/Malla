@@ -2,7 +2,7 @@
 // Map tiles live in a separate database (map/tile-store.ts) so they can be cleared without
 // touching anything else.
 
-import type { NodeId, ServerInfo } from '@tesel/protocol';
+import type { NodeId, ServerInfo, WeatherWarnings } from '@tesel/protocol';
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 
 import type { StoredGroup } from '../groups/group.ts';
@@ -51,12 +51,14 @@ export interface AppSchema extends DBSchema {
   servers: { key: string; value: ServerInfo };
   /** Text messages of other MeshCore apps heard by the radio, oldest first. */
   radioTexts: { key: number; value: StoredRadioText };
+  /** The weather warnings last read from the server, under the key `latest` (protocol §8.4). */
+  weather: { key: 'latest'; value: WeatherWarnings };
 }
 
 export type AppDb = IDBPDatabase<AppSchema>;
 
 const DB_NAME = 'tesel';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 export function openAppDb(name: string = DB_NAME): Promise<AppDb> {
   return openDB<AppSchema>(name, DB_VERSION, {
@@ -87,6 +89,9 @@ export function openAppDb(name: string = DB_NAME): Promise<AppDb> {
         database.deleteObjectStore('cursors');
         database.createObjectStore('cursors');
         database.createObjectStore('servers');
+      }
+      if (oldVersion < 5) {
+        database.createObjectStore('weather');
       }
     },
   });

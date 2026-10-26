@@ -2,9 +2,9 @@
 // comes, or everything at once for a short scenario that should already have happened.
 
 import { deriveGroupKeys, type EventRef } from '@tesel/protocol';
+import { eventDraft, plan, type Scenario } from '@tesel/scenario';
 
-import { SimulatedDevice, type EventDraft } from './device.ts';
-import { plan, type PlannedAction, type Scenario } from './scenario.ts';
+import { SimulatedDevice } from './device.ts';
 
 export interface PlayOptions {
   /** Base URL of the group's server. */
@@ -21,8 +21,6 @@ export interface PlayOptions {
   readonly positionEvery: number;
   readonly log?: (line: string) => void;
 }
-
-const ACCURACY_M = 6;
 
 export async function play(scenario: Scenario, options: PlayOptions): Promise<void> {
   const events = plan(scenario, { positionEvery: options.positionEvery });
@@ -42,84 +40,14 @@ export async function play(scenario: Scenario, options: PlayOptions): Promise<vo
       const device = devices.get(event.by);
       if (device === undefined) throw new Error(`no device for ${event.by}`);
       const time = instant ? startTime + event.at : Math.floor(Date.now() / 1000);
-      const draft = draftOf(event.action, event.by, device, named);
+      const actor = { alias: event.by, publicKey: device.identity.publicKey };
+      const draft = eventDraft(event.action, actor, named);
       const ref = await device.publish(draft, time);
       if ('id' in event.action) named.set(event.action.id, ref);
       if (event.action.type !== 'position') options.log?.(`${event.by}: ${event.action.type}`);
     }
   } finally {
     for (const device of devices.values()) device.close();
-  }
-}
-
-function draftOf(
-  action: PlannedAction,
-  alias: string,
-  device: SimulatedDevice,
-  named: ReadonlyMap<string, EventRef>,
-): EventDraft {
-  const ref = (id: string): EventRef => {
-    const found = named.get(id);
-    if (found === undefined) throw new Error(`${action.type} refers to ${id}, not sent yet`);
-    return found;
-  };
-  switch (action.type) {
-    case 'announce':
-      return (header) => ({
-        ...header,
-        type: 'member-info',
-        role: action.role,
-        publicKey: device.identity.publicKey,
-        alias,
-      });
-    case 'position':
-      return (header) => ({
-        ...header,
-        type: 'position',
-        ...action.where,
-        accuracy: ACCURACY_M,
-        heading: null,
-        speed: null,
-      });
-    case 'chat':
-      return (header) => ({ ...header, type: 'chat', text: action.text });
-    case 'alert':
-      return (header) => ({ ...header, type: 'alert', level: action.level, text: action.text });
-    case 'marker':
-      return (header) => ({
-        ...header,
-        type: 'marker',
-        object: { origin: header.origin, seq: header.seq },
-        symbol: action.symbol,
-        label: action.label,
-        ...action.where,
-      });
-    case 'shape':
-      return (header) => ({
-        ...header,
-        type: 'shape',
-        object: { origin: header.origin, seq: header.seq },
-        style: action.style,
-        label: action.label,
-        geometry: action.geometry,
-      });
-    case 'sos':
-      return (header) => ({
-        ...header,
-        type: 'sos',
-        kind: action.kind,
-        ...action.where,
-        accuracy: ACCURACY_M,
-        text: action.text,
-      });
-    case 'ack': {
-      const target = ref(action.of);
-      return (header) => ({ ...header, type: 'ack', target });
-    }
-    case 'cancel-sos': {
-      const sos = ref(action.of);
-      return (header) => ({ ...header, type: 'sos-cancel', sos });
-    }
   }
 }
 

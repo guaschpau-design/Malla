@@ -1,8 +1,8 @@
 // Day 2: a coordinator creates a group and a second device joins it with the invitation.
 
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
-import { chooseAlias } from './helpers.ts';
+import { chooseAlias, expect, test } from './helpers.ts';
 
 async function invitationLink(page: Page, role: 'miembro' | 'coordinador'): Promise<string> {
   await page.getByRole('button', { name: 'Invitar' }).click();

@@ -1,9 +1,7 @@
 // Day 6: a member who cannot reach the group's server syncs through its command post, which
 // replicates the server (ADR-0018).
 
-import { expect, test } from '@playwright/test';
-
-import { twoMembers } from './helpers.ts';
+import { expect, test, twoMembers } from './helpers.ts';
 
 test('a member cut off from the server keeps talking to the group through the command post', async ({
   browser,

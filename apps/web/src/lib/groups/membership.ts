@@ -39,6 +39,17 @@ export async function startGroup(
   return group;
 }
 
+/**
+ * Creates a practice group and makes it the active group: one without a server, whose other
+ * members a practice run simulates on this device.
+ */
+export async function startPractice(db: AppDb, name: string, now: number): Promise<StoredGroup> {
+  const group: StoredGroup = { ...createGroup(name, null, now), practice: true };
+  await saveGroup(db, group);
+  await setActiveGroupId(db, group.id);
+  return group;
+}
+
 /** Forgets a group and everything it left on this device, including its secret. */
 export async function leaveGroup(db: AppDb, id: string): Promise<void> {
   await deleteGroupEvents(db, id);

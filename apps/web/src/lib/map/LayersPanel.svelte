@@ -33,6 +33,7 @@
     objects: { label: 'layerObjects', icon: 'pin' },
     tasks: { label: 'layerTasks', icon: 'task' },
     services: { label: 'layerServices', icon: 'cross' },
+    weather: { label: 'layerWeather', icon: 'cloud' },
   };
 
   async function toggle(layer: MapLayer): Promise<void> {

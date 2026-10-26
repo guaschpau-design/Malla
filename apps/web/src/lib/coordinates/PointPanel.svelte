@@ -1,7 +1,9 @@
 <!-- A point of the map, picked by a long press, found by its coordinates or tapped as a public
-     service: where it is, how far from here, and what can be done there. -->
+     service: where it is, how far from here, what else is known of it, and what can be done
+     there. -->
 <script lang="ts">
   import type { LatLon } from '@tesel/protocol';
+  import type { Snippet } from 'svelte';
 
   import type { Locale, Translate } from '../i18n/index.ts';
   import FromHere from '../navigation/FromHere.svelte';
@@ -27,6 +29,8 @@
     /** Present when a task can be added there for the group. */
     ontask: (() => void) | null;
     onclose: () => void;
+    /** What else is known of the point, such as the weather warnings there. */
+    about?: Snippet;
   }
 
   let {
@@ -41,6 +45,7 @@
     onmark,
     ontask,
     onclose,
+    about,
   }: Props = $props();
 </script>
 
@@ -48,6 +53,7 @@
   <div class="stack section">
     <CoordinateBlock {t} {at} {format} />
     <FromHere {t} {locale} {at} {location} />
+    {@render about?.()}
     <div class="row">
       <ActionButton icon="heading" label={t('guideMe')} onclick={onnavigate} />
       {#if onmark}<ActionButton icon="pin" label={t('markHere')} onclick={onmark} />{/if}
