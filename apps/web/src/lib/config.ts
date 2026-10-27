@@ -17,6 +17,14 @@ export function mapAssetsUrl(): string {
 }
 
 /**
+ * Absolute URL of the licences of the third-party code the app ships, which the build writes
+ * (scripts/third-party-notices.ts).
+ */
+export function thirdPartyNoticesUrl(): string {
+  return new URL(`${import.meta.env.BASE_URL}third-party-notices.txt`, window.location.href).href;
+}
+
+/**
  * Server proposed for new groups (protocol §8), or null if this build has none. VITE_SERVER_URL may
  * be relative to the app: the server image builds the app with "/", so every server proposes
  * itself. Coordinators can change it when they create a group.

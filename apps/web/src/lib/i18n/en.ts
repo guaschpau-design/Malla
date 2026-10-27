@@ -406,6 +406,7 @@ export const en = {
   practiceGoingToMarta: 'On my way to Marta.',
   practiceMartaSafe: 'Marta is being looked after. Carrying on.',
   practiceOnTheWay: 'Received. On my way to you.',
+  thirdPartyLicences: 'Third-party licences',
 } as const;
 
 export type MessageKey = keyof typeof en;

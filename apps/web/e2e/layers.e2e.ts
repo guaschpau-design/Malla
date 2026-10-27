@@ -36,3 +36,16 @@ test('a hidden map layer stays hidden after the app restarts', async ({ browser 
   await expect(page.getByRole('switch', { name: 'Recorridos' })).not.toBeChecked();
   await expect(page.getByRole('switch', { name: 'Miembros' })).toBeChecked();
 });
+
+test('the layers panel links to the licences of the code the app ships', async ({ browser }) => {
+  const page = await device(browser, 'Ana');
+  await page.getByRole('button', { name: 'Capas del mapa' }).click();
+  const link = page.getByRole('link', { name: 'Licencias de terceros' });
+  const href = await link.getAttribute('href');
+  expect(href).not.toBeNull();
+  const notices = await page.request.get(href ?? '');
+  expect(notices.ok()).toBe(true);
+  const text = await notices.text();
+  expect(text).toContain('maplibre-gl');
+  expect(text).toContain('Licence: BSD-3-Clause');
+});
