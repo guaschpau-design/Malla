@@ -1,6 +1,6 @@
 # 0015. LoRa airtime policy
 
-- Status: Accepted
+- Status: Accepted, amended by 0043
 - Date: 2026-10-25
 
 ## Context

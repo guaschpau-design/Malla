@@ -3,9 +3,13 @@
 # its own Wi-Fi network, the app and a relay that replicates the group's server whenever the
 # computer has internet (docs/decisions/0018-command-post.md).
 #
-#   sudo env IONOS_API_KEY=prefix.secret bash install.sh \
-#     --domain puesto.tesel.eu --upstream https://tesel.eu \
-#     --dns ionos --dns-var IONOS_API_KEY --email you@example.eu
+#   sudo env TESEL_POST_TOKEN=post-1:0123abcd... bash install.sh \
+#     --domain puesto.tesel.eu --upstream https://tesel.eu
+#
+# The token comes from the upstream server (post-certificate.sh grant post-1): with it the post
+# downloads its certificate from there (docs/decisions/0050-post-certificates-from-the-server.md).
+# It is needed on the first run only. To install the files of a release instead of main, pass
+# its tag with --ref (deploy/README.md).
 #
 # Run it with internet, by cable or USB tethering if possible: it downloads everything the post
 # needs and turns the Wi-Fi into the post's network at the very end. Safe to run again.
@@ -16,27 +20,23 @@ REPO_RAW="https://raw.githubusercontent.com/guaschpau-design/Tesel"
 REF="main"
 INSTALL_DIR="/opt/tesel-post"
 POST_ADDRESS="10.42.0.1"
-LEGO_IMAGE="goacme/lego:latest"
 DOMAIN=""
 UPSTREAM=""
-DNS_PROVIDER=""
-DNS_VARS=()
-EMAIL=""
 WIFI_NAME="Tesel"
 WIFI_PASSWORD=""
 WIFI_INTERFACE=""
 
 usage() {
   cat >&2 <<'TEXT'
-Usage: install.sh --domain NAME --upstream URL --dns PROVIDER --dns-var VARIABLE... --email EMAIL
+Usage: sudo env TESEL_POST_TOKEN=NAME:TOKEN bash install.sh --domain NAME --upstream URL
                   [--wifi-name NAME] [--wifi-password PASSWORD] [--wifi-interface IFACE]
                   [--ref GIT_REF]
 
   --domain     Name of the post, the same for every post of a server, e.g. puesto.tesel.eu
   --upstream   The group's server, e.g. https://tesel.eu
-  --dns        lego DNS provider of the domain, e.g. ionos (go-acme.github.io/lego/dns)
-  --dns-var    Name of an environment variable holding a DNS API credential; repeat as needed
-  --email      Contact address for the certificate authority
+  --ref        Branch or tag whose deployment files are installed (default: main)
+
+TESEL_POST_TOKEN is this post's token from the upstream server (post-certificate.sh grant).
 TEXT
   exit 2
 }
@@ -45,9 +45,6 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --domain) DOMAIN="${2:-}"; shift 2 ;;
     --upstream) UPSTREAM="${2:-}"; shift 2 ;;
-    --dns) DNS_PROVIDER="${2:-}"; shift 2 ;;
-    --dns-var) DNS_VARS+=("${2:-}"); shift 2 ;;
-    --email) EMAIL="${2:-}"; shift 2 ;;
     --wifi-name) WIFI_NAME="${2:-}"; shift 2 ;;
     --wifi-password) WIFI_PASSWORD="${2:-}"; shift 2 ;;
     --wifi-interface) WIFI_INTERFACE="${2:-}"; shift 2 ;;
@@ -59,18 +56,22 @@ done
 step() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 fail() { printf '\n\033[31mError:\033[0m %s\n' "$*" >&2; exit 1; }
 
-[[ -n "$DOMAIN" && -n "$UPSTREAM" && -n "$DNS_PROVIDER" && -n "$EMAIL" ]] || usage
-[[ ${#DNS_VARS[@]} -gt 0 ]] || usage
+[[ -n "$DOMAIN" && -n "$UPSTREAM" ]] || usage
 [[ "$DOMAIN" =~ ^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]] || fail "\"$DOMAIN\" is not a domain name."
 [[ "$UPSTREAM" =~ ^https://[A-Za-z0-9.-]+(:[0-9]+)?/?$ ]] || fail "--upstream must be https://host"
+[[ "$REF" =~ ^[A-Za-z0-9._/-]+$ ]] || fail "--ref: \"$REF\" is not a branch or tag name."
 [[ $EUID -eq 0 ]] || fail "run as root (with sudo)."
+if [[ -n "${TESEL_POST_TOKEN:-}" ]]; then
+  [[ "$TESEL_POST_TOKEN" =~ ^[a-z0-9][a-z0-9-]{0,31}:[0-9a-f]{48}$ ]] ||
+    fail "TESEL_POST_TOKEN must be the NAME:TOKEN that post-certificate.sh grant printed."
+elif [[ ! -s "$INSTALL_DIR/token" ]]; then
+  fail "pass this post's token: sudo env TESEL_POST_TOKEN=NAME:TOKEN bash install.sh ...
+Create it on the upstream server with: sudo /opt/tesel/post-certificate.sh grant NAME"
+fi
 # shellcheck source=/dev/null
 . /etc/os-release
 [[ "$ID" == "debian" || "$ID" == "ubuntu" || "$ID" == "raspbian" || "${ID_LIKE:-}" == *debian* ]] ||
   fail "only Debian, Ubuntu and Raspberry Pi OS are supported."
-for variable in "${DNS_VARS[@]}"; do
-  [[ -n "${!variable:-}" ]] || fail "the environment variable $variable is empty. Pass it with sudo env $variable=..."
-done
 if [[ -z "$WIFI_PASSWORD" ]]; then
   # Keep the password of an earlier run, so phones that already joined stay joined.
   WIFI_PASSWORD="$(nmcli -s -g 802-11-wireless-security.psk connection show tesel-post 2>/dev/null || true)"
@@ -87,7 +88,7 @@ export DEBIAN_FRONTEND=noninteractive
 APT_LOCK=(-o DPkg::Lock::Timeout=600)
 APT_OPTIONS=(-yq "${APT_LOCK[@]}" -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)
 apt-get update -q "${APT_LOCK[@]}"
-apt-get install "${APT_OPTIONS[@]}" ca-certificates curl ufw network-manager dnsmasq-base
+apt-get install "${APT_OPTIONS[@]}" ca-certificates curl jq openssl ufw network-manager dnsmasq-base
 
 if [[ -z "$WIFI_INTERFACE" ]]; then
   WIFI_INTERFACE="$(nmcli -t -f DEVICE,TYPE device status | awk -F: '$2 == "wifi" {print $1; exit}')"
@@ -108,69 +109,56 @@ https://download.docker.com/linux/$DOCKER_ID $VERSION_CODENAME stable" > /etc/ap
 fi
 systemctl enable --now docker >/dev/null
 
-step "Installing the command post in $INSTALL_DIR"
-install -m 0755 -d "$INSTALL_DIR" "$INSTALL_DIR/certs" "$INSTALL_DIR/maps"
-for file in compose.yaml Caddyfile; do
-  curl -fsSL "$REPO_RAW/$REF/deploy/command-post/$file" -o "$INSTALL_DIR/$file"
+step "Installing the command post in $INSTALL_DIR from $REF"
+install -m 0755 -d "$INSTALL_DIR" "$INSTALL_DIR/maps"
+install -m 0700 -d "$INSTALL_DIR/certs"
+fetch() { curl -fsSL "$REPO_RAW/$REF/deploy/$1" -o "$INSTALL_DIR/$(basename "$1")"; }
+for file in command-post/compose.yaml command-post/Caddyfile common/headers.caddy; do
+  fetch "$file"
 done
-cat > "$INSTALL_DIR/.env" <<CONF
-TESEL_DOMAIN=$DOMAIN
-TESEL_UPSTREAM=$UPSTREAM
-LEGO_EMAIL=$EMAIL
-LEGO_DNS=$DNS_PROVIDER
-CONF
-# DNS credentials can change the domain's records: readable by root only.
-install -m 0600 /dev/null "$INSTALL_DIR/dns.env"
-for variable in "${DNS_VARS[@]}"; do
-  printf '%s=%s\n' "$variable" "${!variable}" >> "$INSTALL_DIR/dns.env"
+for script in command-post/refresh.sh common/update.sh common/install-cosign.sh; do
+  fetch "$script"
+  chmod 0755 "$INSTALL_DIR/$(basename "$script")"
 done
+"$INSTALL_DIR/install-cosign.sh"
 
-# Run by the timer below too: renews the certificate and updates the images whenever there is
-# internet, and does nothing harmful when there is none.
-cat > "$INSTALL_DIR/refresh.sh" <<SCRIPT
-#!/usr/bin/env bash
-set -uo pipefail
-cd "$INSTALL_DIR" || exit 1
-# shellcheck source=/dev/null
-. ./.env
-lego() {
-  docker run --rm --env-file dns.env -v "$INSTALL_DIR/certs:/certs" $LEGO_IMAGE \\
-    --path /certs --email "\$LEGO_EMAIL" --accept-tos --dns "\$LEGO_DNS" --domains "\$TESEL_DOMAIN" "\$@"
+# Settings live in .env, next to the images update.sh records there.
+set_setting() {
+  touch "$INSTALL_DIR/.env"
+  sed -i "/^$1=/d" "$INSTALL_DIR/.env"
+  echo "$1=$2" >> "$INSTALL_DIR/.env"
 }
-certificate="certs/certificates/\$TESEL_DOMAIN.crt"
-if [[ -f "\$certificate" ]]; then
-  # Caddy only reloads the certificate on a restart; restart it only when lego renewed it.
-  before="\$(stat -c %Y "\$certificate")"
-  lego renew --days 30
-  [[ "\$(stat -c %Y "\$certificate")" != "\$before" ]] && docker compose restart caddy >/dev/null 2>&1
-else
-  lego run
+set_setting TESEL_DOMAIN "$DOMAIN"
+set_setting TESEL_UPSTREAM "$UPSTREAM"
+if [[ -n "${TESEL_POST_TOKEN:-}" ]]; then
+  install -m 0600 /dev/null "$INSTALL_DIR/token"
+  echo "$TESEL_POST_TOKEN" > "$INSTALL_DIR/token"
 fi
-docker compose pull --quiet && docker compose up --detach --remove-orphans
-docker image prune --force >/dev/null
-# The upstream's base map, so phones on the post's Wi-Fi see the whole area; only when it changed.
-mkdir -p maps
-curl -fsS -z maps/basemap.pmtiles -o maps/basemap.pmtiles.new "\${TESEL_UPSTREAM%/}/maps/basemap.pmtiles" &&
-  [[ -s maps/basemap.pmtiles.new ]] && mv maps/basemap.pmtiles.new maps/basemap.pmtiles
-rm -f maps/basemap.pmtiles.new
-SCRIPT
-chmod 0700 "$INSTALL_DIR/refresh.sh"
 
-step "Getting the certificate for $DOMAIN and the latest images"
-docker pull --quiet "$LEGO_IMAGE" >/dev/null
-"$INSTALL_DIR/refresh.sh"
-[[ -f "$INSTALL_DIR/certs/certificates/$DOMAIN.crt" ]] ||
-  fail "no certificate for $DOMAIN. Check the DNS provider name and its credentials, then run this again."
+step "Getting the certificate for $DOMAIN from $UPSTREAM and the latest images"
+"$INSTALL_DIR/refresh.sh" "$INSTALL_DIR"
+[[ -f "$INSTALL_DIR/certs/certificate.crt" ]] ||
+  fail "no certificate for $DOMAIN: $UPSTREAM could not be reached. Connect to the internet and run this again."
+# Caddy reads its configuration only when it starts: apply what was installed above.
+(cd "$INSTALL_DIR" && docker compose exec --no-TTY caddy \
+  caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile)
+# Posts installed before ADR-0050 obtained the certificate themselves, holding the domain's DNS
+# credentials. Now that the certificate comes from the server, those go, with lego's files.
+sed -i '/^LEGO_/d' "$INSTALL_DIR/.env"
+rm -rf "$INSTALL_DIR/dns.env" "$INSTALL_DIR/certs/accounts" "$INSTALL_DIR/certs/certificates"
 
+# cosign, which update.sh runs, keeps Sigstore's trust root under $HOME, which systemd does not
+# set for system services.
 cat > /etc/systemd/system/tesel-post-refresh.service <<CONF
 [Unit]
-Description=Renew the command post certificate and update Tesel when there is internet
+Description=Update the Tesel command post's certificate, image and map when there is internet
 After=docker.service network-online.target
 Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=$INSTALL_DIR/refresh.sh
+Environment=HOME=/root
+ExecStart=$INSTALL_DIR/refresh.sh $INSTALL_DIR
 CONF
 cat > /etc/systemd/system/tesel-post-refresh.timer <<'CONF'
 [Unit]

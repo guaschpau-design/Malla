@@ -4,6 +4,9 @@
 #   curl -fsSL https://raw.githubusercontent.com/guaschpau-design/Tesel/main/deploy/vps/install.sh \
 #     | sudo bash -s -- --domain tesel.example.eu [--redirect-from old.example.eu]
 #
+# To install the files of a release instead of main, fetch this script from the release's tag
+# and pass the same tag with --ref (deploy/README.md).
+#
 # Safe to run again: it converges to the same setup, which is also how configuration changes
 # in this folder reach an existing server. See deploy/README.md for what it does and why.
 
@@ -14,14 +17,31 @@ REF="main"
 DOMAIN=""
 REDIRECT_FROM=""
 COMMAND_POST=""
+DNS_PROVIDER=""
+DNS_VARS=()
+EMAIL=""
 SKIP_DNS_CHECK=false
 INSTALL_DIR="/opt/tesel"
 # Where servers installed before the project was renamed live (ADR-0019).
 LEGACY_DIR="/opt/teselia"
 
 usage() {
-  echo "Usage: install.sh --domain DOMAIN [--redirect-from DOMAIN[,DOMAIN...]] [--command-post URL]" >&2
-  echo "                  [--ref GIT_REF] [--skip-dns-check]" >&2
+  cat >&2 <<'TEXT'
+Usage: install.sh --domain DOMAIN [--redirect-from DOMAIN[,DOMAIN...]]
+                  [--command-post URL --dns PROVIDER --dns-var VARIABLE... --email EMAIL]
+                  [--ref GIT_REF] [--skip-dns-check]
+
+  --domain         The server's name, e.g. tesel.example.eu
+  --redirect-from  Old names of the server, which redirect to the new one
+  --command-post   Name shared by the server's command posts, e.g. https://puesto.example.eu
+  --dns            lego DNS provider of the posts' domain, e.g. ionos (go-acme.github.io/lego/dns):
+                   the server obtains the posts' certificate by DNS challenge
+  --dns-var        Name of an environment variable holding a DNS API credential; repeat as needed
+  --email          Contact address for the certificate authority
+  --ref            Branch or tag whose deployment files are installed (default: main)
+
+The command post and DNS settings are kept on later runs; pass them again to change them.
+TEXT
   exit 2
 }
 
@@ -30,6 +50,9 @@ while [[ $# -gt 0 ]]; do
     --domain) DOMAIN="${2:-}"; shift 2 ;;
     --redirect-from) REDIRECT_FROM="${2:-}"; shift 2 ;;
     --command-post) COMMAND_POST="${2:-}"; shift 2 ;;
+    --dns) DNS_PROVIDER="${2:-}"; shift 2 ;;
+    --dns-var) DNS_VARS+=("${2:-}"); shift 2 ;;
+    --email) EMAIL="${2:-}"; shift 2 ;;
     --ref) REF="${2:-}"; shift 2 ;;
     --skip-dns-check) SKIP_DNS_CHECK=true; shift ;;
     *) usage ;;
@@ -41,14 +64,37 @@ fail() { printf '\n\033[31mError:\033[0m %s\n' "$*" >&2; exit 1; }
 
 is_domain() { [[ "$1" =~ ^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; }
 
+# Settings live in .env; each run updates its own and keeps any other an operator added there
+# (TESEL_RETENTION_DAYS, TESEL_MAP_BBOX, TESEL_ALERT_URL...).
+setting() { sed -n "s/^$1=//p" "$INSTALL_DIR/.env" 2>/dev/null | tail -n 1; }
+set_setting() {
+  touch "$INSTALL_DIR/.env"
+  sed -i "/^$1=/d" "$INSTALL_DIR/.env"
+  echo "$1=$2" >> "$INSTALL_DIR/.env"
+}
+
 [[ -n "$DOMAIN" ]] || usage
 is_domain "$DOMAIN" || fail "\"$DOMAIN\" is not a domain name."
+[[ "$REF" =~ ^[A-Za-z0-9._/-]+$ ]] || fail "--ref: \"$REF\" is not a branch or tag name."
 IFS=',' read -r -a REDIRECT_DOMAINS <<< "$REDIRECT_FROM"
 for old in "${REDIRECT_DOMAINS[@]}"; do
   is_domain "$old" || fail "--redirect-from: \"$old\" is not a domain name."
 done
 [[ -z "$COMMAND_POST" || "$COMMAND_POST" =~ ^https://[A-Za-z0-9.-]+/?$ ]] ||
   fail "--command-post must be https://host"
+if [[ -n "$DNS_PROVIDER" || ${#DNS_VARS[@]} -gt 0 || -n "$EMAIL" ]]; then
+  [[ -n "$DNS_PROVIDER" && ${#DNS_VARS[@]} -gt 0 && -n "$EMAIL" ]] ||
+    fail "--dns, --dns-var and --email go together."
+  for variable in "${DNS_VARS[@]}"; do
+    [[ -n "${!variable:-}" ]] ||
+      fail "the environment variable $variable is empty. Pass it with sudo env $variable=..."
+  done
+fi
+# Posts get their certificate from this server, which needs the DNS settings to obtain it (ADR-0050).
+if [[ -n "${COMMAND_POST:-$(setting TESEL_COMMAND_POST)}" && -z "${DNS_PROVIDER:-$(setting TESEL_POST_DNS)}" ]]; then
+  fail "this server obtains its command posts' certificate: pass --dns, --dns-var and --email
+(the DNS provider and API key of the posts' domain, as posts used to take)."
+fi
 [[ $EUID -eq 0 ]] || fail "run as root (with sudo)."
 # shellcheck source=/dev/null
 . /etc/os-release
@@ -72,7 +118,8 @@ APT_LOCK=(-o DPkg::Lock::Timeout=600)
 APT_OPTIONS=(-yq "${APT_LOCK[@]}" -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)
 apt-get update -q "${APT_LOCK[@]}"
 apt-get upgrade "${APT_OPTIONS[@]}"
-apt-get install "${APT_OPTIONS[@]}" ca-certificates curl ufw fail2ban python3-systemd unattended-upgrades
+apt-get install "${APT_OPTIONS[@]}" ca-certificates curl jq openssl ufw fail2ban python3-systemd \
+  unattended-upgrades
 
 step "Turning on automatic security updates"
 cat > /etc/apt/apt.conf.d/20auto-upgrades <<'CONF'
@@ -162,27 +209,26 @@ if [[ -d "$LEGACY_DIR" ]]; then
     /etc/ssh/sshd_config.d/10-teselia.conf
 fi
 
-step "Installing Tesel in $INSTALL_DIR"
+step "Installing Tesel in $INSTALL_DIR from $REF"
 install -m 0755 -d "$INSTALL_DIR"
-for file in compose.yaml Caddyfile maps.sh; do
-  curl -fsSL "$REPO_RAW/$REF/deploy/vps/$file" -o "$INSTALL_DIR/$file"
+fetch() { curl -fsSL "$REPO_RAW/$REF/deploy/$1" -o "$INSTALL_DIR/$(basename "$1")"; }
+for file in vps/compose.yaml vps/Caddyfile common/headers.caddy; do
+  fetch "$file"
 done
-chmod 0755 "$INSTALL_DIR/maps.sh"
-# Settings live in .env; each run updates its own and keeps any other an operator added there
-# (TESEL_RETENTION_DAYS, TESEL_MAP_BBOX...). A command post or old domains set before stay
-# unless replaced.
-set_setting() {
-  touch "$INSTALL_DIR/.env"
-  sed -i "/^$1=/d" "$INSTALL_DIR/.env"
-  echo "$1=$2" >> "$INSTALL_DIR/.env"
-}
+for script in vps/maps.sh vps/backup.sh vps/notify.sh vps/post-certificate.sh \
+  common/update.sh common/install-cosign.sh; do
+  fetch "$script"
+  chmod 0755 "$INSTALL_DIR/$(basename "$script")"
+done
+"$INSTALL_DIR/install-cosign.sh"
+
 set_setting TESEL_DOMAIN "$DOMAIN"
 if [[ -n "$REDIRECT_FROM" ]] || ! grep -q '^TESEL_REDIRECT_FROM=' "$INSTALL_DIR/.env"; then
   set_setting TESEL_REDIRECT_FROM "$REDIRECT_FROM"
 fi
 # Caddy needs site names in its configuration itself, so the redirect site is written from the
 # setting into a file the Caddyfile imports (empty when there are no old names).
-REDIRECT_FROM="$(sed -n 's/^TESEL_REDIRECT_FROM=//p' "$INSTALL_DIR/.env")"
+REDIRECT_FROM="$(setting TESEL_REDIRECT_FROM)"
 {
   echo "# Written by install.sh from TESEL_REDIRECT_FROM in .env: old names answer with a"
   echo "# permanent redirect to the same address on $DOMAIN. Run install.sh again to change it."
@@ -190,58 +236,79 @@ REDIRECT_FROM="$(sed -n 's/^TESEL_REDIRECT_FROM=//p' "$INSTALL_DIR/.env")"
     printf '%s {\n\tredir https://%s{uri} permanent\n}\n' "${REDIRECT_FROM//,/, }" "$DOMAIN"
   fi
 } > "$INSTALL_DIR/redirects.caddy"
-if [[ -n "$COMMAND_POST" ]] || ! grep -q '^TESEL_COMMAND_POST=' "$INSTALL_DIR/.env" 2>/dev/null; then
+if [[ -n "$COMMAND_POST" ]] || ! grep -q '^TESEL_COMMAND_POST=' "$INSTALL_DIR/.env"; then
   set_setting TESEL_COMMAND_POST "$COMMAND_POST"
 fi
+if [[ -n "$DNS_PROVIDER" ]]; then
+  set_setting TESEL_POST_DNS "$DNS_PROVIDER"
+  set_setting TESEL_POST_EMAIL "$EMAIL"
+  # DNS credentials can change the domain's records: readable by root only, and only here.
+  install -m 0600 /dev/null "$INSTALL_DIR/dns.env"
+  for variable in "${DNS_VARS[@]}"; do
+    printf '%s=%s\n' "$variable" "${!variable}" >> "$INSTALL_DIR/dns.env"
+  done
+fi
+# The posts' certificate is served from here; Caddy's part for it exists even without posts.
+install -m 0700 -d "$INSTALL_DIR/post-certificate"
+"$INSTALL_DIR/post-certificate.sh" configure
 
-cat > /etc/systemd/system/tesel-update.service <<'CONF'
+# Each scheduled job is a oneshot service run by its timer, which reports how it ended
+# (notify.sh): failures to the journal, and every result to TESEL_ALERT_URL when it is set.
+# cosign, which update.sh runs, keeps Sigstore's trust root under $HOME, which systemd does not
+# set for system services.
+write_job() {
+  local name="$1" description="$2" command="$3" schedule="$4" timer_description="$5"
+  cat > "/etc/systemd/system/$name.service" <<CONF
 [Unit]
-Description=Update Tesel to the latest published version
+Description=$description
 After=docker.service network-online.target
 Wants=network-online.target
+OnFailure=tesel-notify@%N.service
 
 [Service]
 Type=oneshot
-WorkingDirectory=/opt/tesel
-ExecStart=/usr/bin/docker compose pull --quiet
-ExecStart=/usr/bin/docker compose up --detach --remove-orphans
-ExecStart=/usr/bin/docker image prune --force
+Environment=HOME=/root
+EnvironmentFile=-$INSTALL_DIR/.env
+ExecStart=$command
+ExecStartPost=$INSTALL_DIR/notify.sh success %N
 CONF
-cat > /etc/systemd/system/tesel-update.timer <<'CONF'
+  cat > "/etc/systemd/system/$name.timer" <<CONF
 [Unit]
-Description=Check for a new Tesel version every 15 minutes
+Description=$timer_description
 
 [Timer]
-OnBootSec=5min
-OnUnitActiveSec=15min
-RandomizedDelaySec=2min
+$schedule
 
 [Install]
 WantedBy=timers.target
 CONF
-cat > /etc/systemd/system/tesel-maps.service <<'CONF'
+}
+cat > /etc/systemd/system/tesel-notify@.service <<CONF
 [Unit]
-Description=Rebuild the Tesel base map from the latest OpenStreetMap data
-After=docker.service network-online.target
-Wants=network-online.target
+Description=Report that %i failed
 
 [Service]
 Type=oneshot
-EnvironmentFile=-/opt/tesel/.env
-ExecStart=/opt/tesel/maps.sh /opt/tesel/maps
+EnvironmentFile=-$INSTALL_DIR/.env
+ExecStart=$INSTALL_DIR/notify.sh failure %i
 CONF
-cat > /etc/systemd/system/tesel-maps.timer <<'CONF'
-[Unit]
-Description=Rebuild the Tesel base map every month
-
-[Timer]
-OnCalendar=monthly
-RandomizedDelaySec=1d
-Persistent=true
-
-[Install]
-WantedBy=timers.target
-CONF
+write_job tesel-update "Update Tesel to the latest signed version" \
+  "$INSTALL_DIR/update.sh $INSTALL_DIR" \
+  $'OnBootSec=5min\nOnUnitActiveSec=15min\nRandomizedDelaySec=2min' \
+  "Check for a new Tesel version every 15 minutes"
+write_job tesel-maps "Rebuild the Tesel base map from the latest OpenStreetMap data" \
+  "$INSTALL_DIR/maps.sh $INSTALL_DIR/maps" \
+  $'OnCalendar=monthly\nRandomizedDelaySec=1d\nPersistent=true' \
+  "Rebuild the Tesel base map every month"
+# Before the automatic reboots at 04:00.
+write_job tesel-backup "Back up the Tesel server" \
+  "$INSTALL_DIR/backup.sh $INSTALL_DIR" \
+  $'OnCalendar=*-*-* 03:00\nRandomizedDelaySec=30min\nPersistent=true' \
+  "Back up the Tesel server every night"
+write_job tesel-post-certificate "Obtain or renew the certificate of Tesel's command posts" \
+  "$INSTALL_DIR/post-certificate.sh renew" \
+  $'OnCalendar=daily\nRandomizedDelaySec=2h\nPersistent=true' \
+  "Renew the command posts' certificate when it is due"
 systemctl daemon-reload
 
 if [[ ! -f "$INSTALL_DIR/maps/basemap.pmtiles" ]]; then
@@ -255,14 +322,25 @@ systemctl enable --now tesel-maps.timer >/dev/null
 
 step "Starting Tesel"
 cd "$INSTALL_DIR"
-if ! docker compose pull --quiet; then
-  fail "could not download the Tesel image. If the package on GitHub is private, make it public:
-github.com/guaschpau-design → Packages → tesel-server → Package settings → Change visibility."
+if ! "$INSTALL_DIR/update.sh" "$INSTALL_DIR"; then
+  fail "could not verify, download or start the Tesel image (see above). The image must be public
+on GitHub (github.com/guaschpau-design → Packages → tesel-server → Package settings) and signed
+by the repository's CI."
 fi
-docker compose up --detach --remove-orphans
-# Enabled only now: a timer whose boot delay has passed fires at once, and its own "compose up"
-# would race the one above for the same container names.
-systemctl enable --now tesel-update.timer >/dev/null
+# Caddy reads its configuration only when it starts: apply what was installed above.
+docker compose exec --no-TTY caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+# Enabled only now: a timer whose boot delay has passed fires at once, and its own update would
+# wait for the one above for nothing.
+systemctl enable --now tesel-update.timer tesel-backup.timer >/dev/null
+
+if [[ -n "$(setting TESEL_COMMAND_POST)" ]]; then
+  step "Obtaining the command posts' certificate"
+  "$INSTALL_DIR/post-certificate.sh" renew
+  systemctl enable --now tesel-post-certificate.timer >/dev/null
+  echo "Give each post a token with: sudo $INSTALL_DIR/post-certificate.sh grant post-1"
+else
+  systemctl disable --now tesel-post-certificate.timer 2>/dev/null
+fi
 
 step "Waiting for https://$DOMAIN"
 for _ in $(seq 1 60); do

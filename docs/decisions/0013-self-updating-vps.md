@@ -1,6 +1,6 @@
 # 0013. A self-updating VPS behind Caddy, installed by one script
 
-- Status: Accepted
+- Status: Accepted, partly superseded by [0049](0049-signed-images-and-checked-updates.md) (signed images, checked updates with rollback, backups)
 - Date: 2026-10-25
 
 ## Context

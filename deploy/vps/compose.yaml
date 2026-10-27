@@ -1,11 +1,21 @@
 # Tesel on a VPS: the relay server behind Caddy, which obtains and renews the HTTPS certificate.
-# Installed by install.sh into /opt/tesel, with TESEL_DOMAIN set in /opt/tesel/.env.
+# Installed by install.sh into /opt/tesel, with its settings in /opt/tesel/.env. TESEL_IMAGE,
+# the server image by digest, is written there by update.sh once its signature is verified.
 
 name: tesel
 
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '3'
+
 services:
   tesel:
-    image: ${TESEL_IMAGE:-ghcr.io/guaschpau-design/tesel-server:latest}
+    image: ${TESEL_IMAGE:?run update.sh, which sets TESEL_IMAGE in .env}
+    # The image's own health check asks /healthz; update.sh waits for it before keeping a new
+    # version. Docker restarts the server when it exits, not when it is unhealthy: an unhealthy
+    # server makes the next update run fail, which alerts the operator.
     restart: unless-stopped
     environment:
       TESEL_RETENTION_DAYS: ${TESEL_RETENTION_DAYS:-30}
@@ -20,10 +30,13 @@ services:
       - /tmp
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
+    mem_limit: 512m
+    pids_limit: 256
+    logging: *logging
     networks: [internal]
 
   caddy:
-    image: caddy:2
+    image: caddy:2.11.7@sha256:5e5286cb37d44086d651a5363f05f43a692ce4d649d88fb1bd844579f45fa9e8
     restart: unless-stopped
     environment:
       TESEL_DOMAIN: ${TESEL_DOMAIN:?set TESEL_DOMAIN in .env}
@@ -33,11 +46,20 @@ services:
       - '443:443/udp'
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./headers.caddy:/etc/caddy/headers.caddy:ro
       - ./redirects.caddy:/etc/caddy/redirects.caddy:ro
+      - ./post-certificate.caddy:/etc/caddy/post-certificate.caddy:ro
+      - ./post-certificate:/srv/post-certificate:ro
       - ./maps:/srv/maps:ro
       - caddy-data:/data
       - caddy-config:/config
+    # Caddy runs as root in its image; it keeps only the right to listen on ports 80 and 443.
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
     security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    pids_limit: 256
+    logging: *logging
     networks: [internal]
     depends_on: [tesel]
 

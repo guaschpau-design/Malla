@@ -1,0 +1,31 @@
+# Security headers of a Tesel server, on the VPS and on a command post alike. Imported inside
+# the site block of both Caddyfiles.
+#
+# The app's Content-Security-Policy is the one apps/web/index.html carries as a meta tag, plus
+# frame-ancestors, which only a header can set: change both together. The app connects to
+# whichever servers its groups use and reads public map services, hence the open connect-src
+# and img-src. The landing page is static HTML and CSS with no scripts; its map pins are
+# placed with style attributes.
+
+@app path /app /app/*
+@site not path /app /app/*
+
+header {
+	Strict-Transport-Security "max-age=31536000"
+	X-Content-Type-Options "nosniff"
+	Referrer-Policy "no-referrer"
+	# What the app uses: location, dictation, the camera for QR codes, radios by Bluetooth or
+	# USB, and full screen; never for pages framed from other origins.
+	Permissions-Policy "geolocation=(self), microphone=(self), camera=(self), bluetooth=(self), serial=(self), fullscreen=(self)"
+	-Server
+}
+
+# Deferred, so these replace any policy set further in, whatever the server sends.
+header @app {
+	Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https: wss: http: ws: data: blob:; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+	defer
+}
+header @site {
+	Content-Security-Policy "default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+	defer
+}
