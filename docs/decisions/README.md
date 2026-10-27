@@ -48,3 +48,5 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0040](0040-dictated-messages.md)                    | Dictate chat messages with the browser's speech recognition              | Accepted                        |
 | [0041](0041-satellite-mosaic-and-national-photos.md) | One Sentinel-2 mosaic from afar, each country's photographs close up     | Accepted                        |
 | [0042](0042-remove-radio-line-of-sight.md)           | Remove the radio line of sight                                           | Accepted                        |
+| [0045](0045-server-keeps-every-distinct-envelope.md) | The server keeps every distinct envelope pushed under a key              | Accepted                        |
+| [0046](0046-store-identity.md)                       | A server's store has an identity, and cursors belong to it               | Accepted                        |

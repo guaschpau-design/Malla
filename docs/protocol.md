@@ -320,17 +320,19 @@ Clients connect to `v1/ws` relative to the server base URL, with the scheme chan
 
 **Server to client**
 
-| Message                                                        | Meaning                                                                                                     |
-| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `{"t": "env", "cursor": N, "key": EVENT_KEY, "env": ENVELOPE}` | A stored envelope; `cursor` increases per group                                                             |
-| `{"t": "synced", "cursor": N}`                                 | The backlog after `after` has been sent; live envelopes follow                                              |
-| `{"t": "stored", "key": EVENT_KEY}`                            | The pushed envelope is stored, now or already before                                                        |
-| `{"t": "error", "code": CODE, "key": EVENT_KEY}`               | `bad-request`, `too-large`, `rate-limited` or `not-joined`; `key` is present when the error concerns a push |
+| Message                                                        | Meaning                                                                                                                    |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `{"t": "env", "cursor": N, "key": EVENT_KEY, "env": ENVELOPE}` | A stored envelope; `cursor` increases per group                                                                            |
+| `{"t": "synced", "cursor": N, "store": STORE_ID}`              | The backlog after `after` has been sent; live envelopes follow. `store` is the server's store identity                     |
+| `{"t": "stored", "key": EVENT_KEY}`                            | The pushed envelope is stored, now or already before                                                                       |
+| `{"t": "error", "code": CODE, "key": EVENT_KEY}`               | `bad-request`, `too-large`, `rate-limited`, `not-joined` or `unavailable`; `key` is present when the error concerns a push |
 
 - If `after` is greater than the group's last cursor, for instance because the server lost data or deleted a quiet group's envelopes, the server sends every envelope it has, then `synced` with its last cursor. Clients always adopt the cursor of `synced`.
-- The server MUST store at most one envelope per `(group, key)`; a repeated push with a known key is answered with `stored` and not relayed again. Clients keep an envelope in their outbox until they receive `stored` for its key.
-- The server MUST reject envelopes larger than 193 bytes with `too-large`, and envelopes smaller than 42 bytes (nonce, event header and tag) with `bad-request`.
-- The server SHOULD rate-limit pushes per connection and per group, and MAY delete envelopes older than a configured retention period.
+- The **store identity** is 16 random bytes, base64url, created with the server's database and kept in it; cursors are only comparable within one identity. A client keeps the identity with its cursor for each relay. When `synced` carries another identity than the one it saved, the relay lost its data or was restored from a backup ([ADR-0046](decisions/0046-store-identity.md)): the client saves the new identity, sets its cursor for that relay to `0`, joins again, and pushes its own events again.
+- The server MUST store at most one envelope per `(group, key, SHA-256 of the envelope)`. A push identical to a stored envelope is answered with `stored` and not relayed again; a different envelope under a known key is stored and relayed like any other, since the server cannot tell which one is genuine ([ADR-0045](decisions/0045-server-keeps-every-distinct-envelope.md)). Receivers MUST discard an envelope whose event, once opened, has another event key (§5) than the message's `key`. Clients keep an envelope in their outbox until they receive `stored` for its key.
+- The server MUST reject envelopes larger than 193 bytes with `too-large`, and envelopes smaller than 42 bytes (nonce, event header and tag) with `bad-request`. It answers `unavailable` when it cannot store a push now, for instance with its disk nearly full; the client keeps the envelope and pushes it again later.
+- The server SHOULD rate-limit pushes per connection, per group and in all, and MAY delete envelopes older than a configured retention period.
+- The server MAY limit connections in all and per client address, refusing the WebSocket upgrade with HTTP `503`; it MAY limit the groups it does not know that one address joins, answering such a `join` with `rate-limited` and closing the connection. It closes connections that have not joined a group within a few seconds.
 - The server never receives the group secret, the content key or plaintext events.
 
 ### 8.1 Server information
@@ -338,23 +340,31 @@ Clients connect to `v1/ws` relative to the server base URL, with the scheme chan
 `GET healthz`, relative to the server base URL, answers a JSON object:
 
 ```json
-{ "status": "ok", "protocolVersion": 1, "upstream": null, "commandPost": "https://post.example/" }
+{
+  "status": "ok",
+  "protocolVersion": 1,
+  "upstream": null,
+  "commandPost": "https://post.example/",
+  "time": 1793000000
+}
 ```
 
-| Field         | Meaning                                                                                        |
-| ------------- | ---------------------------------------------------------------------------------------------- |
-| `upstream`    | Base URL of the server this one replicates (§8.2), or `null`. Set on command posts             |
-| `commandPost` | Base URL shared by the command posts of this server (§8.3), or `null`. Set on internet servers |
+| Field         | Meaning                                                                                                               |
+| ------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `upstream`    | Base URL of the server this one replicates (§8.2), or `null`. Set on command posts                                    |
+| `commandPost` | Base URL shared by the command posts of this server (§8.3), or `null`. Set on internet servers                        |
+| `time`        | The server's clock, in seconds since the epoch; clients compare it with theirs to notice a device clock that is wrong |
 
-Both are secure URLs ending in `/` when present. Clients ignore unknown fields. The response allows any origin (`Access-Control-Allow-Origin: *`), since apps served elsewhere read it. Two server URLs are the same server when they are equal after adding a missing trailing `/` to the path.
+Both URLs are secure URLs ending in `/` when present. Clients ignore unknown fields. A server whose storage does not answer responds `503` with `{"status": "unavailable"}`. The response allows any origin (`Access-Control-Allow-Origin: *`), since apps served elsewhere read it. Two server URLs are the same server when they are equal after adding a missing trailing `/` to the path.
 
 ### 8.2 Replication
 
-A server with an `upstream` (a command post) keeps, for every group it stores or its clients join, a connection to the upstream as a client of that group. It MAY cap the number of these connections, since anyone on its network can join any group ID.
+A server with an `upstream` (a command post) keeps, for every group its clients are in or that has envelopes the upstream lacks, a connection to the upstream as a client of that group, and closes it once the group has neither. It MAY cap the number of these connections, since anyone on its network can join any group ID; it then SHOULD give them to the groups active most recently.
 
 - It joins with its own cursor for the upstream, stores every `env` it receives under the message's `key` and relays it to its own clients.
 - It pushes every envelope its own clients pushed, oldest first, until the upstream answers `stored`, and SHOULD stay under the upstream's rate limits.
-- Storage by `(group, key)` makes replication idempotent: an envelope that comes back is not stored or relayed twice.
+- It keeps the upstream's store identity with its cursor. When `synced` carries another identity, it sets its cursor to `0`, joins again, and pushes again every envelope it holds for the group.
+- Storage by `(group, key, SHA-256 of the envelope)` makes replication idempotent: an envelope that comes back is not stored or relayed twice.
 
 The command post never needs the group secret: it moves envelopes, as any server does.
 
@@ -388,7 +398,7 @@ Each feature has a `Polygon` or `MultiPolygon` geometry, coordinates rounded to 
 | `level`    | The highest level among its warnings                                                                                                                                                                          |
 | `warnings` | Its warnings, each `{ level, onset, expires, text }`: level `2` yellow, `3` orange, `4` red; onset and expiry in seconds since the epoch; `text` by language code (`es`, `en`), each `{ event, description }` |
 
-Only warnings that have not expired are listed. The response allows any origin (`Access-Control-Allow-Origin: *`). A server that does not gather warnings answers `404`; one that has not gathered them yet answers `503`.
+Only warnings that have not expired are listed, at the time of the request. The response allows any origin (`Access-Control-Allow-Origin: *`). A server that does not gather warnings answers `404`; one that has not gathered them yet, or whose last gathering is older than it allows, answers `503`.
 
 ## 9. Versioning
 
