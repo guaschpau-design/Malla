@@ -25,6 +25,13 @@ describe('offline maps', () => {
     ]);
   });
 
+  it('asks the public services for fewer tiles at a time than our own map', () => {
+    const layers = downloadLayers(archives, 14, ['topo', 'aerial', 'relief']);
+    const [own, ...others] = layers;
+    expect(own?.source).toBe('basemap');
+    for (const layer of others) expect(layer.concurrency).toBeLessThan(own?.concurrency ?? 0);
+  });
+
   it('names what an area holds once, whatever the sources behind it', () => {
     const area: OfflineArea = {
       id: 'a',

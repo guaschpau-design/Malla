@@ -27,8 +27,8 @@ describe('area download', () => {
       name: 'Valencia',
       bounds,
       layers: [
-        { source: 'basemap', archive: fakeArchive, maxZoom: 12 },
-        { source: 'ortho', archive: fakeArchive, maxZoom: 10 },
+        { source: 'basemap', archive: fakeArchive, maxZoom: 12, concurrency: 6 },
+        { source: 'ortho', archive: fakeArchive, maxZoom: 10, concurrency: 2 },
       ],
       signal: new AbortController().signal,
       onProgress: (p) => progress.push(p.done),
@@ -55,7 +55,7 @@ describe('area download', () => {
       id: 'c',
       name: 'Cancelled',
       bounds,
-      layers: [{ source: 'basemap', archive: fakeArchive, maxZoom: 13 }],
+      layers: [{ source: 'basemap', archive: fakeArchive, maxZoom: 13, concurrency: 6 }],
       signal: controller.signal,
       onProgress: (p) => {
         if (p.done === 5) controller.abort();
@@ -75,7 +75,7 @@ describe('area download', () => {
         id: 'h',
         name: 'Iberia',
         bounds: huge,
-        layers: [{ source: 'basemap', archive: fakeArchive, maxZoom: 14 }],
+        layers: [{ source: 'basemap', archive: fakeArchive, maxZoom: 14, concurrency: 6 }],
         signal: new AbortController().signal,
         onProgress: () => undefined,
       }),
