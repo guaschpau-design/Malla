@@ -8,8 +8,30 @@ import type { RegionGeometry } from '@tesel/protocol';
 const REPOSITORY = 'https://gitlab.com/api/v4/projects/meteoalarm-pm-group%2Fdocuments/repository';
 const GEOCODES_FILE = /^MeteoAlarm_Geocodes_\d{4}_\d{2}_\d{2}\.json$/;
 
-/** The listing of the repository's files, where the newest outlines are looked for. */
-export const REGIONS_LISTING_URL = `${REPOSITORY}/tree?per_page=100`;
+/** Entries per page of the repository's listing: the most GitLab gives. */
+const LISTING_PAGE_SIZE = 100;
+/** Pages of the listing read at most; the repository holds a few dozen files. */
+const MAX_LISTING_PAGES = 20;
+const MAX_LISTING_PAGE_BYTES = 1024 * 1024;
+
+/** One page, from 1, of the listing of the repository's files. */
+export function regionsListingUrl(page: number): string {
+  return `${REPOSITORY}/tree?per_page=${String(LISTING_PAGE_SIZE)}&page=${String(page)}`;
+}
+
+/** Reads every page of the repository's listing, where the newest outlines are looked for. */
+export async function listRepository(
+  getJson: (url: string, maxBytes: number) => Promise<unknown>,
+): Promise<unknown[]> {
+  const entries: unknown[] = [];
+  for (let page = 1; page <= MAX_LISTING_PAGES; page++) {
+    const listing = await getJson(regionsListingUrl(page), MAX_LISTING_PAGE_BYTES);
+    if (!Array.isArray(listing)) throw new Error('The repository listing is not a list');
+    entries.push(...(listing as unknown[]));
+    if (listing.length < LISTING_PAGE_SIZE) return entries;
+  }
+  throw new Error('The repository listing has more pages than expected');
+}
 
 export interface Region {
   readonly name: string;
@@ -17,8 +39,7 @@ export interface Region {
 }
 
 /** The URL of the newest outlines file in the repository listing, or null if there is none. */
-export function newestRegionsUrl(listing: unknown): string | null {
-  if (!Array.isArray(listing)) return null;
+export function newestRegionsUrl(listing: readonly unknown[]): string | null {
   const names = listing
     .map((entry: unknown) => (entry as { path?: unknown } | null)?.path)
     .filter((path): path is string => typeof path === 'string' && GEOCODES_FILE.test(path))

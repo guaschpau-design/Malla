@@ -37,7 +37,13 @@ test('a device catches up with thousands of waiting events in seconds', async ({
       const message = parseClientMessage(String(text));
       if (!message.ok || message.value.t !== 'join') return;
       for (const envelope of backlog) relay.send(encodeRelayMessage(envelope));
-      relay.send(encodeRelayMessage({ t: 'synced', cursor: backlog.length }));
+      relay.send(
+        encodeRelayMessage({
+          t: 'synced',
+          cursor: backlog.length,
+          store: 'AAAAAAAAAAAAAAAAAAAAAA',
+        }),
+      );
     });
   });
 

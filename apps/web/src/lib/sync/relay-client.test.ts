@@ -32,6 +32,8 @@ class FakeSocket implements SocketLike {
 }
 
 const GROUP = new Uint8Array(16).fill(1);
+/** The relay's store identity (protocol §8). */
+const STORE = 'AAAAAAAAAAAAAAAAAAAAAA';
 const flush = () => vi.advanceTimersByTimeAsync(0);
 
 const SERVER = 'https://relay.example/';
@@ -102,7 +104,7 @@ describe('relay client', () => {
     });
     socket.receive({ t: 'env', cursor: 42, key: new Uint8Array(16), env: new Uint8Array(50) });
     socket.receive({ t: 'env', cursor: 43, key: new Uint8Array(16), env: new Uint8Array(50) });
-    socket.receive({ t: 'synced', cursor: 43 });
+    socket.receive({ t: 'synced', cursor: 43, store: STORE });
     await flush();
     expect(envelopes).toEqual([[42, 43]]);
     expect(synced).toEqual([`43@${SERVER}`]);
@@ -125,7 +127,7 @@ describe('relay client', () => {
       env: new Uint8Array(50),
     });
     for (let cursor = 1; cursor <= 1001; cursor++) socket.receive(env(cursor));
-    socket.receive({ t: 'synced', cursor: 1001 });
+    socket.receive({ t: 'synced', cursor: 1001, store: STORE });
     socket.receive(env(1002));
     await flush();
     expect(envelopes.map((batch) => batch.length)).toEqual([1000, 1, 1]);
@@ -142,7 +144,7 @@ describe('relay client', () => {
     socket.open();
     await flush();
     expect(client.push(new Uint8Array(16), new Uint8Array(50), 'chat')).toBe(false);
-    socket.receive({ t: 'synced', cursor: 0 });
+    socket.receive({ t: 'synced', cursor: 0, store: STORE });
     await flush();
     expect(client.push(new Uint8Array(16), new Uint8Array(50), 'chat')).toBe(true);
   });
@@ -189,7 +191,7 @@ describe('relay client', () => {
     if (!post) throw new Error('no socket');
     post.open();
     await flush();
-    post.receive({ t: 'synced', cursor: 3 });
+    post.receive({ t: 'synced', cursor: 3, store: STORE });
     await flush();
     expect(cursorsAsked).toEqual([POST]);
     expect(client.relay).toBe(POST);

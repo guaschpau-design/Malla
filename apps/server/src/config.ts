@@ -2,6 +2,7 @@
 
 import { isSecureUrl, serverBaseUrl } from '@tesel/protocol';
 
+import { DEFAULT_LIMITS, type RelayLimits } from './relay-limits.ts';
 import { FEED_URLS } from './weather/meteoalarm.ts';
 
 export interface ServerConfig {
@@ -19,6 +20,17 @@ export interface ServerConfig {
   readonly commandPost: string | null;
   /** Countries whose weather warnings it gathers (protocol §8.4); none turns them off. */
   readonly weatherCountries: readonly string[];
+  /** Weather warnings gathered longer ago than this are no longer served. */
+  readonly weatherMaxAgeMinutes: number;
+  /** What one client, one address, one group and everyone together may ask of the relay. */
+  readonly limits: RelayLimits;
+  /** Pushes are refused while the database's disk has no more than this free. */
+  readonly minFreeDiskMegabytes: number;
+  /**
+   * The reverse proxies whose X-Forwarded-For header is believed: addresses, ranges, or the
+   * names `loopback`, `linklocal` and `uniquelocal` (private networks, Docker's among them).
+   */
+  readonly trustedProxies: readonly string[];
 }
 
 export function readConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
@@ -31,7 +43,48 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     upstream: serverUrl(env, 'TESEL_UPSTREAM'),
     commandPost: serverUrl(env, 'TESEL_COMMAND_POST'),
     weatherCountries: countries(env, 'TESEL_WEATHER', 'ES,PT'),
+    // Warnings are gathered every 10 minutes: an hour more of failures is tolerated.
+    weatherMaxAgeMinutes: integer(env, 'TESEL_WEATHER_MAX_AGE_MINUTES', 70, 10, 7 * 24 * 60),
+    limits: {
+      ...DEFAULT_LIMITS,
+      maxConnections: integer(
+        env,
+        'TESEL_MAX_CONNECTIONS',
+        DEFAULT_LIMITS.maxConnections,
+        1,
+        1_000_000,
+      ),
+      maxConnectionsPerAddress: integer(
+        env,
+        'TESEL_MAX_CONNECTIONS_PER_IP',
+        DEFAULT_LIMITS.maxConnectionsPerAddress,
+        1,
+        1_000_000,
+      ),
+      newGroupsPerAddressPerHour: integer(
+        env,
+        'TESEL_NEW_GROUPS_PER_IP_PER_HOUR',
+        DEFAULT_LIMITS.newGroupsPerAddressPerHour,
+        1,
+        1_000_000,
+      ),
+      serverPerSecond: integer(
+        env,
+        'TESEL_PUSHES_PER_SECOND',
+        DEFAULT_LIMITS.serverPerSecond,
+        1,
+        1_000_000,
+      ),
+    },
+    minFreeDiskMegabytes: integer(env, 'TESEL_MIN_FREE_DISK_MB', 500, 0, 1_000_000),
+    trustedProxies: list(env, 'TESEL_TRUSTED_PROXIES', 'loopback,uniquelocal'),
   };
+}
+
+/** A comma-separated list; empty for none. */
+function list(env: NodeJS.ProcessEnv, name: string, fallback: string): string[] {
+  const text = env[name] ?? fallback;
+  return text === '' ? [] : text.split(',').map((item) => item.trim());
 }
 
 /** A comma-separated list of country codes with a warnings feed; "off" or empty for none. */

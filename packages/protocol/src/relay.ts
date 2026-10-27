@@ -9,6 +9,7 @@ import {
   MIN_ENVELOPE_SIZE,
   RELAY_PATH,
   SERVER_INFO_PATH,
+  STORE_ID_SIZE,
 } from './constants.ts';
 import { isSecureUrl } from './invitation.ts';
 import { err, ok, type Result } from './result.ts';
@@ -17,7 +18,8 @@ export type ClientMessage =
   | { readonly t: 'join'; readonly group: Uint8Array; readonly after: number }
   | { readonly t: 'push'; readonly key: Uint8Array; readonly env: Uint8Array };
 
-export type RelayErrorCode = 'bad-request' | 'too-large' | 'rate-limited' | 'not-joined';
+export type RelayErrorCode =
+  'bad-request' | 'too-large' | 'rate-limited' | 'not-joined' | 'unavailable';
 
 export type ServerMessage =
   | {
@@ -26,7 +28,12 @@ export type ServerMessage =
       readonly key: Uint8Array;
       readonly env: Uint8Array;
     }
-  | { readonly t: 'synced'; readonly cursor: number }
+  | {
+      readonly t: 'synced';
+      readonly cursor: number;
+      /** The server's store identity, base64url: cursors are only comparable within one. */
+      readonly store: string;
+    }
   | { readonly t: 'stored'; readonly key: Uint8Array }
   | { readonly t: 'error'; readonly code: RelayErrorCode; readonly key: Uint8Array | null };
 
@@ -108,7 +115,7 @@ export function encodeRelayMessage(message: ClientMessage | ServerMessage): stri
         env: toBase64url(message.env),
       });
     case 'synced':
-      return JSON.stringify({ t: 'synced', cursor: message.cursor });
+      return JSON.stringify({ t: 'synced', cursor: message.cursor, store: message.store });
     case 'stored':
       return JSON.stringify({ t: 'stored', key: toBase64url(message.key) });
     case 'error':
@@ -161,7 +168,8 @@ export function parseServerMessage(text: string): ServerMessage | null {
     }
     case 'synced': {
       const cursor = object['cursor'];
-      return isCursor(cursor) ? { t: 'synced', cursor } : null;
+      const store = object['store'];
+      return isCursor(cursor) && isStoreId(store) ? { t: 'synced', cursor, store } : null;
     }
     case 'stored': {
       const key = bytesField(object, 'key');
@@ -182,6 +190,7 @@ const RELAY_ERROR_CODES: ReadonlySet<unknown> = new Set<RelayErrorCode>([
   'too-large',
   'rate-limited',
   'not-joined',
+  'unavailable',
 ]);
 
 function isRelayErrorCode(value: unknown): value is RelayErrorCode {
@@ -191,6 +200,10 @@ function isRelayErrorCode(value: unknown): value is RelayErrorCode {
 /** A cursor is a non-negative integer that JSON and JavaScript represent exactly. */
 function isCursor(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+}
+
+function isStoreId(value: unknown): value is string {
+  return typeof value === 'string' && fromBase64url(value)?.length === STORE_ID_SIZE;
 }
 
 function parseObject(text: string): Readonly<Record<string, unknown>> | null {

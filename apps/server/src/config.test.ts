@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { readConfig } from './config.ts';
+import { DEFAULT_LIMITS } from './relay-limits.ts';
 
 describe('configuration', () => {
   it('has defaults that work for a single server', () => {
@@ -13,6 +14,10 @@ describe('configuration', () => {
       upstream: null,
       commandPost: null,
       weatherCountries: ['ES', 'PT'],
+      weatherMaxAgeMinutes: 70,
+      limits: DEFAULT_LIMITS,
+      minFreeDiskMegabytes: 500,
+      trustedProxies: ['loopback', 'uniquelocal'],
     });
   });
 
@@ -30,6 +35,27 @@ describe('configuration', () => {
     expect(config.upstream).toBe('https://tesel.example/');
     expect(config.commandPost).toBe('https://post.tesel.example/');
     expect(() => readConfig({ TESEL_UPSTREAM: 'http://tesel.example' })).toThrow(/TESEL_UPSTREAM/);
+  });
+
+  it('reads the relay limits', () => {
+    const config = readConfig({
+      TESEL_MAX_CONNECTIONS: '50',
+      TESEL_MAX_CONNECTIONS_PER_IP: '5',
+      TESEL_NEW_GROUPS_PER_IP_PER_HOUR: '3',
+      TESEL_PUSHES_PER_SECOND: '40',
+      TESEL_MIN_FREE_DISK_MB: '0',
+      TESEL_TRUSTED_PROXIES: '',
+    });
+    expect(config.limits).toEqual({
+      ...DEFAULT_LIMITS,
+      maxConnections: 50,
+      maxConnectionsPerAddress: 5,
+      newGroupsPerAddressPerHour: 3,
+      serverPerSecond: 40,
+    });
+    expect(config.minFreeDiskMegabytes).toBe(0);
+    expect(config.trustedProxies).toEqual([]);
+    expect(() => readConfig({ TESEL_MAX_CONNECTIONS: '0' })).toThrow(/TESEL_MAX_CONNECTIONS/);
   });
 
   it('rejects an invalid port or retention', () => {

@@ -9,20 +9,18 @@ import { buildApp } from '../app.ts';
 import { EnvelopeStore } from '../envelope-store.ts';
 import { Relay } from '../relay.ts';
 import { FEED_URLS } from './meteoalarm.ts';
-import { REGIONS_LISTING_URL } from './regions.ts';
+import { regionsListingUrl } from './regions.ts';
 import { alert, feed, geocodes, listing, NOW_S } from './test-feeds.ts';
 import { WeatherWarningsService } from './weather-warnings.ts';
 
 /** MeteoAlarm as tests see it; counts what is asked of it. */
-function meteoalarm() {
+function meteoalarm(warnings = [alert({ identifier: 'a', region: 'ES521', level: 3 })]) {
   const asked: string[] = [];
   const getJson = (url: string) => {
     asked.push(url);
-    if (url === REGIONS_LISTING_URL) return Promise.resolve(listing);
+    if (url === regionsListingUrl(1)) return Promise.resolve(listing);
     if (url.includes('Geocodes')) return Promise.resolve(geocodes);
-    if (url === FEED_URLS['ES']) {
-      return Promise.resolve(feed(alert({ identifier: 'a', region: 'ES521', level: 3 })));
-    }
+    if (url === FEED_URLS['ES']) return Promise.resolve(feed(...warnings));
     if (url === FEED_URLS['PT']) return Promise.resolve(feed());
     return Promise.reject(new Error(`unexpected ${url}`));
   };
@@ -30,18 +28,20 @@ function meteoalarm() {
 }
 
 const now = () => NOW_S * 1000;
+const MAX_AGE_MINUTES = 70;
 
 describe('weather warnings service', () => {
   it('serves the warning regions as a §8.4 document', async () => {
     const service = new WeatherWarningsService({
       countries: ['ES', 'PT'],
       regionsFile: null,
+      maxAgeMinutes: MAX_AGE_MINUTES,
       getJson: meteoalarm().getJson,
       now,
     });
-    expect(service.body).toBeNull();
+    expect(service.body()).toBeNull();
     await service.refresh();
-    const document = parseWeatherWarnings(JSON.parse(service.body ?? 'null'));
+    const document = parseWeatherWarnings(JSON.parse(service.body() ?? 'null'));
     expect(document?.updated).toBe(NOW_S);
     expect(document?.features.map((region) => region.properties)).toMatchObject([
       { code: 'ES521', name: 'Litoral sur de Valencia', level: 3 },
@@ -54,6 +54,7 @@ describe('weather warnings service', () => {
     const service = new WeatherWarningsService({
       countries: ['ES'],
       regionsFile,
+      maxAgeMinutes: MAX_AGE_MINUTES,
       getJson: first.getJson,
       now,
     });
@@ -65,12 +66,13 @@ describe('weather warnings service', () => {
     const restarted = new WeatherWarningsService({
       countries: ['ES'],
       regionsFile,
+      maxAgeMinutes: MAX_AGE_MINUTES,
       getJson: second.getJson,
       now,
     });
     restarted.start();
     restarted.stop();
-    await expect.poll(() => restarted.body).not.toBeNull();
+    await expect.poll(() => restarted.body()).not.toBeNull();
     expect(second.asked.filter((url) => url.includes('Geocodes'))).toHaveLength(0);
   });
 
@@ -80,14 +82,76 @@ describe('weather warnings service', () => {
     const service = new WeatherWarningsService({
       countries: ['ES'],
       regionsFile: null,
+      maxAgeMinutes: MAX_AGE_MINUTES,
       getJson: (url) => (reachable ? getJson(url) : Promise.reject(new Error('offline'))),
       now,
     });
     await service.refresh();
-    const body = service.body;
+    const body = service.body();
     reachable = false;
     await service.refresh();
-    expect(service.body).toBe(body);
+    expect(service.body()).toBe(body);
+  });
+
+  it('leaves out warnings that expired since they were gathered', async () => {
+    let time = NOW_S * 1000;
+    const service = new WeatherWarningsService({
+      countries: ['ES'],
+      regionsFile: null,
+      maxAgeMinutes: MAX_AGE_MINUTES,
+      getJson: meteoalarm([
+        alert({ identifier: 'a', region: 'ES521', level: 3, expiresInHours: 0.5 }),
+        alert({ identifier: 'b', region: 'ES521', level: 2, expiresInHours: 6 }),
+        alert({ identifier: 'c', region: 'PT004', level: 4, expiresInHours: 0.5 }),
+      ]).getJson,
+      now: () => time,
+    });
+    await service.refresh();
+    const regions = () =>
+      parseWeatherWarnings(JSON.parse(service.body() ?? 'null'))?.features.map(
+        (region) => region.properties,
+      );
+    expect(regions()).toMatchObject([{ code: 'ES521', level: 3 }]);
+    time += 45 * 60 * 1000;
+    expect(regions()).toMatchObject([{ code: 'ES521', level: 2, warnings: [{ level: 2 }] }]);
+  });
+
+  it('stops serving warnings gathered too long ago', async () => {
+    let time = NOW_S * 1000;
+    let reachable = true;
+    const { getJson } = meteoalarm();
+    const service = new WeatherWarningsService({
+      countries: ['ES'],
+      regionsFile: null,
+      maxAgeMinutes: MAX_AGE_MINUTES,
+      getJson: (url) => (reachable ? getJson(url) : Promise.reject(new Error('offline'))),
+      now: () => time,
+    });
+    await service.refresh();
+    reachable = false;
+    time += (MAX_AGE_MINUTES - 1) * 60 * 1000;
+    expect(service.body()).not.toBeNull();
+    time += 2 * 60 * 1000;
+    expect(service.body()).toBeNull();
+  });
+
+  it('reads every page of the repository listing', async () => {
+    const page = (n: number) =>
+      Array.from({ length: 100 }, (_, i) => ({ path: `file-${String(n)}-${String(i)}.txt` }));
+    const { getJson } = meteoalarm();
+    const service = new WeatherWarningsService({
+      countries: ['ES'],
+      regionsFile: null,
+      maxAgeMinutes: MAX_AGE_MINUTES,
+      getJson: (url) => {
+        if (url === regionsListingUrl(1)) return Promise.resolve(page(1));
+        if (url === regionsListingUrl(2)) return Promise.resolve(listing);
+        return getJson(url);
+      },
+      now,
+    });
+    await service.refresh();
+    expect(service.body()).not.toBeNull();
   });
 
   it('gathers warnings with the outlines it has when the outlines cannot be checked', async () => {
@@ -95,6 +159,7 @@ describe('weather warnings service', () => {
     const first = new WeatherWarningsService({
       countries: ['ES'],
       regionsFile,
+      maxAgeMinutes: MAX_AGE_MINUTES,
       getJson: meteoalarm().getJson,
       now,
     });
@@ -104,28 +169,32 @@ describe('weather warnings service', () => {
     const restarted = new WeatherWarningsService({
       countries: ['ES'],
       regionsFile,
+      maxAgeMinutes: MAX_AGE_MINUTES,
       getJson: (url) =>
-        url === REGIONS_LISTING_URL ? Promise.reject(new Error('GitLab is down')) : getJson(url),
+        url === regionsListingUrl(1) ? Promise.reject(new Error('GitLab is down')) : getJson(url),
       now,
     });
     restarted.start();
     restarted.stop();
-    await expect.poll(() => restarted.body).not.toBeNull();
+    await expect.poll(() => restarted.body()).not.toBeNull();
   });
 
   it('is served to any origin, and answers 503 until gathered and 404 when off', async () => {
-    const relay = new Relay(new EnvelopeStore(':memory:'), Date.now);
+    const store = new EnvelopeStore(':memory:');
+    const relay = new Relay(store);
     const service = new WeatherWarningsService({
       countries: ['ES'],
       regionsFile: null,
+      maxAgeMinutes: MAX_AGE_MINUTES,
       getJson: meteoalarm().getJson,
       now,
     });
-    const app = await buildApp(relay, {
+    const app = await buildApp(store, relay, {
       webRoot: null,
       upstream: null,
       commandPost: null,
       weather: service,
+      trustedProxies: [],
     });
     expect((await app.inject('/v1/weather-warnings')).statusCode).toBe(503);
     await service.refresh();
@@ -136,7 +205,7 @@ describe('weather warnings service', () => {
     expect(parseWeatherWarnings(response.json())?.features).toHaveLength(1);
     await app.close();
 
-    const off = await buildApp(relay);
+    const off = await buildApp(store, relay);
     expect((await off.inject('/v1/weather-warnings')).statusCode).toBe(404);
     await off.close();
   });
