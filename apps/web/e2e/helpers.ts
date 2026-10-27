@@ -80,6 +80,39 @@ export async function shareAs(
   await panel.getByRole('button', { name: 'Cerrar' }).click();
 }
 
+/**
+ * Waits until the map has stopped moving and drawn everything it was loading, as MapView tells
+ * through aria-busy: what is drawn then is what a tap finds.
+ */
+export async function mapIdle(page: Page): Promise<void> {
+  await expect(page.locator('.maplibregl-map')).toHaveAttribute('aria-busy', 'false');
+}
+
+/** Taps the map `dx`, `dy` pixels from its centre, once it is idle. */
+export async function tapMap(page: Page, dx = 0, dy = 0): Promise<void> {
+  await mapIdle(page);
+  const box = await page.locator('.maplibregl-canvas').boundingBox();
+  if (!box) throw new Error('no map');
+  await page.mouse.click(box.x + box.width / 2 + dx, box.y + box.height / 2 + dy);
+}
+
+/**
+ * Taps the map `dx`, `dy` pixels from its centre until `expectation` holds. For what reaches the
+ * map a while after the step that makes it — another member's event, or our own once it is stored
+ * — which nothing else on the page announces. Each tap waits for the map to be idle, so a tap that
+ * misses means the object had not arrived, not that the map was still drawing it.
+ */
+export async function tapMapUntil(
+  page: Page,
+  { dx = 0, dy = 0 }: { dx?: number; dy?: number },
+  expectation: () => Promise<void>,
+): Promise<void> {
+  await expect(async () => {
+    await tapMap(page, dx, dy);
+    await expectation();
+  }).toPass({ timeout: 15_000 });
+}
+
 /** Opens one of the items of the dock's "More" menu. */
 export async function openMore(page: Page, item: string): Promise<void> {
   await page.getByRole('button', { name: 'Más' }).click();
