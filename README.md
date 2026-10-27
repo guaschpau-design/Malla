@@ -40,4 +40,6 @@ pnpm check   # everything CI runs
 
 ## Licencia · Licence
 
-[EUPL-1.2](LICENSE)
+[EUPL-1.2](LICENSE). Las licencias de las dependencias de la app se publican con ella, en `third-party-notices.txt`. · The licences of the app's dependencies ship with it, in `third-party-notices.txt`.
+
+> **Uso comercial y mapa satélite.** De lejos, el mapa satélite usa por defecto el mosaico Sentinel-2 cloudless 2024 de EOX, **solo para uso no comercial** (CC BY-NC-SA 4.0). Un despliegue comercial debe compilar la app con `VITE_SATELLITE_MOSAIC=s2cloudless-2016` (CC BY 4.0) o licenciar el mosaico a EOX. · **Commercial use and the satellite map.** From afar, the satellite map shows EOX's Sentinel-2 cloudless 2024 mosaic by default, **for non-commercial use only** (CC BY-NC-SA 4.0). A commercial deployment must build the app with `VITE_SATELLITE_MOSAIC=s2cloudless-2016` (CC BY 4.0) or license the mosaic from EOX. See [ADR-0051](docs/decisions/0051-satellite-mosaic-licence.md).
