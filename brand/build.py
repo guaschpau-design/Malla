@@ -4,7 +4,7 @@
 #
 # The mark is three hexagonal tiles: a tessellation, the cells of a map grid and the nodes of a
 # mesh at once. One tile is lit, in signal lime. The wordmark is Archivo, expanded (width 118)
-# at weight 640, converted to outlines so it needs no font. Needs fonttools, brotli and uharfbuzz
+# at weight 700, converted to outlines so it needs no font. Needs fonttools, brotli and uharfbuzz
 # (pip install fonttools brotli uharfbuzz).
 import io
 import json
@@ -23,12 +23,12 @@ FONT = os.path.join(HERE, '..', 'apps', 'site', 'fonts', 'archivo-latin-standard
 with open(os.path.join(HERE, 'colors.json')) as colors_file:
     COLORS = json.load(colors_file)
 INK, PALE, SIGNAL = COLORS['ink'], COLORS['pale'], COLORS['signal']
-WIDTH, WEIGHT, TRACKING = 118, 640, -0.01
+WIDTH, WEIGHT, TRACKING = 118, 700, -0.025
 
 # The mark, in a 100 x 100 box: three pointy-top hexagons in a triangle, with grout between them.
-HEX_RADIUS = 22
-GROUT = 5.5
-CORNER = 2.5  # rounding of the tiles' corners, as a stroke of the same colour
+HEX_RADIUS = 23.5
+GROUT = 3.5
+CORNER = 3  # rounding of the tiles' corners, as a stroke of the same colour
 
 
 def hexagon(cx, cy):
@@ -83,8 +83,9 @@ def main():
     word = f'<g transform="scale({k:.6f})"><path d="{d}" transform="translate(0 {cap})"/></g>'
     write('wordmark.svg', f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {word_w:.1f} {word_h:.1f}" fill="{INK}">{word}</svg>')
     write('mark.svg', f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" color="{PALE}">{mark()}</svg>')
-    # Lockup: the mark a little taller than the capitals, centred on them.
-    mark_h, gap = 150, 42
+    # Lockup: the tiles about one and a half times as tall as the capitals, centred on them, so
+    # that the mark weighs as much as the word.
+    mark_h, gap = 170, 34
     height = mark_h
     lockup = (
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {mark_h + gap + word_w:.1f} {height:.1f}" color="{INK}">'

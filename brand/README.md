@@ -5,7 +5,7 @@ The Tesel mark, wordmark and lockup.
 | File              | What                                                                                                           |
 | ----------------- | -------------------------------------------------------------------------------------------------------------- |
 | `mark.svg`        | Three hexagonal tiles, one lit: a tessellation, map cells and mesh nodes. Pale tiles take `currentColor`       |
-| `wordmark.svg`    | "Tesel" in Archivo, expanded, weight 640, as outlines so it needs no font                                      |
+| `wordmark.svg`    | "Tesel" in Archivo, expanded, weight 700, as outlines so it needs no font                                      |
 | `lockup.svg`      | Mark and wordmark side by side, ink, for paper                                                                 |
 | `lockup-pale.svg` | The same, pale, for ink: the headers of the app (imported from here) and of the site (`apps/site/img`, a copy) |
 | `build.py`        | Rebuilds the SVGs and the site's copy (`python3 brand/build.py`; needs fonttools, brotli, uharfbuzz)           |
