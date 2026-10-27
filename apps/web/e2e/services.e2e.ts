@@ -44,8 +44,12 @@ test('services can be hidden', async ({ browser }) => {
   await page.getByRole('button', { name: 'Cerrar' }).click();
 
   await page.getByRole('button', { name: 'Capas del mapa' }).click();
-  await page.getByRole('switch', { name: 'Servicios' }).click();
-  await page.getByRole('button', { name: 'Cerrar' }).click();
+  const layers = page.getByRole('region', { name: 'Capas del mapa' });
+  const services = layers.getByRole('switch', { name: 'Servicios' });
+  await services.click();
+  // The switch turns off once the choice is stored, and the map follows it.
+  await expect(services).toHaveAttribute('aria-checked', 'false');
+  await layers.getByRole('button', { name: 'Cerrar' }).click();
   await tapMapCentre(page);
   await expect(page.getByRole('region', { name: 'Hospital de Prueba' })).toBeHidden();
 });
