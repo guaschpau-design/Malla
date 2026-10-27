@@ -7,7 +7,6 @@ describe('warning region outlines', () => {
   it('finds the newest outlines file in the repository', () => {
     expect(newestRegionsUrl(listing)).toMatch(/MeteoAlarm_Geocodes_2025_03_12\.json\/raw/);
     expect(newestRegionsUrl([{ path: 'README.md' }])).toBeNull();
-    expect(newestRegionsUrl('nothing')).toBeNull();
   });
 
   it('keeps the regions of our countries, rounded to about 100 m', () => {

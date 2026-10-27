@@ -88,6 +88,9 @@ export const SERVER_URL_MAX_BYTES = 200;
 /** §8 WebSocket endpoint, relative to the server base URL. */
 export const RELAY_PATH = 'v1/ws';
 
+/** §8 A server's store identity: random bytes created with its database. */
+export const STORE_ID_SIZE = 16;
+
 /** §8.1 Server information endpoint, relative to the server base URL. */
 export const SERVER_INFO_PATH = 'healthz';
 

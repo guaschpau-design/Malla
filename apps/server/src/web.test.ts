@@ -17,13 +17,16 @@ function site(): string {
   return root;
 }
 
-const app = () =>
-  buildApp(new Relay(new EnvelopeStore(':memory:'), Date.now), {
+const app = () => {
+  const store = new EnvelopeStore(':memory:');
+  return buildApp(store, new Relay(store), {
     webRoot: site(),
     upstream: null,
     commandPost: null,
     weather: null,
+    trustedProxies: [],
   });
+};
 
 describe('web serving', () => {
   it('serves the landing page at the root and the app under /app/', async () => {

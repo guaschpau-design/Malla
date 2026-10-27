@@ -16,6 +16,7 @@ import {
 const GROUP = new Uint8Array(16).fill(1);
 const KEY = new Uint8Array(16).fill(2);
 const ENV = new Uint8Array(60).fill(3);
+const STORE = toBase64url(new Uint8Array(16).fill(4));
 
 describe('relay messages', () => {
   it('round-trips every client message', () => {
@@ -30,9 +31,10 @@ describe('relay messages', () => {
   it('round-trips every server message', () => {
     const messages: ServerMessage[] = [
       { t: 'env', cursor: 7, key: KEY, env: ENV },
-      { t: 'synced', cursor: 7 },
+      { t: 'synced', cursor: 7, store: STORE },
       { t: 'stored', key: KEY },
       { t: 'error', code: 'rate-limited', key: KEY },
+      { t: 'error', code: 'unavailable', key: KEY },
       { t: 'error', code: 'not-joined', key: null },
     ];
     for (const message of messages) {
@@ -79,6 +81,12 @@ describe('relay messages', () => {
     expect(parseServerMessage('{"t":"env","cursor":"7","env":"AA"}')).toBeNull();
     expect(parseServerMessage('{"t":"error","code":"teapot"}')).toBeNull();
     expect(parseServerMessage('{"t":"hello"}')).toBeNull();
+  });
+
+  it('ignores a synced frame without a valid store identity', () => {
+    expect(parseServerMessage('{"t":"synced","cursor":7}')).toBeNull();
+    expect(parseServerMessage('{"t":"synced","cursor":7,"store":"AQID"}')).toBeNull();
+    expect(parseServerMessage('{"t":"synced","cursor":7,"store":7}')).toBeNull();
   });
 
   it('derives the WebSocket URL from the server base URL', () => {

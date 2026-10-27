@@ -1,211 +1,117 @@
-// Replication of a command post with its upstream server (docs/protocol.md §8.2). For every group
-// the post stores, one link joins the group at the upstream as an ordinary client: what arrives is
-// stored and relayed to the post's clients, and what the post's clients pushed goes up, one
-// envelope at a time and under the upstream's rate limits, until the upstream confirms it.
+// Replication of a command post with its upstream server (docs/protocol.md §8.2). A group that
+// the post's clients are in, or that has envelopes the upstream lacks, gets a link to the
+// upstream (upstream-link.ts). A link is released once its group has neither, so links follow
+// the groups in use; when there are more such groups than links, the most recently active win.
 
-import { TokenBucket } from '@tesel/core';
-import {
-  encodeRelayMessage,
-  parseServerMessage,
-  relayUrl,
-  toBase64url,
-  type ServerMessage,
-} from '@tesel/protocol';
-import WebSocket from 'ws';
+import { toBase64url } from '@tesel/protocol';
 
-import type { EnvelopeStore } from './envelope-store.ts';
-import type { Relay } from './relay.ts';
-import { frameText } from './ws-text.ts';
+import { Heartbeat } from './heartbeat.ts';
+import { UpstreamLink, type UpstreamLinkOptions } from './upstream-link.ts';
 
-export interface ReplicatorOptions {
-  readonly store: EnvelopeStore;
-  readonly relay: Relay;
-  /** Base URL of the upstream server. */
-  readonly upstream: string;
-  readonly now?: () => number;
-  /** Pushes per second, burst and sustained; below the upstream's per-connection limits. */
-  readonly pushBurst?: number;
-  readonly pushesPerSecond?: number;
-  /** Upstream connections at most; groups beyond them wait for a restart. */
+export interface ReplicatorOptions extends UpstreamLinkOptions {
+  /** Upstream connections at most; beyond them the least recently active groups wait. */
   readonly maxLinks?: number;
 }
 
 /**
- * Anyone on a command post's Wi-Fi can join any group ID, and each group costs one connection
- * to the upstream: a command post serves a handful of groups, so this is plenty.
+ * Anyone on a command post's Wi-Fi can join any group ID, and each group in use costs one
+ * connection to the upstream: a command post serves a handful of groups, so this is plenty.
  */
 const MAX_LINKS = 100;
 
-const FIRST_RETRY_MS = 1000;
-const MAX_RETRY_MS = 60_000;
-/** Wait after the upstream refuses a push for going too fast. */
-const RATE_LIMITED_WAIT_MS = 5000;
-
 export class Replicator {
   readonly #options: ReplicatorOptions;
+  readonly #now: () => number;
   readonly #links = new Map<string, UpstreamLink>();
-  #stopped = false;
+  /** The groups that want a link, and when each last showed activity: links go to the latest. */
+  readonly #wanted = new Map<string, { readonly group: Uint8Array; readonly at: number }>();
+  /** Watches the links' connections while the replicator runs; null while it is stopped. */
+  #heartbeat: Heartbeat | null = null;
+  #warnedFull = false;
 
   constructor(options: ReplicatorOptions) {
     this.#options = options;
+    this.#now = options.now ?? Date.now;
   }
 
-  /** Starts a link for every stored group, and for every group clients use from now on. */
+  /** Links the groups with envelopes the upstream lacks, and from then on the groups in use. */
   start(): void {
-    for (const group of this.#options.store.groups()) this.#link(group);
-    this.#options.relay.onGroupActivity((group) => {
-      if (!this.#stopped) this.#link(group)?.pump();
+    this.#heartbeat = new Heartbeat();
+    for (const group of this.#options.store.groupsPendingUpstream()) this.#consider(group);
+    this.#options.relay.onGroupChange((group) => {
+      if (this.#heartbeat !== null) this.#consider(group);
     });
   }
 
   stop(): void {
-    this.#stopped = true;
+    this.#heartbeat?.stop();
+    this.#heartbeat = null;
     for (const link of this.#links.values()) link.stop();
     this.#links.clear();
+    this.#wanted.clear();
   }
 
-  #link(group: Uint8Array): UpstreamLink | null {
+  /** Gives the group a link, or takes it away, after something changed in it. */
+  #consider(group: Uint8Array): void {
     const id = toBase64url(group);
-    let link = this.#links.get(id);
-    if (link === undefined) {
-      if (this.#links.size >= (this.#options.maxLinks ?? MAX_LINKS)) {
-        console.warn('Too many groups to replicate; this one waits for a restart');
-        return null;
-      }
-      link = new UpstreamLink(group, this.#options);
-      this.#links.set(id, link);
-      link.start();
-    }
-    return link;
-  }
-}
-
-/** One group's connection to the upstream. */
-class UpstreamLink {
-  readonly #group: Uint8Array;
-  readonly #store: EnvelopeStore;
-  readonly #relay: Relay;
-  readonly #url: string;
-  readonly #now: () => number;
-  readonly #bucket: TokenBucket;
-  #socket: WebSocket | null = null;
-  #synced = false;
-  /** Key of the push awaiting `stored`; one at a time keeps the upstream's order. */
-  #inFlight: string | null = null;
-  #retryMs = FIRST_RETRY_MS;
-  #timer: ReturnType<typeof setTimeout> | null = null;
-  #stopped = false;
-
-  constructor(group: Uint8Array, options: ReplicatorOptions) {
-    this.#group = group;
-    this.#store = options.store;
-    this.#relay = options.relay;
-    this.#url = relayUrl(options.upstream);
-    this.#now = options.now ?? Date.now;
-    this.#bucket = new TokenBucket(
-      options.pushBurst ?? 20,
-      options.pushesPerSecond ?? 2,
-      this.#now(),
-    );
-  }
-
-  start(): void {
-    const socket = new WebSocket(this.#url);
-    this.#socket = socket;
-    socket.on('open', () => {
-      const after = this.#store.upstreamCursor(this.#group);
-      socket.send(encodeRelayMessage({ t: 'join', group: this.#group, after }));
-    });
-    socket.on('message', (data) => {
-      const message = parseServerMessage(frameText(data));
-      if (message !== null) this.#handle(message);
-    });
-    socket.on('error', () => {
-      // A refused or broken connection also emits close, which retries.
-    });
-    socket.on('close', () => {
-      if (this.#socket !== socket) return;
-      this.#socket = null;
-      this.#synced = false;
-      this.#inFlight = null;
-      this.#retryLater();
-    });
-  }
-
-  stop(): void {
-    this.#stopped = true;
-    this.#clearTimer();
-    this.#socket?.close();
-    this.#socket = null;
-  }
-
-  /** Pushes the oldest envelope the upstream lacks, if the link is ready for it. */
-  pump(): void {
-    if (!this.#synced || this.#inFlight !== null || this.#timer !== null) return;
-    const pending = this.#store.nextPendingUpstream(this.#group);
-    if (pending === null) return;
-    if (!this.#bucket.take(this.#now())) {
-      this.#wait(1000);
+    const { relay, store } = this.#options;
+    if (relay.clientsIn(group) === 0 && store.nextPendingUpstream(group) === null) {
+      this.#release(id);
       return;
     }
-    this.#inFlight = toBase64url(pending.key);
-    this.#socket?.send(encodeRelayMessage({ t: 'push', key: pending.key, env: pending.env }));
-  }
-
-  #handle(message: ServerMessage): void {
-    switch (message.t) {
-      case 'env':
-        this.#relay.ingest(this.#group, message.key, message.env);
-        this.#store.setUpstreamCursor(this.#group, message.cursor);
-        return;
-      case 'synced':
-        this.#store.setUpstreamCursor(this.#group, message.cursor);
-        this.#synced = true;
-        this.#retryMs = FIRST_RETRY_MS;
-        this.pump();
-        return;
-      case 'stored':
-        this.#confirm(message.key);
-        return;
-      case 'error':
-        if (message.code === 'rate-limited') {
-          this.#inFlight = null;
-          this.#wait(RATE_LIMITED_WAIT_MS);
-        } else if (message.key !== null) {
-          // The upstream will never take this envelope; holding it would block the rest.
-          console.warn('Upstream refused an envelope', message.code);
-          this.#confirm(message.key);
-        }
-        return;
+    this.#wanted.set(id, { group, at: this.#now() });
+    const link = this.#links.get(id);
+    if (link !== undefined) {
+      link.pump();
+      return;
     }
+    if (this.#links.size >= (this.#options.maxLinks ?? MAX_LINKS)) {
+      if (!this.#warnedFull) console.warn('Too many groups to replicate: the least active wait');
+      this.#warnedFull = true;
+      const quietest = this.#quietestLinked();
+      if (quietest === null) return;
+      this.#links.get(quietest)?.stop();
+      this.#links.delete(quietest);
+    }
+    this.#open(id, group);
   }
 
-  #confirm(key: Uint8Array): void {
-    this.#store.markUpstreamStored(this.#group, key);
-    if (this.#inFlight === toBase64url(key)) this.#inFlight = null;
-    this.pump();
+  #open(id: string, group: Uint8Array): void {
+    if (this.#heartbeat === null) return;
+    const link = new UpstreamLink(group, this.#options, this.#heartbeat, () => {
+      this.#consider(group);
+    });
+    this.#links.set(id, link);
+    link.start();
   }
 
-  #wait(ms: number): void {
-    this.#timer = setTimeout(() => {
-      this.#timer = null;
-      this.pump();
-    }, ms);
+  /** Stops a group's link, if it has one, and hands it to the latest group waiting for one. */
+  #release(id: string): void {
+    this.#wanted.delete(id);
+    const link = this.#links.get(id);
+    if (link === undefined) return;
+    link.stop();
+    this.#links.delete(id);
+    const next = this.#latestWaiting();
+    if (next !== null) this.#open(next.id, next.group);
   }
 
-  #retryLater(): void {
-    if (this.#stopped) return;
-    this.#clearTimer();
-    const delay = this.#retryMs * (0.5 + Math.random());
-    this.#retryMs = Math.min(this.#retryMs * 2, MAX_RETRY_MS);
-    this.#timer = setTimeout(() => {
-      this.#timer = null;
-      this.start();
-    }, delay);
+  /** The linked group with the oldest activity. */
+  #quietestLinked(): string | null {
+    let quietest: { id: string; at: number } | null = null;
+    for (const id of this.#links.keys()) {
+      const at = this.#wanted.get(id)?.at ?? -Infinity;
+      if (quietest === null || at < quietest.at) quietest = { id, at };
+    }
+    return quietest?.id ?? null;
   }
 
-  #clearTimer(): void {
-    if (this.#timer !== null) clearTimeout(this.#timer);
-    this.#timer = null;
+  /** The waiting group with the latest activity. */
+  #latestWaiting(): { readonly id: string; readonly group: Uint8Array } | null {
+    let latest: { id: string; group: Uint8Array; at: number } | null = null;
+    for (const [id, { group, at }] of this.#wanted) {
+      if (!this.#links.has(id) && (latest === null || at > latest.at)) latest = { id, group, at };
+    }
+    return latest;
   }
 }

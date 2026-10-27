@@ -1,9 +1,10 @@
 // Gathers the official weather warnings of some countries and keeps them ready to serve, as the
 // JSON text of docs/protocol.md §8.4. Warnings are read every 10 minutes; region outlines are
 // looked for once a day and downloaded only when MeteoAlarm publishes a new file, which is kept
-// on disk so a restart does not download it again.
+// on disk so a restart does not download it again. Warnings that expire after a gathering are
+// left out when serving, and a document gathered too long ago is not served at all.
 
-import { readFile, writeFile } from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 
 import {
   highestLevel,
@@ -13,20 +14,28 @@ import {
   type WeatherWarnings,
 } from '@tesel/protocol';
 
+import { getJson, readJsonFile } from './get-json.ts';
 import { FEED_URLS, SOURCE, warningsByRegion } from './meteoalarm.ts';
-import { newestRegionsUrl, type Region, REGIONS_LISTING_URL, regionsOf } from './regions.ts';
+import { listRepository, newestRegionsUrl, type Region, regionsOf } from './regions.ts';
 
 const WARNINGS_EVERY_MS = 10 * 60 * 1000;
 const REGIONS_EVERY_MS = 24 * 60 * 60 * 1000;
-const REQUEST_TIMEOUT_MS = 60_000;
+/** Far more than a country's warnings feed takes. */
+const MAX_FEED_BYTES = 16 * 1024 * 1024;
+/** Room for MeteoAlarm's outlines of every region in Europe. */
+const MAX_OUTLINES_BYTES = 128 * 1024 * 1024;
+/** The outlines of our countries only, rounded, as this server keeps them. */
+const MAX_STORED_REGIONS_BYTES = 32 * 1024 * 1024;
 
 export interface WeatherWarningsOptions {
   /** ISO codes of the countries to gather, among those of FEED_URLS. */
   readonly countries: readonly string[];
   /** Where the region outlines are kept between runs, or null to keep them in memory only. */
   readonly regionsFile: string | null;
-  /** Reads a JSON document; tests replace it. */
-  readonly getJson?: (url: string) => Promise<unknown>;
+  /** Warnings gathered longer ago than this are not served. */
+  readonly maxAgeMinutes: number;
+  /** Reads a JSON document of at most `maxBytes`; tests replace it. */
+  readonly getJson?: (url: string, maxBytes: number) => Promise<unknown>;
   /** Milliseconds since the epoch. */
   readonly now?: () => number;
 }
@@ -38,15 +47,24 @@ interface StoredRegions {
   readonly regions: readonly (readonly [string, Region])[];
 }
 
+/** The document as served: its JSON text, valid until the first of its warnings expires. */
+interface Served {
+  readonly body: string;
+  /** Seconds since the epoch. */
+  readonly until: number;
+}
+
 export class WeatherWarningsService {
   readonly #countries: readonly string[];
   readonly #regionsFile: string | null;
-  readonly #getJson: (url: string) => Promise<unknown>;
+  readonly #maxAgeSeconds: number;
+  readonly #getJson: (url: string, maxBytes: number) => Promise<unknown>;
   readonly #now: () => number;
   #regions = new Map<string, Region>();
   #regionsSource: string | null = null;
   #regionsCheckedAt = -Infinity;
-  #body: string | null = null;
+  #document: WeatherWarnings | null = null;
+  #served: Served | null = null;
   /** The steps whose last try failed. */
   readonly #failing = new Set<string>();
   #timer: ReturnType<typeof setInterval> | null = null;
@@ -54,13 +72,22 @@ export class WeatherWarningsService {
   constructor(options: WeatherWarningsOptions) {
     this.#countries = options.countries;
     this.#regionsFile = options.regionsFile;
+    this.#maxAgeSeconds = options.maxAgeMinutes * 60;
     this.#getJson = options.getJson ?? getJson;
     this.#now = options.now ?? Date.now;
   }
 
-  /** The §8.4 document as JSON text, or null until the first gathering succeeds. */
-  get body(): string | null {
-    return this.#body;
+  /**
+   * The §8.4 document as JSON text, with the warnings still in force; null until the first
+   * gathering succeeds, and once the last success is older than the maximum age.
+   */
+  body(): string | null {
+    const document = this.#document;
+    if (document === null) return null;
+    const now = Math.floor(this.#now() / 1000);
+    if (now - document.updated > this.#maxAgeSeconds) return null;
+    if (this.#served === null || now >= this.#served.until) this.#served = serve(document, now);
+    return this.#served.body;
   }
 
   start(): void {
@@ -92,11 +119,11 @@ export class WeatherWarningsService {
   }
 
   async #refreshRegions(): Promise<void> {
-    const url = newestRegionsUrl(await this.#getJson(REGIONS_LISTING_URL));
+    const url = newestRegionsUrl(await listRepository(this.#getJson));
     if (url === null) throw new Error('MeteoAlarm lists no region outlines');
     this.#regionsCheckedAt = this.#now();
     if (url === this.#regionsSource) return;
-    this.#regions = regionsOf(await this.#getJson(url), this.#countries);
+    this.#regions = regionsOf(await this.#getJson(url, MAX_OUTLINES_BYTES), this.#countries);
     this.#regionsSource = url;
     await this.#storeRegions();
   }
@@ -108,7 +135,7 @@ export class WeatherWarningsService {
     const feeds = await Promise.all(
       this.#countries.flatMap((country) => {
         const url = FEED_URLS[country];
-        return url === undefined ? [] : [this.#getJson(url)];
+        return url === undefined ? [] : [this.#getJson(url, MAX_FEED_BYTES)];
       }),
     );
     const features: WarningRegion[] = [];
@@ -123,7 +150,7 @@ export class WeatherWarningsService {
         });
       }
     }
-    const document: WeatherWarnings = {
+    this.#document = {
       type: 'FeatureCollection',
       tesel: WEATHER_WARNINGS_KIND,
       version: WEATHER_WARNINGS_VERSION,
@@ -131,18 +158,21 @@ export class WeatherWarningsService {
       source: SOURCE,
       features,
     };
-    this.#body = JSON.stringify(document);
+    this.#served = null;
   }
 
   async #loadStoredRegions(): Promise<void> {
     if (this.#regionsFile === null) return;
     try {
-      const stored = JSON.parse(await readFile(this.#regionsFile, 'utf8')) as StoredRegions;
+      const stored = (await readJsonFile(
+        this.#regionsFile,
+        MAX_STORED_REGIONS_BYTES,
+      )) as StoredRegions;
       if (stored.countries.join() !== this.#countries.join()) return;
       this.#regions = new Map(stored.regions);
       this.#regionsSource = stored.source;
     } catch {
-      // None yet, or unreadable: the outlines are downloaded again.
+      // None yet, too large or unreadable: the outlines are downloaded again.
     }
   }
 
@@ -157,8 +187,15 @@ export class WeatherWarningsService {
   }
 }
 
-async function getJson(url: string): Promise<unknown> {
-  const response = await fetch(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
-  if (!response.ok) throw new Error(`${url} answered ${response.status}`);
-  return response.json();
+/** The document with only the warnings in force at `now` (seconds), as served until one expires. */
+function serve(document: WeatherWarnings, now: number): Served {
+  let until = Infinity;
+  const features = document.features.flatMap((region) => {
+    const warnings = region.properties.warnings.filter((warning) => warning.expires > now);
+    if (warnings.length === 0) return [];
+    for (const warning of warnings) until = Math.min(until, warning.expires);
+    const properties = { ...region.properties, level: highestLevel(warnings), warnings };
+    return [{ ...region, properties }];
+  });
+  return { body: JSON.stringify({ ...document, features }), until };
 }
