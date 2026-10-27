@@ -70,6 +70,6 @@
     width: 100%;
     height: auto;
     aspect-ratio: 3 / 2;
-    border-radius: 0.45rem;
+    border-radius: var(--radius-control);
   }
 </style>

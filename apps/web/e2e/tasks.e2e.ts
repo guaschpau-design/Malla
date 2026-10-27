@@ -28,7 +28,7 @@ test('a task at a point reaches its assignee, who starts and finishes it', async
   await task.getByRole('button', { name: 'Empezar' }).click();
   await expect(task).toContainText('En curso');
   await task.getByRole('button', { name: 'Hecha' }).click();
-  await expect(bertaTasks.getByText('No hay tareas pendientes.', { exact: false })).toBeVisible();
+  await expect(task).toBeHidden();
   await expect(berta.getByRole('button', { name: 'Tareas', exact: true })).toBeVisible();
 
   // Ana sees it done.

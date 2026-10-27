@@ -1,4 +1,4 @@
-<!-- Marks the point being looked at in the coordinates panel. -->
+<!-- Marks the point being looked at in the point panel, as a target (map/target-layers.ts). -->
 <script lang="ts">
   import type { LatLon } from '@tesel/protocol';
   import type { FeatureCollection } from 'geojson';
@@ -6,7 +6,7 @@
 
   import { toPosition } from '../map/geometry.ts';
   import { useOverlay } from '../map/overlay.svelte.ts';
-  import { themeColor } from '../ui/theme.ts';
+  import { targetLayers } from '../map/target-layers.ts';
 
   interface Props {
     map: MapLibreMap;
@@ -25,24 +25,6 @@
   useOverlay(() => map, {
     level: 'point',
     data: { [SOURCE]: () => features(point) },
-    layers: () => [
-      {
-        id: `${SOURCE}-ring`,
-        type: 'circle',
-        source: SOURCE,
-        paint: {
-          'circle-radius': 11,
-          'circle-color': 'transparent',
-          'circle-stroke-width': 3,
-          'circle-stroke-color': themeColor('ink'),
-        },
-      },
-      {
-        id: `${SOURCE}-centre`,
-        type: 'circle',
-        source: SOURCE,
-        paint: { 'circle-radius': 3, 'circle-color': themeColor('ink') },
-      },
-    ],
+    layers: () => targetLayers(SOURCE),
   });
 </script>

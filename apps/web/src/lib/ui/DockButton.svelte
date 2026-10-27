@@ -36,15 +36,15 @@
     place-items: center;
     min-width: 3rem;
     padding: 0.45rem 0.15rem 0.4rem;
-    font-size: 0.75rem;
+    font-size: var(--text-small);
     font-weight: 600;
     color: inherit;
     border: 0;
-    border-radius: 0.9rem;
+    border-radius: var(--radius-card);
   }
 
   .dock-button[aria-expanded='true'] {
-    background: rgb(230 235 232 / 14%);
+    background: var(--chrome-pressed);
   }
 
   .icon {
@@ -56,15 +56,15 @@
     position: absolute;
     top: -0.35rem;
     right: -0.6rem;
-    min-width: 1.05rem;
-    padding: 0 0.2rem;
-    font-size: 0.7rem;
+    min-width: 1.2rem;
+    padding: 0 0.25rem;
+    font-size: var(--text-small);
     font-weight: 800;
-    line-height: 1.05rem;
+    line-height: 1.2rem;
     color: var(--on-accent);
     text-align: center;
     background: var(--signal);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
   }
 
   .dock-button.on :global(svg) {

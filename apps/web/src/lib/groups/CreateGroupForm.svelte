@@ -78,7 +78,7 @@
   summary {
     cursor: pointer;
     color: var(--muted);
-    font-size: 0.9rem;
+    font-size: var(--text-secondary);
   }
 
   details .stack {

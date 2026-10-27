@@ -86,7 +86,7 @@
     display: grid;
     gap: 0.35rem;
     padding: 0.3rem 0.3rem 0.4rem;
-    font-size: 0.9rem;
+    font-size: var(--text-secondary);
     font-weight: 600;
     text-align: center;
     border-width: 2px;

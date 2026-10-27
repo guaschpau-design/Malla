@@ -168,10 +168,6 @@
 </form>
 
 <style>
-  h3 {
-    font-size: 1rem;
-  }
-
   textarea,
   select {
     display: block;
@@ -189,7 +185,7 @@
   legend {
     margin-bottom: 0.4rem;
     padding: 0;
-    font-size: 0.9rem;
+    font-size: var(--text-secondary);
   }
 
   .chip {
@@ -197,9 +193,9 @@
     gap: 0.35rem;
     align-items: center;
     padding: 0.35rem 0.7rem;
-    font-size: 0.9rem;
+    font-size: var(--text-secondary);
     border: 1px solid var(--border);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
   }
 
   .chip:has(input:checked) {
@@ -213,7 +209,7 @@
     flex-wrap: wrap;
     gap: 0.4rem 0.75rem;
     align-items: center;
-    font-size: 0.9rem;
+    font-size: var(--text-secondary);
   }
 
   .coordinates {

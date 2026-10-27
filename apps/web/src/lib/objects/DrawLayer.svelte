@@ -5,6 +5,7 @@
   import { onMount } from 'svelte';
 
   import { useOverlay } from '../map/overlay.svelte.ts';
+  import { targetLayers } from '../map/target-layers.ts';
   import { themeColor } from '../ui/theme.ts';
   import { draftFeatures } from './draft-features.ts';
 
@@ -22,34 +23,24 @@
   const SOURCE = 'tesel-draft';
   const data = $derived(draftFeatures(points, closed));
 
-  // A drawing in progress: an ink dashed line, with this device's lime on its points.
+  // A drawing in progress: a dashed line, and each point as a target (map/target-layers.ts).
   useOverlay(() => map, {
     level: 'draft',
     data: { [SOURCE]: () => data },
-    layers: () => {
-      const ink = themeColor('ink');
-      return [
-        {
-          id: `${SOURCE}-line`,
-          type: 'line',
-          source: SOURCE,
-          filter: ['==', ['geometry-type'], 'LineString'],
-          paint: { 'line-color': ink, 'line-width': 3, 'line-dasharray': [2, 1] },
+    layers: () => [
+      {
+        id: `${SOURCE}-line`,
+        type: 'line',
+        source: SOURCE,
+        filter: ['==', ['geometry-type'], 'LineString'],
+        paint: {
+          'line-color': themeColor('map-text'),
+          'line-width': 2,
+          'line-dasharray': [3, 1.5],
         },
-        {
-          id: `${SOURCE}-point`,
-          type: 'circle',
-          source: SOURCE,
-          filter: ['==', ['geometry-type'], 'Point'],
-          paint: {
-            'circle-radius': 6,
-            'circle-color': themeColor('self'),
-            'circle-stroke-width': 2.5,
-            'circle-stroke-color': ink,
-          },
-        },
-      ];
-    },
+      },
+      ...targetLayers(SOURCE, ['==', ['geometry-type'], 'Point']),
+    ],
   });
 
   function onClick(event: MapMouseEvent): void {

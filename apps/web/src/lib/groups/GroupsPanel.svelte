@@ -136,7 +136,7 @@
     justify-content: space-between;
     padding: 0.4rem 0.4rem 0.4rem 0.85rem;
     border: 1px solid var(--border);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-card);
   }
 
   .actions {
@@ -155,12 +155,12 @@
 
   .practice {
     justify-self: center;
-    font-size: 0.9rem;
+    font-size: var(--text-secondary);
     border-color: transparent;
   }
 
   .device {
     margin-top: 0.5rem;
-    font-size: 0.8rem;
+    font-size: var(--text-small);
   }
 </style>

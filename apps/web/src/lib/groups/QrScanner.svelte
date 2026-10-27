@@ -61,6 +61,6 @@
     aspect-ratio: 1;
     object-fit: cover;
     background: #000;
-    border-radius: 0.75rem;
+    border-radius: var(--radius-card);
   }
 </style>

@@ -17,6 +17,6 @@
     display: block;
     width: min(100%, 18rem);
     margin: 0 auto;
-    border-radius: 0.5rem;
+    border-radius: var(--radius-control);
   }
 </style>

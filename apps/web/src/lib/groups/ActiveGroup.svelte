@@ -51,7 +51,7 @@
     gap: 0.75rem;
     padding: 0.85rem;
     border: 2px solid var(--accent-line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius-card);
   }
 
   header {
@@ -60,7 +60,7 @@
     gap: 0.5rem;
     align-items: center;
     justify-content: space-between;
-    font-size: 1.1rem;
+    font-size: var(--text-title);
   }
 
   .role {

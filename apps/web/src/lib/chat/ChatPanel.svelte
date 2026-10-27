@@ -192,9 +192,9 @@
   .count {
     margin-left: 0.35rem;
     padding: 0 0.4rem;
-    font-size: 0.75rem;
+    font-size: var(--text-small);
     border: 1px solid currentcolor;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
   }
 
   .messages {
@@ -214,7 +214,7 @@
     padding: 0.45rem 0.7rem;
     background: var(--bg);
     border: 1px solid var(--border);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-card);
   }
 
   li.own {
@@ -239,7 +239,7 @@
 
   .meta {
     color: var(--muted);
-    font-size: 0.75rem;
+    font-size: var(--text-small);
   }
 
   .text {

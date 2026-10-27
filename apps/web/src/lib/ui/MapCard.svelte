@@ -1,32 +1,17 @@
 <!-- A card at the top of the map for what is going on now: drawing, measuring, navigating. The
-     workspace stacks it with the incident banners. -->
+     workspace stacks it with the incident banners, which share its look (.map-card in app.css). -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
   interface Props {
+    /** A colour of meaning for its edge, e.g. `var(--info)`; none by default. */
+    edge?: string;
     children: Snippet;
   }
 
-  let { children }: Props = $props();
+  let { edge, children }: Props = $props();
 </script>
 
-<div class="map-card" role="status">
+<div class={['map-card', edge && 'edged']} style:--edge={edge} role="status">
   {@render children()}
 </div>
-
-<style>
-  .map-card {
-    display: grid;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    color: var(--fg);
-    background: var(--surface);
-    border-radius: 0.75rem;
-    pointer-events: auto;
-    box-shadow: 0 4px 16px rgb(0 0 0 / 25%);
-  }
-
-  .map-card :global(p) {
-    margin: 0;
-  }
-</style>

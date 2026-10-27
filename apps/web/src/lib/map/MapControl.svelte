@@ -1,4 +1,4 @@
-<!-- Shows its content among the map's own controls (zoom, compass), in one of the map's corners. -->
+<!-- Shows its content as a group of the map's controls, in one of the map's corners. -->
 <script lang="ts">
   import type { ControlPosition, IControl, Map as MapLibreMap } from 'maplibre-gl';
   import { onMount, type Snippet } from 'svelte';
@@ -29,17 +29,32 @@
 </div>
 
 <style>
-  /* Buttons sized and coloured like MapLibre's own (zoom, compass). */
+  /* Chrome, like the dock: ink, round like what floats on the map, with buttons a finger can hit.
+     MapLibre's own look for control groups is replaced. */
+  div {
+    overflow: hidden;
+    color: var(--chrome-fg);
+    background: var(--chrome-bg);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-float);
+  }
+
   div :global(button) {
     display: grid;
     place-items: center;
+    width: var(--control-size);
+    height: var(--control-size);
     padding: 0;
-    color: var(--ink);
+    color: inherit;
     border: 0;
     border-radius: 0;
   }
 
   div :global(button + button) {
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--chrome-line);
+  }
+
+  div :global(button:hover) {
+    background: var(--chrome-pressed);
   }
 </style>

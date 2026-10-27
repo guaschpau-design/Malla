@@ -101,7 +101,7 @@
   legend {
     margin-bottom: 0.4rem;
     padding: 0;
-    font-size: 0.9rem;
+    font-size: var(--text-secondary);
   }
 
   .choices {
@@ -116,11 +116,11 @@
     gap: 0.5rem;
     align-items: center;
     padding: 0.35rem 0.5rem;
-    font-size: 0.85rem;
+    font-size: var(--text-secondary);
     line-height: 1.2;
     cursor: pointer;
     border: 1px solid var(--border);
-    border-radius: 0.5rem;
+    border-radius: var(--radius-control);
   }
 
   .choice:has(input:checked) {

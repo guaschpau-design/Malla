@@ -46,10 +46,10 @@
     align-items: center;
     margin-right: auto;
     padding: 0.3rem 0.65rem;
-    font-size: 0.85rem;
+    font-size: var(--text-secondary);
     font-weight: 600;
     color: inherit;
     white-space: nowrap;
-    border-color: rgb(230 235 232 / 25%);
+    border-color: var(--chrome-line);
   }
 </style>

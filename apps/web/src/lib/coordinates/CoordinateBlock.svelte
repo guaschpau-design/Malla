@@ -52,7 +52,7 @@
 
   output {
     font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-    font-size: 1.1rem;
+    font-size: var(--text-title);
     font-variant-numeric: tabular-nums;
   }
 
@@ -65,6 +65,6 @@
   select {
     width: auto;
     padding: 0.3rem 0.5rem;
-    font-size: 0.85rem;
+    font-size: var(--text-secondary);
   }
 </style>

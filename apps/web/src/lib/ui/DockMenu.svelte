@@ -62,8 +62,8 @@
     padding: 0.4rem;
     color: var(--fg);
     background: var(--surface);
-    border-radius: 0.75rem;
-    box-shadow: 0 4px 16px rgb(0 0 0 / 30%);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-float);
   }
 
   /* Items are buttons with a pictogram, a name and, for a choice, its switch. */

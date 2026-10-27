@@ -36,7 +36,7 @@
     align-items: start;
     padding: 0.85rem;
     border: 1px solid var(--border);
-    border-radius: 0.9rem;
+    border-radius: var(--radius-card);
   }
 
   .channel.ok {
@@ -49,7 +49,7 @@
     width: 3rem;
     height: 3rem;
     background: var(--bg);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-card);
   }
 
   .ok .sign {
@@ -63,13 +63,13 @@
   }
 
   strong {
-    font-size: 1.1rem;
+    font-size: var(--text-title);
   }
 
   .status {
     display: flex;
     gap: 0.45rem;
     align-items: center;
-    font-size: 0.9rem;
+    font-size: var(--text-secondary);
   }
 </style>

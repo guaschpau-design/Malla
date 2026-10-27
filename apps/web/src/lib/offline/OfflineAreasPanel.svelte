@@ -196,7 +196,7 @@
     margin: 1rem 0;
     padding: 0.9rem;
     border: 1px solid var(--border);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-card);
   }
 
   progress {
@@ -214,7 +214,7 @@
   .extras legend {
     margin-bottom: 0.25rem;
     padding: 0;
-    font-size: 0.9rem;
+    font-size: var(--text-secondary);
   }
 
   .check {

@@ -106,7 +106,7 @@
   }
 
   .diary .hint {
-    font-size: 0.8rem;
+    font-size: var(--text-small);
   }
 
   /* A file input that looks like the buttons beside it. */
@@ -115,7 +115,7 @@
     padding: 0.5rem 0.8rem;
     cursor: pointer;
     border: 1px solid var(--border);
-    border-radius: 0.5rem;
+    border-radius: var(--radius-control);
   }
 
   .file input {

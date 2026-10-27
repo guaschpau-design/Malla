@@ -124,6 +124,8 @@ export const GLYPHS = {
     'M7.5 3.5h9a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 19V5a1.5 1.5 0 0 1 1.5-1.5z',
     'M11 17.5h2',
   ]),
+  /** A compass needle: north filled, south outlined. */
+  compass: glyph(['M8.2 12L12 20.5 15.8 12'], ['M12 3.5L15.8 12H8.2z']),
   /** Points up; turned to show a direction. */
   heading: glyph([], ['M12 2.5l7 18-7-4.2-7 4.2z']),
 } satisfies Record<string, Glyph>;

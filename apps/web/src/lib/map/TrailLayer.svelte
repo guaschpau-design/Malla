@@ -30,7 +30,7 @@
         source: SOURCE,
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: {
-          'line-color': ['case', ['get', 'self'], themeColor('ink'), themeColor('member')],
+          'line-color': ['case', ['get', 'self'], themeColor('map-text'), themeColor('member')],
           'line-width': 3,
           'line-opacity': 0.55,
         },

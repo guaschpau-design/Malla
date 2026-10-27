@@ -80,7 +80,7 @@
 
 <div class="banners">
   {#each calls as call (call.key)}
-    <section class="banner sos" aria-label="SOS">
+    <section class="map-card edged sos" aria-label="SOS">
       <strong>SOS · {call.author} · {t(SOS_KINDS[call.event.kind])}</strong>
       <span class="when">{formatTime(call.event.time * 1000, locale)}</span>
       {#if call.event.text}<p>{call.event.text}</p>{/if}
@@ -108,9 +108,10 @@
   {/each}
   {#if rollCall}
     {@const call = rollCall}
-    <section class="banner roll-call" aria-label={t('rollCall')}>
+    <section class="map-card edged roll-call" aria-label={t('rollCall')}>
       <strong>{t('rollCall')} · {call.caller}</strong>
       <span class="when">{formatTime(call.event.time * 1000, locale)}</span>
+      <p class="question">{call.event.text || t('rollCallQuestion')}</p>
       {#if call.mine}
         <p>
           {t('rollCallAnswered', {
@@ -127,7 +128,6 @@
           <button onclick={() => dismissed.add(call.key)}>{t('close')}</button>
         </div>
       {:else}
-        <p>{call.event.text || t('rollCallQuestion')}</p>
         <div class="row">
           <button class="primary" onclick={() => onacknowledge(call.event)}>{t('imWell')}</button>
           <button class="danger" onclick={onneedhelp}>{t('needHelp')}</button>
@@ -137,7 +137,7 @@
   {/if}
   {#each alerts as alert (alert.key)}
     <section
-      class="banner alert level-{alert.event.level}"
+      class="map-card edged level-{alert.event.level}"
       aria-label={t(ALERT_LEVELS[alert.event.level])}
     >
       <strong>{t(ALERT_LEVELS[alert.event.level])} · {alert.author}</strong>
@@ -172,44 +172,38 @@
     pointer-events: none;
   }
 
-  .banner {
-    display: grid;
+  /* The shared card (.map-card in app.css), its edge in the colour of each kind. Level classes
+     are prefixed: a plain `.warning` is the app's error text. */
+  .sos,
+  .level-critical {
+    --edge: var(--danger);
+  }
+
+  .level-warning {
+    --edge: var(--warning);
+  }
+
+  .level-info,
+  .roll-call {
+    --edge: var(--info);
+  }
+
+  /* Tighter than other cards: several may stack. */
+  .map-card {
     gap: 0.3rem;
-    padding: 0.7rem 0.8rem;
-    color: var(--fg);
-    pointer-events: auto;
-    background: var(--surface);
-    border-left: 6px solid var(--muted);
-    border-radius: 0.75rem;
-    box-shadow: 0 4px 16px rgb(0 0 0 / 25%);
   }
 
-  /* Level classes are prefixed: a plain `.warning` is the app's error text (app.css). */
-  .banner.sos,
-  .banner.level-critical {
-    border-left-color: var(--danger);
-  }
-
-  .banner.level-warning {
-    border-left-color: var(--warning);
-  }
-
-  .banner.level-info,
-  .banner.roll-call {
-    border-left-color: var(--info);
+  .question {
+    font-weight: 600;
   }
 
   .sos strong {
     color: var(--danger);
   }
 
-  p {
-    margin: 0;
-  }
-
   .when,
   .acks {
     color: var(--muted);
-    font-size: 0.85rem;
+    font-size: var(--text-secondary);
   }
 </style>

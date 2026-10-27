@@ -19,6 +19,7 @@
   import { MAP_LAYERS, type MapLayer } from '../map/layers.ts';
   import { onLongPress } from '../map/long-press.ts';
   import LayersPanel from '../map/LayersPanel.svelte';
+  import CompassButton from '../map/CompassButton.svelte';
   import MapControl from '../map/MapControl.svelte';
   import MemberLayer from '../map/MemberLayer.svelte';
   import TrailLayer from '../map/TrailLayer.svelte';
@@ -413,6 +414,7 @@
   {/if}
 </div>
 <MapControl {map}>
+  <CompassButton {t} {map} />
   <LocateButton {t} {map} {location} />
   <button
     aria-label={t('layers')}
@@ -444,12 +446,12 @@
 {/if}
 
 <style>
-  /* Clear of the map's own controls on the right, which are 29 px wide with a 10 px margin. */
+  /* Clear of the map's controls on the right: one control wide, with MapLibre's 10 px margin. */
   .top {
     position: absolute;
     z-index: 2;
     top: 0.75rem;
-    right: 3.25rem;
+    right: calc(var(--control-size) + 1.25rem);
     left: 0.75rem;
     display: grid;
     gap: 0.5rem;

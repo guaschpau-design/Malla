@@ -61,12 +61,12 @@
   .source,
   summary {
     color: var(--muted);
-    font-size: 0.85rem;
+    font-size: var(--text-secondary);
   }
 
   details p {
     margin: 0.25rem 0 0;
-    font-size: 0.9rem;
+    font-size: var(--text-secondary);
   }
 
   .source {

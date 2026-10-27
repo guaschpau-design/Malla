@@ -36,8 +36,8 @@
     color: var(--fg);
     background: var(--surface);
     border: none;
-    border-radius: 1rem;
-    box-shadow: 0 8px 32px rgb(0 0 0 / 35%);
+    border-radius: var(--radius-sheet);
+    box-shadow: var(--shadow-dialog);
   }
 
   dialog::backdrop {
@@ -46,6 +46,6 @@
 
   h2 {
     margin: 0 0 0.75rem;
-    font-size: 1.2rem;
+    font-size: var(--text-title);
   }
 </style>

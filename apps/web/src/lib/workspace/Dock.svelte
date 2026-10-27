@@ -94,11 +94,11 @@
     gap: 0.15rem;
     max-width: 24rem;
     padding: 0.25rem;
-    color: var(--bar-fg);
+    color: var(--chrome-fg);
     pointer-events: auto;
-    background: var(--bar-bg);
-    border-radius: 1.15rem;
-    box-shadow: 0 4px 16px rgb(0 0 0 / 30%);
+    background: var(--chrome-bg);
+    border-radius: var(--radius-sheet);
+    box-shadow: var(--shadow-float);
   }
 
   .sos {
@@ -112,7 +112,7 @@
     background: var(--danger);
     border: 3px solid #fff;
     border-radius: 50%;
-    box-shadow: 0 4px 16px rgb(0 0 0 / 35%);
+    box-shadow: var(--shadow-float);
   }
 
   /* Room for five buttons beside the SOS on the narrowest phones. */

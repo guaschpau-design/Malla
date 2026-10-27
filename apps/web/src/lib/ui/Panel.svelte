@@ -34,8 +34,8 @@
     padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
     background: var(--surface);
     color: var(--fg);
-    border-radius: 1rem 1rem 0 0;
-    box-shadow: 0 -4px 24px rgb(0 0 0 / 25%);
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+    box-shadow: var(--shadow-sheet);
   }
 
   @media (min-width: 48rem) {
@@ -46,7 +46,7 @@
       left: auto;
       width: 24rem;
       max-height: calc(100dvh - 6rem);
-      border-radius: 1rem;
+      border-radius: var(--radius-sheet);
     }
   }
 
@@ -58,6 +58,6 @@
 
   h2 {
     margin: 0;
-    font-size: 1.15rem;
+    font-size: var(--text-title);
   }
 </style>

@@ -72,12 +72,13 @@
 </button>
 
 <style>
-  /* The buttons stay white in the dark theme, where the accent line is lime: use the deep shade. */
-  .locate.follow {
-    color: var(--signal-deep);
+  /* On the ink of the map's controls, as on the dock: lime when shown, filled while following. */
+  .locate.show {
+    color: var(--signal);
   }
 
-  .locate.show {
-    color: var(--info);
+  .locate.follow {
+    color: var(--on-accent);
+    background: var(--signal);
   }
 </style>

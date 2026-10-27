@@ -36,30 +36,31 @@
   useOverlay(() => map, {
     level: 'navigation',
     data: { [SOURCE]: () => features(from, to) },
-    layers: () => {
-      const ink = themeColor('ink');
-      return [
-        {
-          id: `${SOURCE}-line`,
-          type: 'line',
-          source: SOURCE,
-          filter: ['==', ['geometry-type'], 'LineString'],
-          layout: { 'line-cap': 'round' },
-          paint: { 'line-color': ink, 'line-width': 3, 'line-dasharray': [0.5, 2] },
+    layers: () => [
+      {
+        id: `${SOURCE}-line`,
+        type: 'line',
+        source: SOURCE,
+        filter: ['==', ['geometry-type'], 'LineString'],
+        layout: { 'line-cap': 'round' },
+        paint: {
+          'line-color': themeColor('map-text'),
+          'line-width': 3,
+          'line-dasharray': [0.5, 2],
         },
-        {
-          id: `${SOURCE}-target`,
-          type: 'circle',
-          source: SOURCE,
-          filter: ['==', ['geometry-type'], 'Point'],
-          paint: {
-            'circle-radius': 14,
-            'circle-color': 'transparent',
-            'circle-stroke-width': 3,
-            'circle-stroke-color': themeColor('accent-line'),
-          },
+      },
+      {
+        id: `${SOURCE}-target`,
+        type: 'circle',
+        source: SOURCE,
+        filter: ['==', ['geometry-type'], 'Point'],
+        paint: {
+          'circle-radius': 14,
+          'circle-color': 'transparent',
+          'circle-stroke-width': 3,
+          'circle-stroke-color': themeColor('accent-line'),
         },
-      ];
-    },
+      },
+    ],
   });
 </script>

@@ -318,8 +318,8 @@
     gap: 0.75rem;
     align-items: center;
     padding: calc(0.5rem + env(safe-area-inset-top)) 1rem 0.5rem;
-    color: var(--bar-fg);
-    background: var(--bar-bg);
+    color: var(--chrome-fg);
+    background: var(--chrome-bg);
   }
 
   .brand {
@@ -361,6 +361,6 @@
     color: inherit;
     text-overflow: ellipsis;
     white-space: nowrap;
-    border-color: rgb(230 235 232 / 25%);
+    border-color: var(--chrome-line);
   }
 </style>

@@ -8,7 +8,7 @@
   import MapCard from '../ui/MapCard.svelte';
   import WarningList from './WarningList.svelte';
   import type { WeatherFeed } from './weather-feed.svelte.ts';
-  import { warningsAt } from './weather-warnings.ts';
+  import { WARNING_LOOKS, warningsAt } from './weather-warnings.ts';
 
   interface Props {
     t: Translate;
@@ -26,8 +26,9 @@
   const shown = $derived(keys.some((key) => !dismissed.has(key)));
 </script>
 
-{#if shown}
-  <MapCard>
+{#if shown && here[0]}
+  <!-- The highest level here, first in the list, colours the card's edge. -->
+  <MapCard edge="var(--tone-{WARNING_LOOKS[here[0].level].tone})">
     <strong>{t('weatherHere')}</strong>
     <WarningList {t} {locale} warnings={here} source={weather.source} />
     <div class="row">

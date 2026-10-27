@@ -88,7 +88,7 @@
   .roles button {
     padding: 0.35rem 0.8rem;
     text-transform: capitalize;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
   }
 
   .roles button[aria-checked='true'] {
@@ -98,7 +98,7 @@
   }
 
   .link {
-    font-size: 0.8rem;
+    font-size: var(--text-small);
     color: var(--muted);
   }
 </style>

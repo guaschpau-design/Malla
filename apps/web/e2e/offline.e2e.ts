@@ -42,7 +42,7 @@ test('a downloaded area keeps working after going offline and reloading', async 
   // Only the map drawing is compared; UI text depends on the system fonts of each machine.
   await expect(page.locator('.maplibregl-map')).toHaveScreenshot('offline-valencia.png', {
     maxDiffPixelRatio: 0.05,
-    mask: [page.locator('.maplibregl-ctrl'), page.locator('.fab'), page.locator('button.sos')],
+    mask: [page.locator('.maplibregl-ctrl'), page.locator('.dock'), page.locator('button.sos')],
   });
 });
 

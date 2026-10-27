@@ -101,9 +101,7 @@
           }}
         />
       </div>
-      {#if list.pending.length === 0}
-        <p class="hint">{t('tasksEmpty')}</p>
-      {:else}
+      {#if list.pending.length > 0}
         <ul class="cards">
           {#each list.pending as row (row.key)}{@render item(row)}{/each}
         </ul>
@@ -157,7 +155,7 @@
     flex-wrap: wrap;
     gap: 0.3rem;
     align-items: center;
-    font-size: 0.8rem;
+    font-size: var(--text-small);
     color: var(--muted);
   }
 
