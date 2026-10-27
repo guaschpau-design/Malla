@@ -15,7 +15,7 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 - A measuring tool for distances along a path and the area it encloses; lines, areas and circles show their length, area or radius.
 - Members on the map can be tapped for who they are, their last position and the way there.
 - Trails: where each member has been in the last hours, drawn from the positions they share. Hiding one's position hides the trail up to that moment too.
-- Map layers: members, trails, markers and zones, tasks, services and weather warnings can each be hidden; the choice is remembered. This device and SOS calls are always shown.
+- Map layers: members, trails, markers and zones, tasks, services and weather warnings can each be hidden; the choice is remembered. The panel groups its switches by what they are about: the team, the surroundings, and finding one's way (radar, MGRS grid). This device and SOS calls are always shown.
 - What reaches this device from each member, and how: a member's details say when something of theirs last arrived by radio, through the server or through a command post, and the members list marks those whose news arrives by radio.
 - Keep the screen on, as an option, and always while guiding to a target.
 - The operation diary: everything that happened in the group, in order and in plain words, downloadable as text for the report ([ADR-0022](docs/decisions/0022-log-files.md)).
