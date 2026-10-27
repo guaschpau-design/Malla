@@ -1,6 +1,6 @@
 // Plays a scenario on a group, for a demonstration or to try the app with company:
 //
-//   pnpm --filter @tesel/simulator start -- '<invitation link>' [--scenario turia]
+//   pnpm --filter @tesel/simulator start '<invitation link>' [--scenario turia]
 //     [--speed 1 | --speed instant] [--positions 10]
 //
 // The invitation link is the one the app shows under Groups → Invite; it carries the group and

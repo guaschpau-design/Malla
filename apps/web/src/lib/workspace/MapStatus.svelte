@@ -138,7 +138,7 @@
   /* Clear of the map's controls on the right: one control wide, with MapLibre's 10 px margin. */
   .top {
     position: absolute;
-    z-index: 2;
+    z-index: var(--layer-status);
     top: 0.75rem;
     right: calc(var(--control-size) + 1.25rem);
     left: 0.75rem;

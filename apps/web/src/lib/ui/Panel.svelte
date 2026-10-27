@@ -25,7 +25,7 @@
 <style>
   .panel {
     position: absolute;
-    z-index: 2;
+    z-index: var(--layer-panel);
     right: 0;
     bottom: 0;
     left: 0;

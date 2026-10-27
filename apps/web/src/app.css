@@ -74,6 +74,12 @@
   --text-small: 0.8rem;
   --text-secondary: 0.9rem;
   --text-title: 1.15rem;
+  /* What covers what over the map, bottom to top: the dock, what is going on now (cards and
+     banners), the panels, and what pops over everything (menus, notices). */
+  --layer-dock: 1;
+  --layer-status: 2;
+  --layer-panel: 3;
+  --layer-popup: 4;
   /* The height of a button, an input or a map control: large enough for a gloved finger. */
   --control-size: 2.75rem;
 }

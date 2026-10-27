@@ -41,10 +41,7 @@ test('a common task, for anyone, is taken by whoever starts it', async ({ browse
   await ana.getByRole('button', { name: 'Tareas' }).click();
   const anaTasks = ana.getByRole('region', { name: 'Tareas' });
   await anaTasks.getByRole('button', { name: 'Nueva tarea' }).click();
-  await anaTasks
-    .getByRole('group', { name: 'Habituales' })
-    .getByRole('button', { name: 'Llevar material' })
-    .click();
+  await anaTasks.getByLabel('Tarea habitual').selectOption({ label: 'Llevar material' });
   await expect(anaTasks.getByLabel('Qué hay que hacer')).toHaveValue('Llevar material');
   await anaTasks.getByRole('button', { name: 'Guardar' }).click();
   await expect(anaTasks.getByText('Para cualquiera')).toBeVisible();

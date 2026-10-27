@@ -6,16 +6,16 @@ It serves three purposes:
 
 | Use            | How                                                                                                                           |
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Demonstrations | `pnpm --filter @tesel/simulator start -- '<invitation link>'` plays the Turia scenario in real time on that group             |
+| Demonstrations | `pnpm --filter @tesel/simulator start '<invitation link>'` plays the Turia scenario in real time on that group                |
 | Load tests     | `syntheticOperation()` produces thousands of events of a long operation; `apps/web/e2e/catch-up.e2e.ts` feeds them to the app |
-| Screenshots    | `pnpm --filter @tesel/simulator screenshots -- --app <url>/app/` takes the images of the app the site shows                   |
+| Screenshots    | `pnpm --filter @tesel/simulator screenshots --app <url>/app/` takes the images of the app the site shows                      |
 
 ## Playing a scenario
 
 Create a group in the app, open **Grupos → Invitar** and copy the link. Then:
 
 ```sh
-pnpm --filter @tesel/simulator start -- 'https://tesel.eu/app/join#…' --speed 10
+pnpm --filter @tesel/simulator start 'https://tesel.eu/app/join#…' --speed 10
 ```
 
 | Option        | Meaning                                                                                              |

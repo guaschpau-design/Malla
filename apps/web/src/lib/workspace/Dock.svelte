@@ -77,7 +77,7 @@
 <style>
   .bottom {
     position: absolute;
-    z-index: 1;
+    z-index: var(--layer-dock);
     right: 0.75rem;
     bottom: calc(2.25rem + env(safe-area-inset-bottom));
     left: 0.75rem;

@@ -1,7 +1,7 @@
 // Takes the screenshots of the app that the site shows (apps/site/img): Ana coordinates in a real
 // browser, the rest of the team is the Turia scenario played by simulated devices.
 //
-//   pnpm --filter @tesel/simulator screenshots -- --app http://localhost:8080/app/ --out shots
+//   pnpm --filter @tesel/simulator screenshots --app http://localhost:8080/app/ --out shots
 //     [--tiles tiles.json]
 //
 // The app must be built for its own server (VITE_SERVER_URL=/), as in the server image. Its base
@@ -110,7 +110,7 @@ try {
 async function showView(page: Page, hash: string): Promise<void> {
   await page.goto(`${values.app}#map=${hash}`);
   await page.waitForTimeout(3000);
-  for (const close of await page.locator('button', { hasText: /^Cerrar$/ }).all()) {
+  for (const close of await page.getByRole('button', { name: 'Cerrar', exact: true }).all()) {
     await close.click();
   }
   await page.waitForTimeout(500);

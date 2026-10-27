@@ -12,7 +12,7 @@
 <style>
   .toast {
     position: absolute;
-    z-index: 3;
+    z-index: var(--layer-popup);
     top: 4rem;
     left: 50%;
     display: flex;

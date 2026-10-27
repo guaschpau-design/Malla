@@ -1,5 +1,5 @@
-<!-- Adds a task or changes one: only the text is needed, typed or picked from the common ones;
-     who and the place are optional. -->
+<!-- Adds a task or changes one: only the text is needed, typed or picked from the common ones in
+     a drop-down; who and the place are optional. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
   import {
@@ -111,18 +111,30 @@
   }}
 >
   <h3>{existing ? t('editTask') : t('newTask')}</h3>
+  {#if !existing}
+    <!-- One line, whatever the screen: the phone's own picker lists the common tasks. -->
+    <label>
+      {t('taskPresets')}
+      <select
+        value=""
+        onchange={(event) => {
+          const preset = event.currentTarget.value;
+          if (preset !== '') text = preset;
+          event.currentTarget.value = '';
+        }}
+      >
+        <option value="">{t('taskPresetPick')}</option>
+        {#each TASK_PRESETS as preset (preset)}
+          <option value={t(preset)}>{t(preset)}</option>
+        {/each}
+      </select>
+    </label>
+  {/if}
   <label>
     {t('taskText')}
     <!-- svelte-ignore a11y_autofocus -->
     <textarea bind:value={text} rows="2" required autofocus={!existing}></textarea>
   </label>
-  {#if !existing && text.trim() === ''}
-    <div class="row" role="group" aria-label={t('taskPresets')}>
-      {#each TASK_PRESETS as preset (preset)}
-        <button type="button" class="chip" onclick={() => (text = t(preset))}>{t(preset)}</button>
-      {/each}
-    </div>
-  {/if}
   {#if tooLong}<p class="warning">{t('taskTooLong')}</p>{/if}
   <label>
     {t('taskAssignee')}
@@ -201,8 +213,7 @@
     display: inline-flex;
     gap: 0.35rem;
     align-items: center;
-    min-height: auto;
-    padding: 0.45rem 0.75rem;
+    padding: 0.35rem 0.7rem;
     font-size: var(--text-secondary);
     border: 1px solid var(--border);
     border-radius: var(--radius-pill);

@@ -53,7 +53,7 @@
 
   .menu {
     position: absolute;
-    z-index: 3;
+    z-index: var(--layer-popup);
     right: 0;
     bottom: calc(100% + 0.75rem);
     display: grid;
