@@ -85,3 +85,20 @@ export async function openMore(page: Page, item: string): Promise<void> {
   await page.getByRole('button', { name: 'Más' }).click();
   await page.getByRole('menuitem', { name: item }).click();
 }
+
+/** A setting as stored on the device: a choice is stored a moment after the tap. */
+export function storedSetting(page: Page, key: string): Promise<unknown> {
+  return page.evaluate(
+    (setting) =>
+      new Promise((resolve) => {
+        const open = indexedDB.open('tesel');
+        open.onsuccess = () => {
+          const read = open.result.transaction('settings').objectStore('settings').get(setting);
+          read.onsuccess = () => {
+            resolve(read.result);
+          };
+        };
+      }),
+    key,
+  );
+}

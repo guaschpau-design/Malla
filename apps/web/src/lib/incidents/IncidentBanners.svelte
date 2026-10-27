@@ -18,8 +18,10 @@
     self: NodeId;
     /** Whether this device may cancel other members' SOS calls (coordinators). */
     canCancelOthers: boolean;
-    onacknowledge: (target: EventRef) => Promise<void>;
-    oncancel: (sos: EventRef) => Promise<void>;
+    onacknowledge: (target: EventRef) => void;
+    oncancel: (sos: EventRef) => void;
+    /** Own events that have reached no one yet, by event reference key. */
+    undelivered: ReadonlySet<string>;
     onshow: (at: LatLon) => void;
     /** Answers a roll call with "I need help": opens the SOS dialog. */
     onneedhelp: () => void;
@@ -33,6 +35,7 @@
     canCancelOthers,
     onacknowledge,
     oncancel,
+    undelivered,
     onshow,
     onneedhelp,
   }: Props = $props();
@@ -55,35 +58,26 @@
     return open.mine || !open.answeredBySelf ? open : null;
   });
 
-  // Vibrate when an SOS, a critical alert or a roll call arrives while the app is open (not for
-  // the backlog).
-  let known: Set<string> | null = null;
-  $effect(() => {
-    const urgent = [
-      ...calls.filter((call) => !call.mine).map((call) => call.key),
-      ...alerts
-        .filter((alert) => alert.event.level === 'critical' && !alert.mine)
-        .map((a) => a.key),
-      ...(rollCall && !rollCall.mine ? [rollCall.key] : []),
-    ];
-    const previous = known;
-    const isNew = previous !== null && urgent.some((key) => !previous.has(key));
-    // Safari has no vibration API.
-    if (isNew && 'vibrate' in navigator) navigator.vibrate([300, 150, 300]);
-    known = new Set(urgent);
-  });
-
-  async function cancel(sos: EventRef): Promise<void> {
-    if (confirm(t('confirmCancelSos'))) await oncancel(sos);
+  function cancel(sos: EventRef): void {
+    if (confirm(t('confirmCancelSos'))) oncancel(sos);
   }
 </script>
 
 <div class="banners">
   {#each calls as call (call.key)}
+    {@const where = call.where}
     <section class="map-card edged sos" aria-label="SOS">
       <strong>SOS · {call.author} · {t(SOS_KINDS[call.event.kind])}</strong>
       <span class="when">{formatTime(call.event.time * 1000, locale)}</span>
       {#if call.event.text}<p>{call.event.text}</p>{/if}
+      {#if where.kind === 'shared'}
+        <p class="where">{t('sosPlaceShared', { time: formatTime(where.time * 1000, locale) })}</p>
+      {:else if where.kind === 'unknown'}
+        <p class="where warning">{t('sosPlaceUnknown')}</p>
+      {/if}
+      {#if call.mine && undelivered.has(call.key)}
+        <p class="warning">{t('sosNotSentYet')}</p>
+      {/if}
       <p class="acks">
         {call.by.length > 0
           ? t('acknowledgedBy', { names: call.by.join(', ') })
@@ -91,17 +85,26 @@
       </p>
       <div class="row">
         {#if !call.mine && !call.bySelf}
-          <button class="primary" onclick={() => onacknowledge(call.event)}
-            >{t('acknowledge')}</button
+          <button
+            class="primary"
+            onclick={() => {
+              onacknowledge(call.event);
+            }}>{t('acknowledge')}</button
           >
         {/if}
-        <button
-          onclick={() => {
-            onshow(call.event);
-          }}>{t('showOnMap')}</button
-        >
+        {#if where.kind !== 'unknown'}
+          <button
+            onclick={() => {
+              onshow(where.at);
+            }}>{t('showOnMap')}</button
+          >
+        {/if}
         {#if call.mine || canCancelOthers}
-          <button onclick={() => cancel(call.event)}>{t('cancelSos')}</button>
+          <button
+            onclick={() => {
+              cancel(call.event);
+            }}>{t('cancelSos')}</button
+          >
         {/if}
       </div>
     </section>
@@ -129,7 +132,12 @@
         </div>
       {:else}
         <div class="row">
-          <button class="primary" onclick={() => onacknowledge(call.event)}>{t('imWell')}</button>
+          <button
+            class="primary"
+            onclick={() => {
+              onacknowledge(call.event);
+            }}>{t('imWell')}</button
+          >
           <button class="danger" onclick={onneedhelp}>{t('needHelp')}</button>
         </div>
       {/if}
@@ -152,8 +160,11 @@
       {/if}
       <div class="row">
         {#if alert.event.level === 'critical' && !alert.mine}
-          <button class="primary" onclick={() => onacknowledge(alert.event)}
-            >{t('acknowledge')}</button
+          <button
+            class="primary"
+            onclick={() => {
+              onacknowledge(alert.event);
+            }}>{t('acknowledge')}</button
           >
         {:else}
           <button onclick={() => dismissed.add(alert.key)}>{t('close')}</button>
@@ -167,8 +178,6 @@
   .banners {
     display: grid;
     gap: 0.5rem;
-    max-height: 60dvh;
-    overflow-y: auto;
     pointer-events: none;
   }
 

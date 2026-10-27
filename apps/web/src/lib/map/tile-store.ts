@@ -11,6 +11,7 @@ import {
   type StoreNames,
 } from 'idb';
 
+import { IGNORE_VERSION_CHANGE, type VersionChange } from '../storage/version-change.ts';
 import { tileKey, tilesInBounds, type Bounds, type TileCoord } from './tile-math.ts';
 import type { TileSourceId } from './tile-sources.ts';
 
@@ -62,8 +63,16 @@ function storageKey(source: TileSourceId, tile: TileCoord): string {
   return `${source}/${tileKey(tile)}`;
 }
 
-export async function openTileStore(name: string = DB_NAME): Promise<TileStore> {
-  const db = await openDB<MapDb>(name, DB_VERSION, {
+export async function openTileStore(
+  name: string = DB_NAME,
+  change: VersionChange = IGNORE_VERSION_CHANGE,
+): Promise<TileStore> {
+  const db: IDBPDatabase<MapDb> = await openDB<MapDb>(name, DB_VERSION, {
+    blocked: change.onBlocked,
+    blocking() {
+      db.close();
+      change.onReplaced();
+    },
     upgrade(database, oldVersion, _newVersion, transaction) {
       if (oldVersion < 1) {
         database.createObjectStore('tiles');

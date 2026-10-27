@@ -39,7 +39,12 @@
       {/each}
     </select>
     {#if text !== null}
-      <CopyButton {text} label={t('copy')} copiedLabel={t('copied')} />
+      <CopyButton
+        {text}
+        label={t('copy')}
+        copiedLabel={t('copied')}
+        failedLabel={t('copyFailed')}
+      />
     {/if}
   </div>
 </div>

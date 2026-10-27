@@ -4,6 +4,7 @@ import type { GroupState } from '@tesel/core';
 import type { LatLon, ShapeEvent } from '@tesel/protocol';
 import type { Feature, FeatureCollection, Geometry, Point } from 'geojson';
 
+import { aliasOf, whereSos } from '../incidents/incidents.ts';
 import { circleRing, toPosition } from '../map/geometry.ts';
 import type { Tone } from '../ui/theme.ts';
 import { styleInfo, symbolImageName } from './catalog.ts';
@@ -53,8 +54,9 @@ export function mapObjects(state: GroupState): MapObjects {
   const sos: Feature<Point, SosProperties>[] = [];
   for (const [key, call] of state.sos) {
     if (state.sosCancels.has(key)) continue;
-    const label = state.members.get(call.origin)?.alias ?? call.origin;
-    sos.push(point(call, { key, label }));
+    const where = whereSos(state, call);
+    if (where.kind === 'unknown') continue;
+    sos.push(point(where.at, { key, label: aliasOf(state, call.origin) }));
   }
   return {
     markers: { type: 'FeatureCollection', features: markers },

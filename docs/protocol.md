@@ -37,8 +37,10 @@ Every event starts with a 14-byte header:
 The payload follows, up to 151 bytes.
 
 - A device MUST persist its last `seq` and MUST NOT reuse a value. It SHOULD increase `seq` by exactly one per event, so receivers can detect gaps. `seq` `0` is invalid.
+- A device MUST NOT stamp an event with a `time` earlier than that of its previous event: if its clock has gone back, it uses the previous event's `time`. So, among one author's events, the newest by `(time, origin, seq)` is always the last one written.
 - `(origin, seq)` identifies an event globally within a group. Receivers MUST treat a second copy as a duplicate, whatever transport it came from.
 - Receivers MUST ignore events whose `version` they do not support, and events whose `type` they do not know. They MUST NOT treat these as errors that affect other events.
+- Receivers MUST discard an event of a known `type` whose payload does not decode, and MUST NOT record its `(origin, seq)` as received: a damaged copy must not stand in for the real event.
 - Bridges and servers MUST forward events of unknown type unchanged, using the header alone for de-duplication. This lets newer clients use new types through older infrastructure.
 - **Reserved values.** When an enumerated field holds a reserved value, decoders MUST use the default given for that field below, so that newer senders never make older receivers drop information. The one exception is `SHAPE.kind`, whose geometry cannot be parsed without it; an event with a reserved shape kind is ignored.
 
@@ -148,6 +150,8 @@ With an empty label, a shape holds up to 33 points.
 | 4     | `lon`      | Coordinate                                                                                                |
 | 2     | `accuracy` | `u16`, metres, `0xFFFF` unknown                                                                           |
 | 0–140 | `text`     | text-rest                                                                                                 |
+
+A sender without a position MUST NOT hold the call back for one: it sends `lat` and `lon` `0` with `accuracy` `0xFFFF`, which receivers MUST read as "no place" and not as a point at 0°, 0°. Its `POSITION` follows as soon as it has one, whatever its sharing setting, and receivers SHOULD show it as where the caller is.
 
 An `SOS` stays active until a `SOS_CANCEL` referencing it is received. Any member MAY cancel an SOS; the interface SHOULD show who cancelled it. Senders SHOULD repeat an `SOS` over LoRa with back-off until at least one `ACK` for it is received. Repeats are byte-identical copies, so receivers de-duplicate them.
 

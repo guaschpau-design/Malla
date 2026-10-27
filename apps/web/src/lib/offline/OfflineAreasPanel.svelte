@@ -22,6 +22,7 @@
     type Extra,
     type OfflineMaps,
   } from './offline-maps.ts';
+  import { attempt } from '../ui/submission.svelte.ts';
 
   interface Props {
     t: Translate;
@@ -64,17 +65,21 @@
     storage = { used: estimate.usage ?? 0, quota: estimate.quota ?? 0 };
   }
 
-  async function startDownload(): Promise<void> {
+  function startDownload(): void {
     const areaName =
       name.trim() || t('defaultAreaName', { date: formatDateTime(Date.now(), locale) });
-    if (await job.run(offline.store, { name: areaName, bounds, layers })) name = '';
-    await refresh();
+    attempt(async () => {
+      if (await job.run(offline.store, { name: areaName, bounds, layers })) name = '';
+      await refresh();
+    }, t('actionFailed'));
   }
 
-  async function remove(area: OfflineArea): Promise<void> {
+  function remove(area: OfflineArea): void {
     if (!confirm(t('confirmDelete', { name: area.name }))) return;
-    await offline.store.deleteArea(area);
-    await refresh();
+    attempt(async () => {
+      await offline.store.deleteArea(area);
+      await refresh();
+    }, t('actionFailed'));
   }
 
   function show(area: OfflineArea): void {
@@ -85,7 +90,7 @@
   onMount(() => {
     const update = () => (bounds = currentBounds());
     map.on('moveend', update);
-    void refresh();
+    attempt(refresh, t('actionFailed'));
     return () => {
       map.off('moveend', update);
       job.cancel();
@@ -100,7 +105,7 @@
     class="download"
     onsubmit={(event) => {
       event.preventDefault();
-      void startDownload();
+      startDownload();
     }}
   >
     <h3>{t('downloadVisible')}</h3>
@@ -175,7 +180,11 @@
                 show(area);
               }}>{t('showOnMap')}</button
             >
-            <button onclick={() => remove(area)}>{t('delete')}</button>
+            <button
+              onclick={() => {
+                remove(area);
+              }}>{t('delete')}</button
+            >
           </div>
         </li>
       {/each}

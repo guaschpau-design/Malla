@@ -8,6 +8,11 @@ export interface ReceivedFrame {
   readonly bytes: Uint8Array;
   /** Signal-to-noise ratio of the last hop, in dB. */
   readonly snr: number;
+  /**
+   * The secret of the channel it arrived on: the group configured now, or another group whose
+   * channel this radio still holds.
+   */
+  readonly secret: Uint8Array;
 }
 
 /**
@@ -34,7 +39,11 @@ export interface RadioLink {
   /** Name the radio advertises over Bluetooth, once connected. */
   readonly name: string | null;
 
-  /** Asks the user to pick a radio and connects to it. */
+  /**
+   * Asks the user to pick a radio and connects to it. If the connection is lost afterwards, the
+   * link reconnects to the same radio by itself, showing `connecting` meanwhile, until
+   * `disconnect` is called.
+   */
   connect(): Promise<void>;
 
   /**
@@ -43,10 +52,16 @@ export interface RadioLink {
    */
   configureGroupChannel(groupName: string, secret: Uint8Array): Promise<void>;
 
+  /** Clears every channel slot whose secret `matches`: those of groups that were left. */
+  forgetChannels(matches: (secret: Uint8Array) => boolean): Promise<void>;
+
   /** Floods one encoded event on the group channel. */
   send(bytes: Uint8Array): Promise<SendOutcome>;
 
-  /** Subscribes to events received on the group channel; returns an unsubscribe function. */
+  /**
+   * Subscribes to events received on any channel holding a secret, the group channel and those of
+   * other groups this radio carried before; returns an unsubscribe function.
+   */
   onReceive(listener: (frame: ReceivedFrame) => void): () => void;
 
   /** Subscribes to text messages of other MeshCore apps; returns an unsubscribe function. */

@@ -41,7 +41,7 @@
      be read. */
   .credits {
     position: absolute;
-    bottom: calc(5.25rem + env(safe-area-inset-bottom));
+    bottom: var(--dock-clearance);
     left: 0.75rem;
     z-index: var(--layer-dock);
     max-width: min(26rem, 70vw);

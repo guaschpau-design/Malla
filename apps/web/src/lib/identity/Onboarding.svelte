@@ -5,6 +5,7 @@
   import type { Translate } from '../i18n/index.ts';
   import Dialog from '../ui/Dialog.svelte';
   import { normalizeAlias } from './identity.ts';
+  import { Submission } from '../ui/submission.svelte.ts';
 
   interface Props {
     t: Translate;
@@ -16,18 +17,13 @@
   let { t, invitedTo, oncreate }: Props = $props();
 
   let text = $state('');
-  let busy = $state(false);
+  const submission = new Submission();
   const alias = $derived(normalizeAlias(text));
   const tooLong = $derived(text.trim() !== '' && alias === null);
 
-  async function submit(): Promise<void> {
-    if (alias === null) return;
-    busy = true;
-    try {
-      await oncreate(alias);
-    } finally {
-      busy = false;
-    }
+  function submit(): void {
+    const chosen = alias;
+    if (chosen !== null) void submission.run(() => oncreate(chosen));
   }
 </script>
 
@@ -36,7 +32,7 @@
     class="stack"
     onsubmit={(event) => {
       event.preventDefault();
-      void submit();
+      submit();
     }}
   >
     <p class="intro">{t('welcomeIntro')}</p>
@@ -52,7 +48,8 @@
     <p class:warning={tooLong} class:hint={!tooLong}>
       {tooLong ? t('nameInvalid') : t('aliasHint')}
     </p>
-    <button type="submit" class="primary" disabled={alias === null || busy}>
+    {#if submission.failed}<p class="warning">{t('actionFailed')}</p>{/if}
+    <button type="submit" class="primary" disabled={alias === null || submission.busy}>
       {t('continue')}
     </button>
   </form>

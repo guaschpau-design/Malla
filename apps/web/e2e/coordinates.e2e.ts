@@ -1,4 +1,4 @@
-import { device, expect, openMore, test } from './helpers.ts';
+import { device, expect, openMore, storedSetting, test } from './helpers.ts';
 
 test('a dictated coordinate is found on the map and read in another format', async ({
   browser,
@@ -14,6 +14,7 @@ test('a dictated coordinate is found on the map and read in another format', asy
   await expect(panel.locator('output')).toHaveText('30S YJ 25695 72210');
 
   // The format is remembered.
+  await expect.poll(() => storedSetting(page, 'coordinateFormat')).toBe('mgrs');
   await page.reload();
   await page.locator('.maplibregl-canvas').click({ button: 'right' });
   await expect(page.getByRole('region', { name: 'Punto del mapa' }).locator('output')).toHaveText(

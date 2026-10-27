@@ -1,13 +1,22 @@
 // Each group's event log on this device (ARCHITECTURE.md §3): every event received or created,
 // kept as the bytes that travel on the wire so they can be forwarded unchanged.
 
-import { encodeEvent, peekHeader, type EventHeader, type TeselEvent } from '@tesel/protocol';
+import {
+  encodeEvent,
+  isKeepable,
+  peekHeader,
+  type EventHeader,
+  type TeselEvent,
+} from '@tesel/protocol';
 
 import type { AppDb, EventKey, OutboxEntry } from '../storage/app-db.ts';
 import { cursorKey, groupCursors } from '../sync/cursor-store.ts';
 
 /** Largest sequence number: the field is an unsigned 32-bit integer (protocol §2). */
 const MAX_SEQ = 0xffff_ffff;
+
+/** An event that cannot be encoded, mostly for being too big for the radio (protocol §2). */
+export class UnencodableEvent extends Error {}
 
 /** A received event that was new to the log. */
 export interface Received {
@@ -37,7 +46,8 @@ export async function receiveEvents(
   const candidates = new Map<string, Received>();
   for (const bytes of batch) {
     const header = peekHeader(bytes);
-    if (!header.ok) continue;
+    // A damaged copy must not take the place of the real event (protocol §3.1).
+    if (!header.ok || !isKeepable(bytes)) continue;
     const entry: OutboxEntry = { groupId, origin: header.value.origin, seq: header.value.seq };
     const id = `${entry.origin}:${String(entry.seq)}`;
     if (!candidates.has(id)) candidates.set(id, { entry, bytes });
@@ -84,17 +94,24 @@ export async function publishEvent(
   header: Omit<EventHeader, 'seq'>,
 ): Promise<{ entry: OutboxEntry; bytes: Uint8Array }> {
   const tx = db.transaction(['sequence', 'events', 'outbox'], 'readwrite');
-  const seq = (await tx.objectStore('sequence').get('next')) ?? 1;
+  const sequence = tx.objectStore('sequence');
+  const [seq = 1, lastTime = 0] = await Promise.all([
+    sequence.get('next'),
+    sequence.get('lastTime'),
+  ]);
   if (seq > MAX_SEQ) throw new RangeError('this device has used every sequence number');
-  const encoded = encodeEvent(build({ ...header, seq }));
+  // A clock put back must not make this event older than the one before (protocol §3.1).
+  const time = Math.max(header.time, lastTime);
+  const encoded = encodeEvent(build({ ...header, time, seq }));
   if (!encoded.ok) {
     tx.abort();
     await tx.done.catch(() => undefined); // The abort itself rejects `done`.
-    throw new Error(`cannot encode event: ${encoded.error.detail}`);
+    throw new UnencodableEvent(`cannot encode event: ${encoded.error.detail}`);
   }
   const entry: OutboxEntry = { groupId, origin: header.origin, seq };
   await Promise.all([
-    tx.objectStore('sequence').put(seq + 1, 'next'),
+    sequence.put(seq + 1, 'next'),
+    sequence.put(time, 'lastTime'),
     tx.objectStore('events').put({ ...entry, bytes: encoded.value }),
     tx.objectStore('outbox').put(entry),
   ]);
@@ -120,6 +137,15 @@ export async function pendingEvents(
 
 export async function confirmStored(db: AppDb, entry: OutboxEntry): Promise<void> {
   await db.delete('outbox', [entry.groupId, entry.origin, entry.seq]);
+}
+
+/** Notes that an own event went out over LoRa while it still waits for the server. */
+export async function markAired(db: AppDb, entry: OutboxEntry): Promise<void> {
+  const tx = db.transaction('outbox', 'readwrite');
+  const key: EventKey = [entry.groupId, entry.origin, entry.seq];
+  const current = await tx.store.get(key);
+  if (current !== undefined) await tx.store.put({ ...current, aired: true });
+  await tx.done;
 }
 
 /** Forgets everything a group left on this device. */

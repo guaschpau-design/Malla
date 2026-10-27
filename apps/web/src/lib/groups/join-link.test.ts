@@ -21,15 +21,21 @@ describe('join links', () => {
     const link = invitationLink('http://localhost:5173', '/', invitation);
     if (!link.ok) throw new Error('link not built');
     const url = new URL(link.value);
-    expect(invitationInAddress(url.pathname, url.hash)).toEqual({ ok: true, value: invitation });
+    expect(invitationInAddress(url, '/')).toEqual({ ok: true, value: invitation });
   });
 
-  it('ignores addresses that are not join links', () => {
-    expect(invitationInAddress('/', '#map=12/39.47/-0.37')).toBeNull();
-    expect(invitationInAddress('/join', '')).toBeNull();
+  it('ignores addresses that are not join links of this app', () => {
+    const at = (pathname: string, hash: string, search = '') => ({ pathname, search, hash });
+    expect(invitationInAddress(at('/', '#map=12/39.47/-0.37'), '/')).toBeNull();
+    expect(invitationInAddress(at('/join', ''), '/')).toBeNull();
+    // Outside the base the app is served from, or with a query: not an invitation (§6).
+    expect(invitationInAddress(at('/other/join', '#AAAA'), '/app/')).toBeNull();
+    expect(invitationInAddress(at('/app/join', '#AAAA', '?x=1'), '/app/')).toBeNull();
   });
 
   it('reports a damaged token instead of ignoring it', () => {
-    expect(invitationInAddress('/join', '#AAAA')?.ok).toBe(false);
+    expect(invitationInAddress({ pathname: '/join', search: '', hash: '#AAAA' }, '/')?.ok).toBe(
+      false,
+    );
   });
 });

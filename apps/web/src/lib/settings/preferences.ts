@@ -29,6 +29,10 @@ export const PREFERENCES = {
   keepScreenOn: flag('keepScreenOn', false),
   /** The app over the whole screen, where a browser tab allows it: on, until switched off in More. */
   fullscreen: flag('fullscreen', true),
+  /** A tone for an SOS, a critical alert or a roll call: on, since they must not be missed. */
+  alarmSound: flag('alarmSound', true),
+  /** System notifications for them while the app is not on screen: off until the user allows them. */
+  notifications: flag('notifications', false),
   /** The interface's language: the browser's, until one is chosen in More. */
   language: choice('language', LANGUAGE_CHOICES, 'auto'),
 };
@@ -45,6 +49,8 @@ export interface Preferences {
   readonly hiddenLayers: Preference<readonly MapLayer[]>;
   readonly keepScreenOn: Preference<boolean>;
   readonly fullscreen: Preference<boolean>;
+  readonly alarmSound: Preference<boolean>;
+  readonly notifications: Preference<boolean>;
   readonly language: Preference<LanguageChoice>;
 }
 
@@ -60,6 +66,8 @@ export async function loadPreferences(db: AppDb): Promise<Preferences> {
     hiddenLayers: await Preference.load(db, PREFERENCES.hiddenLayers),
     keepScreenOn: await Preference.load(db, PREFERENCES.keepScreenOn),
     fullscreen: await Preference.load(db, PREFERENCES.fullscreen),
+    alarmSound: await Preference.load(db, PREFERENCES.alarmSound),
+    notifications: await Preference.load(db, PREFERENCES.notifications),
     language: await Preference.load(db, PREFERENCES.language),
   };
 }

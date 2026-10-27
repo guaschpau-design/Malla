@@ -1,8 +1,10 @@
 <!-- A dock button that opens a menu above the dock, aligned with the dock's right edge so it stays
      on screen. The menu closes when an item that does something calls `close`, when the user taps
-     elsewhere or presses Escape; a switch in it leaves it open, so its change is seen. -->
+     elsewhere or presses Escape; a switch in it leaves it open, so its change is seen. From the
+     keyboard, the first item takes the focus, the arrow keys move between items and Escape gives
+     the focus back to the button. -->
 <script lang="ts">
-  import type { Snippet } from 'svelte';
+  import { tick, type Snippet } from 'svelte';
 
   import DockButton from './DockButton.svelte';
   import type { GlyphName } from './glyphs.ts';
@@ -18,9 +20,37 @@
 
   let open = $state(false);
   let root: HTMLDivElement;
+  let menu: HTMLDivElement | undefined = $state();
 
   function close(): void {
     open = false;
+  }
+
+  async function toggle(): Promise<void> {
+    open = !open;
+    if (!open) return;
+    await tick();
+    menuItems()[0]?.focus();
+  }
+
+  function menuItems(): HTMLElement[] {
+    return menu ? [...menu.querySelectorAll<HTMLElement>('[role^="menuitem"]')] : [];
+  }
+
+  /** Arrow keys go round the items; Home and End to the first and last. */
+  function onMenuKey(event: KeyboardEvent): void {
+    const all = menuItems();
+    const at = all.findIndex((item) => item === document.activeElement);
+    const to: Record<string, number> = {
+      ArrowDown: (at + 1) % all.length,
+      ArrowUp: (at - 1 + all.length) % all.length,
+      Home: 0,
+      End: all.length - 1,
+    };
+    const next = to[event.key];
+    if (next === undefined || all.length === 0) return;
+    event.preventDefault();
+    all[next]?.focus();
   }
 
   function onPointerDown(event: PointerEvent): void {
@@ -31,17 +61,26 @@
 <svelte:window
   onpointerdown={onPointerDown}
   onkeydown={(event: KeyboardEvent) => {
-    if (event.key === 'Escape') close();
+    if (event.key !== 'Escape' || !open) return;
+    close();
+    root.querySelector<HTMLElement>(':scope > button')?.focus();
   }}
 />
 
 <div class="dock-menu" bind:this={root}>
   {#if open}
-    <div class="menu" role="menu" aria-label={label}>
+    <div
+      class="menu"
+      role="menu"
+      tabindex="-1"
+      aria-label={label}
+      bind:this={menu}
+      onkeydown={onMenuKey}
+    >
       {@render items(close)}
     </div>
   {/if}
-  <DockButton {icon} {label} expanded={open} onclick={() => (open = !open)} />
+  <DockButton {icon} {label} expanded={open} onclick={() => void toggle()} />
 </div>
 
 <style>
@@ -59,6 +98,10 @@
     display: grid;
     gap: 0.25rem;
     width: min(18rem, calc(100vw - 2rem));
+    /* A phone held sideways has little height: the menu scrolls rather than leave the screen. */
+    max-height: calc(100dvh - var(--dock-clearance) - env(safe-area-inset-top) - 1.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 0.4rem;
     color: var(--fg);
     background: var(--surface);

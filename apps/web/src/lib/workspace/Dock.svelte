@@ -1,12 +1,12 @@
 <!-- The bottom of the map: the SOS button and the dock — Me, Add, Chat and Tasks with a group,
      More always. Everything else starts from what is tapped on the map. -->
 <script lang="ts">
-  import type { LanguageChoice, Locale, MessageKey, Translate } from '../i18n/index.ts';
+  import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
   import AddMenu from '../objects/AddMenu.svelte';
   import type { DraftKind } from '../objects/draft.ts';
   import type { PositionMode } from '../position/position-mode.ts';
   import type { PositionSharing } from '../position/position-sharing.svelte.ts';
-  import type { Preference } from '../settings/preference.svelte.ts';
+  import type { Preferences } from '../settings/preferences.ts';
   import DockButton from '../ui/DockButton.svelte';
   import { stopEditingTask } from '../tasks/task-editor.svelte.ts';
   import { panels, togglePanel } from '../ui/panels.svelte.ts';
@@ -19,26 +19,16 @@
     onsos: () => void;
     ondraw: (kind: DraftKind) => void;
     onmeasure: () => void;
-    keepScreenOn: Preference<boolean>;
-    fullscreen: Preference<boolean>;
-    language: Preference<LanguageChoice>;
+    preferences: Preferences;
     locale: Locale;
     /** Pending tasks assigned to this device. */
     tasksForMe: number;
+    /** Drawing or measuring: only the SOS button stays, the rest makes room for the map. */
+    tapping: boolean;
   }
 
-  let {
-    t,
-    sharing,
-    onsos,
-    ondraw,
-    onmeasure,
-    keepScreenOn,
-    fullscreen,
-    language,
-    locale,
-    tasksForMe,
-  }: Props = $props();
+  let { t, sharing, onsos, ondraw, onmeasure, preferences, locale, tasksForMe, tapping }: Props =
+    $props();
 
   const STATES: Readonly<Record<PositionMode, MessageKey>> = {
     sharing: 'positionStateSharing',
@@ -51,68 +41,64 @@
   {#if sharing}
     <button class="sos" onclick={onsos}>{t('sos')}</button>
   {/if}
-  <nav class="dock" aria-label={t('dock')}>
-    <DockButton
-      icon="person"
-      label={t('me')}
-      ariaLabel={sharing ? `${t('me')}: ${t(STATES[sharing.mode])}` : t('me')}
-      on={sharing?.mode === 'sharing'}
-      expanded={panels.open === 'me'}
-      onclick={() => {
-        togglePanel('me');
-      }}
-    />
-    {#if sharing}
-      <AddMenu {t} onstart={ondraw} />
+  {#if !tapping}
+    <nav class="dock" aria-label={t('dock')}>
       <DockButton
-        icon="chat"
-        label={t('chat')}
-        expanded={panels.open === 'chat'}
+        icon="person"
+        label={t('me')}
+        ariaLabel={sharing ? `${t('me')}: ${t(STATES[sharing.mode])}` : t('me')}
+        on={sharing?.mode === 'sharing'}
+        expanded={panels.open === 'me'}
         onclick={() => {
-          togglePanel('chat');
+          togglePanel('me');
         }}
       />
-      <DockButton
-        icon="task"
-        label={t('tasks')}
-        ariaLabel={tasksForMe > 0 ? t('tasksForYou', { count: tasksForMe }) : t('tasks')}
-        count={tasksForMe}
-        expanded={panels.open === 'tasks'}
-        onclick={() => {
-          stopEditingTask();
-          togglePanel('tasks');
-        }}
-      />
-    {/if}
-    <MoreMenu
-      {t}
-      {onmeasure}
-      {keepScreenOn}
-      {fullscreen}
-      {language}
-      {locale}
-      withGroup={sharing !== null}
-    />
-  </nav>
+      {#if sharing}
+        <AddMenu {t} onstart={ondraw} />
+        <DockButton
+          icon="chat"
+          label={t('chat')}
+          expanded={panels.open === 'chat'}
+          onclick={() => {
+            togglePanel('chat');
+          }}
+        />
+        <DockButton
+          icon="task"
+          label={t('tasks')}
+          ariaLabel={tasksForMe > 0 ? t('tasksForYou', { count: tasksForMe }) : t('tasks')}
+          count={tasksForMe}
+          expanded={panels.open === 'tasks'}
+          onclick={() => {
+            stopEditingTask();
+            togglePanel('tasks');
+          }}
+        />
+      {/if}
+      <MoreMenu {t} {preferences} {locale} {onmeasure} withGroup={sharing !== null} />
+    </nav>
+  {/if}
 </div>
 
 <style>
+  /* No z-index here: the menus of the dock must rise over the cards of the map, which a stacking
+     context of the dock's own would keep them under. */
   .bottom {
     position: absolute;
-    z-index: var(--layer-dock);
     right: 0.75rem;
     bottom: calc(0.75rem + env(safe-area-inset-bottom));
-    left: 0.75rem;
+    left: max(0.75rem, env(safe-area-inset-left));
     display: flex;
     gap: 0.75rem;
     align-items: flex-end;
-    justify-content: flex-end;
     pointer-events: none;
   }
 
   .dock {
     position: relative;
     display: flex;
+    min-width: 0;
+    margin-left: auto;
     gap: 0.15rem;
     max-width: 24rem;
     padding: 0.25rem;
@@ -127,7 +113,6 @@
     flex-shrink: 0;
     width: 4rem;
     height: 4rem;
-    margin-right: auto;
     font-weight: 800;
     color: #fff;
     pointer-events: auto;
@@ -137,11 +122,15 @@
     box-shadow: var(--shadow-float);
   }
 
-  /* Room for five buttons beside the SOS on the narrowest phones. */
+  /* Room for five buttons beside the SOS on the narrowest phones, the SOS first. */
   @media (max-width: 22.5rem) {
     .sos {
       width: 3.4rem;
       height: 3.4rem;
+    }
+
+    .dock :global(.dock-button) {
+      min-width: 2.75rem;
     }
   }
 </style>

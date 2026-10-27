@@ -8,7 +8,7 @@ import {
   type CompanionConnection,
   type SyncedMessage,
 } from './companion.ts';
-import { MeshCoreRadio, RadioError } from './meshcore-radio.ts';
+import { MeshCoreRadio, RadioError, type OpenedRadio } from './meshcore-radio.ts';
 import type { ReceivedFrame } from './radio-link.ts';
 
 const SECRET = new Uint8Array(16).fill(9);
@@ -77,10 +77,18 @@ class FakeCompanion implements CompanionConnection {
 const slots = (...entries: [string, Uint8Array][]): ChannelInfo[] =>
   entries.map(([name, secret], channelIdx) => ({ channelIdx, name, secret }));
 
-async function connected(fake: FakeCompanion): Promise<MeshCoreRadio> {
-  const radio = new MeshCoreRadio(() =>
-    Promise.resolve({ connection: fake, name: 'MeshCore-T1000' }),
-  );
+/** Opens `fakes` in turn: the first on connecting, the next ones each time the link reopens. */
+function opener(fakes: FakeCompanion[]): () => Promise<OpenedRadio> {
+  const open = (): Promise<OpenedRadio> => {
+    const fake = fakes.shift();
+    if (fake === undefined) return Promise.reject(new Error('radio out of range'));
+    return Promise.resolve({ connection: fake, name: 'MeshCore-T1000', reopen: open });
+  };
+  return open;
+}
+
+async function connected(...fakes: FakeCompanion[]): Promise<MeshCoreRadio> {
+  const radio = new MeshCoreRadio(opener(fakes));
   await radio.connect();
   return radio;
 }
@@ -130,8 +138,9 @@ describe('MeshCore radio', () => {
     expect(await radio.send(new Uint8Array([1]))).toMatchObject({ status: 'failed' });
   });
 
-  it('passes on Tesel datagrams of the group channel only', async () => {
-    const fake = new FakeCompanion(slots(['Public', EMPTY], ['Rescate', SECRET]));
+  it('passes on Tesel datagrams of channels with a secret, each with its secret', async () => {
+    const other = new Uint8Array(16).fill(4);
+    const fake = new FakeCompanion(slots(['Public', EMPTY], ['Rescate', SECRET], ['Antes', other]));
     const radio = await connected(fake);
     const frames: ReceivedFrame[] = [];
     radio.onReceive((frame) => frames.push(frame));
@@ -150,10 +159,14 @@ describe('MeshCore radio', () => {
       },
       { channelData: { channelIdx: 1, dataType: 0x1234, data: new Uint8Array([2]), snr: 5 } },
       { channelData: { channelIdx: 1, dataType: MESHCORE_DATA_TYPE, data: ours, snr: 6.25 } },
+      { channelData: { channelIdx: 2, dataType: MESHCORE_DATA_TYPE, data: ours, snr: 1 } },
     );
     fake.emit(PUSH_MSG_WAITING);
     await vi.waitFor(() => {
-      expect(frames).toEqual([{ bytes: ours, snr: 6.25 }]);
+      expect(frames).toEqual([
+        { bytes: ours, snr: 6.25, secret: SECRET },
+        { bytes: ours, snr: 1, secret: other },
+      ]);
     });
     expect(fake.waiting).toEqual([]);
   });
@@ -195,14 +208,40 @@ describe('MeshCore radio', () => {
     });
   });
 
-  it('reports a lost Bluetooth link as disconnected', async () => {
-    const fake = new FakeCompanion(slots(['Public', EMPTY]));
-    const radio = await connected(fake);
+  it('reconnects to the same radio by itself when the Bluetooth link drops', async () => {
+    vi.useFakeTimers();
+    const first = new FakeCompanion(slots(['Public', EMPTY]));
+    const again = new FakeCompanion(slots(['Public', EMPTY]));
+    const radio = await connected(first, again);
     const states: string[] = [];
     radio.onStateChange((state) => states.push(state));
+    first.emit('disconnected');
+    expect(radio.state).toBe('connecting');
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(radio.state).toBe('ready');
+    expect(states).toEqual(['disconnected', 'connecting', 'ready']);
+    vi.useRealTimers();
+  });
+
+  it('keeps trying with growing pauses while the radio is out of reach, until disconnected', async () => {
+    vi.useFakeTimers();
+    const fake = new FakeCompanion(slots(['Public', EMPTY]));
+    const radio = await connected(fake);
     fake.emit('disconnected');
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(radio.state).toBe('connecting');
+    await radio.disconnect();
     expect(radio.state).toBe('disconnected');
-    expect(states).toEqual(['disconnected']);
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(radio.state).toBe('disconnected');
+    vi.useRealTimers();
+  });
+
+  it('clears the channel slot of a group that was left', async () => {
+    const fake = new FakeCompanion(slots(['Public', EMPTY], ['Rescate', SECRET]));
+    const radio = await connected(fake);
+    await radio.forgetChannels((secret) => secret.every((byte) => byte === 9));
+    expect(fake.channels[1]).toEqual({ channelIdx: 1, name: '', secret: EMPTY });
   });
 
   it('gives up on a command the radio never answers, and on the radio itself', async () => {
@@ -214,10 +253,11 @@ describe('MeshCore radio', () => {
     const outcome = radio.send(new Uint8Array([1]));
     await vi.advanceTimersByTimeAsync(5000);
     expect(await outcome).toMatchObject({ status: 'failed', reason: 'the radio did not answer' });
-    // A late answer could be taken for the next command's: the link is dropped instead.
+    // A late answer could be taken for the next command's: the link starts again, clean.
     await vi.advanceTimersByTimeAsync(0);
-    expect(radio.state).toBe('disconnected');
+    expect(radio.state).toBe('connecting');
     expect(fake.closed).toBe(true);
+    await radio.disconnect();
     vi.useRealTimers();
   });
 });

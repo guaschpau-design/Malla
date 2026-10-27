@@ -4,10 +4,11 @@
 import type { GroupState } from '@tesel/core';
 import {
   eventRefKey,
+  sosPlace,
   type AlertEvent,
+  type LatLon,
   type NodeId,
   type RollCallEvent,
-  type SosCancelEvent,
   type SosEvent,
 } from '@tesel/protocol';
 
@@ -17,18 +18,30 @@ export interface Acknowledgement {
   readonly bySelf: boolean;
 }
 
+/**
+ * Where the caller of an SOS is: where they called from; or, for a call made without a position,
+ * the position they shared since; or nowhere known yet.
+ */
+export type SosWhere =
+  | { readonly kind: 'called'; readonly at: LatLon }
+  | { readonly kind: 'shared'; readonly at: LatLon; readonly time: number }
+  | { readonly kind: 'unknown' };
+
 export interface SosView extends Acknowledgement {
   readonly key: string;
   readonly event: SosEvent;
   readonly author: string;
   readonly mine: boolean;
+  readonly where: SosWhere;
 }
 
-export interface CancelledSos {
-  readonly key: string;
-  readonly author: string;
-  readonly cancelledBy: string;
-  readonly cancel: SosCancelEvent;
+export function whereSos(state: GroupState, event: SosEvent): SosWhere {
+  const called = sosPlace(event);
+  if (called !== null) return { kind: 'called', at: called };
+  const shared = state.positions.get(event.origin);
+  return shared?.type === 'position'
+    ? { kind: 'shared', at: { lat: shared.lat, lon: shared.lon }, time: shared.time }
+    : { kind: 'unknown' };
 }
 
 export interface AlertView extends Acknowledgement {
@@ -48,25 +61,11 @@ export function activeSos(state: GroupState, self: NodeId): SosView[] {
       event,
       author: aliasOf(state, event.origin),
       mine: event.origin === self,
+      where: whereSos(state, event),
       ...acknowledgement(state, key, self),
     });
   }
   return views.sort((a, b) => b.event.time - a.event.time);
-}
-
-export function cancelledSos(state: GroupState): CancelledSos[] {
-  const views: CancelledSos[] = [];
-  for (const [key, cancel] of state.sosCancels) {
-    const call = state.sos.get(key);
-    if (call === undefined) continue;
-    views.push({
-      key,
-      cancel,
-      author: aliasOf(state, call.origin),
-      cancelledBy: aliasOf(state, cancel.origin),
-    });
-  }
-  return views;
 }
 
 /** Alerts sent at or after `since` (seconds), newest first. */

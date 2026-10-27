@@ -1,6 +1,6 @@
 export * from './base64url.ts';
 export { utf8ByteLength } from './bytes.ts';
-export { decodeEvent, encodeEvent, peekHeader, type RawHeader } from './codec.ts';
+export { decodeEvent, encodeEvent, isKeepable, peekHeader, type RawHeader } from './codec.ts';
 export * from './constants.ts';
 export * from './crypto.ts';
 export type * from './events.ts';
@@ -17,4 +17,5 @@ export * from './node-id.ts';
 export { EVENT_TYPES } from './payloads.ts';
 export type { ProtocolError, ProtocolErrorCode, Result } from './result.ts';
 export * from './relay.ts';
+export * from './sos-place.ts';
 export * from './weather.ts';

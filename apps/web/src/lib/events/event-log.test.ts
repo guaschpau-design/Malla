@@ -39,6 +39,36 @@ describe('event log', () => {
     expect(c.entry.seq).toBe(3);
   });
 
+  it('never stamps an own event earlier than the one before, if the clock goes back', async () => {
+    const db = await freshDb();
+    const build = (header: { origin: NodeId; seq: number; time: number }) =>
+      ({ ...header, type: 'chat', text: 'hola' }) as const;
+    await publishEvent(db, 'group', build, { origin: ME, time: 5000 });
+    const { bytes } = await publishEvent(db, 'group', build, { origin: ME, time: 4000 });
+    const decoded = decodeEvent(bytes);
+    expect(decoded.ok && decoded.value.time).toBe(5000);
+  });
+
+  it('drops a damaged event, so that the real one is still taken later', async () => {
+    const db = await freshDb();
+    const real = chatBytes(OTHER, 4, 'hola');
+    // A known type cut short, with the same (origin, seq): its payload does not decode.
+    const truncatedPosition = encodeEvent({
+      type: 'position',
+      origin: OTHER,
+      seq: 4,
+      time: 1000,
+      lat: 1,
+      lon: 2,
+      accuracy: 5,
+      heading: null,
+      speed: null,
+    });
+    if (!truncatedPosition.ok) throw new Error('encode');
+    expect(await receiveEvents(db, 'group', [truncatedPosition.value.slice(0, 20)])).toEqual([]);
+    expect(await receiveEvents(db, 'group', [real])).toHaveLength(1);
+  });
+
   it('keeps own events in the outbox until the server stores them', async () => {
     const db = await freshDb();
     const { entry } = await publishEvent(

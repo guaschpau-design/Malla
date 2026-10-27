@@ -17,10 +17,9 @@
   import MgrsGridLayer from '../coordinates/MgrsGridLayer.svelte';
   import PointLayer from '../coordinates/PointLayer.svelte';
   import PointPanel from '../coordinates/PointPanel.svelte';
-  import type { Locale, Translate } from '../i18n/index.ts';
+  import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
   import SosDialog from '../incidents/SosDialog.svelte';
   import { MAP_LAYERS, type MapLayer } from '../map/layers.ts';
-  import { mapCentre } from '../map/geometry.ts';
   import { onLongPress } from '../map/long-press.ts';
   import { useStyleCredits } from '../map/style-credits.svelte.ts';
   import LayersPanel from '../map/LayersPanel.svelte';
@@ -40,6 +39,7 @@
   import LocateButton from '../position/LocateButton.svelte';
   import MePanel from '../position/MePanel.svelte';
   import SelfLayer from '../position/SelfLayer.svelte';
+  import IncidentAlarm from '../incidents/IncidentAlarm.svelte';
   import type { RadioSession } from '../radio/radio.svelte.ts';
   import type { TappedService } from '../services/services.ts';
   import ServicesLayer from '../services/ServicesLayer.svelte';
@@ -49,7 +49,8 @@
   import { newTask } from '../tasks/task-editor.svelte.ts';
   import { myPendingCount } from '../tasks/tasks.ts';
   import Pictogram from '../ui/Pictogram.svelte';
-  import Toast from '../ui/Toast.svelte';
+  import { notices, useStandingNotice } from '../ui/notices.svelte.ts';
+  import { attempt } from '../ui/submission.svelte.ts';
   import { closePanel, panels, togglePanel } from '../ui/panels.svelte.ts';
   import { keepScreenAwake } from '../ui/screen-awake.svelte.ts';
   import WarningList from '../weather/WarningList.svelte';
@@ -91,7 +92,11 @@
   }: Props = $props();
 
   // Kept on when the user asks, and always while guiding to a target.
-  keepScreenAwake(() => preferences.keepScreenOn.value || navigation.target !== null);
+  // A phone that carries the radio for the group must not sleep: with the screen off the browser
+  // stops it, and with it the bridge between the radio and the server.
+  keepScreenAwake(
+    () => preferences.keepScreenOn.value || navigation.target !== null || radio.linked,
+  );
 
   const drawing = new Drawing();
   let tool: MapTool | null = $state.raw(null);
@@ -113,12 +118,13 @@
   /** The point shown in the point panel, and what to call it: a service's name, or "map point". */
   let point: { readonly at: LatLon; readonly name: string } | null = $state.raw(null);
   let sosOpen = $state(false);
-  let notice: string | null = $state(null);
 
-  function showNotice(text: string): void {
-    notice = text;
-    setTimeout(() => (notice = null), 4000);
-  }
+  useStandingNotice(() => (radio.reconnecting ? { text: t('radioReconnecting') } : null));
+
+  useStandingNotice(() => {
+    if (location.problem === null) return null;
+    return { text: location.problem === 'denied' ? t('locationDenied') : t('locationUnavailable') };
+  });
 
   function startDrawing(kind: DraftKind): void {
     closePanel();
@@ -180,15 +186,35 @@
     tool = next;
   }
 
+  /** An SOS went out with no place: the GPS stays on until the first fix, which follows it. */
+  let sosWithoutPlace = $state(false);
+
+  $effect(() => {
+    const feed = group?.feed;
+    if (!sosWithoutPlace || feed === undefined) return;
+    return location.use((fix) => {
+      sosWithoutPlace = false;
+      attempt(() => feed.sharePosition(fix), t('actionFailed'));
+    });
+  });
+
   async function sendSos(
     kind: SosKind,
-    at: LatLon,
+    at: LatLon | null,
     accuracy: number | null,
     text: string,
   ): Promise<void> {
-    await group?.feed.sendSos(kind, at, accuracy, text);
+    if (group === null) return;
+    await group.feed.sendSos(kind, at, accuracy, text);
     sosOpen = false;
-    showNotice(t('sosSent'));
+    sosWithoutPlace = at === null;
+    notices.show(t(sosNotice()));
+  }
+
+  /** What became of an SOS just sent: it is with the group, on its way by radio, or waiting. */
+  function sosNotice(): MessageKey {
+    if (group === null || group.practice || group.feed.status === 'synced') return 'sosSent';
+    return radio.linked ? 'sosByRadio' : 'sosWaiting';
   }
 
   function show(at: LatLon): void {
@@ -277,17 +303,7 @@
   />
 
   {#if sosOpen}
-    <SosDialog
-      {t}
-      {location}
-      fallback={mapCentre(map)}
-      onsend={sendSos}
-      oncancel={() => (sosOpen = false)}
-    />
-  {/if}
-
-  {#if notice}
-    <Toast>{notice}</Toast>
+    <SosDialog {t} {location} onsend={sendSos} oncancel={() => (sosOpen = false)} />
   {/if}
 {/if}
 
@@ -357,6 +373,17 @@
   />
 {/if}
 
+{#if group}
+  <IncidentAlarm
+    {t}
+    groupState={group.feed.state}
+    self={group.self}
+    choices={{
+      sound: preferences.alarmSound.value,
+      notifications: preferences.notifications.value,
+    }}
+  />
+{/if}
 <MapStatus
   {t}
   {locale}
@@ -391,23 +418,17 @@
 {#key preferences.baseMap.value}
   <MapCredits {map} {credits} />
 {/key}
-{#if location.problem}
-  <Toast>{location.problem === 'denied' ? t('locationDenied') : t('locationUnavailable')}</Toast>
-{/if}
 
-{#if !tapping}
-  <Dock
-    {t}
-    sharing={group?.sharing ?? null}
-    onsos={() => (sosOpen = true)}
-    ondraw={startDrawing}
-    onmeasure={() => {
-      startTool({ kind: 'measure', from: null });
-    }}
-    keepScreenOn={preferences.keepScreenOn}
-    fullscreen={preferences.fullscreen}
-    language={preferences.language}
-    {locale}
-    tasksForMe={group ? myPendingCount(group.feed.state, group.self) : 0}
-  />
-{/if}
+<Dock
+  {t}
+  sharing={group?.sharing ?? null}
+  onsos={() => (sosOpen = true)}
+  ondraw={startDrawing}
+  onmeasure={() => {
+    startTool({ kind: 'measure', from: null });
+  }}
+  {preferences}
+  {locale}
+  tasksForMe={group ? myPendingCount(group.feed.state, group.self) : 0}
+  {tapping}
+/>

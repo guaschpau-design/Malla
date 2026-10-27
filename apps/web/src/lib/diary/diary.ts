@@ -4,6 +4,7 @@
 import type { GroupState, JournalEvent } from '@tesel/core';
 import {
   eventRefKey,
+  sosPlace,
   type LatLon,
   type MarkerEvent,
   type ShapeEvent,
@@ -136,7 +137,8 @@ function withText(sentence: string, text: string): string {
 }
 
 function placeOf(event: JournalEvent): LatLon | null {
-  if (event.type === 'marker' || event.type === 'sos') return { lat: event.lat, lon: event.lon };
+  if (event.type === 'marker') return { lat: event.lat, lon: event.lon };
+  if (event.type === 'sos') return sosPlace(event);
   if (event.type === 'shape' && event.geometry.kind === 'circle') return event.geometry.center;
   if (event.type === 'task') return event.place;
   return null;

@@ -5,6 +5,7 @@
   import type { Translate } from '../i18n/index.ts';
   import Dialog from '../ui/Dialog.svelte';
   import { ROLE_LABELS } from './role-label.ts';
+  import { Submission } from '../ui/submission.svelte.ts';
 
   interface Props {
     t: Translate;
@@ -16,16 +17,7 @@
 
   let { t, invitation, onjoin, ondismiss }: Props = $props();
 
-  let busy = $state(false);
-
-  async function join(accepted: Invitation): Promise<void> {
-    busy = true;
-    try {
-      await onjoin(accepted);
-    } finally {
-      busy = false;
-    }
-  }
+  const submission = new Submission();
 </script>
 
 <Dialog title={t('joinTitle')}>
@@ -37,7 +29,10 @@
       <p class="hint">{t('invitedBy', { node: invitation.issuer })}</p>
       <p class="hint">{t('joinWarning')}</p>
       <div class="row">
-        <button class="primary" disabled={busy} onclick={() => join(invitation)}>{t('join')}</button
+        <button
+          class="primary"
+          disabled={submission.busy}
+          onclick={() => void submission.run(() => onjoin(invitation))}>{t('join')}</button
         >
         <button onclick={ondismiss}>{t('notNow')}</button>
       </div>

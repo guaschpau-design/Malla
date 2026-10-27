@@ -8,7 +8,7 @@
   import markUrl from '../../../brand/mark.svg';
   import { basemapUrl, defaultServerUrl } from './lib/config.ts';
   import { connection, watchConnection } from './lib/links/connection.svelte.ts';
-  import type { JoinOutcome } from './lib/groups/group.ts';
+  import type { JoinOutcome, StoredGroup } from './lib/groups/group.ts';
   import GroupsPanel from './lib/groups/GroupsPanel.svelte';
   import JoinDialog from './lib/groups/JoinDialog.svelte';
   import { invitationInAddress } from './lib/groups/join-link.ts';
@@ -27,6 +27,9 @@
   import { DeviceLocation } from './lib/position/device-location.svelte.ts';
   import { PositionSharing } from './lib/position/position-sharing.svelte.ts';
   import UpdatePrompt from './lib/pwa/UpdatePrompt.svelte';
+  import { activeSos } from './lib/incidents/incidents.ts';
+  import StartupProblem from './lib/ui/StartupProblem.svelte';
+  import type { StartupFailure, VersionChange } from './lib/storage/version-change.ts';
   import { RadioSession } from './lib/radio/radio.svelte.ts';
   import { loadPreferences, type Preferences } from './lib/settings/preferences.ts';
   import { Session } from './lib/session.svelte.ts';
@@ -36,7 +39,8 @@
   import { GroupFeed } from './lib/sync/group-feed.svelte.ts';
   import { fullscreenAtFirstTap, fullscreenSupported } from './lib/ui/fullscreen.svelte.ts';
   import { closePanel, panels, togglePanel } from './lib/ui/panels.svelte.ts';
-  import Toast from './lib/ui/Toast.svelte';
+  import { notices } from './lib/ui/notices.svelte.ts';
+  import { attempt } from './lib/ui/submission.svelte.ts';
   import { WeatherFeed } from './lib/weather/weather-feed.svelte.ts';
   import MapWorkspace from './lib/workspace/MapWorkspace.svelte';
 
@@ -45,7 +49,7 @@
 
   // Read an invitation link before anything else, then remove the secret from the address bar
   // and the history (ADR-0012). This runs before the map takes over the URL fragment.
-  const fromAddress = invitationInAddress(window.location.pathname, window.location.hash);
+  const fromAddress = invitationInAddress(window.location, import.meta.env.BASE_URL);
   if (fromAddress !== null) window.history.replaceState(null, '', import.meta.env.BASE_URL);
   let incoming: Result<Invitation, ProtocolError> | null = $state.raw(fromAddress);
 
@@ -61,6 +65,8 @@
   let db: AppDb | undefined;
   let session: Session | undefined = $state();
   let preferences: Preferences | undefined = $state.raw();
+  /** Why the app cannot start, while it cannot. */
+  let startupFailure: StartupFailure | null = $state(null);
   /** The language chosen in More, or the browser's until preferences are read. */
   const locale: Locale = $derived(
     resolveLocale(preferences?.language.value ?? 'auto', navigator.languages),
@@ -83,7 +89,6 @@
     browserOnline: connection.online,
   });
   const link = $derived(linkOf(linkInput));
-  let notice: string | null = $state(null);
 
   const JOIN_NOTICES: Readonly<Record<JoinOutcome, MessageKey>> = {
     joined: 'joined',
@@ -96,25 +101,42 @@
     const onScheme = (event: MediaQueryListEvent) => (theme = event.matches ? 'dark' : 'light');
     darkQuery.addEventListener('change', onScheme);
 
-    void openTileStore().then((opened) => {
-      registerTileProtocol(opened, archives);
-      registerContourProtocol(opened, archives);
-      elevations = new ElevationReader((tile) => findTile('terrain', tile, opened, archives));
-      offline = { store: opened, archives };
-    });
+    const versionChange: VersionChange = {
+      onBlocked: () => (startupFailure = 'blocked'),
+      onReplaced: () => (startupFailure = 'replaced'),
+    };
+    const failed = (error: unknown) => {
+      console.error('Tesel could not start', error);
+      startupFailure = 'failed';
+    };
+    /** A database that waited for another window opened in the end: nothing blocks any more. */
+    const opened = () => {
+      if (startupFailure === 'blocked') startupFailure = null;
+    };
+
+    openTileStore(undefined, versionChange).then((store) => {
+      opened();
+      registerTileProtocol(store, archives);
+      registerContourProtocol(store, archives);
+      elevations = new ElevationReader((tile) => findTile('terrain', tile, store, archives));
+      offline = { store, archives };
+    }, failed);
     const server = defaultServerUrl();
     let stopWaitingForTap: (() => void) | undefined;
-    void openAppDb().then(async (opened) => {
-      db = opened;
-      if (server !== null) weather = WeatherFeed.start(opened, server);
-      void radio.useStorage(opened);
-      preferences = await loadPreferences(opened);
-      if (fullscreenSupported && preferences.fullscreen.value) {
-        stopWaitingForTap = fullscreenAtFirstTap();
-      }
-      sharing = new PositionSharing(preferences.positionMode, location);
-      session = await Session.load(opened);
-    });
+    openAppDb(undefined, versionChange)
+      .then(async (database) => {
+        opened();
+        db = database;
+        if (server !== null) weather = WeatherFeed.start(database, server);
+        await radio.useStorage(database);
+        preferences = await loadPreferences(database);
+        if (fullscreenSupported && preferences.fullscreen.value) {
+          stopWaitingForTap = fullscreenAtFirstTap();
+        }
+        sharing = new PositionSharing(preferences.positionMode, location);
+        session = await Session.load(database);
+      })
+      .catch(failed);
 
     return () => {
       stopWatching();
@@ -164,9 +186,18 @@
   });
 
   // The radio follows the active group: its channel, its events. A practice stays on this device.
+  // Derived first, so that reloading the list of groups does not configure the radio again.
+  const radioFeed = $derived(session?.activeGroup?.practice === true ? null : (feed ?? null));
   $effect(() => {
-    void radio.useFeed(session?.activeGroup?.practice ? null : (feed ?? null));
+    void radio.useFeed(radioFeed);
   });
+
+  /** An SOS of this device not cancelled yet: nothing may reload the app meanwhile. */
+  const ownSosOpen = $derived(
+    feed !== undefined && session?.identity
+      ? activeSos(feed.state, session.identity.nodeId).some((call) => call.mine)
+      : false,
+  );
 
   const workspaceGroup = $derived(
     feed && sharing && session?.identity && session.activeGroup
@@ -180,11 +211,6 @@
       : null,
   );
 
-  function showNotice(text: string): void {
-    notice = text;
-    setTimeout(() => (notice = null), 4000);
-  }
-
   async function createIdentity(alias: string): Promise<void> {
     await session?.createIdentity(alias);
   }
@@ -193,7 +219,7 @@
     if (!session) return;
     const outcome = await session.join(invitation);
     incoming = null;
-    showNotice(t(JOIN_NOTICES[outcome], { group: invitation.groupName }));
+    notices.show(t(JOIN_NOTICES[outcome], { group: invitation.groupName }));
   }
 
   function received(invitation: Invitation): void {
@@ -261,7 +287,10 @@
         {preferences}
         {offline}
         {weather}
-        onendpractice={() => void session?.endPractice()}
+        onendpractice={() => {
+          const current = session;
+          if (current) attempt(() => current.endPractice(), t('actionFailed'));
+        }}
       />
     {/if}
 
@@ -281,7 +310,16 @@
     {/if}
 
     {#if session && panels.open === 'groups'}
-      <GroupsPanel {t} {session} activeFeed={feed} oninvitation={received} onclose={closePanel} />
+      <GroupsPanel
+        {t}
+        {session}
+        activeFeed={feed}
+        oninvitation={received}
+        onleft={(group: StoredGroup) => {
+          attempt(() => radio.forgetGroup(group.secret), t('actionFailed'));
+        }}
+        onclose={closePanel}
+      />
     {/if}
 
     {#if session && !session.identity}
@@ -299,10 +337,14 @@
       />
     {/if}
 
-    {#if notice}
-      <Toast>{notice}</Toast>
+    <UpdatePrompt
+      {t}
+      hold={feed !== undefined && session?.identity !== undefined && ownSosOpen}
+      radioLinked={radio.linked}
+    />
+    {#if startupFailure}
+      <StartupProblem {t} failure={startupFailure} />
     {/if}
-    <UpdatePrompt {t} />
   </main>
 </div>
 

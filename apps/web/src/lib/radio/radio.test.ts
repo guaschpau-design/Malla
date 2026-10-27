@@ -1,4 +1,5 @@
 import { encodeEvent, type NodeId, type TeselEvent } from '@tesel/protocol';
+import type { LoraEvent } from '@tesel/core';
 import 'fake-indexeddb/auto';
 
 import type {
@@ -11,14 +12,21 @@ import type {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { LoraSink } from '../sync/group-feed.svelte.ts';
+import { loadEvents } from '../events/event-log.ts';
+import { createGroup } from '../groups/group.ts';
+import { saveGroup } from '../groups/group-store.ts';
 import { openAppDb } from '../storage/app-db.ts';
 import { RadioSession, type RadioFeed } from './radio.svelte.ts';
+
+const SECRET: Uint8Array = new Uint8Array(16).fill(1);
 
 class FakeLink implements RadioLink {
   state: RadioLinkState = 'disconnected';
   name: string | null = null;
   channel: string | null = null;
   readonly sent: Uint8Array[] = [];
+  readonly forgotten: Uint8Array[] = [];
+  held: Uint8Array[] = [];
   #receive: ((frame: ReceivedFrame) => void) | null = null;
   #stateChange: ((state: RadioLinkState) => void) | null = null;
   #text: ((message: RadioText) => void) | null = null;
@@ -33,6 +41,20 @@ class FakeLink implements RadioLink {
   configureGroupChannel(name: string): Promise<void> {
     this.channel = name;
     return Promise.resolve();
+  }
+
+  forgetChannels(matches: (secret: Uint8Array) => boolean): Promise<void> {
+    this.forgotten.push(...this.held.filter(matches));
+    this.held = this.held.filter((secret) => !matches(secret));
+    return Promise.resolve();
+  }
+
+  /** The Bluetooth link drops, then the radio is back. */
+  dropAndReturn(): void {
+    this.state = 'connecting';
+    this.#stateChange?.('connecting');
+    this.state = 'ready';
+    this.#stateChange?.('ready');
   }
 
   send(bytes: Uint8Array): Promise<SendOutcome> {
@@ -65,18 +87,33 @@ class FakeLink implements RadioLink {
     return Promise.resolve();
   }
 
-  hear(bytes: Uint8Array): void {
-    this.#receive?.({ bytes, snr: 7.5 });
+  hear(bytes: Uint8Array, secret = SECRET): void {
+    this.#receive?.({ bytes, snr: 7.5, secret });
   }
 }
 
 class FakeFeed implements RadioFeed {
   sink: LoraSink | null = null;
+  attached = 0;
   readonly received: Uint8Array[] = [];
-  readonly radioChannel = { name: 'Rescate', secret: new Uint8Array(16).fill(1) };
+  readonly aired: LoraEvent[] = [];
+  readonly radioChannel = { name: 'Rescate', secret: SECRET };
 
-  attachRadio(sink: LoraSink | null): void {
+  readonly groupId: string;
+
+  constructor(groupId = 'rescate') {
+    this.groupId = groupId;
+  }
+
+  attachRadio(sink: LoraSink | null): Promise<void> {
     this.sink = sink;
+    if (sink !== null) this.attached++;
+    return Promise.resolve();
+  }
+
+  radioSent(event: LoraEvent): Promise<void> {
+    this.aired.push(event);
+    return Promise.resolve();
   }
 
   receiveFromRadio(bytes: Uint8Array): Promise<void> {
@@ -119,6 +156,33 @@ describe('radio session', () => {
     feed.sink?.offer({ event: chat, bytes }, 'own');
     await vi.advanceTimersByTimeAsync(1000);
     expect(link.sent).toEqual([bytes]);
+    expect(feed.aired).toEqual([chat]);
+  });
+
+  it('links the group again when a lost radio comes back, and says so meanwhile', async () => {
+    const link = new FakeLink();
+    const radio = new RadioSession(link, () => 0);
+    const feed = new FakeFeed();
+    await radio.connect();
+    await radio.useFeed(feed);
+    expect(feed.attached).toBe(1);
+    link.dropAndReturn();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(radio.linked).toBe(true);
+    expect(radio.reconnecting).toBe(false);
+    expect(feed.attached).toBe(2);
+  });
+
+  it('keeps what is queued when the same group’s feed opens again, as for a new alias', async () => {
+    const link = new FakeLink();
+    const radio = new RadioSession(link, () => 0);
+    await radio.connect();
+    const before = new FakeFeed('rescate');
+    await radio.useFeed(before);
+    before.sink?.offer({ event: chat, bytes }, 'own');
+    await radio.useFeed(new FakeFeed('rescate'));
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(link.sent).toEqual([bytes]);
   });
 
   it('never sends what was queued for one group on another group’s channel', async () => {
@@ -129,7 +193,7 @@ describe('radio session', () => {
     await radio.useFeed(first);
     // Queued, but the 1 s pump has not run yet when the user switches groups.
     first.sink?.offer({ event: chat, bytes }, 'own');
-    await radio.useFeed(new FakeFeed());
+    await radio.useFeed(new FakeFeed('otro'));
     await vi.advanceTimersByTimeAsync(5000);
     expect(link.sent).toEqual([]);
   });
@@ -159,6 +223,39 @@ describe('radio session', () => {
       await restarted.useStorage(db);
       expect(restarted.texts.map((text) => text.text)).toEqual(['Hola']);
     });
+  });
+
+  it('keeps what it hears on the channel of another of this device’s groups in that group’s log', async () => {
+    vi.useRealTimers();
+    const db = await openAppDb('radio-session-other-group');
+    const other = createGroup('Antes', null, 1);
+    await saveGroup(db, other);
+    const link = new FakeLink();
+    const radio = new RadioSession(link);
+    await radio.useStorage(db);
+    const feed = new FakeFeed();
+    await radio.connect();
+    await radio.useFeed(feed);
+    link.hear(bytes, other.secret);
+    await vi.waitFor(async () => {
+      expect(await loadEvents(db, other.id)).toEqual([bytes]);
+    });
+    expect(feed.received).toEqual([]);
+  });
+
+  it('clears a left group’s channel from the radio the next time one is linked', async () => {
+    vi.useRealTimers();
+    const db = await openAppDb('radio-session-forget');
+    const left = createGroup('Antes', null, 1);
+    const link = new FakeLink();
+    link.held = [left.secret];
+    const radio = new RadioSession(link);
+    await radio.useStorage(db);
+    await radio.forgetGroup(left.secret);
+    expect(link.forgotten).toEqual([]);
+    await radio.connect();
+    await radio.useFeed(new FakeFeed());
+    expect(link.forgotten).toEqual([left.secret]);
   });
 
   it('unlinks the feed when the radio goes away', async () => {

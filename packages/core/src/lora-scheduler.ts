@@ -2,10 +2,10 @@
 //
 // LoRa is slow and EU law allows a transmitter at most 10 % airtime in the 869.4–869.65 MHz
 // sub-band. The scheduler queues events, sends the most urgent first, keeps a rolling one-hour
-// airtime budget, thins positions, repeats an own SOS until someone acknowledges it, and applies
-// the bridging rules to events that came from the server. It is pure: time and randomness are
-// passed in, and the caller does the sending: it takes one packet with `next`, then reports
-// `sent` or `retry`.
+// airtime budget, thins positions, repeats an own SOS until someone acknowledges or cancels it,
+// and applies the bridging rules to events that came from the server (ADR-0015, ADR-0043). It is
+// pure: time and randomness are passed in, and the caller does the sending: it takes one packet
+// with `next`, then reports `sent` or `retry`.
 
 import {
   eventRefKey,
@@ -52,19 +52,26 @@ export const LIMITS = {
   ownPositionMaxMs: 10 * MINUTE,
   /** Positions from the server: at most one every 5 minutes per member. */
   bridgedPositionMs: 5 * MINUTE,
-  /** Events from the server older than this are history, not news: they are not bridged. */
+  /**
+   * Events from the server older than this are history, not news: they are not bridged, unless
+   * they still call for action (`stillNews`).
+   */
   bridgeMaxAgeMs: 10 * MINUTE,
   /** Bridged events wait up to this long, so several bridges do not all repeat them. */
   bridgeDelayMs: 10_000,
   /** An ACK over LoRa waits 2–30 s and is dropped if another member's ACK is heard first. */
   ackDelayMinMs: 2_000,
   ackDelayMaxMs: 30_000,
-  /** Own SOS repeats: first after 30 s, doubling up to 5 minutes, this many after the first send. */
+  /**
+   * Own SOS repeats: first after 30 s, doubling up to every 5 minutes, until someone acknowledges
+   * or cancels it. At 5 minutes an SOS takes under 1 % of the airtime.
+   */
   sosFirstRepeatMs: 30_000,
   sosMaxRepeatMs: 5 * MINUTE,
-  sosMaxRepeats: 12,
   /** A send the radio refused is retried after this long. */
   retryMs: 10_000,
+  /** Queued packets at most; beyond it the least urgent go, bridged ones first. */
+  maxPending: 500,
 } as const;
 
 /** Events urgent enough to use the full legal budget. */
@@ -89,6 +96,10 @@ export class LoraScheduler {
   readonly #openSos = new Set<string>();
   /** Roll calls seen: each member answers them, so their ACKs are never dropped (§3.12). */
   readonly #rollCalls = new Set<string>();
+  /** SOS calls, critical alerts and roll calls seen: their acknowledgements are urgent too. */
+  readonly #urgentTargets = new Set<string>();
+  /** SOS calls seen cancelled: no longer worth bridging, however recent. */
+  readonly #cancelledSos = new Set<string>();
   readonly #spent: { readonly at: number; readonly ms: number }[] = [];
   #lastOwnPosition: { readonly at: LatLon; readonly time: number } | null = null;
   readonly #lastBridgedPosition = new Map<NodeId, number>();
@@ -106,7 +117,7 @@ export class LoraScheduler {
     const key = eventRefKey(event);
     this.observe(event);
     if (this.#onAir.has(key) || this.#pending.has(key)) return;
-    if (source === 'bridged' && now - event.time * 1000 > LIMITS.bridgeMaxAgeMs) return;
+    if (source === 'bridged' && this.#isHistory(event, now)) return;
     if (event.type === 'position' || event.type === 'position-hidden') {
       // Only the newest position of a member is worth sending, and none once it is hidden.
       for (const [otherKey, other] of this.#pending) {
@@ -123,13 +134,17 @@ export class LoraScheduler {
       dueAt: now + this.#delay(event, source),
       sends: 0,
     });
+    this.#keepWithinLimit();
   }
 
-  /** An event arrived over LoRa: it is on the air already, so it is not sent again. */
+  /**
+   * An event arrived over LoRa: it is on the air already, so it is not sent again. An own SOS
+   * heard back from another bridge still repeats until someone answers it.
+   */
   heard(event: LoraEvent, now: number): void {
     const key = eventRefKey(event);
     this.#onAir.set(key, now);
-    this.#pending.delete(key);
+    if (!this.#openSos.has(key)) this.#pending.delete(key);
     this.observe(event);
     if (event.type === 'ack' && !this.#rollCalls.has(eventRefKey(event.target))) {
       // Another member acknowledged: our own ACK for the same event would only add noise.
@@ -145,9 +160,20 @@ export class LoraScheduler {
 
   /** An event arrived over any transport: acknowledgements and cancellations end SOS repeats. */
   observe(event: LoraEvent): void {
+    const key = eventRefKey(event);
     if (event.type === 'ack') this.#closeSos(eventRefKey(event.target));
-    if (event.type === 'sos-cancel') this.#closeSos(eventRefKey(event.sos));
-    if (event.type === 'roll-call') this.#rollCalls.add(eventRefKey(event));
+    if (event.type === 'sos-cancel') {
+      this.#cancelledSos.add(eventRefKey(event.sos));
+      this.#closeSos(eventRefKey(event.sos));
+    }
+    if (event.type === 'roll-call') this.#rollCalls.add(key);
+    if (
+      event.type === 'sos' ||
+      event.type === 'roll-call' ||
+      (event.type === 'alert' && event.level === 'critical')
+    ) {
+      this.#urgentTargets.add(key);
+    }
   }
 
   /**
@@ -160,6 +186,8 @@ export class LoraScheduler {
     this.#onAir.clear();
     this.#openSos.clear();
     this.#rollCalls.clear();
+    this.#urgentTargets.clear();
+    this.#cancelledSos.clear();
     this.#lastOwnPosition = null;
     this.#lastBridgedPosition.clear();
     this.#inFlight = null;
@@ -172,19 +200,20 @@ export class LoraScheduler {
   next(now: number): LoraPacket | null {
     if (this.#inFlight !== null) return null;
     this.#forgetBefore(now - LIMITS.windowMs);
+    // Bridged news that waited in the queue for the budget may have become history meanwhile.
+    for (const [key, pending] of this.#pending) {
+      if (pending.source === 'bridged' && this.#isHistory(pending.packet.event, now)) {
+        this.#pending.delete(key);
+      }
+    }
     const due = [...this.#pending.values()]
       .filter((pending) => pending.dueAt <= now && this.#eligible(pending, now))
-      .sort(
-        (a, b) =>
-          urgencyOf(a.packet.event.type) - urgencyOf(b.packet.event.type) || a.dueAt - b.dueAt,
-      );
+      .sort((a, b) => this.#urgency(a) - this.#urgency(b) || a.dueAt - b.dueAt);
     const spent = this.#spent.reduce((total, entry) => total + entry.ms, 0);
     for (const pending of due) {
       const cost = this.#airtimeMs(pending.packet.bytes.length);
       const budget =
-        urgencyOf(pending.packet.event.type) <= URGENT
-          ? LIMITS.urgentBudgetMs
-          : LIMITS.normalBudgetMs;
+        this.#urgency(pending) <= URGENT ? LIMITS.urgentBudgetMs : LIMITS.normalBudgetMs;
       if (spent + cost > budget) continue;
       this.#pending.delete(pending.key);
       this.#inFlight = { pending, cost };
@@ -216,6 +245,40 @@ export class LoraScheduler {
   spentMs(now: number): number {
     this.#forgetBefore(now - LIMITS.windowMs);
     return this.#spent.reduce((total, entry) => total + entry.ms, 0);
+  }
+
+  /**
+   * How urgent a queued packet is: its type's urgency, except that an acknowledgement of an SOS,
+   * a critical alert or a roll call is as urgent as an alert.
+   */
+  #urgency(pending: Pending): number {
+    const { event } = pending.packet;
+    if (event.type === 'ack' && this.#urgentTargets.has(eventRefKey(event.target))) return URGENT;
+    return urgencyOf(event.type);
+  }
+
+  /**
+   * Whether an event from the server is too old to bridge. Age is the sender's clock against
+   * ours, so a wrong clock can only hold back what is not urgent: an SOS not cancelled, a
+   * cancellation, an alert and a roll call are bridged however old, since they still call for
+   * action.
+   */
+  #isHistory(event: LoraEvent, now: number): boolean {
+    if (stillNews(event, this.#cancelledSos)) return false;
+    return now - event.time * 1000 > LIMITS.bridgeMaxAgeMs;
+  }
+
+  /** Drops the least urgent queued packets beyond the limit, bridged before own, oldest first. */
+  #keepWithinLimit(): void {
+    const excess = this.#pending.size - LIMITS.maxPending;
+    if (excess <= 0) return;
+    const leastNeeded = [...this.#pending.values()].sort(
+      (a, b) =>
+        this.#urgency(b) - this.#urgency(a) ||
+        Number(b.source === 'bridged') - Number(a.source === 'bridged') ||
+        a.dueAt - b.dueAt,
+    );
+    for (const pending of leastNeeded.slice(0, excess)) this.#pending.delete(pending.key);
   }
 
   #delay(event: LoraEvent, source: LoraSource): number {
@@ -252,7 +315,7 @@ export class LoraScheduler {
       else this.#lastBridgedPosition.set(event.origin, now);
     }
     const sends = pending.sends + 1;
-    if (this.#openSos.has(pending.key) && sends <= LIMITS.sosMaxRepeats) {
+    if (this.#openSos.has(pending.key)) {
       // Repeats are byte-identical, so receivers de-duplicate them (protocol §3.8).
       const wait = Math.min(LIMITS.sosFirstRepeatMs * 2 ** (sends - 1), LIMITS.sosMaxRepeatMs);
       this.#pending.set(pending.key, { ...pending, dueAt: now + wait, sends });
@@ -269,4 +332,10 @@ export class LoraScheduler {
     while (this.#spent[0] !== undefined && this.#spent[0].at < time) this.#spent.shift();
     for (const [key, at] of this.#onAir) if (at < time) this.#onAir.delete(key);
   }
+}
+
+/** Events that call for action however long ago they were sent. */
+function stillNews(event: LoraEvent, cancelledSos: ReadonlySet<string>): boolean {
+  if (event.type === 'sos') return !cancelledSos.has(eventRefKey(event));
+  return event.type === 'sos-cancel' || event.type === 'alert' || event.type === 'roll-call';
 }

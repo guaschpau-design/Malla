@@ -16,6 +16,7 @@
   import TasksPanel from '../tasks/TasksPanel.svelte';
   import type { TaskFields } from '../tasks/tasks.ts';
   import { closePanel, panels } from '../ui/panels.svelte.ts';
+  import { attempt } from '../ui/submission.svelte.ts';
 
   interface Props {
     t: Translate;
@@ -96,13 +97,14 @@
     {locale}
     groupState={feed.state}
     {self}
+    undelivered={feed.undelivered}
     coordinator={role === 'coordinator'}
     onsend={(text: string) => feed.sendChat(text)}
     onalert={(text: string) => feed.sendAlert(text)}
-    onrollcall={async () => {
+    onrollcall={() => {
       // Closing the chat shows who answers, in the banner on the map.
       closePanel();
-      await feed.callRoll();
+      attempt(() => feed.callRoll(), t('actionFailed'));
     }}
     radioTexts={radio.texts}
     showRadioTab={radio.state !== 'disconnected' || radio.texts.length > 0}

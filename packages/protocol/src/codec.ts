@@ -50,6 +50,16 @@ export function decodeEvent(bytes: Uint8Array): Result<TeselEvent, ProtocolError
   });
 }
 
+/**
+ * Whether an event is worth keeping (§3.1): one of a known type that decodes, or one of a type
+ * this version does not know, kept and forwarded unchanged. A known type that does not decode is
+ * damaged and is dropped, so that it cannot stand in for the real event with its `(origin, seq)`.
+ */
+export function isKeepable(bytes: Uint8Array): boolean {
+  const decoded = decodeEvent(bytes);
+  return decoded.ok || decoded.error.code === 'unknown-type';
+}
+
 function catchFailure<T>(work: () => T): Result<T, ProtocolError> {
   try {
     return ok(work());

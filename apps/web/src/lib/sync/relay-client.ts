@@ -74,7 +74,11 @@ export class RelayClient {
   #retryTimer: ReturnType<typeof setTimeout> | null = null;
   #connectTimer: ReturnType<typeof setTimeout> | null = null;
   #stopped = true;
-  /** Messages are handled one at a time, in arrival order, so cursors only move forward. */
+  /**
+   * Messages are handled one at a time, in arrival order, so cursors only move forward. If one
+   * fails, the rest of that link's messages are dropped and the link closed: joining again from
+   * the last stored cursor brings back what was lost, instead of a later cursor skipping it.
+   */
   #queue: Promise<void> = Promise.resolve();
   /** The batch envelopes join while it waits in the queue; null once it starts or is closed. */
   #batch: ReceivedEnvelope[] | null = null;
@@ -162,7 +166,7 @@ export class RelayClient {
     }, CONNECT_TIMEOUT_MS);
     socket.onopen = () => {
       this.#clearConnectTimer();
-      this.#enqueue(async () => {
+      this.#enqueue(socket, async () => {
         const after = await this.#options.handlers.cursor(relay);
         if (this.#socket !== socket) return;
         socket.send(encodeRelayMessage({ t: 'join', group: this.#options.group, after }));
@@ -173,12 +177,12 @@ export class RelayClient {
       const message = typeof event.data === 'string' ? parseServerMessage(event.data) : null;
       if (message === null) return;
       if (message.t === 'env') {
-        this.#collect({ env: message.env, cursor: message.cursor }, relay);
+        this.#collect(socket, { env: message.env, cursor: message.cursor }, relay);
         return;
       }
       // Envelopes after this message go in a new batch, handled after it.
       this.#batch = null;
-      this.#enqueue(() => this.#handle(message, relay));
+      this.#enqueue(socket, () => this.#handle(message, relay));
     };
     socket.onclose = () => {
       if (this.#socket !== socket) return;
@@ -202,11 +206,11 @@ export class RelayClient {
   }
 
   /** Adds an envelope to the waiting batch, or queues a new batch if none is waiting or it is full. */
-  #collect(envelope: ReceivedEnvelope, relay: string): void {
+  #collect(socket: SocketLike, envelope: ReceivedEnvelope, relay: string): void {
     if (this.#batch === null || this.#batch.length >= MAX_BATCH) {
       const batch: ReceivedEnvelope[] = [];
       this.#batch = batch;
-      this.#enqueue(async () => {
+      this.#enqueue(socket, async () => {
         if (this.#batch === batch) this.#batch = null;
         await this.#options.handlers.onEnvelopes(batch, relay);
       });
@@ -237,10 +241,17 @@ export class RelayClient {
     }
   }
 
-  #enqueue(task: () => Promise<void>): void {
-    this.#queue = this.#queue.then(task).catch((error: unknown) => {
-      console.warn('Relay message handling failed', error);
-    });
+  /** Queues the handling of a message of `socket`; it is skipped once that link is gone. */
+  #enqueue(socket: SocketLike, task: () => Promise<void>): void {
+    this.#queue = this.#queue
+      .then(() => (this.#socket === socket ? task() : undefined))
+      .catch((error: unknown) => {
+        console.warn('Relay message handling failed', error);
+        if (this.#socket !== socket) return;
+        this.#socket = null;
+        socket.close();
+        this.#lost(true);
+      });
   }
 
   #scheduleRetry(): void {

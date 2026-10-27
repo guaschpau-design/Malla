@@ -7,7 +7,7 @@
 
   import type { Translate } from '../i18n/index.ts';
   import { aliasOf } from '../incidents/incidents.ts';
-  import Toast from '../ui/Toast.svelte';
+  import { notices } from '../ui/notices.svelte.ts';
   import { editTask } from './task-editor.svelte.ts';
   import TaskLayer from './TaskLayer.svelte';
   import { assignedTo, newlyAssigned } from './tasks.ts';
@@ -24,30 +24,19 @@
 
   let { t, map, groupState, self, interactive, visible }: Props = $props();
 
-  const NOTICE_MS = 6000;
   const mine = $derived(assignedTo(groupState, self));
   // What was already assigned when the group opened is not news.
   let known = untrack(() => mine);
-  let notice: string | null = $state(null);
-  let timer: ReturnType<typeof setTimeout> | undefined;
 
   $effect(() => {
     const now = mine;
     const [handed] = newlyAssigned(known, now, self);
     known = now;
     if (handed === undefined) return;
-    notice = t('taskHandedToYou', { name: aliasOf(groupState, handed.origin), text: handed.text });
-    clearTimeout(timer);
-    timer = setTimeout(() => (notice = null), NOTICE_MS);
-  });
-
-  $effect(() => () => {
-    clearTimeout(timer);
+    notices.show(
+      t('taskHandedToYou', { name: aliasOf(groupState, handed.origin), text: handed.text }),
+    );
   });
 </script>
 
 <TaskLayer {map} {groupState} {interactive} {visible} onselect={editTask} />
-
-{#if notice}
-  <Toast>{notice}</Toast>
-{/if}

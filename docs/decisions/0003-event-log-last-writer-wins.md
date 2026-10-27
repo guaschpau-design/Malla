@@ -1,6 +1,6 @@
 # 0003. Event log with last-writer-wins instead of a CRDT library
 
-- Status: Accepted
+- Status: Accepted, amended by 0044
 - Date: 2026-10-25
 
 ## Context
@@ -18,4 +18,4 @@ Several devices change shared state while partly or fully disconnected, over lin
 - The model is easy to explain, test and implement in another language.
 - Each event fits in one LoRa packet.
 - Two people editing the same marker at the same moment: one edit wins. Acceptable for our objects.
-- Ordering relies on device clocks. Phones are normally synchronised by the network or GPS; badly wrong clocks only affect tie-breaking of concurrent edits, not delivery.
+- Ordering relies on device clocks. Phones are normally synchronised by the network or GPS. Wrong clocks do not affect delivery, but a clock that runs ahead wins concurrent edits until it is set right; a clock that went back is kept from undoing its own device's edits by [ADR-0044](0044-clocks-and-damaged-events.md).

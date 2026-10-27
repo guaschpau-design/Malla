@@ -53,14 +53,17 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 - Live positions with three privacy modes: sharing, paused and hidden.
 - Group chat, with dictation: a microphone in the text box writes what is said, in Spanish, with the phone's speech recognition, to be checked and sent ([ADR-0040](docs/decisions/0040-dictated-messages.md)).
 - Markers and areas with a symbol catalogue, editable by any member. Lines and circles from other clients are shown (protocol §3.7).
-- SOS calls with kind, position and acknowledgements; cancellation by the sender or a coordinator.
+- SOS calls with kind, position and acknowledgements; cancellation by the sender or a coordinator. An SOS never waits for the GPS: without a fix it goes at once, says the place is not known yet, and the position follows as soon as there is one (protocol §3.8, [ADR-0043](docs/decisions/0043-radio-delivery.md)).
+- The alarm: another member's SOS, a critical alert and a roll call vibrate and sound a short tone, and, while the app is in the background, show a notification that brings it back. The tone and the notifications are switches in "More" ([ADR-0047](docs/decisions/0047-alarms-and-notices.md)).
+- What has not reached anyone yet is marked: own chat messages and SOS calls waiting for a server or the radio say so.
+- One place for messages to the user, at the top of the map under the incidents, so they never cover a button. A form that could not be sent keeps what was typed and says so; any action that fails says so too; a second window that holds the app's storage is explained, with a button to reload.
 - Alerts from coordinators: a chat message sent as an alert stays on every screen until acknowledged ([ADR-0026](docs/decisions/0026-one-kind-of-alert.md)).
 - Roll call: a coordinator calls it from the chat; each member answers «Estoy bien» or «Necesito ayuda» (which opens the SOS), and the caller sees who has not answered yet. One new event, `ROLL_CALL`, answered with ACKs that LoRa never drops for another member's answer ([ADR-0028](docs/decisions/0028-roll-call.md), protocol §3.12).
 
 ### Transports
 
 - Internet: a zero-knowledge relay that stores and forwards encrypted envelopes (protocol §8).
-- MeshCore LoRa through a companion radio over Web Bluetooth (protocol §7), with priorities, a legal airtime budget, position thinning, SOS repeats and bridging between radio and internet by any member who has both ([ADR-0015](docs/decisions/0015-lora-airtime-policy.md)).
+- MeshCore LoRa through a companion radio over Web Bluetooth (protocol §7), with priorities, a legal airtime budget, position thinning, SOS repeats and bridging between radio and internet by any member who has both ([ADR-0015](docs/decisions/0015-lora-airtime-policy.md)). What was written without a radio goes on the air once one is linked; an SOS repeats until it is acknowledged or cancelled; open SOS calls, alerts and roll calls are bridged however old; answers to them go first; a lost Bluetooth link comes back by itself; frames of the device's other groups are kept for them; and leaving a group frees its channel in the radio ([ADR-0043](docs/decisions/0043-radio-delivery.md)).
 - Text messages of other MeshCore apps are kept, read-only, in a chat tab.
 - The top bar names what the device reaches its group through — WiFi, 4G/5G, LoRa, several at once — with a green, orange or red dot, and opens a panel with one card per connection. Browsers that do not say whether they use Wi-Fi or mobile data show "WiFi/5G".
 - Command post: a laptop or Raspberry Pi with its own Wi-Fi that replicates the group's server; apps find it by name and sync through it when the server cannot be reached ([ADR-0018](docs/decisions/0018-command-post.md)).
@@ -76,7 +79,7 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 
 ### Known limits
 
-- Phones must keep the app open: no background position or notifications until the Android and iOS apps (ADR-0016).
+- Phones must keep the app open to share their position: no background position until the Android and iOS apps (ADR-0016). Alarm notifications reach a phone with the app in the background where the browser allows it.
 - iPhones cannot pair a radio from Safari; they use the internet or a command post.
 - Over LoRa, members can impersonate each other and channel encryption is weak ([ADR-0010](docs/decisions/0010-lora-link-security.md)).
 - MeshCore `data_type` 0xFF4D is in the development range until registered.

@@ -16,6 +16,7 @@
   import InviteView from './InviteView.svelte';
   import JoinGroup from './JoinGroup.svelte';
   import QrScanner from './QrScanner.svelte';
+  import { attempt } from '../ui/submission.svelte.ts';
 
   interface Props {
     t: Translate;
@@ -24,10 +25,12 @@
     activeFeed: GroupFeed | undefined;
     /** An invitation was pasted or scanned; the caller asks the user to confirm it. */
     oninvitation: (invitation: Invitation) => void;
+    /** A group was left: its channel goes from the radio. */
+    onleft: (group: StoredGroup) => void;
     onclose: () => void;
   }
 
-  let { t, session, activeFeed, oninvitation, onclose }: Props = $props();
+  let { t, session, activeFeed, oninvitation, onleft, onclose }: Props = $props();
 
   type View =
     | { kind: 'home' }
@@ -45,18 +48,23 @@
     oninvitation(invitation);
   }
 
-  async function leave(group: StoredGroup): Promise<void> {
+  function leave(group: StoredGroup): void {
     if (group.practice) {
-      await session.endPractice();
+      attempt(() => session.endPractice(), t('actionFailed'));
       return;
     }
     if (!confirm(t('confirmLeave', { group: group.name }))) return;
-    await session.leave(group.id);
+    attempt(async () => {
+      await session.leave(group.id);
+      onleft(group);
+    }, t('actionFailed'));
   }
 
-  async function practise(): Promise<void> {
-    await session.startPractice(t('practiceGroupName'));
-    onclose();
+  function practise(): void {
+    attempt(async () => {
+      await session.startPractice(t('practiceGroupName'));
+      onclose();
+    }, t('actionFailed'));
   }
 </script>
 
@@ -79,7 +87,9 @@
           feed={activeFeed}
           self={session.identity.nodeId}
           oninvite={() => (view = { kind: 'invite', group })}
-          onleave={() => leave(group)}
+          onleave={() => {
+            leave(group);
+          }}
         />
       {:else if session.groups.length === 0}
         <p class="hint">{t('noGroups')}</p>

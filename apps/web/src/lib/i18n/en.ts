@@ -52,6 +52,16 @@ export const en = {
   confirmDelete: 'Delete the offline map "{name}"?',
   storageUsed: 'Storage used by the app: {used} of {quota}',
   updateAvailable: 'A new version is available.',
+  updateAvailableRadio:
+    'A new version is ready. Updating disconnects the radio, which then has to be connected again.',
+  startupProblem: 'Tesel cannot start',
+  startupBlocked:
+    'Another window of Tesel is open with an older version. Close it and Tesel will start by itself.',
+  startupReplaced: 'Tesel was updated in another window. Reload this one to go on.',
+  startupFailed:
+    'This browser does not let Tesel keep its data: it may be a private window, or the device may be full. Try a normal window or free some space.',
+  reload: 'Reload',
+  radioReconnecting: 'The radio connection was lost. Connecting again…',
   update: 'Update',
   readyOffline: 'The app is ready to work offline.',
 
@@ -105,6 +115,7 @@ export const en = {
   invitationQr: 'QR code of the invitation',
   copyLink: 'Copy link',
   copied: 'Copied',
+  copyFailed: 'Could not copy.',
   share: 'Share',
   back: 'Back',
   scanTitle: 'Scan an invitation',
@@ -271,9 +282,24 @@ export const en = {
   sosFire: 'Fire',
   sosSecurity: 'Security',
   sosText: 'Details (optional)',
-  sosLocating: 'Getting your position…',
+  sosWithoutPlace:
+    'No position yet: the SOS goes out now without it, and your position follows as soon as the GPS has it.',
+  sosFailed: 'The SOS could not be sent. Try again, or call for help another way.',
+  sosByRadio: 'SOS on its way by radio.',
+  sosWaiting:
+    'No connection and no radio: the SOS is kept and goes out as soon as there is either.',
+  sosPlaceShared: 'Called without a position; position shared at {time}.',
+  sosPlaceUnknown: 'Called without a position, and has shared none yet.',
+  sosNotSentYet:
+    'It has not left this device yet: it goes out when there is a connection or a radio.',
+  notSentYet: 'not sent yet',
+  sendFailed: 'That could not be sent. Try again.',
+  actionFailed: 'That did not work. Try again.',
+  alarmSound: 'Alarm sound',
+  notifications: 'Notifications',
+  notificationsRefused:
+    "The browser does not let Tesel show notifications. Allow them in the browser's site settings.",
   sosLocated: 'Your position goes with it, accurate to {meters} m.',
-  sosNoLocation: 'Your position is not available: the SOS will carry the centre of the map.',
   sosSend: 'Send SOS',
   sosSent: 'SOS sent to the group.',
   acknowledgedBy: 'Acknowledged by {names}',

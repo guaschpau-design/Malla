@@ -5,6 +5,7 @@
   import {
     ALERT_TEXT_MAX_BYTES,
     CHAT_MAX_BYTES,
+    eventRefKey,
     utf8ByteLength,
     type NodeId,
   } from '@tesel/protocol';
@@ -17,6 +18,7 @@
   import type { StoredRadioText } from '../radio/radio-texts.ts';
   import Panel from '../ui/Panel.svelte';
   import Pictogram from '../ui/Pictogram.svelte';
+  import { Submission } from '../ui/submission.svelte.ts';
   import { Dictation, speechRecognizer, type DictationProblem } from './dictation.svelte.ts';
   import { timeline } from './timeline.ts';
 
@@ -25,6 +27,8 @@
     locale: Locale;
     groupState: GroupState;
     self: NodeId;
+    /** Own events that have reached no one yet, by event reference key: shown as pending. */
+    undelivered: ReadonlySet<string>;
     /** This device coordinates: it can send alerts and call the roll (a UI rule, ADR-0005). */
     coordinator: boolean;
     onsend: (text: string) => Promise<void>;
@@ -42,6 +46,7 @@
     locale,
     groupState,
     self,
+    undelivered,
     coordinator,
     onsend,
     onalert,
@@ -80,14 +85,19 @@
 
   onDestroy(() => dictation?.cancel());
 
-  /** Sends the text typed or dictated, as a message or as an alert. */
+  const submission = new Submission();
+
+  /**
+   * Sends the text typed or dictated, as a message or as an alert. The box is emptied at once,
+   * and gets the text back if it could not be sent.
+   */
   async function send(as: 'message' | 'alert'): Promise<void> {
     if (!fits[as]) return;
     dictation?.cancel();
     const message = text.trim();
     text = '';
-    if (as === 'alert') await onalert(message);
-    else await onsend(message);
+    const sent = await submission.run(() => (as === 'alert' ? onalert(message) : onsend(message)));
+    if (!sent && text === '') text = message;
   }
 
   // Keep the newest entry in view.
@@ -148,6 +158,9 @@
               )}
             </span>
             <span class="text">{entry.event.text}</span>
+            {#if undelivered.has(eventRefKey(entry.event))}
+              <span class="pending">{t('notSentYet')}</span>
+            {/if}
           </li>
         {/each}
       </ol>
@@ -180,7 +193,10 @@
           </button>
         {/if}
       </div>
-      <button type="submit" class="primary" disabled={!fits.message}>{t('send')}</button>
+      <button type="submit" class="primary" disabled={submission.busy || !fits.message}
+        >{t('send')}</button
+      >
+      {#if submission.failed}<p class="warning">{t('sendFailed')}</p>{/if}
       {#if coordinator}
         <div class="coordinator">
           <button
@@ -274,6 +290,12 @@
     border-left-color: var(--danger);
   }
 
+  .pending {
+    color: var(--muted);
+    font-size: var(--text-small);
+    font-style: italic;
+  }
+
   .meta {
     color: var(--muted);
     font-size: var(--text-small);
@@ -290,6 +312,10 @@
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 0.5rem;
+  }
+
+  .compose .warning {
+    grid-column: 1 / -1;
   }
 
   /* The microphone inside the text box, at its end, where the thumb is. */

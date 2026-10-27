@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { decodeEvent, encodeEvent, peekHeader } from './codec.ts';
+import { decodeEvent, encodeEvent, isKeepable, peekHeader } from './codec.ts';
 import { EventTypeCode, MAX_EVENT_SIZE } from './constants.ts';
 import type { NodeId, ShapeEvent, TeselEvent } from './events.ts';
 import { TASK_TEXT_MAX_BYTES } from './fields.ts';
@@ -49,6 +49,27 @@ describe('event codec', () => {
     const bytes = encodeOrFail(event);
     expect(bytes.length).toBe(28);
     expect(toHex(bytes)).toBe('0102a1b2c3d4070000000013fc685037ab18f0e64a0105005a009600');
+  });
+
+  it('keeps events that decode and those of unknown types, not damaged ones', () => {
+    const chat = encodeOrFail({ type: 'chat', origin: ALICE, seq: 1, time: T0, text: 'Hola' });
+    expect(isKeepable(chat)).toBe(true);
+    const unknown = chat.slice();
+    unknown[1] = 0x7f;
+    expect(isKeepable(unknown)).toBe(true);
+    const position = encodeOrFail({
+      type: 'position',
+      origin: ALICE,
+      seq: 7,
+      time: T0,
+      lat: 41.3874,
+      lon: 2.1686,
+      accuracy: 5,
+      heading: 90,
+      speed: 1.5,
+    });
+    expect(isKeepable(position.slice(0, 20))).toBe(false);
+    expect(isKeepable(position.slice(0, 10))).toBe(false);
   });
 
   describe('encoding limits', () => {

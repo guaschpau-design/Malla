@@ -15,6 +15,7 @@
   import ActionButton from '../ui/ActionButton.svelte';
   import Panel from '../ui/Panel.svelte';
   import { objectKind } from './catalog.ts';
+  import { attempt } from '../ui/submission.svelte.ts';
 
   interface Props {
     t: Translate;
@@ -64,10 +65,12 @@
     record && record.type !== 'object-delete' && record.label ? record.label : kindName,
   );
 
-  async function remove(): Promise<void> {
+  function remove(): void {
     if (!confirm(t('confirmDeleteObject', { name: title }))) return;
-    await ondelete();
-    onclose();
+    attempt(async () => {
+      await ondelete();
+      onclose();
+    }, t('actionFailed'));
   }
 </script>
 

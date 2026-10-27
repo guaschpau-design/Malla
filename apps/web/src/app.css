@@ -84,6 +84,9 @@
   --layer-status: 2;
   --layer-panel: 3;
   --layer-popup: 4;
+  /* The room the dock and the SOS button take at the bottom of the map: on phones, panels and
+     the cards at the top stop above it, so the SOS button is always within reach. */
+  --dock-clearance: calc(5.5rem + env(safe-area-inset-bottom));
   /* The height of a button, an input or a map control: large enough for a gloved finger. */
   --control-size: 2.75rem;
 }

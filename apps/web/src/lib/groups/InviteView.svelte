@@ -64,7 +64,12 @@
       }}
     />
     <div class="row">
-      <CopyButton text={link.value} label={t('copyLink')} copiedLabel={t('copied')} />
+      <CopyButton
+        text={link.value}
+        label={t('copyLink')}
+        copiedLabel={t('copied')}
+        failedLabel={t('copyFailed')}
+      />
       {#if canShare}
         <button onclick={() => share(link.value)}>{t('share')}</button>
       {/if}

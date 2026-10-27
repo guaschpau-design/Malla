@@ -27,6 +27,7 @@ class AirLink implements RadioLink {
   name: string | null = 'MeshCore';
   readonly #air: Air;
   #receive: ((frame: ReceivedFrame) => void) | null = null;
+  #secret: Uint8Array = new Uint8Array(16);
 
   constructor(air: Air) {
     this.#air = air;
@@ -37,12 +38,20 @@ class AirLink implements RadioLink {
     return Promise.resolve();
   }
 
-  configureGroupChannel(): Promise<void> {
+  configureGroupChannel(_name: string, secret: Uint8Array): Promise<void> {
+    this.#secret = secret;
+    return Promise.resolve();
+  }
+
+  forgetChannels(): Promise<void> {
     return Promise.resolve();
   }
 
   send(bytes: Uint8Array): Promise<SendOutcome> {
-    for (const radio of this.#air.radios) if (radio !== this) radio.#receive?.({ bytes, snr: 5 });
+    const secret = this.#secret;
+    for (const radio of this.#air.radios) {
+      if (radio !== this) radio.#receive?.({ bytes, snr: 5, secret });
+    }
     return Promise.resolve({ status: 'sent' });
   }
 
@@ -96,6 +105,38 @@ describe('the radio path', () => {
         expect([...bertaFeed.state.sos.values()].map((call) => call.text)).toEqual(['Tobillo']);
         // Berta learnt Ana's alias from her announcement, which travelled by radio too.
         expect(bertaFeed.state.members.get(ana.nodeId)?.alias).toBe('Ana');
+      },
+      { timeout: 10_000, interval: 200 },
+    );
+  }, 15_000);
+
+  it('sends an SOS made while no radio was linked as soon as one is', async () => {
+    const group = createGroup('Rescate', null, 0);
+    const ana = createLocalIdentity('Ana', 0);
+    const berta = createLocalIdentity('Berta', 0);
+    const bertaGroup = applyInvitation(
+      undefined,
+      invitationFor(group, 'member', ana.nodeId),
+      0,
+    ).group;
+    const air = new Air();
+    const anaFeed = await GroupFeed.open(await openAppDb('radio-late-ana'), group, ana);
+    const bertaFeed = await GroupFeed.open(await openAppDb('radio-late-berta'), bertaGroup, berta);
+    const bertaRadio = new RadioSession(air.link(), () => 0);
+    await bertaRadio.connect();
+    await bertaRadio.useFeed(bertaFeed);
+
+    // Ana's radio is off when she calls for help.
+    await anaFeed.sendSos('trapped', { lat: 39.47, lon: -0.37 }, 10, 'Atrapada');
+    expect(anaFeed.undelivered.size).toBeGreaterThan(0);
+    const anaRadio = new RadioSession(air.link(), () => 0);
+    await anaRadio.connect();
+    await anaRadio.useFeed(anaFeed);
+
+    await vi.waitFor(
+      () => {
+        expect([...bertaFeed.state.sos.values()].map((call) => call.text)).toEqual(['Atrapada']);
+        expect(anaFeed.undelivered.size).toBe(0);
       },
       { timeout: 10_000, interval: 200 },
     );

@@ -2,13 +2,7 @@ import { stateOf } from '@tesel/core';
 import type { NodeId } from '@tesel/protocol';
 import { describe, expect, it } from 'vitest';
 
-import {
-  activeSos,
-  cancelledSos,
-  openRollCall,
-  recentAlerts,
-  ROLL_CALL_OPEN_S,
-} from './incidents.ts';
+import { activeSos, openRollCall, recentAlerts, ROLL_CALL_OPEN_S } from './incidents.ts';
 
 const ANA = 'a1b2c3d4' as NodeId;
 const BERTA = '0f1e2d3c' as NodeId;
@@ -50,10 +44,6 @@ describe('incidents', () => {
     expect(others).toEqual([]);
     expect(call).toMatchObject({ author: 'Berta', mine: false, by: ['Ana'], bySelf: true });
     expect(activeSos(state, BERTA)[0]).toMatchObject({ mine: true, bySelf: false });
-  });
-
-  it('says who cancelled an SOS', () => {
-    expect(cancelledSos(state).map((c) => [c.author, c.cancelledBy])).toEqual([['Berta', 'Ana']]);
   });
 
   it('shows only recent alerts, with their acknowledgements', () => {

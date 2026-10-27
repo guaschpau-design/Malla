@@ -8,6 +8,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { StoredGroup } from '../groups/group.ts';
 import type { LocalIdentity } from '../identity/identity.ts';
 import type { StoredRadioText } from '../radio/radio-texts.ts';
+import { IGNORE_VERSION_CHANGE, type VersionChange } from './version-change.ts';
 
 /** An event of a group as received or created: its encoded bytes, keyed by group and ref. */
 export interface StoredEvent extends OutboxEntry {
@@ -19,6 +20,8 @@ export interface OutboxEntry {
   readonly groupId: string;
   readonly origin: NodeId;
   readonly seq: number;
+  /** Sent over LoRa already: a radio linked later need not send it again. */
+  readonly aired?: true;
 }
 
 export type SettingKey =
@@ -33,7 +36,10 @@ export type SettingKey =
   | 'hiddenLayers'
   | 'keepScreenOn'
   | 'fullscreen'
-  | 'language';
+  | 'language'
+  | 'alarmSound'
+  | 'notifications'
+  | 'radioChannelsToFree';
 
 export type EventKey = [groupId: string, origin: NodeId, seq: number];
 
@@ -46,8 +52,11 @@ export interface AppSchema extends DBSchema {
   groups: { key: string; value: StoredGroup };
   /** The active group and the preferences of this device (settings/preferences.ts). */
   settings: { key: SettingKey; value: unknown };
-  /** The next sequence number this device will use (ARCHITECTURE.md §3.3). */
-  sequence: { key: 'next'; value: number };
+  /**
+   * The next sequence number this device will use (ARCHITECTURE.md §3.3), and the time of its
+   * last event, below which no later event is stamped (protocol §3.1).
+   */
+  sequence: { key: 'next' | 'lastTime'; value: number };
   events: { key: EventKey; value: StoredEvent; indexes: { byGroup: string } };
   outbox: { key: EventKey; value: OutboxEntry; indexes: { byGroup: string } };
   /** How far this device has read each group's envelopes on each relay. */
@@ -65,8 +74,16 @@ export type AppDb = IDBPDatabase<AppSchema>;
 const DB_NAME = 'tesel';
 const DB_VERSION = 5;
 
-export function openAppDb(name: string = DB_NAME): Promise<AppDb> {
-  return openDB<AppSchema>(name, DB_VERSION, {
+export async function openAppDb(
+  name: string = DB_NAME,
+  change: VersionChange = IGNORE_VERSION_CHANGE,
+): Promise<AppDb> {
+  const db: AppDb = await openDB<AppSchema>(name, DB_VERSION, {
+    blocked: change.onBlocked,
+    blocking() {
+      db.close();
+      change.onReplaced();
+    },
     upgrade(database, oldVersion) {
       // Each step upgrades from the previous version; a new install runs all of them.
       if (oldVersion < 1) {
@@ -100,4 +117,5 @@ export function openAppDb(name: string = DB_NAME): Promise<AppDb> {
       }
     },
   });
+  return db;
 }

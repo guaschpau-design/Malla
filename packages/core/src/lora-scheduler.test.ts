@@ -117,6 +117,46 @@ describe('LoRa scheduler', () => {
     expect(drain(lora, (T0 + 10 * 60) * 1000)).toEqual(['chat']);
   });
 
+  it('bridges what still calls for action however old: an open SOS, alerts, roll calls', () => {
+    const lora = scheduler();
+    const later = (T0 + 60 * 60) * 1000;
+    const open = packet({
+      type: 'sos',
+      origin: OTHER,
+      kind: 'trapped',
+      ...VALENCIA,
+      accuracy: 9,
+      text: '',
+    });
+    lora.offer(open, 'bridged', later);
+    lora.offer(
+      packet({ type: 'alert', origin: OTHER, level: 'critical', text: '!' }),
+      'bridged',
+      later,
+    );
+    lora.offer(packet({ type: 'roll-call', origin: OTHER, text: '' }), 'bridged', later);
+    expect(drain(lora, later + 10_000).sort()).toEqual(['alert', 'roll-call', 'sos']);
+
+    const cancelled = packet({
+      type: 'sos',
+      origin: OTHER,
+      kind: 'trapped',
+      ...VALENCIA,
+      accuracy: 9,
+      text: '',
+    });
+    lora.observe({ type: 'sos-cancel', origin: OTHER, seq: 500, time: T0, sos: cancelled.event });
+    lora.offer(cancelled, 'bridged', later);
+    expect(drain(lora, later + 20_000)).toEqual([]);
+  });
+
+  it('drops bridged news that waited in the queue until it became history', () => {
+    const lora = scheduler();
+    const now = (T0 + 9 * 60) * 1000;
+    lora.offer(chat(OTHER), 'bridged', now);
+    expect(drain(lora, now + 2 * 60_000)).toEqual([]);
+  });
+
   it('sends bridged positions of a member at most every 5 minutes', () => {
     const lora = scheduler();
     lora.offer(position(VALENCIA, OTHER), 'bridged', 0);
@@ -138,6 +178,24 @@ describe('LoRa scheduler', () => {
 
     lora.observe({ type: 'ack', origin: OTHER, seq: 99, time: T0, target: call.event });
     expect(drain(lora, 60 * 60_000)).toEqual([]);
+  });
+
+  it('keeps repeating an own SOS every 5 minutes for as long as nobody answers it', () => {
+    const lora = scheduler();
+    lora.offer(sos(), 'own', 0);
+    let sends = 0;
+    for (let now = 0; now <= 3 * 60 * 60_000; now += 60_000) sends += drain(lora, now).length;
+    // 30 s, 1, 2 and 4 minutes, then every 5 minutes for three hours.
+    expect(sends).toBeGreaterThan(30);
+  });
+
+  it('keeps repeating an own SOS that another bridge put on the air', () => {
+    const lora = scheduler();
+    const call = sos();
+    lora.offer(call, 'own', 0);
+    drain(lora, 0);
+    lora.heard(call.event, 10_000);
+    expect(drain(lora, 30_000)).toEqual(['sos']);
   });
 
   it('stops repeating a cancelled SOS', () => {
@@ -166,6 +224,33 @@ describe('LoRa scheduler', () => {
     lora.offer(packet({ type: 'ack', origin: ME, target }), 'own', 0);
     lora.heard({ type: 'ack', origin: '630dcd29' as NodeId, seq: 1, time: T0, target }, 10_000);
     expect(drain(lora, 60_000)).toEqual(['ack']);
+  });
+
+  it('acknowledges an SOS within the urgent budget when ordinary traffic has spent its own', () => {
+    const lora = scheduler();
+    for (let i = 0; i < LIMITS.normalBudgetMs / 1000; i++) lora.offer(chat(), 'own', 0);
+    drain(lora, 0);
+    const call = {
+      type: 'sos',
+      origin: OTHER,
+      seq: 9,
+      time: T0,
+      kind: 'fire',
+      ...VALENCIA,
+      accuracy: null,
+      text: '',
+    } as const;
+    lora.heard(call, 0);
+    lora.offer(packet({ type: 'ack', origin: ME, target: call }), 'own', 0);
+    expect(drain(lora, 60_000)).toEqual(['ack']);
+  });
+
+  it('keeps its queue bounded, dropping the least urgent bridged traffic first', () => {
+    const lora = scheduler();
+    lora.offer(sos(), 'own', 0);
+    for (let i = 0; i < LIMITS.maxPending + 50; i++)
+      lora.offer(chat(OTHER), 'bridged', (T0 + 60) * 1000);
+    expect(lora.next((T0 + 60) * 1000)?.event.type).toBe('sos');
   });
 
   it('retries a packet the radio refused, without charging its airtime', () => {

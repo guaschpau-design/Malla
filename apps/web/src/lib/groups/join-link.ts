@@ -3,7 +3,6 @@
 import {
   buildInvitationUrl,
   decodeInvitationToken,
-  isJoinPath,
   type Invitation,
   type ProtocolError,
   type Result,
@@ -14,15 +13,20 @@ export function appBaseUrl(origin: string, base: string): string {
   return new URL(base, origin).href;
 }
 
+/** The parts of the address an invitation is read from. */
+export type Address = Pick<Location, 'pathname' | 'search' | 'hash'>;
+
 /**
- * The invitation in the current address, if it is a join link. The app reads its own address,
- * so the scheme is not checked here: development runs on http://localhost.
+ * The invitation in the current address, if it is a join link: `join` right under the base the
+ * app is served from, with no query (protocol §6). The app reads its own address, so the scheme
+ * is not checked here: development runs on http://localhost.
  */
 export function invitationInAddress(
-  pathname: string,
-  hash: string,
+  address: Address,
+  base: string,
 ): Result<Invitation, ProtocolError> | null {
-  if (!isJoinPath(pathname) || hash.length < 2) return null;
+  const { pathname, search, hash } = address;
+  if (pathname !== `${base}join` || search !== '' || hash.length < 2) return null;
   return decodeInvitationToken(hash.slice(1));
 }
 

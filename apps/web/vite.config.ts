@@ -41,6 +41,10 @@ export default defineConfig({
         globPatterns: ['**/*.{js,mjs,css,html,png,svg,pbf,json,webmanifest}'],
         navigateFallback: 'index.html',
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        // Icons are linked with ?v= so browsers fetch new ones; the cache serves them all the same.
+        ignoreURLParametersMatching: [/^utm_/, /^fbclid$/, /^v$/],
+        // A tap on an alarm notification brings the app to the front.
+        importScripts: ['notification-click.js'],
       },
     }),
   ],

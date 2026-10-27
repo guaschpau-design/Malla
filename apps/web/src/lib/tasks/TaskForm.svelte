@@ -15,6 +15,7 @@
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import { aliasOf } from '../incidents/incidents.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
+  import { Submission } from '../ui/submission.svelte.ts';
   import type { TaskEditing } from './task-editor.svelte.ts';
   import { TASK_PRESETS } from './task-presets.ts';
   import { fieldsOf, type TaskFields } from './tasks.ts';
@@ -60,8 +61,7 @@
   /** The assignee's node ID, or '' for anyone. */
   let assignee: string = $state(initial.assignee ?? '');
   let place = $state.raw(initial.place);
-  let busy = $state(false);
-  let failed = $state(false);
+  const submission = new Submission();
 
   const size = $derived(utf8ByteLength(text.trim()));
   const tooLong = $derived(size > TASK_TEXT_MAX_BYTES);
@@ -75,17 +75,7 @@
   );
 
   async function save(fields: TaskFields): Promise<void> {
-    busy = true;
-    failed = false;
-    try {
-      await onsave(existing?.task ?? null, fields);
-      onback();
-    } catch (error) {
-      console.warn('Task not saved', error);
-      failed = true;
-    } finally {
-      busy = false;
-    }
+    if (await submission.run(() => onsave(existing?.task ?? null, fields))) onback();
   }
 
   function fields(): TaskFields {
@@ -174,14 +164,14 @@
   {:else}
     <p class="hint">{t('taskNoPlace')}</p>
   {/if}
-  {#if failed}<p class="warning">{t('taskNotSent')}</p>{/if}
+  {#if submission.failed}<p class="warning">{t('taskNotSent')}</p>{/if}
   <div class="row">
-    <button type="submit" class="primary" disabled={busy || size === 0 || tooLong}
+    <button type="submit" class="primary" disabled={submission.busy || size === 0 || tooLong}
       >{t('save')}</button
     >
     <button type="button" onclick={onback}>{t('back')}</button>
     {#if existing}
-      <button type="button" class="danger-text" disabled={busy} onclick={cancelTask}>
+      <button type="button" class="danger-text" disabled={submission.busy} onclick={cancelTask}>
         {t('taskCancel')}
       </button>
     {/if}

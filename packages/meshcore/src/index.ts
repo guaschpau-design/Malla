@@ -1,5 +1,5 @@
 export { channelName, chooseChannelSlot } from './channel-slot.ts';
-export { MeshCoreRadio, RadioError, type Connector } from './meshcore-radio.ts';
+export { MeshCoreRadio, RadioError, type Connector, type OpenedRadio } from './meshcore-radio.ts';
 export type {
   RadioLink,
   RadioLinkState,

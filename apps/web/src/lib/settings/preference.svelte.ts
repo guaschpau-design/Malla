@@ -63,9 +63,16 @@ export class Preference<T> {
     return new Preference(db, spec, await loadPreference(db, spec));
   }
 
-  /** Stored first, so what the screen shows is what the app will start with next time. */
+  /**
+   * Takes effect at once and is stored for the next start. Storing seldom fails; when it does,
+   * the choice holds until the app closes, which is better than refusing a switch the user tapped.
+   */
   async set(value: T): Promise<void> {
-    await savePreference(this.#db, this.#spec, value);
     this.value = value;
+    try {
+      await savePreference(this.#db, this.#spec, value);
+    } catch (error) {
+      console.warn('A preference could not be stored', error);
+    }
   }
 }

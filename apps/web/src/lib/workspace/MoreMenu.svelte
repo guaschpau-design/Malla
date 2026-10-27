@@ -1,14 +1,15 @@
-<!-- The dock's "More" menu: what is used now and then, with or without a group. -->
+<!-- The dock's "More" menu: what is used now and then, with or without a group, and the choices of
+     this device. Switches leave the menu open, so their change is seen. -->
 <script lang="ts">
+  import { allowNotifications, notificationsSupported } from '../incidents/alarm.ts';
   import {
     LOCALE_NAMES,
     nextLocale,
-    type LanguageChoice,
     type Locale,
     type MessageKey,
     type Translate,
   } from '../i18n/index.ts';
-  import type { Preference } from '../settings/preference.svelte.ts';
+  import type { Preferences } from '../settings/preferences.ts';
   import DockMenu from '../ui/DockMenu.svelte';
   import {
     enterFullscreen,
@@ -17,6 +18,7 @@
     fullscreenView,
   } from '../ui/fullscreen.svelte.ts';
   import type { GlyphName } from '../ui/glyphs.ts';
+  import { notices } from '../ui/notices.svelte.ts';
   import { panels } from '../ui/panels.svelte.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import { screenWakeSupported } from '../ui/screen-awake.svelte.ts';
@@ -24,25 +26,32 @@
 
   interface Props {
     t: Translate;
-    onmeasure: () => void;
-    keepScreenOn: Preference<boolean>;
-    /** Whether the app goes full screen in a browser tab. */
-    fullscreen: Preference<boolean>;
-    language: Preference<LanguageChoice>;
+    preferences: Preferences;
     /** The language shown now. */
     locale: Locale;
+    onmeasure: () => void;
     /** The diary is the active group's. */
     withGroup: boolean;
   }
 
-  let { t, onmeasure, keepScreenOn, fullscreen, language, locale, withGroup }: Props = $props();
+  let { t, preferences, locale, onmeasure, withGroup }: Props = $props();
 
   /** Now and on every later visit, until switched off again. */
   function toggleFullscreen(): void {
     const on = !fullscreenView.active;
     if (on) enterFullscreen();
     else exitFullscreen();
-    void fullscreen.set(on);
+    void preferences.fullscreen.set(on);
+  }
+
+  /** Turning notifications on asks the browser first; a refusal is explained. */
+  async function toggleNotifications(): Promise<void> {
+    const on = !preferences.notifications.value;
+    if (on && !(await allowNotifications())) {
+      notices.show(t('notificationsRefused'), { stays: true });
+      return;
+    }
+    await preferences.notifications.set(on);
   }
 
   interface Item {
@@ -80,16 +89,35 @@
         {t(item.label)}
       </button>
     {/each}
-    {#if screenWakeSupported}
-      <!-- The menu stays open, so the switch is seen to change. -->
+    <button
+      role="menuitemcheckbox"
+      aria-checked={preferences.alarmSound.value}
+      onclick={() => void preferences.alarmSound.set(!preferences.alarmSound.value)}
+    >
+      <Pictogram name="warning" size={20} />
+      {t('alarmSound')}
+      <Switch on={preferences.alarmSound.value} />
+    </button>
+    {#if notificationsSupported}
       <button
         role="menuitemcheckbox"
-        aria-checked={keepScreenOn.value}
-        onclick={() => void keepScreenOn.set(!keepScreenOn.value)}
+        aria-checked={preferences.notifications.value}
+        onclick={() => void toggleNotifications()}
+      >
+        <Pictogram name="chat" size={20} />
+        {t('notifications')}
+        <Switch on={preferences.notifications.value} />
+      </button>
+    {/if}
+    {#if screenWakeSupported}
+      <button
+        role="menuitemcheckbox"
+        aria-checked={preferences.keepScreenOn.value}
+        onclick={() => void preferences.keepScreenOn.set(!preferences.keepScreenOn.value)}
       >
         <Pictogram name="screen" size={20} />
         {t('keepScreenOn')}
-        <Switch on={keepScreenOn.value} />
+        <Switch on={preferences.keepScreenOn.value} />
       </button>
     {/if}
     {#if fullscreenSupported}
@@ -103,8 +131,8 @@
         <Switch on={fullscreenView.active} />
       </button>
     {/if}
-    <!-- The next language, round the list; the menu stays open, so the change is seen. -->
-    <button role="menuitem" onclick={() => void language.set(nextLocale(locale))}>
+    <!-- The next language, round the list. -->
+    <button role="menuitem" onclick={() => void preferences.language.set(nextLocale(locale))}>
       <Pictogram name="language" size={20} />
       {t('language')}
       <span class="value">{LOCALE_NAMES[locale]}</span>

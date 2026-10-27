@@ -7,6 +7,7 @@
   import type { Translate } from '../i18n/index.ts';
   import type { Session } from '../session.svelte.ts';
   import { proposedServer } from '../sync/relays.ts';
+  import { Submission } from '../ui/submission.svelte.ts';
   import { normalizeGroupName, normalizeServerUrl } from './group.ts';
 
   interface Props {
@@ -30,10 +31,13 @@
     if (proposed !== null && serverText === (homeServer ?? '')) serverText = proposed;
   });
 
+  const submission = new Submission();
+
   async function create(): Promise<void> {
     if (groupName === null || server === undefined) return;
-    await session.createGroup(groupName, server);
-    onback();
+    const name = groupName;
+    const chosen = server;
+    if (await submission.run(() => session.createGroup(name, chosen))) onback();
   }
 </script>
 
@@ -66,8 +70,13 @@
       </p>
     </div>
   </details>
+  {#if submission.failed}<p class="warning">{t('sendFailed')}</p>{/if}
   <div class="row">
-    <button type="submit" class="primary" disabled={groupName === null || server === undefined}>
+    <button
+      type="submit"
+      class="primary"
+      disabled={submission.busy || groupName === null || server === undefined}
+    >
       {t('create')}
     </button>
     <button type="button" onclick={onback}>{t('back')}</button>

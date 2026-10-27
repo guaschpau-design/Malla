@@ -1,4 +1,5 @@
-<!-- A side panel on wide screens and a bottom sheet on phones. Only one is open at a time. -->
+<!-- A side panel on wide screens and a sheet above the dock on phones, which leaves the SOS button
+     in reach. Only one is open at a time. -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
@@ -26,15 +27,15 @@
   .panel {
     position: absolute;
     z-index: var(--layer-panel);
-    right: 0;
-    bottom: 0;
-    left: 0;
-    max-height: 75dvh;
+    right: 0.5rem;
+    bottom: var(--dock-clearance);
+    left: 0.5rem;
+    max-height: min(75dvh, calc(100% - var(--dock-clearance) - 0.5rem));
     overflow-y: auto;
-    padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
+    padding: 1rem;
     background: var(--surface);
     color: var(--fg);
-    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+    border-radius: var(--radius-sheet);
     box-shadow: var(--shadow-sheet);
   }
 

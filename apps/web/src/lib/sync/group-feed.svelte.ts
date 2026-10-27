@@ -15,6 +15,8 @@ import {
   encodeEvent,
   encodeLogFile,
   eventKey,
+  eventRefKey,
+  NO_SOS_PLACE,
   openEnvelope,
   parseLogFile,
   peekHeader,
@@ -30,10 +32,12 @@ import {
   type SosKind,
   type TeselEvent,
 } from '@tesel/protocol';
+import { SvelteSet } from 'svelte/reactivity';
 
 import {
   confirmStored,
   loadEvents,
+  markAired,
   pendingEvents,
   publishEvent,
   receiveEvents,
@@ -66,6 +70,12 @@ export interface LoraSink {
   heard(event: LoraEvent): void;
 }
 
+/**
+ * How far an own event has gone: still only on this device, or handed to a relay that stored it
+ * or put on the air by the radio.
+ */
+export type Delivery = 'queued' | 'delivered';
+
 export class GroupFeed {
   state: GroupState = $state.raw(EMPTY_STATE);
   status: FeedStatus = $state('local-only');
@@ -73,6 +83,14 @@ export class GroupFeed {
   viaCommandPost = $state(false);
   /** What this device has heard from each member, by channel, since the feed opened. */
   heard: Heard = $state.raw(NOTHING_HEARD);
+  /**
+   * Own events neither stored by a relay nor put on the air, by event reference key. A practice
+   * delivers nothing, as nothing leaves the device, and so has none.
+   */
+  get undelivered(): ReadonlySet<string> {
+    return this.#undelivered;
+  }
+  readonly #undelivered = new SvelteSet<string>();
 
   readonly #db: AppDb;
   readonly #group: StoredGroup;
@@ -119,6 +137,12 @@ export class GroupFeed {
   static async open(db: AppDb, group: StoredGroup, identity: LocalIdentity): Promise<GroupFeed> {
     const feed = new GroupFeed(db, group, identity);
     feed.#apply(await loadEvents(db, group.id));
+    if (!group.practice) {
+      const pending = await pendingEvents(db, group.id);
+      for (const { entry } of pending) {
+        if (entry.aired !== true) feed.#undelivered.add(eventRefKey(entry));
+      }
+    }
     await feed.#announceSelf();
     if (feed.#client) {
       window.addEventListener('online', feed.#retry);
@@ -144,15 +168,47 @@ export class GroupFeed {
   /**
    * Connects the feed to a radio, or disconnects it with null. While connected, own events go
    * on the air too, and so do events from the server: this device bridges them (ARCHITECTURE.md
-   * §4.3).
+   * §4.3). On connecting, the radio is given what it missed while there was none: this device's
+   * announcement, its SOS calls still open, which repeat until answered, and its events that
+   * have reached no one (ADR-0043).
    */
-  attachRadio(sink: LoraSink | null): void {
-    this.#lora = sink;
+  async attachRadio(sink: LoraSink | null): Promise<void> {
+    // A practice never reaches the air, whatever the caller does (ADR-0031).
+    this.#lora = this.#group.practice === true ? null : sink;
+    if (this.#lora === null || sink === null) return;
+    const self = this.#identity.nodeId;
+    const due: TeselEvent[] = [];
     // Members who only hear the radio learn this device's alias from its announcement.
-    const announcement = this.state.members.get(this.#identity.nodeId);
-    if (sink === null || announcement === undefined) return;
-    const bytes = encodeEvent(announcement);
-    if (bytes.ok) sink.offer({ event: announcement, bytes: bytes.value }, 'own');
+    const announcement = this.state.members.get(self);
+    if (announcement !== undefined) due.push(announcement);
+    for (const [key, call] of this.state.sos) {
+      if (call.origin === self && !this.state.sosCancels.has(key)) due.push(call);
+    }
+    for (const event of due) {
+      const bytes = encodeEvent(event);
+      if (bytes.ok) sink.offer({ event, bytes: bytes.value }, 'own');
+    }
+    for (const { entry, bytes } of await pendingEvents(this.#db, this.#group.id)) {
+      const event = loraEventOf(bytes);
+      if (entry.aired !== true && event !== null) sink.offer({ event, bytes }, 'own');
+    }
+  }
+
+  /**
+   * An event this device put on the air. For a group without a server the radio is the only way
+   * out, so the event leaves the outbox; otherwise the server still has to store it.
+   */
+  async radioSent(event: LoraEvent): Promise<void> {
+    if (event.origin !== this.#identity.nodeId) return;
+    const entry = { groupId: this.#group.id, origin: event.origin, seq: event.seq };
+    this.#undelivered.delete(eventRefKey(entry));
+    if (this.#group.server === null) await confirmStored(this.#db, entry);
+    else await markAired(this.#db, entry);
+  }
+
+  /** Whether an own event has reached anyone yet. */
+  deliveryOf(event: EventRef): Delivery {
+    return this.undelivered.has(eventRefKey(event)) ? 'queued' : 'delivered';
   }
 
   /** An event heard over the radio. New ones are applied and, with a server, forwarded to it. */
@@ -253,8 +309,15 @@ export class GroupFeed {
     await this.#publish((header) => ({ ...header, type: 'object-delete', object }));
   }
 
-  async sendSos(kind: SosKind, at: LatLon, accuracy: number | null, text: string): Promise<void> {
-    await this.#publish((header) => ({ ...header, type: 'sos', kind, ...at, accuracy, text }));
+  /** Calls for help from `at`, or with no place when this device has no position (§3.8). */
+  async sendSos(
+    kind: SosKind,
+    at: LatLon | null,
+    accuracy: number | null,
+    text: string,
+  ): Promise<void> {
+    const place = at === null ? NO_SOS_PLACE : { ...at, accuracy };
+    await this.#publish((header) => ({ ...header, type: 'sos', kind, ...place, text }));
   }
 
   async cancelSos(sos: EventRef): Promise<void> {
@@ -304,6 +367,7 @@ export class GroupFeed {
   async #publish(build: (header: EventHeader) => TeselEvent): Promise<void> {
     const header = { origin: this.#identity.nodeId, time: Math.floor(Date.now() / 1000) };
     const { entry, bytes } = await publishEvent(this.#db, this.#group.id, build, header);
+    if (!this.#group.practice) this.#undelivered.add(eventRefKey(entry));
     const [event] = this.#apply([bytes]);
     this.#push(entry, bytes);
     if (event) this.#lora?.offer({ event, bytes }, 'own');
@@ -356,6 +420,7 @@ export class GroupFeed {
     const entry = this.#pushed.get(id);
     if (entry === undefined) return;
     this.#pushed.delete(id);
+    this.#undelivered.delete(eventRefKey(entry));
     await confirmStored(this.#db, entry);
   }
 

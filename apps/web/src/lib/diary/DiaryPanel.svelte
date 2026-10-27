@@ -10,6 +10,7 @@
   import Panel from '../ui/Panel.svelte';
   import { diaryLines } from './diary.ts';
   import { diaryText, fileName } from './diary-text.ts';
+  import { attempt } from '../ui/submission.svelte.ts';
 
   interface Props {
     t: Translate;
@@ -36,17 +37,24 @@
     downloadFile(fileName(feed.groupName, now, 'txt'), text, 'text/plain;charset=utf-8');
   }
 
-  async function saveLog(): Promise<void> {
+  function saveLog(): void {
     const name = fileName(feed.groupName, Date.now(), 'tesel');
-    downloadFile(name, await feed.exportLog(), 'application/json');
+    attempt(async () => {
+      downloadFile(name, await feed.exportLog(), 'application/json');
+    }, t('actionFailed'));
   }
 
-  async function loadLog(event: Event & { currentTarget: HTMLInputElement }): Promise<void> {
+  function loadLog(event: Event & { currentTarget: HTMLInputElement }): void {
     const input = event.currentTarget;
     const file = input.files?.[0];
     if (file === undefined) return;
-    loaded = await feed.importLog(await file.text());
-    input.value = '';
+    attempt(async () => {
+      try {
+        loaded = await feed.importLog(await file.text());
+      } finally {
+        input.value = '';
+      }
+    }, t('actionFailed'));
   }
 </script>
 

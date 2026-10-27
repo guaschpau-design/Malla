@@ -1,5 +1,7 @@
-<!-- The top of the map: what is going on now (drawing, a tool, guidance, weather where this device
-     is, a practice, a danger area entered, the operation area's map), then the incidents. -->
+<!-- The top of the map, in order of what needs attention first: the tool in use (drawing,
+     measuring), the incidents, a danger area entered, guidance, a practice, weather where this
+     device is, the operation area's map, then the app's notices. The stack never runs under the
+     dock: past its height it scrolls. -->
 <script lang="ts">
   import type { EventRef, LatLon } from '@tesel/protocol';
   import type { Map as MapLibreMap } from 'maplibre-gl';
@@ -17,6 +19,8 @@
   import OperationAreaOffer from '../offline/OperationAreaOffer.svelte';
   import type { DeviceLocation } from '../position/device-location.svelte.ts';
   import Practice from '../practice/Practice.svelte';
+  import Notices from '../ui/Notices.svelte';
+  import { attempt } from '../ui/submission.svelte.ts';
   import WeatherCard from '../weather/WeatherCard.svelte';
   import type { WeatherFeed } from '../weather/weather-feed.svelte.ts';
   import type { MapTool, WorkspaceGroup } from './workspace.ts';
@@ -60,12 +64,14 @@
     map.flyTo({ center: [at.lon, at.lat], zoom: Math.max(map.getZoom(), 15) });
   }
 
-  async function acknowledge(target: EventRef): Promise<void> {
-    await group?.feed.acknowledge(target);
+  function acknowledge(target: EventRef): void {
+    const feed = group?.feed;
+    if (feed) attempt(() => feed.acknowledge(target), t('actionFailed'));
   }
 
-  async function cancelSos(sos: EventRef): Promise<void> {
-    await group?.feed.cancelSos(sos);
+  function cancelSos(sos: EventRef): void {
+    const feed = group?.feed;
+    if (feed) attempt(() => feed.cancelSos(sos), t('actionFailed'));
   }
 </script>
 
@@ -95,10 +101,24 @@
   {:else if tool?.kind === 'measure'}
     <Measuring {t} {locale} {map} from={tool.from} onclose={onclosetool} />
   {/if}
-  <Navigation {t} {locale} {map} {location} groupState={group?.feed.state ?? null} />
-  {#if weather && !tapping}
-    <WeatherCard {t} {locale} {weather} {location} />
+  {#if group && !tapping}
+    <IncidentBanners
+      {t}
+      {locale}
+      groupState={group.feed.state}
+      self={group.self}
+      canCancelOthers={group.role === 'coordinator'}
+      undelivered={group.feed.undelivered}
+      onacknowledge={acknowledge}
+      oncancel={cancelSos}
+      onshow={show}
+      {onneedhelp}
+    />
   {/if}
+  {#if group}
+    <DangerZoneAlert {t} groupState={group.feed.state} {location} />
+  {/if}
+  <Navigation {t} {locale} {map} {location} groupState={group?.feed.state ?? null} />
   {#if group?.practice}
     {#key group.feed}
       <Practice
@@ -110,25 +130,15 @@
       />
     {/key}
   {/if}
-  {#if group}
-    <DangerZoneAlert {t} groupState={group.feed.state} {location} />
+  {#if weather && !tapping}
+    <WeatherCard {t} {locale} {weather} {location} />
   {/if}
   {#if group && !tapping}
     {#key group.feed}
       <OperationAreaOffer {t} {locale} groupState={group.feed.state} {offline} />
     {/key}
-    <IncidentBanners
-      {t}
-      {locale}
-      groupState={group.feed.state}
-      self={group.self}
-      canCancelOthers={group.role === 'coordinator'}
-      onacknowledge={acknowledge}
-      oncancel={cancelSos}
-      onshow={show}
-      {onneedhelp}
-    />
   {/if}
+  <Notices {t} />
 </div>
 
 <style>
@@ -140,9 +150,13 @@
     right: calc(var(--control-size) + 1.25rem);
     left: 0.75rem;
     display: grid;
+    align-content: start;
     gap: 0.5rem;
     max-width: 30rem;
+    max-height: calc(100% - 0.75rem - var(--dock-clearance));
     margin: 0 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     pointer-events: none;
   }
 </style>

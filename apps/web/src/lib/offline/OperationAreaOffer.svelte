@@ -20,6 +20,7 @@
     isDownloaded,
     type OfflineMaps,
   } from './offline-maps.ts';
+  import { attempt } from '../ui/submission.svelte.ts';
 
   interface Props {
     t: Translate;
@@ -55,19 +56,21 @@
     downloaded = await offline.store.listAreas();
   }
 
-  async function download(): Promise<void> {
+  function download(): void {
     if (offer?.layers == null) return;
     const { area, layers } = offer;
-    await job.run(offline.store, {
-      name: area.label || t('styleOperationArea'),
-      bounds: area.bounds,
-      layers,
-    });
-    await refresh();
+    attempt(async () => {
+      await job.run(offline.store, {
+        name: area.label || t('styleOperationArea'),
+        bounds: area.bounds,
+        layers,
+      });
+      await refresh();
+    }, t('actionFailed'));
   }
 
   onMount(() => {
-    void refresh();
+    attempt(refresh, t('actionFailed'));
     return () => {
       job.cancel();
     };

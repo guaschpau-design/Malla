@@ -2,8 +2,10 @@
 <script lang="ts">
   import { MARKER_LABEL_MAX_BYTES, SHAPE_LABEL_MAX_BYTES, utf8ByteLength } from '@tesel/protocol';
 
+  import { UnencodableEvent } from '../events/event-log.ts';
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import Panel from '../ui/Panel.svelte';
+  import { Submission } from '../ui/submission.svelte.ts';
   import { areaStyles, SYMBOLS } from './catalog.ts';
   import type { DraftKind } from './draft.ts';
   import SymbolIcon from './SymbolIcon.svelte';
@@ -30,22 +32,8 @@
 
   let code = $state(0);
   let label = $state('');
-  let failed = $state(false);
-  let busy = $state(false);
+  const submission = new Submission();
   const tooLong = $derived(utf8ByteLength(label.trim()) > maxBytes);
-
-  async function save(): Promise<void> {
-    busy = true;
-    failed = false;
-    try {
-      await onsave(code, label.trim());
-    } catch (error) {
-      console.warn('Object not saved', error);
-      failed = true;
-    } finally {
-      busy = false;
-    }
-  }
 </script>
 
 <Panel title={t(TITLES[kind])} closeLabel={t('close')} onclose={oncancel}>
@@ -53,7 +41,7 @@
     class="stack section"
     onsubmit={(event) => {
       event.preventDefault();
-      void save();
+      void submission.run(() => onsave(code, label.trim()));
     }}
   >
     <fieldset>
@@ -83,9 +71,15 @@
       <input bind:value={label} autocomplete="off" />
     </label>
     {#if tooLong}<p class="warning">{t('nameInvalid')}</p>{/if}
-    {#if failed}<p class="warning">{t('objectTooBig')}</p>{/if}
+    {#if submission.failed}
+      <p class="warning">
+        {submission.failure instanceof UnencodableEvent ? t('objectTooBig') : t('sendFailed')}
+      </p>
+    {/if}
     <div class="row">
-      <button type="submit" class="primary" disabled={busy || tooLong}>{t('save')}</button>
+      <button type="submit" class="primary" disabled={submission.busy || tooLong}
+        >{t('save')}</button
+      >
       <button type="button" onclick={oncancel}>{t('cancel')}</button>
     </div>
   </form>

@@ -37,7 +37,8 @@ const flush = () => vi.advanceTimersByTimeAsync(0);
 const SERVER = 'https://relay.example/';
 const POST = 'https://post.example/';
 
-function setup(cursor = 0, relays: readonly string[] = [SERVER]) {
+function setup(cursor = 0, relays: readonly string[] = [SERVER], failingBatches = 0) {
+  let failures = failingBatches;
   const sockets: FakeSocket[] = [];
   const statuses: RelayStatus[] = [];
   /** Each batch handed on, as its envelopes' cursors. */
@@ -61,6 +62,7 @@ function setup(cursor = 0, relays: readonly string[] = [SERVER]) {
         return Promise.resolve(cursor);
       },
       onEnvelopes: (batch) => {
+        if (failures-- > 0) return Promise.reject(new Error('disk full'));
         envelopes.push(batch.map((envelope) => envelope.cursor));
         handled.push(`batch of ${String(batch.length)}`);
         return Promise.resolve();
@@ -131,6 +133,36 @@ describe('relay client', () => {
     expect(envelopes.map((batch) => batch.length)).toEqual([1000, 1, 1]);
     expect(envelopes.flat()).toEqual(Array.from({ length: 1002 }, (_, i) => i + 1));
     expect(handled).toEqual(['batch of 1000', 'batch of 1', 'synced at 1001', 'batch of 1']);
+  });
+
+  it('joins again from the stored cursor when a batch cannot be taken', async () => {
+    const { client, sockets, envelopes, synced, statuses } = setup(7, [SERVER], 1);
+    client.start();
+    await flush();
+    const first = sockets[0];
+    if (!first) throw new Error('no socket');
+    first.open();
+    await flush();
+    first.receive({ t: 'env', cursor: 8, key: new Uint8Array(16), env: new Uint8Array(50) });
+    first.receive({ t: 'synced', cursor: 8 });
+    await flush();
+    // The sync after the lost batch must not store a cursor past it.
+    expect(synced).toEqual([]);
+    expect(statuses.at(-1)).toBe('disconnected');
+    await vi.advanceTimersByTimeAsync(1000);
+    const second = sockets[1];
+    if (!second) throw new Error('no second socket');
+    second.open();
+    await flush();
+    expect(parseClientMessage(second.sent[0] ?? '')).toEqual({
+      ok: true,
+      value: { t: 'join', group: GROUP, after: 7 },
+    });
+    second.receive({ t: 'env', cursor: 8, key: new Uint8Array(16), env: new Uint8Array(50) });
+    second.receive({ t: 'synced', cursor: 8 });
+    await flush();
+    expect(envelopes).toEqual([[8]]);
+    expect(synced).toEqual([`8@${SERVER}`]);
   });
 
   it('only pushes once synced', async () => {
