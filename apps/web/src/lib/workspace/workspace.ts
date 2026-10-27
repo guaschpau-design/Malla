@@ -18,7 +18,5 @@ export interface WorkspaceGroup {
   readonly practice: boolean;
 }
 
-/** A tool that takes taps on the map: measuring, from a point if any, or a radio line of sight. */
-export type MapTool =
-  | { readonly kind: 'measure'; readonly from: LatLon | null }
-  | { readonly kind: 'sight'; readonly from: LatLon };
+/** A tool that takes taps on the map: measuring, from a point if any. */
+export type MapTool = { readonly kind: 'measure'; readonly from: LatLon | null };

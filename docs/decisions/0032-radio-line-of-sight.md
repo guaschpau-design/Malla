@@ -1,6 +1,6 @@
 # 0032. Radio line of sight from the terrain, sure only when it says no
 
-- Status: Accepted, amended by [0037](0037-maps-across-borders.md) (elevation about 10 m apart, sampled every 10 m)
+- Status: Superseded by [0042](0042-remove-radio-line-of-sight.md); amended before by [0037](0037-maps-across-borders.md) (elevation about 10 m apart, sampled every 10 m)
 - Date: 2026-10-27
 
 ## Context

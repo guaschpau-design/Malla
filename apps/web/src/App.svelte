@@ -55,9 +55,6 @@
     get reader() {
       return preferences?.relief.value ? elevations : null;
     },
-    get onRequest() {
-      return elevations;
-    },
   });
   /** Downloaded maps, once their database is open. */
   let offline: OfflineMaps | undefined = $state.raw();

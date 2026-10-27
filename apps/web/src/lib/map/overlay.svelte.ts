@@ -43,7 +43,6 @@ export const OVERLAY_LEVELS = [
   'sos',
   'self',
   'navigation',
-  'sight',
   'point',
   'draft',
 ] as const;

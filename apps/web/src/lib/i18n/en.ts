@@ -406,24 +406,6 @@ export const en = {
   practiceGoingToMarta: 'On my way to Marta.',
   practiceMartaSafe: 'Marta is being looked after. Carrying on.',
   practiceOnTheWay: 'Received. On my way to you.',
-  radioSight: 'Radio sight',
-  sightPickEnd: 'Tap the other end of the radio link on the map.',
-  sightWorking: 'Working it out from the terrain…',
-  sightNoData:
-    'No terrain data for this area. Without a connection, download the area with “Relief”.',
-  sightBlocked: 'The terrain cuts the signal',
-  sightMarginal: 'Marginal: it may fail',
-  sightClear: 'Clear over the terrain',
-  sightBlockedBy: 'At the marked point the terrain rises {metres} above the line.',
-  sightMarginalRoom:
-    'At the marked point the line passes {metres} above the terrain: the signal needs more room. Try higher antennas.',
-  sightMarginalTouch:
-    'At the marked point the terrain grazes the line and may cut it. Try higher antennas.',
-  sightClearNote: 'Buildings and trees not counted: the terrain data does not include them.',
-  sightHere: 'Antenna at the point',
-  sightThere: 'Antenna at the other end',
-  antennaHeight: '{metres} m',
-  sightFromMe: 'To my position',
 } as const;
 
 export type MessageKey = keyof typeof en;

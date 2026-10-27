@@ -308,9 +308,6 @@
     onmeasure={() => {
       startTool({ kind: 'measure', from: at });
     }}
-    onsight={() => {
-      startTool({ kind: 'sight', from: at });
-    }}
     onmark={group
       ? () => {
           markAt(at);

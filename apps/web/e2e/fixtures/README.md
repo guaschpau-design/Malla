@@ -8,9 +8,3 @@ It was generated with `make-test-basemap.py`:
 pip install pmtiles mapbox-vector-tile shapely
 python3 make-test-basemap.py test-basemap.pmtiles
 ```
-
-`flat-terrain.png` is a Terrarium elevation tile of flat ground at sea level (every pixel 128, 0, 0), which the radio line-of-sight test serves for every elevation tile:
-
-```sh
-python3 -c "from PIL import Image; Image.new('RGB', (256, 256), (128, 0, 0)).save('flat-terrain.png', optimize=True)"
-```

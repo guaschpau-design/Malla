@@ -409,22 +409,4 @@ export const es: Messages = {
   practiceGoingToMarta: 'Voy hacia Marta.',
   practiceMartaSafe: 'Marta está atendida. Seguimos.',
   practiceOnTheWay: 'Recibido. Voy hacia ti.',
-  radioSight: 'Visión radio',
-  sightPickEnd: 'Toca en el mapa el otro extremo del enlace de radio.',
-  sightWorking: 'Calculando con el relieve…',
-  sightNoData:
-    'No hay datos de relieve de esta zona. Sin conexión, descarga la zona con «Relieve».',
-  sightBlocked: 'El terreno corta la señal',
-  sightMarginal: 'Justo: puede fallar',
-  sightClear: 'Despejada sobre el terreno',
-  sightBlockedBy: 'En el punto marcado el terreno sobresale {metres} por encima de la línea.',
-  sightMarginalRoom:
-    'En el punto marcado la línea pasa a {metres} del terreno: la señal necesita más margen. Prueba con antenas más altas.',
-  sightMarginalTouch:
-    'En el punto marcado el terreno roza la línea y puede cortarla. Prueba con antenas más altas.',
-  sightClearNote: 'Sin contar edificios ni árboles, que el relieve no recoge.',
-  sightHere: 'Antena en el punto',
-  sightThere: 'Antena en el otro extremo',
-  antennaHeight: '{metres} m',
-  sightFromMe: 'Hasta mi posición',
 };

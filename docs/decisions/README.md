@@ -37,7 +37,7 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0029](0029-operation-area.md)                       | The operation area: an area style that offers its map                    | Accepted                        |
 | [0030](0030-weather-warnings.md)                     | Official weather warnings, gathered by the server from MeteoAlarm        | Accepted, amended by 0038       |
 | [0031](0031-practice-mode.md)                        | Practice mode: a simulated group played on the device                    | Accepted                        |
-| [0032](0032-radio-line-of-sight.md)                  | Radio line of sight from the terrain, sure only when it says no          | Accepted, amended by 0037       |
+| [0032](0032-radio-line-of-sight.md)                  | Radio line of sight from the terrain, sure only when it says no          | Superseded by 0042              |
 | [0033](0033-danger-area-warning.md)                  | Warning on entering a danger area, worked out on each device             | Accepted                        |
 | [0034](0034-vector-topographic-map.md)               | Topographic map from vector data, relief shaded from IGN's terrain model | Accepted, amended by 0037       |
 | [0035](0035-base-maps-by-purpose.md)                 | Give each base map a purpose of its own                                  | Accepted                        |
@@ -47,3 +47,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0039](0039-map-credits-and-scale.md)                | Map credits on opening and in the layers panel, scale with the controls  | Accepted                        |
 | [0040](0040-dictated-messages.md)                    | Dictate chat messages with the browser's speech recognition              | Accepted                        |
 | [0041](0041-satellite-mosaic-and-national-photos.md) | One Sentinel-2 mosaic from afar, each country's photographs close up     | Accepted                        |
+| [0042](0042-remove-radio-line-of-sight.md)           | Remove the radio line of sight                                           | Accepted                        |

@@ -17,7 +17,6 @@
   import OperationAreaOffer from '../offline/OperationAreaOffer.svelte';
   import type { DeviceLocation } from '../position/device-location.svelte.ts';
   import Practice from '../practice/Practice.svelte';
-  import SightCheck from '../terrain/SightCheck.svelte';
   import WeatherCard from '../weather/WeatherCard.svelte';
   import type { WeatherFeed } from '../weather/weather-feed.svelte.ts';
   import type { MapTool, WorkspaceGroup } from './workspace.ts';
@@ -95,8 +94,6 @@
     />
   {:else if tool?.kind === 'measure'}
     <Measuring {t} {locale} {map} from={tool.from} onclose={onclosetool} />
-  {:else if tool?.kind === 'sight'}
-    <SightCheck {t} {locale} {map} from={tool.from} {location} onclose={onclosetool} />
   {/if}
   <Navigation {t} {locale} {map} {location} groupState={group?.feed.state ?? null} />
   {#if weather && !tapping}

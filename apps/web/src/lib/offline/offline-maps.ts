@@ -24,7 +24,7 @@ const EXTRA_SOURCES: Readonly<Record<Extra, readonly TileSourceId[]>> = {
   // The names of the terrain, and the elevation the contour lines are worked out from.
   topo: ['ign-names', 'terrain'],
   aerial: ['ortho'],
-  // For the shading, and for the line of sight and the climbs.
+  // For the shading and the climbs.
   relief: ['terrain'],
 };
 

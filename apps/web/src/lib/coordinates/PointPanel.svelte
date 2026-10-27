@@ -24,8 +24,6 @@
     format: Preference<CoordinateFormat>;
     onnavigate: () => void;
     onmeasure: () => void;
-    /** Checks whether a radio here reaches another point. */
-    onsight: () => void;
     /** Present when the point can be marked for the group. */
     onmark: (() => void) | null;
     /** Present when a task can be added there for the group. */
@@ -44,7 +42,6 @@
     format,
     onnavigate,
     onmeasure,
-    onsight,
     onmark,
     ontask,
     onclose,
@@ -62,7 +59,6 @@
       {#if onmark}<ActionButton icon="pin" label={t('markHere')} onclick={onmark} />{/if}
       {#if ontask}<ActionButton icon="task" label={t('taskHere')} onclick={ontask} />{/if}
       <ActionButton icon="ruler" label={t('measureFromHere')} onclick={onmeasure} />
-      <ActionButton icon="mast" label={t('radioSight')} onclick={onsight} />
     </div>
   </div>
 </Panel>

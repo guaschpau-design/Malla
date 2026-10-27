@@ -38,9 +38,6 @@ export const TERRAIN_TILE_SIZE = 512;
 export const TERRAIN_ATTRIBUTION =
   '<a href="https://mapterhorn.com/attribution" target="_blank">© Mapterhorn</a>';
 
-/** The same credit as plain text, for where elevations are used without a map layer. */
-export const TERRAIN_CREDIT = 'Elevation: Mapterhorn (IGN, DGT, IGN France, Copernicus)';
-
 export function terrainTileUrl(z: number, x: number, y: number): string {
   return `https://tiles.mapterhorn.com/${String(z)}/${String(x)}/${String(y)}.webp`;
 }
