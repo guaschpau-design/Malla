@@ -14,6 +14,7 @@ import type {
 import type { FeatureCollection } from 'geojson';
 
 import type { Locale, MessageKey } from '../i18n/index.ts';
+import { insideRing } from '../map/geometry.ts';
 import type { Tone } from '../ui/theme.ts';
 
 /** How each level is named and coloured: yellow, orange, red. */
@@ -93,17 +94,6 @@ export function contains(geometry: RegionGeometry, at: LatLon): boolean {
   const polygons = geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates;
   return polygons.some(
     ([outer, ...holes]) =>
-      outer !== undefined && inRing(outer, at) && !holes.some((hole) => inRing(hole, at)),
+      outer !== undefined && insideRing(outer, at) && !holes.some((hole) => insideRing(hole, at)),
   );
-}
-
-/** Ray casting: a point is inside a ring if a ray from it crosses the ring an odd number of times. */
-function inRing(ring: readonly [number, number][], { lat, lon }: LatLon): boolean {
-  let inside = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const [xi, yi] = ring[i] as [number, number];
-    const [xj, yj] = ring[j] as [number, number];
-    if (yi > lat !== yj > lat && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) inside = !inside;
-  }
-  return inside;
 }

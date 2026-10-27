@@ -14,6 +14,7 @@ const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] };
 /** Our overlays from bottom to top: each is drawn above every one listed before it. */
 export const OVERLAY_LEVELS = [
   'weather',
+  'grid',
   'services',
   'trails',
   'objects',
@@ -22,6 +23,7 @@ export const OVERLAY_LEVELS = [
   'sos',
   'self',
   'navigation',
+  'sight',
   'point',
   'draft',
 ] as const;

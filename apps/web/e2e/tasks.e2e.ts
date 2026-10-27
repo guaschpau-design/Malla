@@ -35,13 +35,17 @@ test('a task at a point reaches its assignee, who starts and finishes it', async
   await expect(anaTasks.getByText('Hechas (1)')).toBeVisible();
 });
 
-test('a task for anyone is taken by whoever starts it', async ({ browser }) => {
+test('a common task, for anyone, is taken by whoever starts it', async ({ browser }) => {
   const { ana, berta } = await twoMembers(browser, VIEW);
 
   await ana.getByRole('button', { name: 'Tareas' }).click();
   const anaTasks = ana.getByRole('region', { name: 'Tareas' });
   await anaTasks.getByRole('button', { name: 'Nueva tarea' }).click();
-  await anaTasks.getByLabel('Qué hay que hacer').fill('Llevar agua al puesto');
+  await anaTasks
+    .getByRole('group', { name: 'Habituales' })
+    .getByRole('button', { name: 'Llevar material' })
+    .click();
+  await expect(anaTasks.getByLabel('Qué hay que hacer')).toHaveValue('Llevar material');
   await anaTasks.getByRole('button', { name: 'Guardar' }).click();
   await expect(anaTasks.getByText('Para cualquiera')).toBeVisible();
 
@@ -49,7 +53,7 @@ test('a task for anyone is taken by whoever starts it', async ({ browser }) => {
   const task = berta
     .getByRole('region', { name: 'Tareas' })
     .getByRole('listitem')
-    .filter({ hasText: 'Llevar agua al puesto' });
+    .filter({ hasText: 'Llevar material' });
   await task.getByRole('button', { name: 'Empezar' }).click();
   await expect(anaTasks.getByText('Para Berta')).toBeVisible();
 });

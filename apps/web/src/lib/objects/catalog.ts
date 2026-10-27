@@ -33,6 +33,8 @@ export const SYMBOLS: readonly SymbolInfo[] = [
   { code: 0x000c, label: 'symbolCommandPost', glyph: 'mast', tone: 'ink' },
 ];
 
+/** §4.2: an area to keep out of; each device warns its user on entering one. */
+export const DANGER_STYLE = 0x0001;
 /** §4.2: the area the group works in, whose map members are offered to download. */
 export const OPERATION_AREA_STYLE = 0x0006;
 
@@ -44,7 +46,7 @@ export interface StyleInfo {
 
 export const SHAPE_STYLES: readonly StyleInfo[] = [
   { code: 0x0000, label: 'styleNeutral', tone: 'slate' },
-  { code: 0x0001, label: 'styleDanger', tone: 'red' },
+  { code: DANGER_STYLE, label: 'styleDanger', tone: 'red' },
   { code: 0x0002, label: 'styleSearchAssigned', tone: 'amber' },
   { code: 0x0003, label: 'styleSearchCleared', tone: 'green' },
   { code: 0x0004, label: 'styleSafe', tone: 'teal' },

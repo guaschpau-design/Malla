@@ -1,0 +1,63 @@
+<!-- Warns on entering a danger area of the group, from this device's own position: a card on top
+     of the map and a vibration. Closing it lasts until the device leaves the area; entering again
+     warns again. While the group has a danger area the GPS stays on for this, on the device only:
+     nothing is shared that the user has not chosen to share. -->
+<script lang="ts">
+  import type { GroupState } from '@tesel/core';
+  import { SvelteSet } from 'svelte/reactivity';
+
+  import type { Translate } from '../i18n/index.ts';
+  import type { DeviceLocation } from '../position/device-location.svelte.ts';
+  import MapCard from '../ui/MapCard.svelte';
+  import { dangerZones, zonesAt } from './danger-zones.ts';
+
+  interface Props {
+    t: Translate;
+    groupState: GroupState;
+    location: DeviceLocation;
+  }
+
+  let { t, groupState, location }: Props = $props();
+
+  const zones = $derived(dangerZones(groupState));
+  const watching = $derived(zones.length > 0);
+
+  $effect(() => {
+    if (watching) return location.use();
+  });
+  const inside = $derived(location.fix ? zonesAt(zones, location.fix.at) : []);
+  /** Areas closed on this device while still inside them. */
+  const dismissed = new SvelteSet<string>();
+  const warned = $derived(inside.filter((zone) => !dismissed.has(zone.key)));
+
+  // An area left is forgotten, so entering it again warns again; one entered vibrates.
+  let known = new Set<string>();
+  $effect(() => {
+    const now = new Set(inside.map((zone) => zone.key));
+    for (const key of dismissed) if (!now.has(key)) dismissed.delete(key);
+    const entered = [...now].some((key) => !known.has(key));
+    // Safari has no vibration API.
+    if (entered && 'vibrate' in navigator) navigator.vibrate([500, 200, 500]);
+    known = now;
+  });
+</script>
+
+{#if warned.length > 0}
+  <MapCard edge="var(--danger)">
+    <strong class="title">{t('dangerZoneEntered')}</strong>
+    <p>{warned.map((zone) => zone.label || t('styleDanger')).join(' · ')}</p>
+    <div class="row">
+      <button
+        onclick={() => {
+          for (const zone of warned) dismissed.add(zone.key);
+        }}>{t('understood')}</button
+      >
+    </div>
+  </MapCard>
+{/if}
+
+<style>
+  .title {
+    color: var(--danger);
+  }
+</style>

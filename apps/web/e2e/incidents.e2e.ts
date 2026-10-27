@@ -122,3 +122,30 @@ test('an area is drawn point by point and described before it is shared', async 
     await expect(details).toBeVisible({ timeout: 1000 });
   }).toPass({ timeout: 15_000 });
 });
+
+test('members inside a danger area are warned', async ({ browser }) => {
+  const { ana, berta } = await twoMembers(browser, VIEW);
+  const box = await ana.locator('.maplibregl-canvas').boundingBox();
+  if (!box) throw new Error('no map');
+  const at = (dx: number, dy: number) =>
+    ana.mouse.click(box.x + box.width / 2 + dx, box.y + box.height / 2 + dy);
+
+  // A square around the centre of the view, which is where both devices are.
+  await ana.getByRole('button', { name: 'Añadir' }).click();
+  await ana.getByRole('menuitem', { name: 'Zona' }).click();
+  await at(-80, -80);
+  await at(80, -80);
+  await at(80, 80);
+  await at(-80, 80);
+  await ana.getByRole('button', { name: 'Terminar' }).click();
+  await ana.getByRole('radio', { name: 'Zona de peligro' }).check();
+  await ana.getByLabel('Etiqueta (opcional)').fill('Derrumbe');
+  await ana.getByRole('button', { name: 'Guardar' }).click();
+
+  const warning = berta
+    .getByRole('status')
+    .filter({ hasText: 'Has entrado en una zona de peligro' });
+  await expect(warning).toContainText('Derrumbe', { timeout: 15_000 });
+  await warning.getByRole('button', { name: 'Entendido' }).click();
+  await expect(warning).toBeHidden();
+});

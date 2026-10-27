@@ -27,6 +27,7 @@ export type SettingKey =
   | 'coordinateFormat'
   | 'baseMap'
   | 'relief'
+  | 'mgrsGrid'
   | 'hiddenLayers'
   | 'keepScreenOn';
 

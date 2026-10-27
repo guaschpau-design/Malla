@@ -52,7 +52,14 @@ const RAD = Math.PI / 180;
 /** The UTM coordinates of a point, or null near the poles, where UTM does not reach. */
 export function toUtm(at: LatLon): Utm | null {
   if (at.lat < SOUTH_LIMIT || at.lat > NORTH_LIMIT) return null;
-  const zone = zoneOf(at);
+  return toUtmInZone(at, zoneOf(at));
+}
+
+/**
+ * The coordinates of a point in a given zone, even one it is not in: a grid drawn over a zone
+ * reaches a little past its edge.
+ */
+export function toUtmInZone(at: LatLon, zone: number): Utm {
   const phi = at.lat * RAD;
   const lambda = (at.lon - centralMeridian(zone)) * RAD;
 
@@ -123,6 +130,11 @@ function zoneOf({ lat, lon }: LatLon): number {
  */
 function toMillimetres(metres: number): number {
   return Math.round(metres * 1000) / 1000;
+}
+
+/** The western edge of a zone, in degrees of longitude; it is six degrees wide. */
+export function zoneWest(zone: number): number {
+  return zone * 6 - 186;
 }
 
 function centralMeridian(zone: number): number {

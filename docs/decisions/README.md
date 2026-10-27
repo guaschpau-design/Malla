@@ -37,3 +37,5 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0029](0029-operation-area.md)                     | The operation area: an area style that offers its map                    | Accepted                      |
 | [0030](0030-weather-warnings.md)                   | Official weather warnings, gathered by the server from MeteoAlarm        | Accepted                      |
 | [0031](0031-practice-mode.md)                      | Practice mode: a simulated group played on the device                    | Accepted                      |
+| [0032](0032-radio-line-of-sight.md)                | Radio line of sight from the terrain, sure only when it says no          | Accepted                      |
+| [0033](0033-danger-area-warning.md)                | Warning on entering a danger area, worked out on each device             | Accepted                      |

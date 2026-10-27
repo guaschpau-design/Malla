@@ -1,50 +1,43 @@
 <!--
-  Everything on top of the map: weather warnings, public services, this device, the group's
-  members, objects, tasks and incidents, drawing, measuring and navigating, the panels and the
-  dock. Without an active group, only what works alone: weather warnings, services, this device,
-  coordinates, measuring, navigating to a point and offline maps.
+  Everything on top of the map: weather warnings, the MGRS grid, public services, this device, the
+  group's members, objects, tasks and incidents, drawing, measuring and navigating, the panels and
+  the dock. Without an active group, only what works alone: weather warnings, the grid, services,
+  this device, coordinates, measuring, navigating to a point and offline maps.
 -->
 <script lang="ts">
-  import type { EventRef, LatLon, NodeId, Role, SosKind } from '@tesel/protocol';
+  import type { LatLon, NodeId, SosKind } from '@tesel/protocol';
   import type { Map as MapLibreMap } from 'maplibre-gl';
 
   import { onMount } from 'svelte';
 
   import FindCoordinatePanel from '../coordinates/FindCoordinatePanel.svelte';
+  import MgrsGridLayer from '../coordinates/MgrsGridLayer.svelte';
   import PointLayer from '../coordinates/PointLayer.svelte';
   import PointPanel from '../coordinates/PointPanel.svelte';
   import type { Locale, Translate } from '../i18n/index.ts';
-  import IncidentBanners from '../incidents/IncidentBanners.svelte';
   import SosDialog from '../incidents/SosDialog.svelte';
   import { MAP_LAYERS, type MapLayer } from '../map/layers.ts';
+  import { mapCentre } from '../map/geometry.ts';
   import { onLongPress } from '../map/long-press.ts';
   import LayersPanel from '../map/LayersPanel.svelte';
   import CompassButton from '../map/CompassButton.svelte';
   import MapControl from '../map/MapControl.svelte';
   import MemberLayer from '../map/MemberLayer.svelte';
   import TrailLayer from '../map/TrailLayer.svelte';
-  import Measuring from '../measure/Measuring.svelte';
-  import Navigation from '../navigation/Navigation.svelte';
   import { navigateTo, navigation } from '../navigation/navigation.svelte.ts';
   import { draftGeometry, type DraftKind } from '../objects/draft.ts';
-  import DrawBar from '../objects/DrawBar.svelte';
   import { Drawing } from '../objects/drawing.svelte.ts';
-  import DrawLayer from '../objects/DrawLayer.svelte';
   import ObjectForm from '../objects/ObjectForm.svelte';
   import ObjectLayer from '../objects/ObjectLayer.svelte';
   import type { OfflineMaps } from '../offline/offline-maps.ts';
-  import OperationAreaOffer from '../offline/OperationAreaOffer.svelte';
   import type { DeviceLocation } from '../position/device-location.svelte.ts';
   import LocateButton from '../position/LocateButton.svelte';
   import MePanel from '../position/MePanel.svelte';
   import SelfLayer from '../position/SelfLayer.svelte';
   import type { RadioSession } from '../radio/radio.svelte.ts';
-  import type { PositionSharing } from '../position/position-sharing.svelte.ts';
-  import Practice from '../practice/Practice.svelte';
   import type { TappedService } from '../services/services.ts';
   import ServicesLayer from '../services/ServicesLayer.svelte';
   import type { Preferences } from '../settings/preferences.ts';
-  import type { GroupFeed } from '../sync/group-feed.svelte.ts';
   import MapTasks from '../tasks/MapTasks.svelte';
   import { newTask } from '../tasks/task-editor.svelte.ts';
   import { myPendingCount } from '../tasks/tasks.ts';
@@ -53,28 +46,20 @@
   import { closePanel, panels, togglePanel } from '../ui/panels.svelte.ts';
   import { keepScreenAwake } from '../ui/screen-awake.svelte.ts';
   import WarningList from '../weather/WarningList.svelte';
-  import WeatherCard from '../weather/WeatherCard.svelte';
   import type { WeatherFeed } from '../weather/weather-feed.svelte.ts';
   import WeatherLayer from '../weather/WeatherLayer.svelte';
   import { warningsAt } from '../weather/weather-warnings.ts';
   import Dock from './Dock.svelte';
   import GroupPanels from './GroupPanels.svelte';
+  import MapStatus from './MapStatus.svelte';
+  import type { MapTool, WorkspaceGroup } from './workspace.ts';
 
   interface Props {
     t: Translate;
     locale: Locale;
     map: MapLibreMap;
-    /**
-     * The active group's feed and this device's place in it, when there is an active group; for a
-     * practice, its other members are simulated here.
-     */
-    group: {
-      feed: GroupFeed;
-      self: NodeId;
-      role: Role;
-      sharing: PositionSharing;
-      practice: boolean;
-    } | null;
+    /** The active group and this device's place in it, when there is an active group. */
+    group: WorkspaceGroup | null;
     radio: RadioSession;
     location: DeviceLocation;
     preferences: Preferences;
@@ -102,10 +87,9 @@
   keepScreenAwake(() => preferences.keepScreenOn.value || navigation.target !== null);
 
   const drawing = new Drawing();
-  /** Measuring, and the point it started from if any. */
-  let measuring: { readonly from: LatLon | null } | null = $state.raw(null);
-  /** Drawing or measuring: taps on the map add points instead of opening what they hit. */
-  const tapping = $derived(drawing.draft !== null || measuring !== null);
+  let tool: MapTool | null = $state.raw(null);
+  /** Drawing or a tool: taps on the map add points instead of opening what they hit. */
+  const tapping = $derived(drawing.draft !== null || tool !== null);
   /** Which map layers are shown, by layer. */
   const shown = $derived(
     Object.fromEntries(
@@ -126,7 +110,7 @@
 
   function startDrawing(kind: DraftKind): void {
     closePanel();
-    measuring = null;
+    tool = null;
     drawing.start(kind);
   }
 
@@ -178,10 +162,10 @@
     panels.open = 'member';
   }
 
-  function startMeasuring(from: LatLon | null): void {
+  function startTool(next: MapTool): void {
     closePanel();
     drawing.stop();
-    measuring = { from };
+    tool = next;
   }
 
   async function sendSos(
@@ -195,24 +179,14 @@
     showNotice(t('sosSent'));
   }
 
-  function mapCentre(): LatLon {
-    const centre = map.getCenter();
-    return { lat: centre.lat, lon: centre.lng };
-  }
-
   function show(at: LatLon): void {
     map.flyTo({ center: [at.lon, at.lat], zoom: Math.max(map.getZoom(), 15) });
   }
-
-  async function acknowledge(target: EventRef): Promise<void> {
-    await group?.feed.acknowledge(target);
-  }
-
-  async function cancelSos(sos: EventRef): Promise<void> {
-    await group?.feed.cancelSos(sos);
-  }
 </script>
 
+{#if preferences.mgrsGrid.value}
+  <MgrsGridLayer {map} />
+{/if}
 {#if weather}
   <WeatherLayer {map} regions={weather.regions} visible={shown.weather} />
 {/if}
@@ -283,7 +257,7 @@
     <SosDialog
       {t}
       {location}
-      fallback={mapCentre()}
+      fallback={mapCentre(map)}
       onsend={sendSos}
       oncancel={() => (sosOpen = false)}
     />
@@ -309,7 +283,10 @@
       navigateTo({ kind: 'point', at, name });
     }}
     onmeasure={() => {
-      startMeasuring(at);
+      startTool({ kind: 'measure', from: at });
+    }}
+    onsight={() => {
+      startTool({ kind: 'sight', from: at });
     }}
     onmark={group
       ? () => {
@@ -349,70 +326,27 @@
     {t}
     base={preferences.baseMap}
     relief={preferences.relief}
+    grid={preferences.mgrsGrid}
     hidden={preferences.hiddenLayers}
     onclose={closePanel}
   />
 {/if}
 
-<!-- The top of the map: what is going on now, then the incidents. -->
-<div class="top">
-  {#if drawing.draft && drawing.tapping}
-    <DrawLayer
-      {map}
-      points={drawing.draft.points}
-      closed={drawing.draft.kind === 'area'}
-      onpoint={(at: LatLon) => {
-        drawing.add(at);
-      }}
-    />
-    <DrawBar
-      {t}
-      draft={drawing.draft}
-      onundo={() => {
-        drawing.undo();
-      }}
-      onfinish={() => {
-        drawing.finish();
-      }}
-      oncancel={() => {
-        drawing.stop();
-      }}
-    />
-  {:else if measuring}
-    <Measuring {t} {locale} {map} from={measuring.from} onclose={() => (measuring = null)} />
-  {/if}
-  <Navigation {t} {locale} {map} {location} groupState={group?.feed.state ?? null} />
-  {#if weather && shown.weather && !tapping}
-    <WeatherCard {t} {locale} {weather} {location} />
-  {/if}
-  {#if group?.practice}
-    {#key group.feed}
-      <Practice
-        {t}
-        feed={group.feed}
-        self={group.self}
-        centre={location.fix?.at ?? mapCentre()}
-        onend={onendpractice}
-      />
-    {/key}
-  {/if}
-  {#if group && !tapping}
-    {#key group.feed}
-      <OperationAreaOffer {t} {locale} groupState={group.feed.state} {offline} />
-    {/key}
-    <IncidentBanners
-      {t}
-      {locale}
-      groupState={group.feed.state}
-      self={group.self}
-      canCancelOthers={group.role === 'coordinator'}
-      onacknowledge={acknowledge}
-      oncancel={cancelSos}
-      onshow={show}
-      onneedhelp={() => (sosOpen = true)}
-    />
-  {/if}
-</div>
+<MapStatus
+  {t}
+  {locale}
+  {map}
+  {location}
+  {group}
+  {drawing}
+  {tool}
+  {tapping}
+  weather={shown.weather ? weather : null}
+  {offline}
+  onclosetool={() => (tool = null)}
+  {onendpractice}
+  onneedhelp={() => (sosOpen = true)}
+/>
 <MapControl {map}>
   <CompassButton {t} {map} />
   <LocateButton {t} {map} {location} />
@@ -438,25 +372,9 @@
     onsos={() => (sosOpen = true)}
     ondraw={startDrawing}
     onmeasure={() => {
-      startMeasuring(null);
+      startTool({ kind: 'measure', from: null });
     }}
     keepScreenOn={preferences.keepScreenOn}
     tasksForMe={group ? myPendingCount(group.feed.state, group.self) : 0}
   />
 {/if}
-
-<style>
-  /* Clear of the map's controls on the right: one control wide, with MapLibre's 10 px margin. */
-  .top {
-    position: absolute;
-    z-index: 2;
-    top: 0.75rem;
-    right: calc(var(--control-size) + 1.25rem);
-    left: 0.75rem;
-    display: grid;
-    gap: 0.5rem;
-    max-width: 30rem;
-    margin: 0 auto;
-    pointer-events: none;
-  }
-</style>

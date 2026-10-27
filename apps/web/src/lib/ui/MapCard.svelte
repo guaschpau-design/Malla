@@ -5,7 +5,7 @@
 
   interface Props {
     /** A colour of meaning for its edge, e.g. `var(--info)`; none by default. */
-    edge?: string;
+    edge?: string | undefined;
     children: Snippet;
   }
 

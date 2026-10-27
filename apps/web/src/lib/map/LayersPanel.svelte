@@ -15,11 +15,12 @@
     t: Translate;
     base: Preference<BaseMap>;
     relief: Preference<boolean>;
+    grid: Preference<boolean>;
     hidden: Preference<readonly MapLayer[]>;
     onclose: () => void;
   }
 
-  let { t, base, relief, hidden, onclose }: Props = $props();
+  let { t, base, relief, grid, hidden, onclose }: Props = $props();
 
   const BASE_NAMES: Readonly<Record<BaseMap, MessageKey>> = {
     streets: 'baseMapStreets',
@@ -71,6 +72,9 @@
     {/each}
     {@render layerSwitch('relief', t('layerRelief'), relief.value, () => {
       void relief.set(!relief.value);
+    })}
+    {@render layerSwitch('grid', t('layerGrid'), grid.value, () => {
+      void grid.set(!grid.value);
     })}
   </div>
 </Panel>

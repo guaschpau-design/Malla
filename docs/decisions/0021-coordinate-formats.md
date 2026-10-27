@@ -9,7 +9,7 @@ Teams read coordinates aloud over the radio and write them in reports. Phones an
 
 ## Decision
 
-- The app writes and reads four formats: decimal degrees, degrees-minutes-seconds, UTM and MGRS (`apps/web/src/lib/coordinates/`). Each device chooses one, remembered as a preference; decimal degrees is the default.
+- The app writes and reads four formats: decimal degrees, degrees-minutes-seconds, UTM and MGRS (`apps/web/src/lib/coordinates/`). Each device chooses one, remembered as a preference; decimal degrees is the default. The MGRS grid can be drawn over the map, off by default (added 2026-10-27): lines every 100 km, 10 km, 1 km or 100 m as the zoom allows, labelled with their digits, the 100 km squares named and the zone edges marked.
 - All coordinates are WGS 84, the datum of GPS. ETRS89, the official European datum, differs from it by well under a metre, which does not matter in the field; we do not convert between them.
 - The conversions are our own code, about 450 lines with their comments: Krüger's series to the third order for UTM, accurate to a millimetre within a zone, and the standard MGRS lettering. Tests compare them with PROJ and with NGA's GEOTRANS. The JavaScript libraries we looked at cover only part of this (MGRS without UTM text, or no parsing), and the mathematics is stable and well documented.
 - Reading is lenient where people are: signs or hemisphere letters (O for west), decimal commas, with or without symbols, UTM with a latitude band (Spanish usage) or a hemisphere. An MGRS square with fewer digits is read as its centre.
