@@ -56,6 +56,20 @@ const AVERAGE_TILE_BYTES: Readonly<Record<TileSourceId, number>> = {
 };
 
 /**
+ * Requests in flight at once to each source while downloading. Our own archive takes six, as many
+ * as a browser opens to one host. The others are public services, free to use but not ours to
+ * load: a download asks them for up to tens of thousands of tiles, and Portugal's DGT draws each
+ * one on request (ortho.ts). They are asked two at a time: the download takes longer, and spreads
+ * its load on them over that time.
+ */
+const CONCURRENCY: Readonly<Record<TileSourceId, number>> = {
+  basemap: 6,
+  'ign-names': 2,
+  ortho: 2,
+  terrain: 2,
+};
+
+/**
  * Photographs need three zooms more than the vector map for the same detail: their tiles cannot be
  * enlarged without blurring.
  */
@@ -91,6 +105,7 @@ export function downloadLayers(
     source,
     archive: archives[source],
     maxZoom: sourceMaxZoom(source, maxZoom),
+    concurrency: CONCURRENCY[source],
   }));
 }
 

@@ -1,6 +1,6 @@
 # 0012. Invitation links work under a base path
 
-- Status: Accepted
+- Status: Accepted, amended by [0017](0017-server-serves-site-and-app.md) (GitHub Pages only redirects)
 - Date: 2026-10-25
 - Amends: [`protocol.md`](../protocol.md) §6, which required the path to be exactly `/join`
 

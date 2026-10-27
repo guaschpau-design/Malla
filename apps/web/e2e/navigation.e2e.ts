@@ -1,11 +1,13 @@
-import { device, expect, openMore, test } from './helpers.ts';
+import { device, expect, mapIdle, openMore, test } from './helpers.ts';
 
 test('a point picked on the map is measured from here and navigated to', async ({ browser }) => {
   const page = await device(browser, 'Ana');
   await page.getByRole('button', { name: 'Mostrar mi ubicación' }).click();
-  // Wait for the map to centre on this device, then pick a point above it.
+  // Wait for the map to centre on this device, whose view the URL keeps, and settle there; then
+  // pick a point above it.
   await expect(page.getByRole('button', { name: 'Dejar de mostrar mi ubicación' })).toBeVisible();
-  await page.waitForTimeout(1500);
+  await expect(page).toHaveURL(/#map=[\d.]+\/39\.4699\/-0\.3763$/);
+  await mapIdle(page);
   const canvas = page.locator('.maplibregl-canvas');
   const box = await canvas.boundingBox();
   if (box === null) throw new Error('no map');

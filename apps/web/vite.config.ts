@@ -2,13 +2,23 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// TESEL_BASE lets the app be served from a sub-path, e.g. "/tesel/" on GitHub Pages.
+import { thirdPartyNotices } from './scripts/third-party-notices.ts';
+
+// TESEL_BASE lets the app be served from a sub-path, e.g. "/app/" in the server image.
 const base = process.env['TESEL_BASE'] ?? '/';
 
 export default defineConfig({
   base,
   plugins: [
     svelte(),
+    thirdPartyNotices([
+      {
+        // The service worker's runtime, which vite-plugin-pwa bundles apart from the app.
+        name: 'workbox-core, workbox-precaching, workbox-routing, workbox-strategies',
+        license: 'MIT',
+        notice: 'workbox',
+      },
+    ]),
     VitePWA({
       // Updates wait for the user to accept them (see UpdatePrompt.svelte).
       registerType: 'prompt',
@@ -36,9 +46,10 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // The whole app, glyphs and sprites are cached at install so the map works offline.
+        // The whole app, glyphs and sprites are cached at install so the map works offline, and so
+        // are the third-party licences, which the fallback to index.html would otherwise answer.
         // Map tiles are not handled here: downloaded areas live in IndexedDB.
-        globPatterns: ['**/*.{js,mjs,css,html,png,svg,pbf,json,webmanifest}'],
+        globPatterns: ['**/*.{js,mjs,css,html,png,svg,pbf,json,webmanifest,txt}'],
         navigateFallback: 'index.html',
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         // Icons are linked with ?v= so browsers fetch new ones; the cache serves them all the same.

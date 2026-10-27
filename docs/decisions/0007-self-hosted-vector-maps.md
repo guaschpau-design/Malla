@@ -1,6 +1,6 @@
 # 0007. Self-hosted vector maps for offline use
 
-- Status: Accepted; offline-download mechanism superseded by [0011](0011-client-side-area-download.md)
+- Status: Accepted, partly superseded by [0011](0011-client-side-area-download.md) (the offline download)
 - Date: 2026-10-25
 
 ## Context

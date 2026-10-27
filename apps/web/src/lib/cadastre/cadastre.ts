@@ -49,7 +49,9 @@ export const CADASTRES: readonly CadastreService[] = [
     layer: 'CADASTRALPARCELS.PARCELLAIRE_EXPRESS',
     // The style with each parcel's number.
     style: 'PCI vecteur',
-    credit: '<a href="https://www.ign.fr" target="_blank">© IGN</a> · PCI Express',
+    // The Licence Ouverte 2.0 asks for the producers and the date of the last update. The service
+    // gives no date the app can rely on, so the credit names the producers only.
+    credit: '<a href="https://www.ign.fr" target="_blank">DGFiP / IGN – PCI Express</a>',
   },
 ];
 

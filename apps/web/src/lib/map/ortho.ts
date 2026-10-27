@@ -1,10 +1,11 @@
 // The satellite map, as one source (ADR-0041): from afar, one mosaic for every country alike,
-// Sentinel-2 cloudless 2024; close up, each country's newest orthophotos laid over it within its
+// Sentinel-2 cloudless of the year the build chose (ADR-0051); close up, each country's newest orthophotos laid over it within its
 // outline (borders-data.ts) — Spain's (IGN, PNOA), mainland Portugal's (DGT, OrtoSat 2023) and
 // France's (IGN France, BD ORTHO). Where no country's photographs reach, such as Andorra, the
 // mosaic stays. A tile inside one outline is that country's tile as its service gives it; a tile
 // across outlines is put together on the device.
 
+import { satelliteMosaic, type SatelliteMosaic } from '../config.ts';
 import type { TileArchive } from './area-download.ts';
 import { FRANCE_SOUTH, PORTUGAL, SPAIN, type Outline } from './borders-data.ts';
 import { outlineCoverage, toWebMercator } from './geometry.ts';
@@ -14,12 +15,37 @@ import { SCNE, webArchive } from './tile-sources.ts';
 /** The orthophotos are drawn and downloaded up to this zoom; MapLibre enlarges them beyond it. */
 export const ORTHO_MAX_ZOOM = 18;
 
+/** A mosaic of EOX's: its layer in the WMTS, and the credit its licence asks for, licence named. */
+interface Mosaic {
+  readonly layer: string;
+  readonly credit: string;
+}
+
+const EOX = '<a href="https://cloudless.eox.at" target="_blank">EOxCloudless</a>';
+
+/** The mosaics a build can choose (config.ts, ADR-0051). */
+const MOSAICS: Readonly<Record<SatelliteMosaic, Mosaic>> = {
+  's2cloudless-2024': {
+    layer: 's2cloudless-2024_3857',
+    credit:
+      `${EOX} 2024 by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2024), ` +
+      '<a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a>',
+  },
+  's2cloudless-2016': {
+    layer: 's2cloudless_3857',
+    credit:
+      `${EOX} 2016 by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2016 & ` +
+      '2017), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC BY 4.0</a>',
+  },
+};
+
+const MOSAIC = MOSAICS[satelliteMosaic()];
+
 export const ORTHO_ATTRIBUTION =
-  '<a href="https://s2maps.eu" target="_blank">Sentinel-2 cloudless 2024</a> by EOX IT Services ' +
-  'GmbH (contains modified Copernicus Sentinel data 2024) | ' +
+  `${MOSAIC.credit} | ` +
   `${SCNE} · PNOA | ` +
   '<a href="https://www.dgterritorio.gov.pt" target="_blank">CC BY 4.0 DGT</a> · OrtoSat 2023 | ' +
-  '<a href="https://www.ign.fr" target="_blank">© IGN</a> · BD ORTHO';
+  '<a href="https://www.ign.fr" target="_blank">IGN – BD ORTHO</a>';
 
 /**
  * From this zoom, about a town's view, each country's photographs are laid over the mosaic: further
@@ -30,9 +56,9 @@ const TILE_PX = 256;
 /** Tiles put together are saved as JPEG, like the services' own. */
 const JPEG_QUALITY = 0.85;
 
-/** EOX's Sentinel-2 cloudless mosaic of 2024, from its WMTS in the Web Mercator grid. */
+/** The build's Sentinel-2 cloudless mosaic, from EOX's WMTS in the Web Mercator grid. */
 function mosaicUrl(z: number, x: number, y: number): string {
-  return `https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/g/${String(z)}/${String(y)}/${String(x)}.jpg`;
+  return `https://tiles.maps.eox.at/wmts/1.0.0/${MOSAIC.layer}/default/g/${String(z)}/${String(y)}/${String(x)}.jpg`;
 }
 
 /** PNOA, the newest of each place, from IGN's WMTS in the Web Mercator grid. */

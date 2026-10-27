@@ -3,7 +3,7 @@
 
 import type { Page } from '@playwright/test';
 
-import { device, expect, test } from './helpers.ts';
+import { device, expect, mapIdle, test } from './helpers.ts';
 
 const BLANK_PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
@@ -42,6 +42,13 @@ test('the cadastre asks for nothing while too far out to read parcels', async ({
   const page = await device(browser, 'Ana', '/#map=12/39.4750/-0.3700');
   const asked = await standInForCadastre(page);
   await turnOnCadastre(page);
-  await page.waitForTimeout(500);
+  await mapIdle(page);
   expect(asked).toEqual([]);
+  // Closer in, the same map asks once: a picture asked for further out would be here too.
+  await page.evaluate(() => {
+    window.location.hash = 'map=16/39.4750/-0.3700';
+  });
+  await expect.poll(() => asked.length).toBe(1);
+  await mapIdle(page);
+  expect(asked).toHaveLength(1);
 });

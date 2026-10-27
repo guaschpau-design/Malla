@@ -1,16 +1,8 @@
 // Day 4: map objects, SOS calls and alerts reach the whole group.
 
-import type { Page } from '@playwright/test';
-
-import { expect, test, twoMembers } from './helpers.ts';
+import { expect, tapMap, tapMapUntil, test, twoMembers } from './helpers.ts';
 
 const VIEW = '/#map=15/39.4699/-0.3763';
-
-async function tapMapCentre(page: Page): Promise<void> {
-  const box = await page.locator('.maplibregl-canvas').boundingBox();
-  if (!box) throw new Error('no map');
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-}
 
 test('a marker drawn by one member can be opened and deleted by another', async ({ browser }) => {
   const { ana, berta } = await twoMembers(browser, VIEW);
@@ -18,26 +10,23 @@ test('a marker drawn by one member can be opened and deleted by another', async 
   await ana.getByRole('button', { name: 'Añadir' }).click();
   await ana.getByRole('menuitem', { name: 'Marcador' }).click();
   await expect(ana.getByText('Toca el mapa donde va el marcador.')).toBeVisible();
-  await tapMapCentre(ana);
+  await tapMap(ana);
   await ana.getByRole('radio', { name: 'Fuego' }).check();
   await ana.getByLabel('Etiqueta (opcional)').fill('Foco norte');
   await ana.getByRole('button', { name: 'Guardar' }).click();
 
   // Berta taps the same spot until the marker has arrived and been drawn.
   const details = berta.getByRole('region', { name: 'Foco norte' });
-  await expect(async () => {
-    await tapMapCentre(berta);
-    await expect(details).toBeVisible({ timeout: 1000 });
-  }).toPass({ timeout: 15_000 });
+  await tapMapUntil(berta, {}, () => expect(details).toBeVisible({ timeout: 2000 }));
   await expect(details).toContainText('Último cambio de Ana');
 
   berta.once('dialog', (dialog) => void dialog.accept());
   await details.getByRole('button', { name: 'Borrar' }).click();
   await expect(details).toBeHidden();
-  await expect(async () => {
-    await tapMapCentre(ana);
-    await expect(ana.getByRole('region', { name: 'Foco norte' })).toBeHidden({ timeout: 500 });
-  }).toPass({ timeout: 15_000 });
+  // Ana taps the same spot until the deletion has arrived and the marker opens no more.
+  await tapMapUntil(ana, {}, () =>
+    expect(ana.getByRole('region', { name: 'Foco norte' })).toBeHidden({ timeout: 2000 }),
+  );
 });
 
 test('an SOS is acknowledged by the group and cancelled by its sender', async ({ browser }) => {
@@ -117,10 +106,7 @@ test('an area is drawn point by point and described before it is shared', async 
 
   // The triangle left after undoing covers the point to the right of the centre.
   const details = ana.getByRole('region', { name: 'Zona de peligro' });
-  await expect(async () => {
-    await at(40, -20);
-    await expect(details).toBeVisible({ timeout: 1000 });
-  }).toPass({ timeout: 15_000 });
+  await tapMapUntil(ana, { dx: 40, dy: -20 }, () => expect(details).toBeVisible({ timeout: 2000 }));
 });
 
 test('members inside a danger area are warned', async ({ browser }) => {

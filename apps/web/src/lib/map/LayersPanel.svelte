@@ -1,7 +1,9 @@
 <!-- The map under everything, and what is shown on it: pictures to choose the map, then the
-     switches in the groups layers.ts sets out, then the credits of the map's data. This device and
+     switches in the groups layers.ts sets out, then the credits of the map's data and the licences
+     of the third-party code the app ships. This device and
      SOS calls are always shown. -->
 <script lang="ts">
+  import { thirdPartyNoticesUrl } from '../config.ts';
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import Panel from '../ui/Panel.svelte';
@@ -84,6 +86,7 @@
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- the credits are constants of the app -->
         <li>{@html credit}</li>
       {/each}
+      <li><a href={thirdPartyNoticesUrl()} target="_blank">{t('thirdPartyLicences')}</a></li>
     </ul>
   </section>
 </Panel>

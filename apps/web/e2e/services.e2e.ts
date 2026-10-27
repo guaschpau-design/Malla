@@ -4,25 +4,17 @@
 
 import type { Page } from '@playwright/test';
 
-import { device, expect, test } from './helpers.ts';
+import { device, expect, tapMap, test } from './helpers.ts';
 
 /** The test base map's hospital, at the centre of this view. */
 const VIEW = '/#map=16/39.4750/-0.3700';
 /** Its pharmacy, at the centre of this one. */
 const PHARMACY_VIEW = '/#map=16/39.4750/-0.3800';
 
-async function tapMapCentre(page: Page): Promise<void> {
-  const box = await page.locator('.maplibregl-canvas').boundingBox();
-  if (!box) throw new Error('no map');
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-}
-
-/** Taps the service at the centre until its point opens: the base map's tiles arrive after the page. */
+/** Taps the service at the centre and waits for its point to open. */
 async function openService(page: Page, name: string): Promise<void> {
-  await expect(async () => {
-    await tapMapCentre(page);
-    await expect(page.getByRole('region', { name })).toBeVisible({ timeout: 1000 });
-  }).toPass({ timeout: 15_000 });
+  await tapMap(page);
+  await expect(page.getByRole('region', { name })).toBeVisible();
 }
 
 test('a hospital on the map opens by its name and guides there', async ({ browser }) => {
@@ -50,6 +42,6 @@ test('services can be hidden', async ({ browser }) => {
   // The switch turns off once the choice is stored, and the map follows it.
   await expect(services).toHaveAttribute('aria-checked', 'false');
   await layers.getByRole('button', { name: 'Cerrar' }).click();
-  await tapMapCentre(page);
+  await tapMap(page);
   await expect(page.getByRole('region', { name: 'Hospital de Prueba' })).toBeHidden();
 });

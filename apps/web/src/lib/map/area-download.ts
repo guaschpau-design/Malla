@@ -15,6 +15,8 @@ export interface DownloadLayer {
   readonly source: TileSourceId;
   readonly archive: TileArchive;
   readonly maxZoom: number;
+  /** Requests in flight at once to the archive. */
+  readonly concurrency: number;
 }
 
 export interface DownloadProgress {
@@ -30,8 +32,6 @@ export interface DownloadRequest {
   readonly layers: readonly DownloadLayer[];
   readonly signal: AbortSignal;
   readonly onProgress: (progress: DownloadProgress) => void;
-  /** Requests in flight at once. */
-  readonly concurrency?: number;
   /** Clock, injectable for tests. */
   readonly now?: () => number;
 }
@@ -96,7 +96,7 @@ export async function downloadArea(
         request.onProgress({ done, total, bytes });
       }
     };
-    await Promise.all(Array.from({ length: request.concurrency ?? 6 }, worker));
+    await Promise.all(Array.from({ length: layer.concurrency }, worker));
     await flush();
   }
 

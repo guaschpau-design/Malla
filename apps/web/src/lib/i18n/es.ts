@@ -434,4 +434,5 @@ export const es: Messages = {
   practiceGoingToMarta: 'Voy hacia Marta.',
   practiceMartaSafe: 'Marta está atendida. Seguimos.',
   practiceOnTheWay: 'Recibido. Voy hacia ti.',
+  thirdPartyLicences: 'Licencias de terceros',
 };

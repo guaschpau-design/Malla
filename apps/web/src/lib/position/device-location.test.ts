@@ -1,33 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { DeviceLocation, type GeolocationSource } from './device-location.svelte.ts';
-
-/** Stands in for the browser's geolocation: tests decide when a fix or an error arrives. */
-class FakeGps implements GeolocationSource {
-  watching = 0;
-  #success: PositionCallback | null = null;
-  #error: PositionErrorCallback | null = null;
-
-  watchPosition(success: PositionCallback, error?: PositionErrorCallback | null): number {
-    this.watching++;
-    this.#success = success;
-    this.#error = error ?? null;
-    return this.watching;
-  }
-
-  clearWatch(): void {
-    this.watching--;
-  }
-
-  fix(lat: number, lon: number): void {
-    const coords = { latitude: lat, longitude: lon, accuracy: 8, heading: NaN, speed: null };
-    this.#success?.({ coords, timestamp: 1_000 } as unknown as GeolocationPosition);
-  }
-
-  deny(): void {
-    this.#error?.({ code: 1, PERMISSION_DENIED: 1 } as GeolocationPositionError);
-  }
-}
+import { DeviceLocation } from './device-location.svelte.ts';
+import { FakeGps } from './fake-gps.ts';
 
 describe('device location', () => {
   it('runs the GPS once however many use it, and stops when the last one lets go', () => {

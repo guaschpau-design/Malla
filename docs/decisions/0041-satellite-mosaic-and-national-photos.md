@@ -1,6 +1,6 @@
 # 0041. Show one Sentinel-2 mosaic from afar, and each country's photographs close up
 
-- Status: Accepted
+- Status: Accepted, amended by [0051](0051-satellite-mosaic-licence.md) (the mosaic's licence, chosen at build time)
 - Date: 2026-10-27
 
 ## Context

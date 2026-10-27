@@ -21,6 +21,11 @@
   let container: HTMLDivElement;
   let map: MapLibreMap | undefined = $state();
   let appliedStyle = '';
+  /**
+   * Whether the map is still loading, moving or drawing, until it settles: told to assistive
+   * technology through aria-busy, which end-to-end tests wait on too.
+   */
+  let busy = $state(true);
 
   // Spain and Portugal, until the user's own position or areas say otherwise.
   const INITIAL_VIEW = { center: [-3.7, 40.2] as [number, number], zoom: 5 };
@@ -37,6 +42,10 @@
       // Keeps the view in the URL (#map=zoom/lat/lon), so a reload or a shared link keeps it.
       hash: 'map',
     });
+    const startBusy = () => (busy = true);
+    instance.on('dataloading', startBusy);
+    instance.on('movestart', startBusy);
+    instance.on('idle', () => (busy = false));
     map = instance;
     onready(instance);
     return () => {
@@ -54,7 +63,7 @@
   });
 </script>
 
-<div class="map" bind:this={container}></div>
+<div class="map" aria-busy={busy} bind:this={container}></div>
 
 <style>
   .map {

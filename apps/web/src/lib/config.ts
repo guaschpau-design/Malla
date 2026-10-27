@@ -17,6 +17,14 @@ export function mapAssetsUrl(): string {
 }
 
 /**
+ * Absolute URL of the licences of the third-party code the app ships, which the build writes
+ * (scripts/third-party-notices.ts).
+ */
+export function thirdPartyNoticesUrl(): string {
+  return new URL(`${import.meta.env.BASE_URL}third-party-notices.txt`, window.location.href).href;
+}
+
+/**
  * Server proposed for new groups (protocol §8), or null if this build has none. VITE_SERVER_URL may
  * be relative to the app: the server image builds the app with "/", so every server proposes
  * itself. Coordinators can change it when they create a group.
@@ -24,6 +32,28 @@ export function mapAssetsUrl(): string {
 export function defaultServerUrl(): string | null {
   const configured = import.meta.env['VITE_SERVER_URL'] as string | undefined;
   return configured ? new URL(configured, window.location.href).href : null;
+}
+
+/** EOX's Sentinel-2 cloudless mosaics the satellite map can show from afar (ADR-0051). */
+export const SATELLITE_MOSAICS = ['s2cloudless-2024', 's2cloudless-2016'] as const;
+export type SatelliteMosaic = (typeof SATELLITE_MOSAICS)[number];
+
+/**
+ * The satellite map's mosaic, VITE_SATELLITE_MOSAIC. The 2024 mosaic is the default and is free for
+ * non-commercial use only (CC BY-NC-SA 4.0); a commercial deployment builds with the 2016 mosaic
+ * (CC BY 4.0) or licenses the newer one from EOX. A value this build does not know stops the app,
+ * so that no deployment shows a mosaic it did not choose.
+ */
+export function satelliteMosaic(): SatelliteMosaic {
+  const configured = import.meta.env['VITE_SATELLITE_MOSAIC'] as string | undefined;
+  if (!configured) return 's2cloudless-2024';
+  const mosaic = SATELLITE_MOSAICS.find((known) => known === configured);
+  if (mosaic === undefined) {
+    throw new Error(
+      `VITE_SATELLITE_MOSAIC is "${configured}"; expected one of ${SATELLITE_MOSAICS.join(', ')}`,
+    );
+  }
+  return mosaic;
 }
 
 /**

@@ -279,10 +279,11 @@ describe('long operations', () => {
         events.push(position(member, round + 1, T0 + 10 * round, 39.47 + index / 1000));
       });
     }
-    // About half a second on a laptop. The bound only catches a slice that turns quadratic.
+    // About half a second on a laptop. The bound only catches a slice that turns quadratic, which
+    // over these 144,000 events would take hours; it is loose so that a busy machine never fails it.
     const start = performance.now();
     const state = stateOf(events);
-    expect(performance.now() - start).toBeLessThan(10_000);
+    expect(performance.now() - start).toBeLessThan(60_000);
     expect(state.positions.size).toBe(50);
   });
 });

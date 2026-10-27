@@ -17,7 +17,10 @@
 
   let { t, from, to, terrain }: Props = $props();
 
-  /** Closer than this, the way is the same as far as 30 m elevation data can tell. */
+  /**
+   * Closer than this, the way is the same as far as its samples, 30 m apart (climb.ts), can tell:
+   * the elevation itself, about 10 m apart, is finer.
+   */
   const RECOMPUTE_AFTER_M = 25;
 
   let climb: Climb | null = $state.raw(null);

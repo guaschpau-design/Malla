@@ -19,10 +19,17 @@ import { device, expect, test } from './helpers.ts';
 
 const MEMBERS = 50;
 const EVENTS = 5000;
-/** Before batching this took about ten minutes; now it takes a few seconds. */
-const CATCH_UP_LIMIT_MS = 30_000;
+/**
+ * Before batching this took about ten minutes; now it takes seconds, about twenty on a busy
+ * machine. The bound lies far from both, so that load never fails it and a return to one envelope
+ * at a time always does.
+ */
+const CATCH_UP_LIMIT_MS = 120_000;
+/** Time for the rest of the test: the device, its group and the backlog. */
+const SETUP_MS = 60_000;
 
 test('a device catches up with thousands of waiting events in seconds', async ({ browser }) => {
+  test.setTimeout(SETUP_MS + CATCH_UP_LIMIT_MS);
   const ana = await device(browser, 'Ana');
   await ana.getByRole('button', { name: 'Grupos: Sin grupo' }).click();
   await ana.getByRole('button', { name: 'Crear grupo' }).click();

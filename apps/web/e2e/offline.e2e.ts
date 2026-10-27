@@ -1,6 +1,6 @@
 // The core promise of v0.1: prepare while online, keep working when the network is gone.
 
-import { chooseAlias, expect, openMore, test, twoMembers } from './helpers.ts';
+import { chooseAlias, expect, mapIdle, openMore, test, twoMembers } from './helpers.ts';
 
 test('a downloaded area keeps working after going offline and reloading', async ({
   page,
@@ -28,17 +28,8 @@ test('a downloaded area keeps working after going offline and reloading', async 
   await page.reload();
 
   await expect(page.getByRole('button', { name: 'Conexiones: Sin conexión' })).toBeVisible();
-  // Tiles come from IndexedDB: the map reports its sources as loaded, with no network.
-  await expect
-    .poll(
-      () =>
-        page.evaluate(() => {
-          const canvas = document.querySelector('canvas.maplibregl-canvas');
-          return canvas !== null && canvas.clientWidth > 0;
-        }),
-      { timeout: 15_000 },
-    )
-    .toBe(true);
+  // Tiles come from IndexedDB: the map loads its sources and settles, with no network.
+  await mapIdle(page);
   // Only the map drawing is compared; UI text depends on the system fonts of each machine.
   await expect(page.locator('.maplibregl-map')).toHaveScreenshot('offline-valencia.png', {
     maxDiffPixelRatio: 0.05,
