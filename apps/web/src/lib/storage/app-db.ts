@@ -29,6 +29,7 @@ export type SettingKey =
   | 'relief'
   | 'mgrsGrid'
   | 'radar'
+  | 'cadastre'
   | 'hiddenLayers'
   | 'keepScreenOn';
 

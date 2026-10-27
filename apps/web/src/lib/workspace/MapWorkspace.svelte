@@ -1,9 +1,9 @@
 <!--
-  Everything on top of the map: weather warnings, the MGRS grid, the radar, public services, this
-  device, the group's members, objects, tasks and incidents, drawing, measuring and navigating, the
-  panels and the dock. Without an active group, only what works alone: weather warnings, the grid,
-  the radar's rings, services, this device, coordinates, measuring, navigating to a point and
-  offline maps.
+  Everything on top of the map: the cadastre, weather warnings, the MGRS grid, the radar, public
+  services, this device, the group's members, objects, tasks and incidents, drawing, measuring and
+  navigating, the panels and the dock. Without an active group, only what works alone: the
+  cadastre, weather warnings, the grid, the radar's rings, services, this device, coordinates,
+  measuring, navigating to a point and offline maps.
 -->
 <script lang="ts">
   import type { LatLon, NodeId, SosKind } from '@tesel/protocol';
@@ -11,6 +11,7 @@
 
   import { onMount } from 'svelte';
 
+  import CadastreLayer from '../cadastre/CadastreLayer.svelte';
   import FindCoordinatePanel from '../coordinates/FindCoordinatePanel.svelte';
   import MgrsGridLayer from '../coordinates/MgrsGridLayer.svelte';
   import PointLayer from '../coordinates/PointLayer.svelte';
@@ -186,6 +187,9 @@
   }
 </script>
 
+{#if preferences.cadastre.value}
+  <CadastreLayer {map} />
+{/if}
 {#if preferences.mgrsGrid.value}
   <MgrsGridLayer {map} />
 {/if}
@@ -335,9 +339,12 @@
   <LayersPanel
     {t}
     base={preferences.baseMap}
-    relief={preferences.relief}
-    grid={preferences.mgrsGrid}
-    radar={preferences.radar}
+    flags={{
+      relief: preferences.relief,
+      cadastre: preferences.cadastre,
+      grid: preferences.mgrsGrid,
+      radar: preferences.radar,
+    }}
     hidden={preferences.hiddenLayers}
     onclose={closePanel}
   />

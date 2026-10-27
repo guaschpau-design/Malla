@@ -20,6 +20,8 @@ export const PREFERENCES = {
   mgrsGrid: flag('mgrsGrid', false),
   /** The radar around this device: off, as it keeps the GPS on. */
   radar: flag('radar', false),
+  /** The cadastre's parcels: off, as it asks a public service for a picture of every view. */
+  cadastre: flag('cadastre', false),
   /** Map layers the user has hidden: none at first. */
   hiddenLayers: subset('hiddenLayers', MAP_LAYERS, []),
   /** Keep the screen on while the app is open: off, to spare the battery. */
@@ -34,6 +36,7 @@ export interface Preferences {
   readonly relief: Preference<boolean>;
   readonly mgrsGrid: Preference<boolean>;
   readonly radar: Preference<boolean>;
+  readonly cadastre: Preference<boolean>;
   readonly hiddenLayers: Preference<readonly MapLayer[]>;
   readonly keepScreenOn: Preference<boolean>;
 }
@@ -46,6 +49,7 @@ export async function loadPreferences(db: AppDb): Promise<Preferences> {
     relief: await Preference.load(db, PREFERENCES.relief),
     mgrsGrid: await Preference.load(db, PREFERENCES.mgrsGrid),
     radar: await Preference.load(db, PREFERENCES.radar),
+    cadastre: await Preference.load(db, PREFERENCES.cadastre),
     hiddenLayers: await Preference.load(db, PREFERENCES.hiddenLayers),
     keepScreenOn: await Preference.load(db, PREFERENCES.keepScreenOn),
   };

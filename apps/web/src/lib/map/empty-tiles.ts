@@ -8,10 +8,15 @@ function bytes(base64: string): ArrayBuffer {
 /** Vector tiles: no data at all. */
 export const EMPTY_VECTOR_TILE = new ArrayBuffer(0);
 
-/** Raster maps: a 1 × 1 transparent PNG. */
-export const EMPTY_RASTER_TILE = bytes(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-);
+/** A 1 × 1 transparent PNG. */
+const TRANSPARENT_PNG =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+
+/** Raster maps: nothing to see. */
+export const EMPTY_RASTER_TILE = bytes(TRANSPARENT_PNG);
+
+/** A picture of nothing, for an image source before it has one to show. */
+export const TRANSPARENT_IMAGE_URL = `data:image/png;base64,${TRANSPARENT_PNG}`;
 
 // Elevation: sea level everywhere, so the relief is flat where it is unknown. Each in its source's
 // encoding and size, since the map needs every elevation tile of a source to be the same size.

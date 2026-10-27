@@ -20,22 +20,19 @@
   interface Props {
     t: Translate;
     base: Preference<BaseMap>;
-    relief: Preference<boolean>;
-    grid: Preference<boolean>;
-    radar: Preference<boolean>;
+    /** The layers that are off unless turned on, each a preference. */
+    flags: Readonly<Record<MapFlag, Preference<boolean>>>;
     hidden: Preference<readonly MapLayer[]>;
     onclose: () => void;
   }
 
-  let { t, base, relief, grid, radar, hidden, onclose }: Props = $props();
+  let { t, base, flags, hidden, onclose }: Props = $props();
 
   const BASE_NAMES: Readonly<Record<BaseMap, MessageKey>> = {
     streets: 'baseMapStreets',
     topo: 'baseMapTopo',
     aerial: 'baseMapAerial',
   };
-
-  const flags = $derived<Readonly<Record<MapFlag, Preference<boolean>>>>({ relief, grid, radar });
 
   function isOn(name: LayerSwitch): boolean {
     return isFlag(name) ? flags[name].value : !hidden.value.includes(name);

@@ -1,6 +1,6 @@
-// MapLibre styles for each base map: the Protomaps OpenStreetMap map in the app's theme; the same
-// map as a topographic map, with IGN's contour lines and names of the terrain (topo.ts); or the
-// IGN orthophotos with our labels over them. All served through our tile protocol
+// MapLibre styles for each base map, light or dark: the Protomaps OpenStreetMap map as a street
+// map (streets.ts) or as a topographic map, with IGN's contour lines and names of the terrain
+// (topo.ts); or the IGN orthophotos with our labels over them. All served through our tile protocol
 // (tile-source.ts), so downloaded areas work offline whichever is shown.
 
 import { layers, namedFlavor, type Flavor } from '@protomaps/basemaps';
@@ -12,6 +12,7 @@ import type {
 } from 'maplibre-gl';
 
 import { themeColor } from '../ui/theme.ts';
+import { streetFlavor } from './streets.ts';
 import { tileUrlTemplate } from './tile-source.ts';
 import {
   CONTOURS_ATTRIBUTION,
@@ -87,7 +88,10 @@ function baseMapLayers({ base, theme, lang }: StyleChoice): BaseMapLayers {
     attribution: OSM_ATTRIBUTION,
   };
   if (base === 'streets') {
-    return { sources: { [BASEMAP_SOURCE]: basemap }, ...streetMap(namedFlavor(theme), lang) };
+    return {
+      sources: { [BASEMAP_SOURCE]: basemap },
+      ...protomapsLayers(streetFlavor(theme), lang),
+    };
   }
   if (base === 'topo') {
     const contours: SourceSpecification = {
@@ -96,7 +100,7 @@ function baseMapLayers({ base, theme, lang }: StyleChoice): BaseMapLayers {
       maxzoom: CONTOURS_MAX_ZOOM,
       attribution: CONTOURS_ATTRIBUTION,
     };
-    const { ground, names } = streetMap(topoFlavor(theme), lang);
+    const { ground, names } = protomapsLayers(topoFlavor(theme), lang);
     return {
       sources: { [BASEMAP_SOURCE]: basemap, [CONTOURS_SOURCE]: contours },
       ground,
@@ -120,7 +124,7 @@ function baseMapLayers({ base, theme, lang }: StyleChoice): BaseMapLayers {
 }
 
 /** The Protomaps map in a palette, split where its names begin. */
-function streetMap(flavor: Flavor, lang: string): Omit<BaseMapLayers, 'sources'> {
+function protomapsLayers(flavor: Flavor, lang: string): Omit<BaseMapLayers, 'sources'> {
   const all = layers(BASEMAP_SOURCE, flavor, { lang });
   const firstName = all.findIndex((layer) => layer.type === 'symbol');
   const at = firstName === -1 ? all.length : firstName;

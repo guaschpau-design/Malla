@@ -1,3 +1,4 @@
+import type { FeatureCollection } from 'geojson';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import { describe, expect, it } from 'vitest';
 
@@ -74,9 +75,11 @@ class FakeMap {
   }
 }
 
+const NOTHING: FeatureCollection = { type: 'FeatureCollection', features: [] };
+
 const spec = (map: FakeMap) => ({
   level: 'members' as const,
-  sources: ['a', 'b'] as const,
+  data: { a: NOTHING, b: NOTHING },
   // Adding an image announces a style change straight away.
   prepare: () => {
     map.fire('styledata');
@@ -107,7 +110,7 @@ describe('map overlays', () => {
     const overlay = (level: 'trails' | 'self', id: string) =>
       new Overlay(map as unknown as MapLibreMap, {
         level,
-        sources: [id],
+        data: { [id]: NOTHING },
         layers: () => [{ id: `${id}-line`, type: 'line' as const, source: id }],
       });
     overlay('self', 'me');
@@ -119,7 +122,7 @@ describe('map overlays', () => {
     const map = new FakeMap();
     new Overlay(map as unknown as MapLibreMap, {
       level: 'services',
-      sources: [],
+      data: {},
       baseSource: 'protomaps',
       layers: () => [{ id: 'services-icons', type: 'symbol' as const, source: 'protomaps' }],
     });
@@ -138,5 +141,31 @@ describe('map overlays', () => {
     expect(map.sources.size + map.layers.size).toBe(0);
     map.fire('idle');
     expect(map.sources.size).toBe(0);
+  });
+
+  it('draws a picture from an image source, and moves it where it is told', () => {
+    const map = new FakeMap();
+    const corners = (
+      west: number,
+    ): [[number, number], [number, number], [number, number], [number, number]] => [
+      [west, 1],
+      [west + 1, 1],
+      [west + 1, 0],
+      [west, 0],
+    ];
+    const moved: unknown[] = [];
+    const overlay = new Overlay(map as unknown as MapLibreMap, {
+      level: 'cadastre',
+      data: { view: { url: 'a.png', coordinates: corners(0) } },
+      layers: () => [{ id: 'view-picture', type: 'raster' as const, source: 'view' }],
+    });
+    expect(map.sources.get('view')).toEqual({
+      type: 'image',
+      url: 'a.png',
+      coordinates: corners(0),
+    });
+    map.sources.set('view', { updateImage: (image: unknown) => moved.push(image) });
+    overlay.setData('view', { url: 'b.png', coordinates: corners(2) });
+    expect(moved).toEqual([{ url: 'b.png', coordinates: corners(2) }]);
   });
 });

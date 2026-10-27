@@ -129,6 +129,7 @@ export const GLYPHS = {
     ['M12 10.5a1.5 1.5 0 1 1 0 3a1.5 1.5 0 1 1 0-3z'],
   ),
   grid: glyph(['M9 4v16', 'M15 4v16', 'M4 9h16', 'M4 15h16']),
+  parcel: glyph(['M3.5 4.5h17v15h-17z', 'M3.5 11.5l7.5-1.5 9.5 2.5', 'M11 10v9.5']),
   /** A compass needle: north filled, south outlined. */
   compass: glyph(['M8.2 12L12 20.5 15.8 12'], ['M12 3.5L15.8 12H8.2z']),
   /** Points up; turned to show a direction. */

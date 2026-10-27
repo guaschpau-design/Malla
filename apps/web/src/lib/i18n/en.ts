@@ -153,6 +153,7 @@ export const en = {
   layerTrails: 'Trails',
   layerObjects: 'Markers and zones',
   layerRelief: 'Relief',
+  layerCadastre: 'Cadastre',
   climb: '↑ {up} m · ↓ {down} m · steepest {steepest} %',
   baseMap: 'Base map',
   baseMapStreets: 'Streets',

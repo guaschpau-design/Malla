@@ -9,7 +9,7 @@ export const MAP_LAYERS = ['members', 'trails', 'objects', 'tasks', 'services', 
 export type MapLayer = (typeof MAP_LAYERS)[number];
 
 /** Layers off unless the user turns them on, each a preference of its own. */
-export const MAP_FLAGS = ['relief', 'grid', 'radar'] as const;
+export const MAP_FLAGS = ['relief', 'cadastre', 'grid', 'radar'] as const;
 export type MapFlag = (typeof MAP_FLAGS)[number];
 
 export type LayerSwitch = MapLayer | MapFlag;
@@ -23,6 +23,7 @@ export const LAYER_SWITCHES: Readonly<Record<LayerSwitch, { label: MessageKey; i
     weather: { label: 'layerWeather', icon: 'cloud' },
     services: { label: 'layerServices', icon: 'cross' },
     relief: { label: 'layerRelief', icon: 'relief' },
+    cadastre: { label: 'layerCadastre', icon: 'parcel' },
     radar: { label: 'layerRadar', icon: 'radar' },
     grid: { label: 'layerGrid', icon: 'grid' },
   };
@@ -36,7 +37,7 @@ export const LAYER_SECTIONS: readonly {
   readonly switches: readonly LayerSwitch[];
 }[] = [
   { title: 'layersTeam', switches: ['members', 'trails', 'objects', 'tasks'] },
-  { title: 'layersSurroundings', switches: ['weather', 'services', 'relief'] },
+  { title: 'layersSurroundings', switches: ['weather', 'services', 'relief', 'cadastre'] },
   { title: 'layersOrientation', switches: ['radar', 'grid'] },
 ];
 

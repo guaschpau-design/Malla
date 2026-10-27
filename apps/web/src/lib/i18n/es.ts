@@ -155,6 +155,7 @@ export const es: Messages = {
   layerTrails: 'Recorridos',
   layerObjects: 'Marcadores y zonas',
   layerRelief: 'Relieve',
+  layerCadastre: 'Catastro',
   climb: '↑ {up} m · ↓ {down} m · pendiente máx. {steepest} %',
   baseMap: 'Mapa base',
   baseMapStreets: 'Callejero',

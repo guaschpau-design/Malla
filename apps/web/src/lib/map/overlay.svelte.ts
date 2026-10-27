@@ -1,18 +1,37 @@
-// Our own layers on top of the base map, drawing our GeoJSON sources or, for places the base map
-// already knows (services), one of its sources. A new style (theme or language
+// Our own layers on top of the base map, drawing our sources — GeoJSON features, or a picture over
+// part of the map such as a map service's image of the view — or, for places the base map already
+// knows (services), one of its sources. A new style (theme or language
 // change) removes them, and the style may still be loading when they are first added, so they are
 // installed again on every style change and whenever the map settles. Data and visibility set
 // while they are not installed are kept and applied when they are. Each overlay has a level, so
 // the stacking is the same whatever order they were installed in.
 
 import type { FeatureCollection } from 'geojson';
-import type { GeoJSONSource, LayerSpecification, Map as MapLibreMap } from 'maplibre-gl';
+import type {
+  GeoJSONSource,
+  ImageSource,
+  ImageSourceSpecification,
+  LayerSpecification,
+  Map as MapLibreMap,
+} from 'maplibre-gl';
 import { untrack } from 'svelte';
 
-const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] };
+/** A picture over part of the map: its address and its corners, clockwise from the top left. */
+export interface MapImage {
+  readonly url: string;
+  readonly coordinates: ImageSourceSpecification['coordinates'];
+}
+
+/** What one of our sources holds: features, or a picture. */
+export type OverlayData = FeatureCollection | MapImage;
+
+function isImage(data: OverlayData): data is MapImage {
+  return 'url' in data;
+}
 
 /** Our overlays from bottom to top: each is drawn above every one listed before it. */
 export const OVERLAY_LEVELS = [
+  'cadastre',
   'weather',
   'grid',
   'services',
@@ -36,10 +55,10 @@ const LEVEL_KEY = 'tesel:level';
 export interface OverlaySpec<Source extends string> {
   readonly level: OverlayLevel;
   /**
-   * The names of our own sources, unique on the map. Each starts empty until `setData`. None for an
-   * overlay whose layers read only the base map (`baseSource`).
+   * Our own sources by name, unique on the map, with what they hold at first; each stays features
+   * or a picture. None for an overlay whose layers read only the base map (`baseSource`).
    */
-  readonly sources: readonly Source[];
+  readonly data: Readonly<Record<Source, OverlayData>>;
   /** A source of the base map the layers read: they are installed once the style has it. */
   readonly baseSource?: string;
   /**
@@ -54,7 +73,7 @@ export interface OverlaySpec<Source extends string> {
 export class Overlay<Source extends string> {
   readonly #map: MapLibreMap;
   readonly #spec: OverlaySpec<Source>;
-  readonly #data: Record<Source, FeatureCollection>;
+  readonly #data: Record<Source, OverlayData>;
   #layerIds: readonly string[] = [];
   #visible = true;
   /**
@@ -69,18 +88,16 @@ export class Overlay<Source extends string> {
   constructor(map: MapLibreMap, spec: OverlaySpec<Source>) {
     this.#map = map;
     this.#spec = spec;
-    this.#data = Object.fromEntries(spec.sources.map((source) => [source, EMPTY])) as Record<
-      Source,
-      FeatureCollection
-    >;
+    this.#data = { ...spec.data };
     map.on('styledata', this.#install);
     map.on('idle', this.#install);
     if (map.isStyleLoaded()) this.#installNow();
   }
 
-  setData(source: Source, data: FeatureCollection): void {
+  setData(source: Source, data: OverlayData): void {
     this.#data[source] = data;
-    void this.#map.getSource<GeoJSONSource>(source)?.setData(data);
+    if (isImage(data)) void this.#map.getSource<ImageSource>(source)?.updateImage(data);
+    else void this.#map.getSource<GeoJSONSource>(source)?.setData(data);
   }
 
   setVisible(visible: boolean): void {
@@ -96,9 +113,13 @@ export class Overlay<Source extends string> {
     for (const id of [...this.#layerIds].reverse()) {
       if (this.#map.getLayer(id)) this.#map.removeLayer(id);
     }
-    for (const source of this.#spec.sources) {
+    for (const source of this.#sources) {
       if (this.#map.getSource(source)) this.#map.removeSource(source);
     }
+  }
+
+  get #sources(): Source[] {
+    return Object.keys(this.#data) as Source[];
   }
 
   get #visibility(): 'visible' | 'none' {
@@ -125,9 +146,13 @@ export class Overlay<Source extends string> {
 
   #addEverything(): void {
     this.#spec.prepare?.();
-    for (const source of this.#spec.sources) {
+    for (const source of this.#sources) {
       if (this.#map.getSource(source) !== undefined) continue;
-      this.#map.addSource(source, { type: 'geojson', data: this.#data[source] });
+      const data = this.#data[source];
+      this.#map.addSource(
+        source,
+        isImage(data) ? { type: 'image', ...data } : { type: 'geojson', data },
+      );
     }
     const level = OVERLAY_LEVELS.indexOf(this.#spec.level);
     // Below the first layer of a higher overlay already on the map, if any.
@@ -154,9 +179,9 @@ function levelOf(layer: LayerSpecification): number {
   return typeof level === 'number' ? level : -1;
 }
 
-export interface OverlayUse<Source extends string> extends Omit<OverlaySpec<Source>, 'sources'> {
+export interface OverlayUse<Source extends string> extends Omit<OverlaySpec<Source>, 'data'> {
   /** Each source's data, read reactively: the map updates when it changes. */
-  readonly data: Readonly<Record<Source, () => FeatureCollection>>;
+  readonly data: Readonly<Record<Source, () => OverlayData>>;
   /** Whether the layers are shown, read reactively. Shown when omitted. */
   readonly visible?: () => boolean;
 }
@@ -172,8 +197,12 @@ export function useOverlay<Source extends string>(
   $effect(() => {
     const sources = Object.keys(use.data) as Source[];
     const target = map();
-    // Building the overlay reads the layers' colours; nothing in it should rerun this effect.
-    const overlay = untrack(() => new Overlay(target, { ...use, sources }));
+    // Building the overlay reads the layers' colours and the first data; nothing in it should rerun
+    // this effect.
+    const overlay = untrack(() => {
+      const data = Object.fromEntries(sources.map((source) => [source, use.data[source]()]));
+      return new Overlay(target, { ...use, data: data as Record<Source, OverlayData> });
+    });
     $effect(() => {
       for (const source of sources) overlay.setData(source, use.data[source]());
     });

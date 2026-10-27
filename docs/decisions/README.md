@@ -40,3 +40,5 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0032](0032-radio-line-of-sight.md)                | Radio line of sight from the terrain, sure only when it says no          | Accepted                      |
 | [0033](0033-danger-area-warning.md)                | Warning on entering a danger area, worked out on each device             | Accepted                      |
 | [0034](0034-vector-topographic-map.md)             | Topographic map from vector data, relief shaded from IGN's terrain model | Accepted                      |
+| [0035](0035-base-maps-by-purpose.md)               | Give each base map a purpose of its own                                  | Accepted                      |
+| [0036](0036-cadastre-layer.md)                     | The cadastre's parcels as one picture of the view, online only           | Accepted                      |
