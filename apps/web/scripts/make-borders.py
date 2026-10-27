@@ -2,78 +2,99 @@
 """Writes src/lib/map/borders-data.ts: where the satellite map lays each country's own photographs
 over the common Sentinel-2 mosaic, close up (map/ortho.ts, ADR-0041).
 
-From Natural Earth's 1:10m countries (public domain):
+From geo-maps' countries at 10 m (OpenStreetMap's coastlines and borders, ODbL), whose shores are
+true to a few metres, with shapely 2 and pyproj:
 
-    python3 scripts/make-borders.py ne_10m_admin_0_countries.geojson
+    npm pack @geo-maps/countries-land-10m@0.6.0 && tar xzf geo-maps-countries-land-10m-0.6.0.tgz
+    python3 scripts/make-borders.py package/map.geo.json
 
-Spain's photographs reach a little across its borders and out to sea; its neighbours' services
-paint what lies beyond theirs in a flat colour. So Spain's outline, with its islands, reaches 1 km
-out (but not into Andorra, which none of them covers), and mainland Portugal's and France's stay
-400 m inside their borders. France's goes as far north as the street map (deploy/vps/maps.sh).
+Each service paints at least 250 m past its country, out to sea and across its borders (a flat
+colour further on). So each outline is the country's land and lakes 150 m out, simplified within
+75 m: every shore and border lies inside it, and nothing beyond the services' reach does. Andorra
+is left out: PNOA paints it only blurred, the others not at all. France's goes as far north as the
+street map (deploy/vps/maps.sh); Portugal's is the mainland and its coastal islands.
 """
 
 import json
 import sys
 from pathlib import Path
 
-from shapely.geometry import Polygon, box, mapping, shape
+import numpy
+import shapely
+from pyproj import Transformer
+from shapely.geometry import Polygon, box, shape
+from shapely.ops import unary_union
 
+MARGIN_M = 150
+TOLERANCE_M = 75
 FRANCE_BOX = box(-2.0, 42.0, 4.6, 44.0)
-# About a kilometre, and 400 m, in degrees at these latitudes.
-OUTSET_DEG = 0.01
-INSET_DEG = 0.004
-# Simplified within what each margin allows: 400 m for Spain's, 200 m for its neighbours'.
-COARSE_DEG = 0.004
-FINE_DEG = 0.002
+PORTUGAL_MAINLAND_BOX = box(-10.0, 36.5, -6.0, 42.5)
+
+# Lambert azimuthal equal-area for Europe: metres, true enough from the Canaries to the Pyrenees.
+TO_METRES = Transformer.from_crs("EPSG:4326", "EPSG:3035", always_xy=True)
+TO_DEGREES = Transformer.from_crs("EPSG:3035", "EPSG:4326", always_xy=True)
 
 
 def parts(geometry):
     return list(getattr(geometry, "geoms", [geometry]))
 
 
-def rings(geometry, tolerance):
-    """The outer ring of each part, simplified and rounded to about 10 m."""
+def filled(geometry):
+    """Each piece of land with its lakes and rivers, as the outer ring of each part."""
+    return unary_union([Polygon(part.exterior) for part in parts(geometry)])
+
+
+def project(geometry, transformer):
+    return shapely.transform(
+        geometry, lambda xy: numpy.column_stack(transformer.transform(xy[:, 0], xy[:, 1]))
+    )
+
+
+def outline(land, andorra):
+    """Land 150 m out, without Andorra, simplified: the outer ring of each part, to about 10 m."""
+    reach = project(land, TO_METRES).buffer(MARGIN_M).difference(project(andorra, TO_METRES))
+    simple = project(reach.simplify(TOLERANCE_M), TO_DEGREES)
     return [
-        [[round(lon, 4), round(lat, 4)] for lon, lat in mapping(part)["coordinates"][0]]
-        for part in parts(geometry.simplify(tolerance))
+        [[round(lon, 4), round(lat, 4)] for lon, lat in part.exterior.coords]
+        for part in parts(simple)
         if isinstance(part, Polygon) and not part.is_empty
     ]
 
 
-def mainland(geometry):
-    return max(parts(geometry), key=lambda part: part.area)
-
-
 def main(path: str) -> None:
     countries = json.loads(Path(path).read_text())["features"]
-    by_name = {c["properties"]["ADMIN"]: shape(c["geometry"]) for c in countries}
-    andorra = by_name["Andorra"]
-    spain = by_name["Spain"].buffer(OUTSET_DEG).difference(andorra)
-    portugal = mainland(by_name["Portugal"]).buffer(-INSET_DEG)
-    france = by_name["France"].intersection(FRANCE_BOX).buffer(-INSET_DEG)
-    outlines = {
-        "SPAIN": (spain, COARSE_DEG),
-        "PORTUGAL": (portugal, FINE_DEG),
-        "FRANCE_SOUTH": (france, FINE_DEG),
+    by_code = {
+        c["properties"]["A3"]: filled(shape(c["geometry"]))
+        for c in countries
+        if c["properties"]["A3"] in ("ESP", "PRT", "FRA", "AND")
+    }
+    andorra = by_code["AND"]
+    lands = {
+        "SPAIN": by_code["ESP"],
+        "PORTUGAL": by_code["PRT"].intersection(PORTUGAL_MAINLAND_BOX),
+        "FRANCE_SOUTH": by_code["FRA"].intersection(FRANCE_BOX),
     }
     descriptions = {
-        "SPAIN": "Spain and its islands, 1 km out, Andorra left out",
-        "PORTUGAL": "Mainland Portugal, 400 m inside its border",
-        "FRANCE_SOUTH": "France up to 44° N, 400 m inside its border",
+        "SPAIN": "Spain and its islands",
+        "PORTUGAL": "Mainland Portugal",
+        "FRANCE_SOUTH": "France up to 44° N",
     }
-    lines = ["// Generated by scripts/make-borders.py from Natural Earth (public domain). Do not edit.", ""]
-    lines.append("/** An outline: closed rings of [longitude, latitude], one per piece of land. */")
-    lines.append("export type Outline = readonly (readonly (readonly [number, number])[])[];")
+    lines = [
+        "// Generated by scripts/make-borders.py from OpenStreetMap (ODbL), via geo-maps. Do not edit.",
+        "",
+        "/** An outline: closed rings of [longitude, latitude], one per piece of land. */",
+        "export type Outline = readonly (readonly (readonly [number, number])[])[];",
+    ]
     counts = []
-    for name, (geometry, tolerance) in outlines.items():
-        data = rings(geometry, tolerance)
+    for name, land in lands.items():
+        data = outline(land, andorra)
         counts.append(f"{name} {sum(len(r) for r in data)} points")
         lines.append("")
-        lines.append(f"/** {descriptions[name]}. */")
-        lines.append(f"export const {name}: Outline = {json.dumps(data)};")
+        lines.append(f"/** {descriptions[name]}, {MARGIN_M} m out. */")
+        lines.append(f"export const {name}: Outline = {json.dumps(data, separators=(',', ':'))};")
     out = Path(__file__).parent.parent / "src/lib/map/borders-data.ts"
     out.write_text("\n".join(lines) + "\n")
-    print(f"{out}: {', '.join(counts)}")
+    print(f"{out}: {', '.join(counts)}, {out.stat().st_size // 1024} KiB")
 
 
 if __name__ == "__main__":

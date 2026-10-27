@@ -97,7 +97,7 @@ interface Country {
 
 export function orthoArchive(): TileArchive {
   const mosaic = webArchive(mosaicUrl);
-  // Spain's outline reaches a little beyond its borders, its neighbours' stay inside theirs.
+  // Each outline reaches 150 m past its shores and borders, where its service still paints.
   const countries: readonly Country[] = [
     { outline: SPAIN, archive: webArchive(spainUrl) },
     { outline: PORTUGAL, archive: webArchive(portugalUrl) },
