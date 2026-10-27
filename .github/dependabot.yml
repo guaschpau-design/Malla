@@ -1,0 +1,9 @@
+# CI pins its actions by commit (ci.yml); Dependabot proposes the newer releases, updating the
+# commit and its "# vX.Y.Z" comment together. Images pinned in apps/server/Dockerfile and deploy/
+# are updated by hand, with CI's Node version (deploy/README.md, "Updating pinned versions").
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
