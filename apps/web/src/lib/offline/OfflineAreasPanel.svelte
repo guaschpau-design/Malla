@@ -111,7 +111,7 @@
       {t('detail')}
       <select bind:value={maxZoom} disabled={job.running}>
         {#each detailOptions as option (option.zoom)}
-          <option value={option.zoom}>{t(option.label)}</option>
+          <option value={option.zoom}>{t(option.label, { zoom: option.zoom })}</option>
         {/each}
       </select>
     </label>

@@ -6,6 +6,8 @@ describe('services', () => {
   it('groups the base map kinds into a few services', () => {
     expect(serviceKindOf('hospital')?.id).toBe('health');
     expect(serviceKindOf('clinic')?.id).toBe('health');
+    expect(serviceKindOf('pharmacy')?.id).toBe('pharmacy');
+    expect(serviceKindOf('fuel')?.id).toBe('fuel');
     expect(serviceKindOf('fire_station')?.id).toBe('fire');
     expect(serviceKindOf('police')?.id).toBe('police');
   });

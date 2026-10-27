@@ -1,6 +1,6 @@
 // The public services worth finding in an emergency, as the base map knows them: OpenStreetMap
 // points of interest in the base map's `pois` layer, grouped into a few kinds with a pictogram and
-// a colour each. Only what the base map carries; pharmacies, for one, it does not.
+// a colour each.
 
 import type { LatLon } from '@tesel/protocol';
 import type { ExpressionSpecification } from 'maplibre-gl';
@@ -10,7 +10,7 @@ import type { GlyphName } from '../ui/glyphs.ts';
 import type { Tone } from '../ui/theme.ts';
 
 export interface ServiceKind {
-  readonly id: 'health' | 'fire' | 'police' | 'helipad' | 'townhall';
+  readonly id: 'health' | 'pharmacy' | 'fire' | 'police' | 'helipad' | 'townhall' | 'fuel';
   readonly label: MessageKey;
   readonly glyph: GlyphName;
   readonly tone: Tone;
@@ -25,6 +25,14 @@ export const SERVICE_KINDS: readonly [ServiceKind, ...ServiceKind[]] = [
     glyph: 'cross',
     tone: 'red',
     osmKinds: ['hospital', 'clinic', 'doctors'],
+  },
+  // The green cross pharmacies show in Spain and Portugal.
+  {
+    id: 'pharmacy',
+    label: 'servicePharmacy',
+    glyph: 'cross',
+    tone: 'green',
+    osmKinds: ['pharmacy'],
   },
   { id: 'fire', label: 'serviceFire', glyph: 'flame', tone: 'orange', osmKinds: ['fire_station'] },
   { id: 'police', label: 'servicePolice', glyph: 'shield', tone: 'blue', osmKinds: ['police'] },
@@ -43,6 +51,8 @@ export const SERVICE_KINDS: readonly [ServiceKind, ...ServiceKind[]] = [
     tone: 'ink',
     osmKinds: ['townhall'],
   },
+  // Fuel for vehicles and generators.
+  { id: 'fuel', label: 'serviceFuel', glyph: 'fuel', tone: 'teal', osmKinds: ['fuel'] },
 ];
 
 /** A service tapped on the map: where it is, its name if the map has one, and its kind. */

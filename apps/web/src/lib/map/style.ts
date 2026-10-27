@@ -27,8 +27,12 @@ export type MapTheme = 'light' | 'dark';
 export const BASE_MAPS = ['streets', 'topo', 'aerial'] as const;
 export type BaseMap = (typeof BASE_MAPS)[number];
 
-/** Highest zoom of the vector base map we download and request; MapLibre over-zooms beyond it. */
-export const BASEMAP_MAX_ZOOM = 14;
+/**
+ * Highest zoom of the vector base map we download and request; MapLibre over-zooms beyond it. It
+ * is the last level of the Protomaps builds, the only one that holds every point of interest:
+ * pharmacies, most police stations and doctors are not in the levels above.
+ */
+export const BASEMAP_MAX_ZOOM = 15;
 
 /** The style's name for the vector base map, in the Protomaps schema. Every style has it. */
 export const BASEMAP_SOURCE = 'protomaps';

@@ -11,9 +11,9 @@ ADR-0007 planned for the server to cut a PMTiles extract per area and for the br
 ## Decision
 
 - The base map is one PMTiles file served as a static file with range requests.
-- To download an area, the web app lists every tile from zoom 0 to the chosen zoom (at most 14), fetches them from the archive and stores them in IndexedDB. Each tile records which areas need it; deleting an area only removes tiles no other area uses.
+- To download an area, the web app lists every tile from zoom 0 to the chosen zoom (at most 15), fetches them from the archive and stores them in IndexedDB. Each tile records which areas need it; deleting an area only removes tiles no other area uses.
 - MapLibre gets tiles through a custom `tesel-tiles://` protocol that answers from IndexedDB first and from the network second, and returns an empty tile when both fail.
-- The style's source maximum zoom is 14; MapLibre over-zooms beyond it, so downloaded areas look the same online and offline.
+- The style's source maximum zoom is 15, the last level of the Protomaps builds; MapLibre over-zooms beyond it, so downloaded areas look the same online and offline. (It was 14 until 2026-10-27, which left out the points of interest the builds carry only at 15, pharmacies among them: ADR-0027.)
 - Glyphs (a European subset) and sprites are vendored in the app and precached by the service worker.
 - One area is capped at 20,000 tiles to protect the user's storage and data plan.
 

@@ -14,7 +14,7 @@ def tile_bounds(z,x,y):
     return lon1, lat(y+1), lon2, lat(y)
 
 def tiles():
-    for z in range(0,15):
+    for z in range(0,16):
         n=2**z
         def tx(lon): return min(n-1,max(0,int((lon+180)/360*n)))
         def ty(la):
@@ -45,14 +45,19 @@ with open(out,'wb') as f:
         if roads: layers.append({'name':'roads','features':roads})
         p=Point(-0.3763,39.4699)
         if tb.contains(p): layers.append({'name':'places','features':[{'geometry':p,'properties':{'kind':'locality','name':'Valencia','name:es':'Valencia','min_zoom':4,'population_rank':12}}]})
-        # One public service, for the services layer: a hospital a little north-east of the centre.
+        # Public services, for the services layer: a hospital a little north-east of the centre and,
+        # like the real base map carries minor ones only in its last level, a pharmacy to its west.
+        pois=[]
         h=Point(-0.3700,39.4750)
-        if z>=14 and tb.contains(h): layers.append({'name':'pois','features':[{'geometry':h,'properties':{'kind':'hospital','name':'Hospital de Prueba','min_zoom':14}}]})
+        if z>=14 and tb.contains(h): pois.append({'geometry':h,'properties':{'kind':'hospital','name':'Hospital de Prueba','min_zoom':14}})
+        ph=Point(-0.3800,39.4750)
+        if z>=15 and tb.contains(ph): pois.append({'geometry':ph,'properties':{'kind':'pharmacy','name':'Farmacia de Prueba','min_zoom':15}})
+        if pois: layers.append({'name':'pois','features':pois})
         mvt=mapbox_vector_tile.encode(layers, default_options={'quantize_bounds':b,'extents':4096})
         entries.append((zxy_to_tileid(z,x,y), gzip.compress(mvt)))
     for tid,data in sorted(entries):
         w.write_tile(tid,data)
-    w.finalize({'tile_type':TileType.MVT,'tile_compression':Compression.GZIP,'min_zoom':0,'max_zoom':14,
+    w.finalize({'tile_type':TileType.MVT,'tile_compression':Compression.GZIP,'min_zoom':0,'max_zoom':15,
         'min_lon_e7':int(W*1e7),'min_lat_e7':int(S*1e7),'max_lon_e7':int(E*1e7),'max_lat_e7':int(N*1e7),
         'center_zoom':12,'center_lon_e7':int(-0.38*1e7),'center_lat_e7':int(39.47*1e7)},
         {'name':'synthetic test basemap','vector_layers':[]})

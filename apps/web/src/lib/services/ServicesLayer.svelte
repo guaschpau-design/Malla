@@ -1,6 +1,6 @@
-<!-- The public services of the base map (health, fire, police, helipads, town halls) as round icons
-     with their names, from zoom 14, and taps on them. They come with the base map, so they also
-     work offline in downloaded areas. -->
+<!-- The public services of the base map (health, pharmacies, fire, police, helipads, town halls,
+     fuel stations) as round icons with their names, and taps on them. They come with the base map,
+     so they also work offline in downloaded areas. -->
 <script lang="ts">
   import type { Map as MapLibreMap, MapGeoJSONFeature, MapMouseEvent } from 'maplibre-gl';
   import { onMount } from 'svelte';
@@ -32,8 +32,11 @@
   let { map, locale, interactive, visible, onselect }: Props = $props();
 
   const LAYER = 'tesel-services';
-  /** Services appear from this zoom: the base map carries most of them only at its last level. */
-  const MIN_ZOOM = 14;
+  /**
+   * Services appear from this zoom. Which ones is the base map's choice: hospitals, fire stations
+   * and town halls are in its levels from about here, the rest only in its last level (style.ts).
+   */
+  const MIN_ZOOM = 12;
 
   useOverlay(() => map, {
     level: 'services',
