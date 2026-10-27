@@ -44,3 +44,5 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0036](0036-cadastre-layer.md)                     | The cadastre's parcels as one picture of the view, online only           | Accepted, amended by 0037       |
 | [0037](0037-maps-across-borders.md)                | Maps across Spain, Portugal and southern France                          | Accepted                        |
 | [0038](0038-official-warnings-look.md)             | Draw official warnings unlike the group's own areas                      | Accepted                        |
+| [0039](0039-map-credits-and-scale.md)              | Map credits on opening and in the layers panel, scale with the controls  | Accepted                        |
+| [0040](0040-dictated-messages.md)                  | Dictate chat messages with the browser's speech recognition              | Accepted                        |

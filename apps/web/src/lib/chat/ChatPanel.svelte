@@ -8,15 +8,16 @@
     utf8ByteLength,
     type NodeId,
   } from '@tesel/protocol';
-  import { tick } from 'svelte';
+  import { onDestroy, tick } from 'svelte';
 
   import { formatTime } from '../format.ts';
-  import type { Locale, Translate } from '../i18n/index.ts';
+  import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
   import { aliasOf } from '../incidents/incidents.ts';
   import { ALERT_LEVELS } from '../incidents/sos-kinds.ts';
   import type { StoredRadioText } from '../radio/radio-texts.ts';
   import Panel from '../ui/Panel.svelte';
   import Pictogram from '../ui/Pictogram.svelte';
+  import { Dictation, speechRecognizer, type DictationProblem } from './dictation.svelte.ts';
   import { timeline } from './timeline.ts';
 
   interface Props {
@@ -61,9 +62,28 @@
     alert: size > 0 && size <= ALERT_TEXT_MAX_BYTES,
   });
 
-  /** Sends the text typed, as a message or as an alert. */
+  /** Dictation, where the browser can recognise speech. */
+  const Recognizer = speechRecognizer();
+  const dictation = Recognizer ? new Dictation(Recognizer) : null;
+  const DICTATION_PROBLEMS: Readonly<Record<DictationProblem, MessageKey>> = {
+    permission: 'dictationPermission',
+    network: 'dictationNetwork',
+    silence: 'dictationSilence',
+    unavailable: 'dictationUnavailable',
+  };
+
+  function toggleDictation(): void {
+    if (!dictation) return;
+    if (dictation.listening) dictation.stop();
+    else dictation.start(locale, text, (heard) => (text = heard));
+  }
+
+  onDestroy(() => dictation?.cancel());
+
+  /** Sends the text typed or dictated, as a message or as an alert. */
   async function send(as: 'message' | 'alert'): Promise<void> {
     if (!fits[as]) return;
+    dictation?.cancel();
     const message = text.trim();
     text = '';
     if (as === 'alert') await onalert(message);
@@ -140,12 +160,26 @@
         void send('message');
       }}
     >
-      <input
-        bind:value={text}
-        aria-label={t('message')}
-        placeholder={t('message')}
-        autocomplete="off"
-      />
+      <div class="field">
+        <input
+          bind:value={text}
+          aria-label={t('message')}
+          placeholder={dictation?.listening ? t('dictationListening') : t('message')}
+          autocomplete="off"
+        />
+        {#if dictation}
+          <button
+            type="button"
+            class="dictate"
+            aria-pressed={dictation.listening}
+            aria-label={dictation.listening ? t('dictationStop') : t('dictate')}
+            title={dictation.listening ? t('dictationStop') : t('dictate')}
+            onclick={toggleDictation}
+          >
+            <Pictogram name="mic" size={20} />
+          </button>
+        {/if}
+      </div>
       <button type="submit" class="primary" disabled={!fits.message}>{t('send')}</button>
       {#if coordinator}
         <div class="coordinator">
@@ -167,6 +201,9 @@
       {/if}
     </form>
     {#if size > CHAT_MAX_BYTES}<p class="warning">{t('messageTooLong')}</p>{/if}
+    {#if dictation?.problem}
+      <p class="warning">{t(DICTATION_PROBLEMS[dictation.problem])}</p>
+    {/if}
   {/if}
 </Panel>
 
@@ -255,8 +292,50 @@
     gap: 0.5rem;
   }
 
-  .compose input {
+  /* The microphone inside the text box, at its end, where the thumb is. */
+  .field {
+    position: relative;
+    display: grid;
     min-width: 0;
+  }
+
+  .field input {
+    min-width: 0;
+    padding-right: calc(var(--control-size) + 0.25rem);
+  }
+
+  .dictate {
+    position: absolute;
+    top: 50%;
+    right: 0.15rem;
+    display: grid;
+    place-items: center;
+    width: var(--control-size);
+    height: var(--control-size);
+    padding: 0;
+    color: var(--muted);
+    border: 0;
+    border-radius: 50%;
+    transform: translateY(-50%);
+  }
+
+  /* Listening: in the colour of what is live, pulsing gently. */
+  .dictate[aria-pressed='true'] {
+    color: #fff;
+    background: var(--danger);
+    animation: listening 1.4s ease-in-out infinite;
+  }
+
+  @keyframes listening {
+    50% {
+      box-shadow: 0 0 0 0.35rem color-mix(in srgb, var(--danger) 30%, transparent);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dictate[aria-pressed='true'] {
+      animation: none;
+    }
   }
 
   .coordinator {

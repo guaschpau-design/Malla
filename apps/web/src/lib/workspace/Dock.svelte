@@ -79,7 +79,7 @@
     position: absolute;
     z-index: var(--layer-dock);
     right: 0.75rem;
-    bottom: calc(2.25rem + env(safe-area-inset-bottom));
+    bottom: calc(0.75rem + env(safe-area-inset-bottom));
     left: 0.75rem;
     display: flex;
     gap: 0.75rem;

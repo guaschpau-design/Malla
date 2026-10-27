@@ -1,7 +1,7 @@
 <script lang="ts">
   import 'maplibre-gl/dist/maplibre-gl.css';
 
-  import { Map as MapLibreMap, ScaleControl, setWorkerUrl } from 'maplibre-gl';
+  import { Map as MapLibreMap, setWorkerUrl } from 'maplibre-gl';
   // MapLibre loads its worker relative to its own module, which bundling breaks; give Vite
   // the worker as a separate asset instead.
   import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
@@ -32,11 +32,11 @@
       container,
       style: buildStyle(choice, mapAssetsUrl()),
       ...INITIAL_VIEW,
-      attributionControl: { compact: true },
+      // The credits are shown by MapCredits and in the layers panel, the scale by MapScale.
+      attributionControl: false,
       // Keeps the view in the URL (#map=zoom/lat/lon), so a reload or a shared link keeps it.
       hash: 'map',
     });
-    instance.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left');
     map = instance;
     onready(instance);
     return () => {

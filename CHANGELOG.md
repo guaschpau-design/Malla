@@ -20,7 +20,7 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 - Keep the screen on, as an option, and always while guiding to a target.
 - The operation diary: everything that happened in the group, in order and in plain words, downloadable as text for the report ([ADR-0022](docs/decisions/0022-log-files.md)).
 - The group's log can be saved to a file, encrypted for the group, and loaded on another device of the group to bring it what it is missing (protocol §10).
-- A simpler screen: the SOS button and a dock — Me (where you are and how you share your position), Add, Chat, Tasks and More. Everything else starts from what is touched on the map: a point, a marker or a member opens what can be done there (guide, mark, measure). The map's controls are one ink group, like the dock: a needle that puts north back up, this device and the map layers; zoom is by pinching.
+- A simpler screen: the SOS button and a dock — Me (where you are and how you share your position), Add, Chat, Tasks and More. Everything else starts from what is touched on the map: a point, a marker or a member opens what can be done there (guide, mark, measure). The map's controls are one ink group, like the dock: a needle that puts north back up, this device and the map layers; zoom is by pinching. The map's credits show in small print when it opens and stay in the layers panel; the scale sits under the map's controls ([ADR-0039](docs/decisions/0039-map-credits-and-scale.md)).
 - One look throughout: every corner, shadow and size of text comes from a few shared values, the chrome around the map (top bar, dock, map controls) is ink and what it shows sits on cards, and map lines and labels turn pale in the dark theme. Points placed on the map, by drawing, measuring or a long press, are fine targets with a dot on the exact spot.
 - A refined logo: tighter tiles that weigh as much as the word, in a bolder Archivo.
 - Short panels, made to read at a glance: the base map is chosen by its picture and layers are switched on and off; Me has three buttons to share, pause or hide one's position, says how precise the GPS is (good, fair or poor), and keeps the coordinate format in a drop-down, as every panel with coordinates does; "Screen always on" is a switch.
@@ -50,7 +50,7 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 ### Situational awareness
 
 - Live positions with three privacy modes: sharing, paused and hidden.
-- Group chat.
+- Group chat, with dictation: a microphone in the text box writes what is said, in Spanish, with the phone's speech recognition, to be checked and sent ([ADR-0040](docs/decisions/0040-dictated-messages.md)).
 - Markers and areas with a symbol catalogue, editable by any member. Lines and circles from other clients are shown (protocol §3.7).
 - SOS calls with kind, position and acknowledgements; cancellation by the sender or a coordinator.
 - Alerts from coordinators: a chat message sent as an alert stays on every screen until acknowledged ([ADR-0026](docs/decisions/0026-one-kind-of-alert.md)).

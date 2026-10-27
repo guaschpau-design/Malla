@@ -24,6 +24,8 @@ export interface CadastreService {
   readonly version: '1.1.1' | '1.3.0';
   readonly layer: string;
   readonly style: string;
+  /** The credit the service asks for, as HTML (map/style-credits.svelte.ts). */
+  readonly credit: string;
 }
 
 export const CADASTRES: readonly CadastreService[] = [
@@ -35,6 +37,8 @@ export const CADASTRES: readonly CadastreService[] = [
     version: '1.1.1',
     layer: 'Catastro',
     style: '',
+    credit:
+      '<a href="https://www.sedecatastro.gob.es" target="_blank">© Dirección General del Catastro</a>',
   },
   {
     id: 'france',
@@ -45,8 +49,11 @@ export const CADASTRES: readonly CadastreService[] = [
     layer: 'CADASTRALPARCELS.PARCELLAIRE_EXPRESS',
     // The style with each parcel's number.
     style: 'PCI vecteur',
+    credit: '<a href="https://www.ign.fr" target="_blank">© IGN</a> · PCI Express',
   },
 ];
+
+export const CADASTRE_CREDITS = CADASTRES.map((service) => service.credit);
 
 /** The services whose country is in a view. */
 export function cadastresIn(view: Bounds): CadastreService[] {

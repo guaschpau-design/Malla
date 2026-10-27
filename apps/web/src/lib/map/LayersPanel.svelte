@@ -1,5 +1,6 @@
 <!-- The map under everything, and what is shown on it: pictures to choose the map, then the
-     switches in the groups layers.ts sets out. This device and SOS calls are always shown. -->
+     switches in the groups layers.ts sets out, then the credits of the map's data. This device and
+     SOS calls are always shown. -->
 <script lang="ts">
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
@@ -23,10 +24,12 @@
     /** The layers that are off unless turned on, each a preference. */
     flags: Readonly<Record<MapFlag, Preference<boolean>>>;
     hidden: Preference<readonly MapLayer[]>;
+    /** What the map's data asks to be credited for, as HTML of our own. */
+    credits: readonly string[];
     onclose: () => void;
   }
 
-  let { t, base, flags, hidden, onclose }: Props = $props();
+  let { t, base, flags, hidden, credits, onclose }: Props = $props();
 
   const BASE_NAMES: Readonly<Record<BaseMap, MessageKey>> = {
     streets: 'baseMapStreets',
@@ -74,6 +77,15 @@
       {/each}
     </section>
   {/each}
+  <section class="credits section" aria-label={t('mapCredits')}>
+    <h3>{t('mapCredits')}</h3>
+    <ul>
+      {#each credits as credit (credit)}
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -- the credits are constants of the app -->
+        <li>{@html credit}</li>
+      {/each}
+    </ul>
+  </section>
 </Panel>
 
 <style>
@@ -123,5 +135,20 @@
 
   .layer[aria-checked='false'] :global(svg) {
     opacity: 0.45;
+  }
+
+  /* The credits are small print. */
+  .credits ul {
+    display: grid;
+    gap: 0.15rem;
+    margin: 0;
+    padding: 0 0.4rem;
+    color: var(--muted);
+    font-size: var(--text-small);
+    list-style: none;
+  }
+
+  .credits :global(a) {
+    color: inherit;
   }
 </style>

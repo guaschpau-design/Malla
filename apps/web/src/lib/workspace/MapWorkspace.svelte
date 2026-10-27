@@ -11,6 +11,7 @@
 
   import { onMount } from 'svelte';
 
+  import { CADASTRE_CREDITS } from '../cadastre/cadastre.ts';
   import CadastreLayer from '../cadastre/CadastreLayer.svelte';
   import FindCoordinatePanel from '../coordinates/FindCoordinatePanel.svelte';
   import MgrsGridLayer from '../coordinates/MgrsGridLayer.svelte';
@@ -21,9 +22,12 @@
   import { MAP_LAYERS, type MapLayer } from '../map/layers.ts';
   import { mapCentre } from '../map/geometry.ts';
   import { onLongPress } from '../map/long-press.ts';
+  import { useStyleCredits } from '../map/style-credits.svelte.ts';
   import LayersPanel from '../map/LayersPanel.svelte';
   import CompassButton from '../map/CompassButton.svelte';
   import MapControl from '../map/MapControl.svelte';
+  import MapCredits from '../map/MapCredits.svelte';
+  import MapScale from '../map/MapScale.svelte';
   import MemberLayer from '../map/MemberLayer.svelte';
   import TrailLayer from '../map/TrailLayer.svelte';
   import { navigateTo, navigation } from '../navigation/navigation.svelte.ts';
@@ -98,6 +102,11 @@
     Object.fromEntries(
       MAP_LAYERS.map((layer) => [layer, !preferences.hiddenLayers.value.includes(layer)]),
     ) as Record<MapLayer, boolean>,
+  );
+  /** What the map's data asks to be credited for, with the cadastres when they are shown. */
+  const styleCredits = useStyleCredits(() => map);
+  const credits = $derived(
+    preferences.cadastre.value ? [...styleCredits.list, ...CADASTRE_CREDITS] : styleCredits.list,
   );
   let selected: string | null = $state(null);
   let selectedMember: NodeId | null = $state(null);
@@ -346,6 +355,7 @@
       radar: preferences.radar,
     }}
     hidden={preferences.hiddenLayers}
+    {credits}
     onclose={closePanel}
   />
 {/if}
@@ -379,6 +389,11 @@
     <Pictogram name="layers" size={18} />
   </button>
 </MapControl>
+<MapScale {map} />
+<!-- Shown again with each base map, which brings its own sources. -->
+{#key preferences.baseMap.value}
+  <MapCredits {map} {credits} />
+{/key}
 {#if location.problem}
   <Toast>{location.problem === 'denied' ? t('locationDenied') : t('locationUnavailable')}</Toast>
 {/if}

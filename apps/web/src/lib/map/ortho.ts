@@ -3,7 +3,7 @@
 // the country it lies in. A tile across a border is put together from both: Spain's first, which
 // reaches a little across it; Portugal's over it, whose service leaves the rest transparent; and
 // France's within France's outline (borders-data.ts), since its service paints the rest white.
-// Further out than zoom 12, Spain's service shows the whole peninsula by itself, from Sentinel-2.
+// Further out than zoom 8, where the three are alike, Spain's service shows them all by itself.
 
 import type { TileArchive } from './area-download.ts';
 import { FRANCE_SOUTH, PORTUGAL } from './borders-data.ts';
@@ -19,8 +19,11 @@ export const ORTHO_ATTRIBUTION =
   '<a href="https://www.dgterritorio.gov.pt" target="_blank">CC BY 4.0 DGT</a> · OrtoSat 2023 | ' +
   '<a href="https://www.ign.fr" target="_blank">© IGN</a> · BD ORTHO';
 
-/** Below this zoom Spain's service covers the three countries alike. */
-const NATIONAL_MIN_ZOOM = 12;
+/**
+ * From this zoom each country's own photographs are sharper beyond Spain than Spain's service, which
+ * there has only a coarse Sentinel-2 mosaic; DGT's service draws nothing further out.
+ */
+const NATIONAL_MIN_ZOOM = 8;
 const TILE_PX = 256;
 /** Tiles put together are saved as JPEG, like the services' own. */
 const JPEG_QUALITY = 0.85;
