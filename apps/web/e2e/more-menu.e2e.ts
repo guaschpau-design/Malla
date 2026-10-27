@@ -1,20 +1,15 @@
-// Full screen in a browser tab: chosen on first launch, resumed at the first tap of a later visit
-// and switched in the "More" menu.
+// Choices of the "More" menu that the app keeps: full screen, on by default and entered at the
+// first tap of each visit, and the language.
 
 import type { Page } from '@playwright/test';
 
-import { expect, test } from './helpers.ts';
+import { device, expect, test } from './helpers.ts';
 
 const isFullscreen = (page: Page) => page.evaluate(() => document.fullscreenElement !== null);
 
-test('full screen is chosen on first launch and remembered', async ({ page }) => {
-  await page.goto('/');
-  const dialog = page.getByRole('dialog', { name: 'Te damos la bienvenida a Tesel' });
-  await dialog.getByLabel('Tu nombre en el grupo').fill('Ana');
-  const choice = dialog.getByRole('switch', { name: /Pantalla completa/ });
-  await expect(choice).toHaveAttribute('aria-checked', 'false');
-  await choice.click();
-  await dialog.getByRole('button', { name: 'Continuar' }).click();
+test('the app goes full screen at the first tap, until switched off', async ({ browser }) => {
+  // The first tap, on the welcome screen, already took it there.
+  const page = await device(browser, 'Ana');
   await expect.poll(() => isFullscreen(page)).toBe(true);
 
   // A reload leaves full screen; the first tap of the visit goes back to it.
@@ -34,4 +29,13 @@ test('full screen is chosen on first launch and remembered', async ({ page }) =>
   await page.getByRole('button', { name: 'Más' }).click();
   await expect(page.getByRole('menuitemcheckbox', { name: 'Pantalla completa' })).toBeVisible();
   expect(await isFullscreen(page)).toBe(false);
+});
+
+test('the language is chosen in the "More" menu and remembered', async ({ browser }) => {
+  const page = await device(browser, 'Ana');
+  await page.getByRole('button', { name: 'Más' }).click();
+  await page.getByRole('menuitem', { name: /Idioma/ }).click();
+  await expect(page.getByRole('menuitem', { name: /Language/ })).toContainText('English');
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'More' })).toBeVisible();
 });

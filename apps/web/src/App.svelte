@@ -12,7 +12,7 @@
   import GroupsPanel from './lib/groups/GroupsPanel.svelte';
   import JoinDialog from './lib/groups/JoinDialog.svelte';
   import { invitationInAddress } from './lib/groups/join-link.ts';
-  import { detectLocale, translator, type Locale, type MessageKey } from './lib/i18n/index.ts';
+  import { resolveLocale, translator, type Locale, type MessageKey } from './lib/i18n/index.ts';
   import Onboarding from './lib/identity/Onboarding.svelte';
   import ConnectionsPanel from './lib/links/ConnectionsPanel.svelte';
   import LinkButton from './lib/links/LinkButton.svelte';
@@ -40,9 +40,6 @@
   import { WeatherFeed } from './lib/weather/weather-feed.svelte.ts';
   import MapWorkspace from './lib/workspace/MapWorkspace.svelte';
 
-  let locale: Locale = $state(detectLocale(navigator.languages));
-  const t = $derived(translator(locale));
-
   const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
   let theme: MapTheme = $state(darkQuery.matches ? 'dark' : 'light');
 
@@ -67,6 +64,11 @@
   let db: AppDb | undefined;
   let session: Session | undefined = $state();
   let preferences: Preferences | undefined = $state.raw();
+  /** The language chosen in More, or the browser's until preferences are read. */
+  const locale: Locale = $derived(
+    resolveLocale(preferences?.language.value ?? 'auto', navigator.languages),
+  );
+  const t = $derived(translator(locale));
   let sharing: PositionSharing | undefined;
   let feed: GroupFeed | undefined = $state.raw();
   let map: MapLibreMap | undefined = $state();
@@ -236,14 +238,6 @@
         {groupLabel}
       </button>
     {/if}
-    <button
-      class="ghost"
-      onclick={() => (locale = locale === 'es' ? 'en' : 'es')}
-      aria-label={t('switchLanguage')}
-      title={t('switchLanguage')}
-    >
-      {locale === 'es' ? 'EN' : 'ES'}
-    </button>
   </header>
 
   <main>
@@ -297,7 +291,6 @@
       <Onboarding
         {t}
         invitedTo={incoming?.ok ? incoming.value.groupName : null}
-        fullscreen={fullscreenSupported ? (preferences?.fullscreen ?? null) : null}
         oncreate={createIdentity}
       />
     {:else if session && incoming}

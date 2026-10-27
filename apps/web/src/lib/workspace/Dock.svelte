@@ -1,7 +1,7 @@
 <!-- The bottom of the map: the SOS button and the dock — Me, Add, Chat and Tasks with a group,
      More always. Everything else starts from what is tapped on the map. -->
 <script lang="ts">
-  import type { MessageKey, Translate } from '../i18n/index.ts';
+  import type { LanguageChoice, Locale, MessageKey, Translate } from '../i18n/index.ts';
   import AddMenu from '../objects/AddMenu.svelte';
   import type { DraftKind } from '../objects/draft.ts';
   import type { PositionMode } from '../position/position-mode.ts';
@@ -21,12 +21,24 @@
     onmeasure: () => void;
     keepScreenOn: Preference<boolean>;
     fullscreen: Preference<boolean>;
+    language: Preference<LanguageChoice>;
+    locale: Locale;
     /** Pending tasks assigned to this device. */
     tasksForMe: number;
   }
 
-  let { t, sharing, onsos, ondraw, onmeasure, keepScreenOn, fullscreen, tasksForMe }: Props =
-    $props();
+  let {
+    t,
+    sharing,
+    onsos,
+    ondraw,
+    onmeasure,
+    keepScreenOn,
+    fullscreen,
+    language,
+    locale,
+    tasksForMe,
+  }: Props = $props();
 
   const STATES: Readonly<Record<PositionMode, MessageKey>> = {
     sharing: 'positionStateSharing',
@@ -72,7 +84,15 @@
         }}
       />
     {/if}
-    <MoreMenu {t} {onmeasure} {keepScreenOn} {fullscreen} withGroup={sharing !== null} />
+    <MoreMenu
+      {t}
+      {onmeasure}
+      {keepScreenOn}
+      {fullscreen}
+      {language}
+      {locale}
+      withGroup={sharing !== null}
+    />
   </nav>
 </div>
 

@@ -409,6 +409,8 @@
     }}
     keepScreenOn={preferences.keepScreenOn}
     fullscreen={preferences.fullscreen}
+    language={preferences.language}
+    {locale}
     tasksForMe={group ? myPendingCount(group.feed.state, group.self) : 0}
   />
 {/if}

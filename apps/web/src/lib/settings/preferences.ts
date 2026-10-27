@@ -1,6 +1,7 @@
 // Every preference this device remembers, in one place: what it is, its choices and its default.
 
 import { COORDINATE_FORMATS, type CoordinateFormat } from '../coordinates/coordinates.ts';
+import { LANGUAGE_CHOICES, type LanguageChoice } from '../i18n/index.ts';
 import { MAP_LAYERS, type MapLayer } from '../map/layers.ts';
 import { BASE_MAPS, type BaseMap } from '../map/style.ts';
 import { POSITION_MODES, type PositionMode } from '../position/position-mode.ts';
@@ -26,8 +27,10 @@ export const PREFERENCES = {
   hiddenLayers: subset('hiddenLayers', MAP_LAYERS, []),
   /** Keep the screen on while the app is open: off, to spare the battery. */
   keepScreenOn: flag('keepScreenOn', false),
-  /** The app over the whole screen in a browser tab: off until chosen, on first launch or in More. */
-  fullscreen: flag('fullscreen', false),
+  /** The app over the whole screen, where a browser tab allows it: on, until switched off in More. */
+  fullscreen: flag('fullscreen', true),
+  /** The interface's language: the browser's, until one is chosen in More. */
+  language: choice('language', LANGUAGE_CHOICES, 'auto'),
 };
 
 /** The preferences the interface reads and changes as the user works. */
@@ -42,6 +45,7 @@ export interface Preferences {
   readonly hiddenLayers: Preference<readonly MapLayer[]>;
   readonly keepScreenOn: Preference<boolean>;
   readonly fullscreen: Preference<boolean>;
+  readonly language: Preference<LanguageChoice>;
 }
 
 export async function loadPreferences(db: AppDb): Promise<Preferences> {
@@ -56,5 +60,6 @@ export async function loadPreferences(db: AppDb): Promise<Preferences> {
     hiddenLayers: await Preference.load(db, PREFERENCES.hiddenLayers),
     keepScreenOn: await Preference.load(db, PREFERENCES.keepScreenOn),
     fullscreen: await Preference.load(db, PREFERENCES.fullscreen),
+    language: await Preference.load(db, PREFERENCES.language),
   };
 }

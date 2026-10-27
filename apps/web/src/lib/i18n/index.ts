@@ -3,10 +3,28 @@
 import { en, type MessageKey, type Messages } from './en.ts';
 import { es } from './es.ts';
 
-export type Locale = 'es' | 'en';
+export const LOCALES = ['es', 'en'] as const;
+export type Locale = (typeof LOCALES)[number];
 export type { MessageKey, Messages };
 
 export const locales: Readonly<Record<Locale, Messages>> = { es, en };
+
+/** Each language by its own name, as a language menu shows it. */
+export const LOCALE_NAMES: Readonly<Record<Locale, string>> = { es: 'Español', en: 'English' };
+
+/** The interface's language: the browser's, or one chosen in the app. */
+export const LANGUAGE_CHOICES = ['auto', ...LOCALES] as const;
+export type LanguageChoice = (typeof LANGUAGE_CHOICES)[number];
+
+/** The language to show: the one chosen, or else the browser's. */
+export function resolveLocale(choice: LanguageChoice, languages: readonly string[]): Locale {
+  return choice === 'auto' ? detectLocale(languages) : choice;
+}
+
+/** The language after `locale`, round the list: what the language item of a menu switches to. */
+export function nextLocale(locale: Locale): Locale {
+  return LOCALES[(LOCALES.indexOf(locale) + 1) % LOCALES.length] ?? locale;
+}
 
 /** Spanish unless the browser prefers English. */
 export function detectLocale(languages: readonly string[]): Locale {

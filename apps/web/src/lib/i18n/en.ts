@@ -23,7 +23,7 @@ export const en = {
   mediumUnknown: 'WiFi/5G',
   mediumLora: 'LoRa',
   radioUnnamed: 'unnamed radio',
-  switchLanguage: 'Español',
+  language: 'Language',
   offlineAreas: 'Offline maps',
   close: 'Close',
   areasIntro:
@@ -172,7 +172,6 @@ export const en = {
     'Topographic, satellite and relief: Spain, Portugal and southern France. Satellite takes several times the space of the street map.',
   keepScreenOn: 'Screen always on',
   fullscreen: 'Full screen',
-  fullscreenHint: 'Without the browser’s bars. Changed in “More”.',
   diary: 'Operation diary',
   diaryIntro:
     'Everything that has happened in the group, newest first. It is kept on this device and can be saved for the report.',

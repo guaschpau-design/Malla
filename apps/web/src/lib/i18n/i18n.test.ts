@@ -5,12 +5,22 @@ import { describe, expect, it } from 'vitest';
 
 import { en } from './en.ts';
 import { es } from './es.ts';
-import { detectLocale, translator } from './index.ts';
+import { detectLocale, nextLocale, resolveLocale, translator } from './index.ts';
 
 describe('translations', () => {
   it('detects the browser language, defaulting to Spanish', () => {
     expect(detectLocale(['en-GB', 'es'])).toBe('en');
     expect(detectLocale(['fr-FR'])).toBe('es');
+  });
+
+  it('shows the language chosen, or else the browser’s', () => {
+    expect(resolveLocale('auto', ['en-US'])).toBe('en');
+    expect(resolveLocale('es', ['en-US'])).toBe('es');
+  });
+
+  it('switches to the next language, round the list', () => {
+    expect(nextLocale('es')).toBe('en');
+    expect(nextLocale('en')).toBe('es');
   });
 
   it('fills placeholders', () => {

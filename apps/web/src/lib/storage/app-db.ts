@@ -32,7 +32,8 @@ export type SettingKey =
   | 'cadastre'
   | 'hiddenLayers'
   | 'keepScreenOn'
-  | 'fullscreen';
+  | 'fullscreen'
+  | 'language';
 
 export type EventKey = [groupId: string, origin: NodeId, seq: number];
 

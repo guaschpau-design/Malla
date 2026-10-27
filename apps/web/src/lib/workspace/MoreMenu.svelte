@@ -1,6 +1,13 @@
 <!-- The dock's "More" menu: what is used now and then, with or without a group. -->
 <script lang="ts">
-  import type { MessageKey, Translate } from '../i18n/index.ts';
+  import {
+    LOCALE_NAMES,
+    nextLocale,
+    type LanguageChoice,
+    type Locale,
+    type MessageKey,
+    type Translate,
+  } from '../i18n/index.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import DockMenu from '../ui/DockMenu.svelte';
   import {
@@ -21,11 +28,14 @@
     keepScreenOn: Preference<boolean>;
     /** Whether the app goes full screen in a browser tab. */
     fullscreen: Preference<boolean>;
+    language: Preference<LanguageChoice>;
+    /** The language shown now. */
+    locale: Locale;
     /** The diary is the active group's. */
     withGroup: boolean;
   }
 
-  let { t, onmeasure, keepScreenOn, fullscreen, withGroup }: Props = $props();
+  let { t, onmeasure, keepScreenOn, fullscreen, language, locale, withGroup }: Props = $props();
 
   /** Now and on every later visit, until switched off again. */
   function toggleFullscreen(): void {
@@ -93,5 +103,19 @@
         <Switch on={fullscreenView.active} />
       </button>
     {/if}
+    <!-- The next language, round the list; the menu stays open, so the change is seen. -->
+    <button role="menuitem" onclick={() => void language.set(nextLocale(locale))}>
+      <Pictogram name="language" size={20} />
+      {t('language')}
+      <span class="value">{LOCALE_NAMES[locale]}</span>
+    </button>
   {/snippet}
 </DockMenu>
+
+<style>
+  /* The language shown now, beside the item that changes it. */
+  .value {
+    color: var(--muted);
+    font-size: var(--text-small);
+  }
+</style>
