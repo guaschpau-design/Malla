@@ -31,7 +31,8 @@ export type SettingKey =
   | 'radar'
   | 'cadastre'
   | 'hiddenLayers'
-  | 'keepScreenOn';
+  | 'keepScreenOn'
+  | 'fullscreen';
 
 export type EventKey = [groupId: string, origin: NodeId, seq: number];
 

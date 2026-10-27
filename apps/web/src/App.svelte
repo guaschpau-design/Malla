@@ -34,6 +34,7 @@
   import { provideTerrain } from './lib/terrain/terrain-context.ts';
   import { openAppDb, type AppDb } from './lib/storage/app-db.ts';
   import { GroupFeed } from './lib/sync/group-feed.svelte.ts';
+  import { fullscreenAtFirstTap, fullscreenSupported } from './lib/ui/fullscreen.svelte.ts';
   import { closePanel, panels, togglePanel } from './lib/ui/panels.svelte.ts';
   import Toast from './lib/ui/Toast.svelte';
   import { WeatherFeed } from './lib/weather/weather-feed.svelte.ts';
@@ -103,17 +104,22 @@
       offline = { store: opened, archives };
     });
     const server = defaultServerUrl();
+    let stopWaitingForTap: (() => void) | undefined;
     void openAppDb().then(async (opened) => {
       db = opened;
       if (server !== null) weather = WeatherFeed.start(opened, server);
       void radio.useStorage(opened);
       preferences = await loadPreferences(opened);
+      if (fullscreenSupported && preferences.fullscreen.value) {
+        stopWaitingForTap = fullscreenAtFirstTap();
+      }
       sharing = new PositionSharing(preferences.positionMode, location);
       session = await Session.load(opened);
     });
 
     return () => {
       stopWatching();
+      stopWaitingForTap?.();
       weather?.stop();
       darkQuery.removeEventListener('change', onScheme);
     };
@@ -291,6 +297,7 @@
       <Onboarding
         {t}
         invitedTo={incoming?.ok ? incoming.value.groupName : null}
+        fullscreen={fullscreenSupported ? (preferences?.fullscreen ?? null) : null}
         oncreate={createIdentity}
       />
     {:else if session && incoming}

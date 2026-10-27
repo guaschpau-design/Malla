@@ -173,6 +173,8 @@ export const es: Messages = {
   downloadAlsoHint:
     'Topográfico, satélite y relieve: España, Portugal y el sur de Francia. El satélite ocupa varias veces lo que el callejero.',
   keepScreenOn: 'Pantalla siempre encendida',
+  fullscreen: 'Pantalla completa',
+  fullscreenHint: 'Sin las barras del navegador. Se cambia en «Más».',
   diary: 'Diario de la operación',
   diaryIntro:
     'Todo lo que ha pasado en el grupo, lo último primero. Se guarda en este dispositivo y puede descargarse para el informe.',

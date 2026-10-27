@@ -26,6 +26,8 @@ export const PREFERENCES = {
   hiddenLayers: subset('hiddenLayers', MAP_LAYERS, []),
   /** Keep the screen on while the app is open: off, to spare the battery. */
   keepScreenOn: flag('keepScreenOn', false),
+  /** The app over the whole screen in a browser tab: off until chosen, on first launch or in More. */
+  fullscreen: flag('fullscreen', false),
 };
 
 /** The preferences the interface reads and changes as the user works. */
@@ -39,6 +41,7 @@ export interface Preferences {
   readonly cadastre: Preference<boolean>;
   readonly hiddenLayers: Preference<readonly MapLayer[]>;
   readonly keepScreenOn: Preference<boolean>;
+  readonly fullscreen: Preference<boolean>;
 }
 
 export async function loadPreferences(db: AppDb): Promise<Preferences> {
@@ -52,5 +55,6 @@ export async function loadPreferences(db: AppDb): Promise<Preferences> {
     cadastre: await Preference.load(db, PREFERENCES.cadastre),
     hiddenLayers: await Preference.load(db, PREFERENCES.hiddenLayers),
     keepScreenOn: await Preference.load(db, PREFERENCES.keepScreenOn),
+    fullscreen: await Preference.load(db, PREFERENCES.fullscreen),
   };
 }

@@ -20,11 +20,13 @@
     ondraw: (kind: DraftKind) => void;
     onmeasure: () => void;
     keepScreenOn: Preference<boolean>;
+    fullscreen: Preference<boolean>;
     /** Pending tasks assigned to this device. */
     tasksForMe: number;
   }
 
-  let { t, sharing, onsos, ondraw, onmeasure, keepScreenOn, tasksForMe }: Props = $props();
+  let { t, sharing, onsos, ondraw, onmeasure, keepScreenOn, fullscreen, tasksForMe }: Props =
+    $props();
 
   const STATES: Readonly<Record<PositionMode, MessageKey>> = {
     sharing: 'positionStateSharing',
@@ -70,7 +72,7 @@
         }}
       />
     {/if}
-    <MoreMenu {t} {onmeasure} {keepScreenOn} withGroup={sharing !== null} />
+    <MoreMenu {t} {onmeasure} {keepScreenOn} {fullscreen} withGroup={sharing !== null} />
   </nav>
 </div>
 

@@ -408,6 +408,7 @@
       startTool({ kind: 'measure', from: null });
     }}
     keepScreenOn={preferences.keepScreenOn}
+    fullscreen={preferences.fullscreen}
     tasksForMe={group ? myPendingCount(group.feed.state, group.self) : 0}
   />
 {/if}

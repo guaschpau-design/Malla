@@ -3,6 +3,12 @@
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import DockMenu from '../ui/DockMenu.svelte';
+  import {
+    enterFullscreen,
+    exitFullscreen,
+    fullscreenSupported,
+    fullscreenView,
+  } from '../ui/fullscreen.svelte.ts';
   import type { GlyphName } from '../ui/glyphs.ts';
   import { panels } from '../ui/panels.svelte.ts';
   import Pictogram from '../ui/Pictogram.svelte';
@@ -13,11 +19,21 @@
     t: Translate;
     onmeasure: () => void;
     keepScreenOn: Preference<boolean>;
+    /** Whether the app goes full screen in a browser tab. */
+    fullscreen: Preference<boolean>;
     /** The diary is the active group's. */
     withGroup: boolean;
   }
 
-  let { t, onmeasure, keepScreenOn, withGroup }: Props = $props();
+  let { t, onmeasure, keepScreenOn, fullscreen, withGroup }: Props = $props();
+
+  /** Now and on every later visit, until switched off again. */
+  function toggleFullscreen(): void {
+    const on = !fullscreenView.active;
+    if (on) enterFullscreen();
+    else exitFullscreen();
+    void fullscreen.set(on);
+  }
 
   interface Item {
     readonly icon: GlyphName;
@@ -64,6 +80,17 @@
         <Pictogram name="screen" size={20} />
         {t('keepScreenOn')}
         <Switch on={keepScreenOn.value} />
+      </button>
+    {/if}
+    {#if fullscreenSupported}
+      <button
+        role="menuitemcheckbox"
+        aria-checked={fullscreenView.active}
+        onclick={toggleFullscreen}
+      >
+        <Pictogram name="fullscreen" size={20} />
+        {t('fullscreen')}
+        <Switch on={fullscreenView.active} />
       </button>
     {/if}
   {/snippet}
