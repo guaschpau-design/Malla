@@ -2,7 +2,7 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// TESEL_BASE lets the app be served from a sub-path, e.g. "/tesel/" on GitHub Pages.
+// TESEL_BASE lets the app be served from a sub-path, e.g. "/app/" in the server image.
 const base = process.env['TESEL_BASE'] ?? '/';
 
 export default defineConfig({

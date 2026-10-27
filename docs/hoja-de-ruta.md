@@ -30,6 +30,8 @@ Principio: que la app sea versátil y cada equipo la use a su manera, sin menús
 | 2.3 | Relieve                     | Modelo digital del terreno: sombreado y curvas en el mapa, y desnivel y pendiente más dura del tramo cuando la app guía hasta un sitio.                                    |
 | 2.4 | Tareas                      | Un texto corto y, si se quiere, una persona y un sitio del mapa; pendiente, en curso o hecha. Cualquiera puede crearlas; nada obligatorio más que el texto.                |
 
+La interfaz del punto 2.1 se revisó después: el dock tiene Yo, Añadir, Chat y Tareas cuando hay grupo, y Más siempre; las capas están entre los controles del mapa, a la derecha, con el norte y este dispositivo (ADR-0039).
+
 Las tareas usan un tipo de evento nuevo, `TASK` (protocolo §3.11, ADR-0025); el protocolo lo admite sin cambiar de versión.
 
 Hecha el 26 de octubre de 2026.

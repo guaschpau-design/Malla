@@ -1,6 +1,6 @@
 # 0002. A progressive web app is the only client in v0.1
 
-- Status: Superseded after v0.1 by [ADR-0016](0016-web-app-and-native-shells.md)
+- Status: Superseded after v0.1 by [0016](0016-web-app-and-native-shells.md)
 - Date: 2026-10-25
 
 ## Context

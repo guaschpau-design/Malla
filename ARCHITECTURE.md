@@ -80,15 +80,17 @@ The device reads its GPS only while something uses it — sharing, showing it on
 
 An event has a fixed 14-byte header — protocol version, type, origin node ID, sequence number, timestamp — followed by a type-specific payload. The full list of types and their byte layouts is in [`docs/protocol.md`](docs/protocol.md) §3. In short:
 
-| Type                               | Purpose                                         |
-| ---------------------------------- | ----------------------------------------------- |
-| `MEMBER_INFO`                      | Alias, role and public key of a member          |
-| `POSITION`, `POSITION_HIDDEN`      | Live position, or "I stopped sharing"           |
-| `CHAT`                             | Group chat line                                 |
-| `MARKER`, `SHAPE`, `OBJECT_DELETE` | Map objects: points, lines, polygons, circles   |
-| `SOS`, `SOS_CANCEL`                | Emergency call and its cancellation             |
-| `ALERT`                            | Broadcast warning with a severity level         |
-| `ACK`                              | Acknowledges an event (used for SOS and alerts) |
+| Type                               | Purpose                                                     |
+| ---------------------------------- | ----------------------------------------------------------- |
+| `MEMBER_INFO`                      | Alias, role and public key of a member                      |
+| `POSITION`, `POSITION_HIDDEN`      | Live position, or "I stopped sharing"                       |
+| `CHAT`                             | Group chat line                                             |
+| `MARKER`, `SHAPE`, `OBJECT_DELETE` | Map objects: points, lines, polygons, circles               |
+| `SOS`, `SOS_CANCEL`                | Emergency call and its cancellation                         |
+| `ALERT`                            | Broadcast warning with a severity level                     |
+| `ACK`                              | Acknowledges an event (used for SOS, alerts and roll calls) |
+| `TASK`                             | Creates or changes a task: what, who and where (ADR-0025)   |
+| `ROLL_CALL`                        | Asks every member to answer with an `ACK` (ADR-0028)        |
 
 `(origin, seq)` uniquely identifies an event. Sequence numbers are per device, start at 1, normally increase by one and are persisted, so a device never reuses one.
 
@@ -96,11 +98,14 @@ An event has a fixed 14-byte header — protocol version, type, origin node ID, 
 
 The current picture is a pure function of the event log, computed by the reducer in `packages/core`. The state is composed of **slices**, one module per domain in `packages/core/src/state/`: each declares the event types it reads, its empty value and how one more event changes it. The reducer routes each event to the slices that read it and leaves the others untouched, so unchanged slices keep their identity and the UI only recomputes what changed.
 
+- **Members:** latest `MEMBER_INFO` per origin.
 - **Positions:** latest `POSITION` or `POSITION_HIDDEN` per origin.
 - **Trails:** the newest positions of each origin, in order, for drawing where members have been. A `POSITION_HIDDEN` cuts the trail: positions up to it are dropped, so hiding also hides where one went.
 - **Map objects:** identified by the `(origin, seq)` of the event that created them. Later `MARKER`/`SHAPE` events for the same object replace it; `OBJECT_DELETE` removes it. Conflicts resolve by **last writer wins**, ordering by `(timestamp, origin, seq)`.
+- **Tasks:** like map objects, identified by the `(origin, seq)` of the event that created them, and the last writer wins.
 - **Chat and alerts:** append-only, ordered by `(timestamp, origin, seq)` so every device shows the same order.
 - **SOS:** every `SOS` is kept; one is active until a `SOS_CANCEL` for it arrives, and the first cancellation (by the same order) says who cancelled it.
+- **Roll call:** the newest `ROLL_CALL`; its answers are the acknowledgements of it.
 - **Acknowledgements:** per acknowledged event, the first `ACK` of each member.
 - **Journal:** every event except positions, in order: the record from which the app writes the operation diary ([ADR-0022](docs/decisions/0022-log-files.md)).
 
@@ -128,8 +133,8 @@ The web app connects to a MeshCore companion radio over Web Bluetooth (Chrome an
 
 LoRa is slow and legally limited to 10 % airtime in the EU 869.4–869.65 MHz sub-band, so outgoing LoRa traffic goes through a **scheduler** in `packages/core` ([ADR-0015](docs/decisions/0015-lora-airtime-policy.md)) that:
 
-1. Orders events by priority: `SOS` > `SOS_CANCEL` > `ALERT` > `POSITION_HIDDEN` > `ACK` > `CHAT` > map objects (`MARKER`, `SHAPE`, `OBJECT_DELETE`) > `MEMBER_INFO` > `POSITION`. `POSITION_HIDDEN` is never thinned or delayed, and it drops any position still queued: a user who stops sharing must disappear from the map promptly.
-2. Estimates each packet's airtime from the radio preset and keeps a rolling one-hour budget: 5 % of the hour for ordinary traffic, the legal 10 % for `SOS`, `SOS_CANCEL` and alerts.
+1. Orders events by urgency, given for every event type in `packages/core/src/urgency.ts`: the SOS and its cancellation first, then alerts and roll calls, hiding a position, acknowledgements, chat and tasks, map objects, member information and, last, positions. `POSITION_HIDDEN` is never thinned or delayed, and it drops any position still queued: a user who stops sharing must disappear from the map promptly.
+2. Estimates each packet's airtime from the radio preset and keeps a rolling one-hour budget: 5 % of the hour for ordinary traffic, the legal 10 % for events as urgent as an alert or more (`SOS`, `SOS_CANCEL`, `ALERT`, `ROLL_CALL`).
 3. Thins own positions: at most one every 2 minutes, and only after moving 50 m or 10 minutes passing.
 4. Repeats an own `SOS` with back-off (30 s, doubling to 5 minutes) until an `ACK` or a `SOS_CANCEL` arrives over any transport.
 5. Applies the protocol's ACK rule: an own `ACK` waits 2–30 s and is dropped if another member's `ACK` is heard first.
@@ -173,9 +178,9 @@ A command post is found by name and replicates by protocol ([ADR-0018](docs/deci
 
 ## 7. Maps
 
-The base map is OpenStreetMap data rendered as vector tiles from a single PMTiles file that **we host**. The public OpenStreetMap tile servers forbid bulk downloading, so they cannot be used for offline maps. To prepare for an incident, the web app downloads every tile of an area, up to zoom 15, straight from that file and stores it in IndexedDB. MapLibre reads tiles through a `tesel-tiles://` protocol that answers from IndexedDB first and the network second. Glyphs and sprites ship inside the app. See [ADR-0007](docs/decisions/0007-self-hosted-vector-maps.md) and [ADR-0011](docs/decisions/0011-client-side-area-download.md).
+The base map is OpenStreetMap data rendered as vector tiles from a single PMTiles file that **we host**. The public OpenStreetMap tile servers forbid bulk downloading, so they cannot be used for offline maps. To prepare for an incident, the web app downloads every tile of an area straight from that file, up to zoom 15 or less for a large area, and stores it in IndexedDB. MapLibre reads tiles through a `tesel-tiles://` protocol that answers from IndexedDB first and the network second. Glyphs and sprites ship inside the app. See [ADR-0007](docs/decisions/0007-self-hosted-vector-maps.md) and [ADR-0011](docs/decisions/0011-client-side-area-download.md).
 
-Two more base maps cover Spain, Portugal and southern France, from open national services the browser reads directly through the same protocol: the satellite map, one Sentinel-2 mosaic from afar and each country's orthophotos close up, joined on the device where a tile crosses a border ([ADR-0023](docs/decisions/0023-ign-base-maps.md), [ADR-0041](docs/decisions/0041-satellite-mosaic-and-national-photos.md)), and a topographic map, which is the street map in another palette with contour lines worked out on the device from the elevation, and IGN's names of the terrain in Spain ([ADR-0034](docs/decisions/0034-vector-topographic-map.md)). The elevation — relief shading, contour lines, the climb of a way — comes from Mapterhorn's tiles, built from each country's best open model. An offline area can include any of them; every downloaded tile is kept under its source. The cadastres' parcels, of Spain and France, are a layer drawn from one picture of the view at a time, asked for online, since Spain's service forbids tiles and downloads ([ADR-0036](docs/decisions/0036-cadastre-layer.md)).
+Two more base maps cover Spain, Portugal and southern France, from open national services the browser reads directly through the same protocol: the satellite map, one Sentinel-2 mosaic from afar and each country's orthophotos close up, joined on the device where a tile crosses a border ([ADR-0023](docs/decisions/0023-ign-base-maps.md), [ADR-0041](docs/decisions/0041-satellite-mosaic-and-national-photos.md); the mosaic's licence and how a build changes it, [ADR-0051](docs/decisions/0051-satellite-mosaic-licence.md)), and a topographic map, which is the street map in another palette with contour lines worked out on the device from the elevation, and IGN's names of the terrain in Spain ([ADR-0034](docs/decisions/0034-vector-topographic-map.md)). The elevation — relief shading, contour lines, the climb of a way — comes from Mapterhorn's tiles, built from each country's best open model. An offline area can include any of them, each to the zoom it needs (`lib/offline/offline-maps.ts`): the satellite map three zooms deeper than the street map, to zoom 18, since a photograph cannot be enlarged without blurring; the elevation to zoom 13, where a pixel is already about 10 m; IGN's names as deep as the street map. Every downloaded tile is kept under its source. A download asks our own map for six tiles at a time and the public services for two, so as not to weigh on services we do not run. The cadastres' parcels, of Spain and France, are a layer drawn from one picture of the view at a time, asked for online, since Spain's service forbids tiles and downloads ([ADR-0036](docs/decisions/0036-cadastre-layer.md)).
 
 ## 8. Security model
 

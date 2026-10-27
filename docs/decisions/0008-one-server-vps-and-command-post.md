@@ -1,6 +1,6 @@
 # 0008. One server program for the VPS and the local command post
 
-- Status: Accepted
+- Status: Accepted, settled by [0018](0018-command-post.md) (HTTPS on a local network)
 - Date: 2026-10-25
 
 ## Context
