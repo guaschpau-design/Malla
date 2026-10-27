@@ -17,6 +17,16 @@ export function circleRing(center: LatLon, radius: number, steps = 48): [number,
   return ring;
 }
 
+/** The Web Mercator map, as MapLibre draws it, wraps the equator: 2π times 6 378 137 m. */
+const MAP_CIRCUMFERENCE_M = 2 * Math.PI * 6_378_137;
+/** MapLibre's tiles are 512 pixels wide. */
+const TILE_PX = 512;
+
+/** Metres on the ground for one pixel of the map, at a zoom and a latitude. */
+export function metresPerPixel(zoom: number, lat: number): number {
+  return (MAP_CIRCUMFERENCE_M * Math.cos((lat * Math.PI) / 180)) / (TILE_PX * 2 ** zoom);
+}
+
 /** The point at the middle of the map's view. */
 export function mapCentre(map: MapLibreMap): LatLon {
   const centre = map.getCenter();

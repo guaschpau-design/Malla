@@ -16,11 +16,12 @@
     base: Preference<BaseMap>;
     relief: Preference<boolean>;
     grid: Preference<boolean>;
+    radar: Preference<boolean>;
     hidden: Preference<readonly MapLayer[]>;
     onclose: () => void;
   }
 
-  let { t, base, relief, grid, hidden, onclose }: Props = $props();
+  let { t, base, relief, grid, radar, hidden, onclose }: Props = $props();
 
   const BASE_NAMES: Readonly<Record<BaseMap, MessageKey>> = {
     streets: 'baseMapStreets',
@@ -75,6 +76,9 @@
     })}
     {@render layerSwitch('grid', t('layerGrid'), grid.value, () => {
       void grid.set(!grid.value);
+    })}
+    {@render layerSwitch('radar', t('layerRadar'), radar.value, () => {
+      void radar.set(!radar.value);
     })}
   </div>
 </Panel>

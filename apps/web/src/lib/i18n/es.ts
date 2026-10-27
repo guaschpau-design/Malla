@@ -355,6 +355,7 @@ export const es: Messages = {
   layerServices: 'Servicios',
   layerWeather: 'Avisos meteo',
   layerGrid: 'Cuadrícula MGRS',
+  layerRadar: 'Radar',
   serviceHealth: 'Salud',
   servicePharmacy: 'Farmacia',
   serviceFuel: 'Gasolinera',

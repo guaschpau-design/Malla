@@ -1,8 +1,9 @@
 <!--
-  Everything on top of the map: weather warnings, the MGRS grid, public services, this device, the
-  group's members, objects, tasks and incidents, drawing, measuring and navigating, the panels and
-  the dock. Without an active group, only what works alone: weather warnings, the grid, services,
-  this device, coordinates, measuring, navigating to a point and offline maps.
+  Everything on top of the map: weather warnings, the MGRS grid, the radar, public services, this
+  device, the group's members, objects, tasks and incidents, drawing, measuring and navigating, the
+  panels and the dock. Without an active group, only what works alone: weather warnings, the grid,
+  the radar's rings, services, this device, coordinates, measuring, navigating to a point and
+  offline maps.
 -->
 <script lang="ts">
   import type { LatLon, NodeId, SosKind } from '@tesel/protocol';
@@ -37,6 +38,7 @@
   import type { RadioSession } from '../radio/radio.svelte.ts';
   import type { TappedService } from '../services/services.ts';
   import ServicesLayer from '../services/ServicesLayer.svelte';
+  import RadarLayer from '../radar/RadarLayer.svelte';
   import type { Preferences } from '../settings/preferences.ts';
   import MapTasks from '../tasks/MapTasks.svelte';
   import { newTask } from '../tasks/task-editor.svelte.ts';
@@ -187,6 +189,14 @@
 {#if preferences.mgrsGrid.value}
   <MgrsGridLayer {map} />
 {/if}
+{#if preferences.radar.value}
+  <RadarLayer
+    {map}
+    {locale}
+    {location}
+    group={group ? { state: group.feed.state, self: group.self } : null}
+  />
+{/if}
 {#if weather}
   <WeatherLayer {map} regions={weather.regions} visible={shown.weather} />
 {/if}
@@ -327,6 +337,7 @@
     base={preferences.baseMap}
     relief={preferences.relief}
     grid={preferences.mgrsGrid}
+    radar={preferences.radar}
     hidden={preferences.hiddenLayers}
     onclose={closePanel}
   />

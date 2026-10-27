@@ -353,6 +353,7 @@ export const en = {
   layerServices: 'Services',
   layerWeather: 'Weather warnings',
   layerGrid: 'MGRS grid',
+  layerRadar: 'Radar',
   serviceHealth: 'Health',
   servicePharmacy: 'Pharmacy',
   serviceFuel: 'Fuel station',

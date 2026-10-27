@@ -16,6 +16,7 @@ export const OVERLAY_LEVELS = [
   'weather',
   'grid',
   'services',
+  'radar',
   'trails',
   'objects',
   'tasks',

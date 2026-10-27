@@ -6,6 +6,7 @@
 import type { LatLon } from '@tesel/protocol';
 import type { Feature, FeatureCollection, LineString, Point } from 'geojson';
 
+import { metresPerPixel } from '../map/geometry.ts';
 import { toMgrs } from './mgrs.ts';
 import { bandOf, fromUtm, toUtmInZone, zoneWest } from './utm.ts';
 
@@ -28,17 +29,14 @@ const MIN_GAP_PX = 90;
 const SQUARE = 100_000;
 /** Each line is drawn as this many straight pieces. */
 const SEGMENTS = 16;
-const EARTH_CIRCUMFERENCE_M = 40_075_016.686;
-const TILE_PX = 512;
 /** UTM reaches from 80° S to 84° N; the grid does too. */
 const SOUTH_LIMIT = -80;
 const NORTH_LIMIT = 84;
 
 /** The finest spacing that leaves the lines at least MIN_GAP_PX apart, or null if none does. */
 export function gridSpacing(zoom: number, lat: number): number | null {
-  const metresPerPixel =
-    (EARTH_CIRCUMFERENCE_M * Math.cos((lat * Math.PI) / 180)) / (TILE_PX * 2 ** zoom);
-  return SPACINGS.find((spacing) => spacing / metresPerPixel >= MIN_GAP_PX) ?? null;
+  const scale = metresPerPixel(zoom, lat);
+  return SPACINGS.find((spacing) => spacing / scale >= MIN_GAP_PX) ?? null;
 }
 
 /** The grid over a view, as features with a `kind` and, for lines and squares, a `label`. */

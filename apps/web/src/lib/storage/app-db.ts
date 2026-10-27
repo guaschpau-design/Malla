@@ -28,6 +28,7 @@ export type SettingKey =
   | 'baseMap'
   | 'relief'
   | 'mgrsGrid'
+  | 'radar'
   | 'hiddenLayers'
   | 'keepScreenOn';
 
