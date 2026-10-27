@@ -1,6 +1,6 @@
 # 0018. A command post is a replicating server on its own Wi-Fi, found by name
 
-- Status: Accepted
+- Status: Accepted, amended by [0050](0050-post-certificates-from-the-server.md) (the server obtains the posts' certificate)
 - Date: 2026-10-25
 - Settles: the open question of [ADR-0008](0008-one-server-vps-and-command-post.md) about HTTPS on a local network
 

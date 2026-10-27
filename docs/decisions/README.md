@@ -18,12 +18,12 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0010](0010-lora-link-security.md)                   | Rely on MeshCore channel encryption for LoRa in v0.1, knowing its limits | Accepted                        |
 | [0011](0011-client-side-area-download.md)            | Download offline areas tile by tile in the browser                       | Accepted                        |
 | [0012](0012-invitation-links-under-a-base-path.md)   | Invitation links work under a base path                                  | Accepted, amended by 0017       |
-| [0013](0013-self-updating-vps.md)                    | A self-updating VPS behind Caddy, installed by one script                | Accepted                        |
+| [0013](0013-self-updating-vps.md)                    | A self-updating VPS behind Caddy, installed by one script                | Partly superseded by 0049       |
 | [0014](0014-name-teselia.md)                         | The project is called Teselia                                            | Superseded by 0019              |
 | [0015](0015-lora-airtime-policy.md)                  | LoRa airtime policy                                                      | Accepted                        |
 | [0016](0016-web-app-and-native-shells.md)            | The web app first, and Android and iOS apps built from the same code     | Accepted                        |
 | [0017](0017-server-serves-site-and-app.md)           | The server serves the landing page and the web app                       | Accepted                        |
-| [0018](0018-command-post.md)                         | A command post is a replicating server on its own Wi-Fi, found by name   | Accepted                        |
+| [0018](0018-command-post.md)                         | A command post is a replicating server on its own Wi-Fi, found by name   | Accepted, amended by 0050       |
 | [0019](0019-name-tesel.md)                           | The project is called Tesel                                              | Accepted                        |
 | [0020](0020-colour-and-symbols.md)                   | Signal lime, colours defined once, and symbols of our own                | Accepted                        |
 | [0021](0021-coordinate-formats.md)                   | Write coordinates in four formats, converted by our own code             | Accepted                        |
@@ -48,3 +48,5 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0040](0040-dictated-messages.md)                    | Dictate chat messages with the browser's speech recognition              | Accepted                        |
 | [0041](0041-satellite-mosaic-and-national-photos.md) | One Sentinel-2 mosaic from afar, each country's photographs close up     | Accepted                        |
 | [0042](0042-remove-radio-line-of-sight.md)           | Remove the radio line of sight                                           | Accepted                        |
+| [0049](0049-signed-images-and-checked-updates.md)    | Run only signed server images, and check every update                    | Accepted                        |
+| [0050](0050-post-certificates-from-the-server.md)    | Command posts get their certificate from the server                      | Accepted                        |

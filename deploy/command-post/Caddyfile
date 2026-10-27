@@ -1,17 +1,12 @@
 # HTTPS for a command post. Its name resolves to the post only on the post's own Wi-Fi, so no
-# certificate authority can reach it: the certificate comes from lego beforehand (DNS challenge)
-# and Caddy only serves it.
+# certificate authority can reach it: the certificate is obtained by the upstream server and
+# downloaded from it by refresh.sh while there is internet (ADR-0050); Caddy only serves it.
 {$TESEL_DOMAIN} {
-	tls /certs/certificates/{$TESEL_DOMAIN}.crt /certs/certificates/{$TESEL_DOMAIN}.key
+	tls /certs/certificate.crt /certs/certificate.key
+	import /etc/caddy/headers.caddy
 
-	header {
-		Strict-Transport-Security "max-age=31536000"
-		X-Content-Type-Options "nosniff"
-		Referrer-Policy "no-referrer"
-		-Server
-	}
-
-	# The base map, copied from the upstream while there is internet (refresh.sh).
+	# The base map and its licence notice, copied from the upstream while there is internet
+	# (refresh.sh).
 	handle_path /maps/* {
 		root * /srv/maps
 		header Access-Control-Allow-Origin "*"

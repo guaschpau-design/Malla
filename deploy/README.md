@@ -2,11 +2,13 @@
 
 ## What the server publishes
 
-Caddy serves the base map at `/maps/basemap.pmtiles` ([ADR-0007](../docs/decisions/0007-self-hosted-vector-maps.md)): Spain, Portugal and the islands by default; set `TESEL_MAP_BBOX` (west,south,east,north) in the environment of `maps.sh` for another area.
+Caddy serves the base map at `/maps/basemap.pmtiles` ([ADR-0007](../docs/decisions/0007-self-hosted-vector-maps.md)): Spain, Portugal and the islands by default; set `TESEL_MAP_BBOX` (west,south,east,north) in the environment of `maps.sh` for another area. It is OpenStreetMap data, © OpenStreetMap contributors, under the [Open Database License](https://www.openstreetmap.org/copyright); `/maps/README.txt`, written with every build, says so and where the extract came from.
 
-The server image carries the landing page ([`apps/site`](../apps/site)) at `/`, its English version at `/en/`, the web app at `/app/` and the relay at `/v1/ws` ([ADR-0017](../docs/decisions/0017-server-serves-site-and-app.md)). The app built into the image proposes its own server for new groups and uses the base map its server publishes.
+The server image carries the landing page ([`apps/site`](../apps/site)) at `/`, its English version at `/en/`, the web app at `/app/` and the relay at `/v1/ws` ([ADR-0017](../docs/decisions/0017-server-serves-site-and-app.md)). The app built into the image proposes its own server for new groups and uses the base map its server publishes. Whoever controls the image controls the app, so servers run only images signed by this repository's CI ([ADR-0049](../docs/decisions/0049-signed-images-and-checked-updates.md)).
 
 GitHub Pages, where the app used to live, now only redirects to `https://tesel.eu/app/` ([`pages/`](pages)).
+
+The files here are grouped by where they run: [`vps/`](vps) on the internet server, [`command-post/`](command-post) on a command post, [`common/`](common) on both (the update with its signature check, the cosign installer and the security headers), [`pages/`](pages) on GitHub Pages.
 
 ## Server on a VPS
 
@@ -24,36 +26,164 @@ The server runs on any Debian or Ubuntu VPS with a domain pointing to it ([ADR-0
 
 3. Open `https://tesel.example.eu`: the landing page is at the root and the app at `/app/`. Groups created there use that server.
 
+The installer and the files it downloads come from `main`. To install those of a release, fetch the script from the release's tag and pass the same tag with `--ref`; the image still follows `TESEL_IMAGE_TAG` (below):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/guaschpau-design/Tesel/v0.1.0/deploy/vps/install.sh \
+  | sudo bash -s -- --ref v0.1.0 --domain tesel.example.eu
+```
+
 What [`vps/install.sh`](vps/install.sh) sets up:
 
-| Layer      | What                                                                                                                                                |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| System     | Updates, then automatic security updates with a nightly reboot when the kernel needs it                                                             |
-| Firewall   | `ufw`: only SSH (22) and the web (80, 443) are reachable                                                                                            |
-| SSH        | `fail2ban` bans repeated failed logins; password logins are turned off if an SSH key is installed                                                   |
-| Containers | Docker with [`vps/compose.yaml`](vps/compose.yaml): the server (read-only, no capabilities, unprivileged) and Caddy                                 |
-| HTTPS      | Caddy gets and renews a Let's Encrypt certificate ([`vps/Caddyfile`](vps/Caddyfile)); no access logs are kept                                       |
-| Old names  | With `--redirect-from`, domains the server used to have answer with a permanent redirect to the same address on the new one                         |
-| Updates    | A systemd timer pulls `ghcr.io/guaschpau-design/tesel-server:latest` every 15 minutes and restarts what changed                                     |
-| Base map   | [`vps/maps.sh`](vps/maps.sh) extracts the area from the latest Protomaps build of OpenStreetMap, served at `/maps/basemap.pmtiles`; rebuilt monthly |
+| Layer      | What                                                                                                                                                                             |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| System     | Updates, then automatic security updates with a nightly reboot when the kernel needs it                                                                                          |
+| Firewall   | `ufw`: only SSH (22) and the web (80, 443) are reachable                                                                                                                         |
+| SSH        | `fail2ban` bans repeated failed logins; password logins are turned off if an SSH key is installed                                                                                |
+| Containers | Docker with [`vps/compose.yaml`](vps/compose.yaml): the server (read-only, no capabilities, unprivileged) and Caddy; memory limits and rotated logs                              |
+| HTTPS      | Caddy gets and renews a Let's Encrypt certificate ([`vps/Caddyfile`](vps/Caddyfile)) and sends security headers ([`common/headers.caddy`](common/headers.caddy)); no access logs |
+| Old names  | With `--redirect-from`, domains the server used to have answer with a permanent redirect to the same address on the new one                                                      |
+| Updates    | `tesel-update.timer`, every 15 minutes: [`common/update.sh`](common/update.sh) verifies, starts and checks the newest image, or goes back (below)                                |
+| Base map   | [`vps/maps.sh`](vps/maps.sh) extracts the area from the latest Protomaps build of OpenStreetMap, served at `/maps/basemap.pmtiles`; rebuilt monthly                              |
+| Backups    | `tesel-backup.timer`, nightly: [`vps/backup.sh`](vps/backup.sh) keeps 14 days of the database and of Caddy's data in `/opt/tesel/backups`                                        |
+| Posts      | With `--command-post`, the posts' certificate is obtained here and handed to posts with a token ([`vps/post-certificate.sh`](vps/post-certificate.sh))                           |
 
-CI publishes that image after every green push to `main` (job `image`), for amd64 and arm64. Running the script again applies changes to `compose.yaml` or `Caddyfile` and is otherwise harmless.
+Running the script again applies changes to the files of this folder and is otherwise harmless.
 
 Useful commands on the VPS:
 
 ```sh
 cd /opt/tesel
-docker compose ps                   # what is running
-docker compose logs --tail 100      # recent logs
-systemctl list-timers tesel-update  # when the next update check runs
+docker compose ps                         # what is running, and whether the server is healthy
+docker compose logs --tail 100            # recent logs
+systemctl list-timers 'tesel-*'           # when each job runs next
+journalctl -u tesel-update --since today  # what the updates did
 ```
-
-To announce a command post (below), run the script again with `--command-post https://puesto.example.eu`; the setting is kept on later runs.
 
 To move the server to a new domain, point both names at the VPS and run the script with `--domain new.example.eu --redirect-from old.example.eu` (several old names go comma-separated). Links and QR codes printed with the old name keep working; the setting is kept on later runs.
 
 A server installed while the project was called Teselia (in `/opt/teselia`) is moved by the script on its next run: it keeps the base map and the settings in `.env`, and removes the old containers, timers and stored envelopes, which were sealed with keys derived under the old name.
 
+### Updates
+
+CI builds the image on every run and starts it as servers do. After every green push to `main` it publishes `ghcr.io/guaschpau-design/tesel-server` for amd64 and arm64, signs it with cosign under the identity of its workflow on `main`, and only then moves the `latest` tag to it ([ADR-0049](../docs/decisions/0049-signed-images-and-checked-updates.md)).
+
+Every 15 minutes [`common/update.sh`](common/update.sh) checks that signature for the image `TESEL_IMAGE_TAG` names (`latest` unless set in `.env`; a commit's SHA pins that version), pulls it by digest, starts it and waits for its health check. A version that does not become healthy is replaced at once by the previous one, kept on disk for this, and is not tried again. `.env` records the digests: `TESEL_IMAGE` (running), `TESEL_IMAGE_PREVIOUS` and `TESEL_IMAGE_REJECTED`. With nothing new the job only checks that the server is healthy, so an unhealthy server shows up as a failed update.
+
+### Alerts
+
+Failures of the update, base map, backup and certificate jobs go to the journal. Set `TESEL_ALERT_URL` in `/opt/tesel/.env` to a ping URL of [healthchecks.io](https://healthchecks.io) or a compatible service to hear about them: each job pings it when it succeeds and pings it with `/fail` appended when it fails. Updates ping every 15 minutes, so a period of one hour also tells when the server stops reporting at all.
+
+### Backups
+
+Every night [`vps/backup.sh`](vps/backup.sh) writes into `/opt/tesel/backups`, readable by root only:
+
+- `tesel-TIME.db`: a consistent copy of the database, taken while the server runs and checked for integrity;
+- `caddy-data-TIME.tar.gz`: Caddy's certificates and ACME account.
+
+Copies are kept `TESEL_BACKUP_DAYS` days (14 unless set in `.env`). The database holds sealed envelopes only, but a backup on the same VPS is lost with it. To keep a copy elsewhere, create `/opt/tesel/backup.env` (mode 0600) with a [restic](https://restic.readthedocs.io) repository, its password and the credentials of its storage, for example an S3-compatible bucket:
+
+```sh
+RESTIC_REPOSITORY=s3:https://s3.example.eu/tesel-backups
+RESTIC_PASSWORD=a-long-random-password-kept-elsewhere-too
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+```
+
+Create the repository once, then the nightly job copies the folder there after every backup and forgets copies older than `TESEL_BACKUP_DAYS` days:
+
+```sh
+cd /opt/tesel && sudo docker run --rm --env-file backup.env restic/restic:0.19.1 init
+```
+
 ## Command post
 
-The same image runs a command post on a laptop or Raspberry Pi with its own Wi-Fi, replicating the VPS: see [`command-post/`](command-post/README.md).
+The same image runs a command post on a laptop or Raspberry Pi with its own Wi-Fi, replicating the VPS: see [`command-post/`](command-post/README.md). The posts' certificate is obtained by the VPS, which alone holds the DNS credentials of their domain ([ADR-0050](../docs/decisions/0050-post-certificates-from-the-server.md)):
+
+```sh
+curl -fsSLO https://raw.githubusercontent.com/guaschpau-design/Tesel/main/deploy/vps/install.sh
+sudo env IONOS_API_KEY=prefix.secret bash install.sh --domain tesel.eu \
+  --command-post https://puesto.tesel.eu --dns ionos --dns-var IONOS_API_KEY --email you@example.eu
+```
+
+`--dns` names the DNS provider in [lego's list](https://go-acme.github.io/lego/dns/) and `--dns-var` each environment variable that holds one of its credentials; for IONOS the key is created at <https://developer.hosting.ionos.es> → API keys and reads `prefix.secret`. The settings are kept on later runs. Then give each post a token, shown once, and install the post with it:
+
+```sh
+sudo /opt/tesel/post-certificate.sh grant post-1   # prints post-1:TOKEN
+sudo /opt/tesel/post-certificate.sh list           # posts holding a token
+sudo /opt/tesel/post-certificate.sh revoke post-1  # a lost post can no longer download the certificate
+```
+
+## Runbook
+
+### Going back to the previous version
+
+```sh
+sudo /opt/tesel/update.sh /opt/tesel rollback
+```
+
+It starts `TESEL_IMAGE_PREVIOUS` and rejects the running image, so the timer does not bring it back; the next image CI publishes is installed as usual. To stay on one version, set `TESEL_IMAGE_TAG` in `.env` to the commit's SHA (images are tagged with it) and run `sudo /opt/tesel/update.sh /opt/tesel`; remove the line to follow `latest` again. A command post does the same with `/opt/tesel-post`.
+
+### Restoring from a backup
+
+Restoring replaces the database with an older copy. The server's store identity changes with it, and apps notice and resynchronise with the server on their own.
+
+```sh
+cd /opt/tesel
+backup=backups/tesel-20261027T030000Z.db   # the copy to restore
+sudo systemctl stop tesel-update.timer
+sudo docker compose stop tesel
+# The server's user (uid 1000 in the image) owns the database.
+sudo install -m 0600 -o 1000 -g 1000 "$backup" /tmp/tesel-restore.db
+sudo docker compose run --rm --no-deps --volume /tmp/tesel-restore.db:/restore.db:ro \
+  --entrypoint sh tesel -c 'cp /restore.db "$TESEL_DB" && rm -f "$TESEL_DB-wal" "$TESEL_DB-shm"'
+sudo rm /tmp/tesel-restore.db
+sudo docker compose up --detach
+sudo systemctl start tesel-update.timer
+```
+
+Caddy's data rarely needs restoring: Caddy obtains a new certificate on its own. Restoring it avoids the certificate authority's rate limits when a server is rebuilt many times:
+
+```sh
+cd /opt/tesel
+sudo docker compose stop caddy
+sudo docker compose run --rm --no-deps --no-TTY --entrypoint sh caddy \
+  -c 'rm -rf /data/* && tar -xzf - -C /data' < backups/caddy-data-20261027T030000Z.tar.gz
+sudo docker compose up --detach
+```
+
+### Rebuilding a lost server
+
+Keep these somewhere other than the VPS: `/opt/tesel/.env` (settings), `dns.env` and `post-tokens` (with command posts), `backup.env` and the restic password (with off-host copies), and the latest backups (`tesel-*.db`, `caddy-data-*.tar.gz`), from `/opt/tesel/backups` or restic. The base map is rebuilt by the installer.
+
+1. Point the domain at the new VPS.
+2. Copy the kept files into `/opt/tesel` on the new VPS (create the folder as root).
+3. Run the installer as above; it keeps the settings it finds.
+4. Restore the database, and Caddy's data if wanted, as above.
+
+Command posts keep working with their tokens if `post-tokens` was kept; otherwise grant new tokens and install the posts again with them.
+
+### Updating the installers and the configuration
+
+Changes to the files of [`vps/`](vps) and [`common/`](common) reach a server when its installer runs again; `--domain` is the only option to repeat, the others are kept:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/guaschpau-design/Tesel/main/deploy/vps/install.sh \
+  | sudo bash -s -- --domain tesel.eu
+```
+
+A command post is updated the same way with its installer ([`command-post/`](command-post/README.md)); its token is kept.
+
+### Updating pinned versions
+
+Images and tools are pinned by version, and images also by digest; nothing updates them silently. To update one, change its version and digest (`docker buildx imagetools inspect IMAGE:VERSION` prints the digest) where it is pinned, and let CI and an installer run:
+
+| What           | Where                                                                                           |
+| -------------- | ----------------------------------------------------------------------------------------------- |
+| Node           | `apps/server/Dockerfile` (three stages) and `node-version` in `.github/workflows/ci.yml`        |
+| Caddy          | `vps/compose.yaml` and `command-post/compose.yaml`                                              |
+| go-pmtiles     | `vps/maps.sh`                                                                                   |
+| lego           | `vps/post-certificate.sh`                                                                       |
+| restic         | `vps/backup.sh`                                                                                 |
+| cosign         | `common/install-cosign.sh` (with the checksums of its release) and `cosign-release` in `ci.yml` |
+| GitHub Actions | `.github/workflows/ci.yml`, by commit; Dependabot proposes updates                              |

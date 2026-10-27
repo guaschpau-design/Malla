@@ -4,20 +4,20 @@
 import /etc/caddy/redirects.caddy
 
 {$TESEL_DOMAIN} {
-	header {
-		Strict-Transport-Security "max-age=31536000"
-		X-Content-Type-Options "nosniff"
-		Referrer-Policy "no-referrer"
-		-Server
-	}
+	import /etc/caddy/headers.caddy
 
-	# The base map: one PMTiles file read by HTTP range requests, from apps on any origin.
+	# The base map: one PMTiles file read by HTTP range requests, from apps on any origin, with
+	# the notice of its OpenStreetMap licence next to it (README.txt).
 	handle_path /maps/* {
 		root * /srv/maps
 		header Access-Control-Allow-Origin "*"
 		header Cache-Control "public, max-age=3600"
 		file_server
 	}
+
+	# The command posts' certificate, for posts holding a token (ADR-0050). Written by
+	# post-certificate.sh; empty while no post has a token.
+	import /etc/caddy/post-certificate.caddy
 
 	# The server keeps no access logs: who connects when is nobody's business.
 	handle {
