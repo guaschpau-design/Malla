@@ -28,7 +28,7 @@ describe('area download', () => {
       bounds,
       layers: [
         { source: 'basemap', archive: fakeArchive, maxZoom: 12 },
-        { source: 'ign-ortho', archive: fakeArchive, maxZoom: 10 },
+        { source: 'ortho', archive: fakeArchive, maxZoom: 10 },
       ],
       signal: new AbortController().signal,
       onProgress: (p) => progress.push(p.done),
@@ -43,7 +43,7 @@ describe('area download', () => {
       expect(stored === undefined).toBe(tile.z === 12 && tile.x % 2 === 1);
     }
     for (const tile of tilesInBounds(bounds, 0, 10)) {
-      expect(await store.getTile('ign-ortho', tile)).toBeDefined();
+      expect(await store.getTile('ortho', tile)).toBeDefined();
     }
     expect(await store.listAreas()).toEqual([area]);
   });

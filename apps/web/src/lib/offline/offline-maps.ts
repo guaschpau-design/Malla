@@ -8,7 +8,7 @@ import { BASEMAP_MAX_ZOOM } from '../map/style.ts';
 import { containsBounds, type Bounds } from '../map/tile-math.ts';
 import type { TileArchives } from '../map/tile-source.ts';
 import type { OfflineArea, TileStore } from '../map/tile-store.ts';
-import { RELIEF_MAX_ZOOM, TERRAIN_MAX_ZOOM, type TileSourceId } from '../map/tile-sources.ts';
+import { TERRAIN_MAX_ZOOM, type TileSourceId } from '../map/tile-sources.ts';
 
 /** Where downloaded maps are kept, and where their tiles come from. */
 export interface OfflineMaps {
@@ -21,10 +21,11 @@ export const EXTRAS = ['topo', 'aerial', 'relief'] as const;
 export type Extra = (typeof EXTRAS)[number];
 
 const EXTRA_SOURCES: Readonly<Record<Extra, readonly TileSourceId[]>> = {
-  topo: ['ign-contours'],
-  aerial: ['ign-ortho'],
-  // The shading, and the elevations the line of sight and the climbs are measured with.
-  relief: ['ign-relief', 'terrain'],
+  // The names of the terrain, and the elevation the contour lines are worked out from.
+  topo: ['ign-names', 'terrain'],
+  aerial: ['ortho'],
+  // For the shading, and for the line of sight and the climbs.
+  relief: ['terrain'],
 };
 
 export const EXTRA_NAMES: Readonly<Record<Extra, MessageKey>> = {
@@ -36,9 +37,8 @@ export const EXTRA_NAMES: Readonly<Record<Extra, MessageKey>> = {
 /** The name of what each source was downloaded for. */
 const SOURCE_NAMES: Readonly<Record<TileSourceId, MessageKey>> = {
   basemap: 'baseMapStreets',
-  'ign-contours': EXTRA_NAMES.topo,
-  'ign-ortho': EXTRA_NAMES.aerial,
-  'ign-relief': EXTRA_NAMES.relief,
+  'ign-names': EXTRA_NAMES.topo,
+  ortho: EXTRA_NAMES.aerial,
   terrain: EXTRA_NAMES.relief,
 };
 
@@ -50,10 +50,9 @@ export function areaContents(area: OfflineArea): MessageKey[] {
 /** Rough average size of a tile of each source, only used to estimate download size. */
 const AVERAGE_TILE_BYTES: Readonly<Record<TileSourceId, number>> = {
   basemap: 25 * 1024,
-  'ign-contours': 60 * 1024,
-  'ign-ortho': 18 * 1024,
-  'ign-relief': 200 * 1024,
-  terrain: 110 * 1024,
+  'ign-names': 60 * 1024,
+  ortho: 18 * 1024,
+  terrain: 120 * 1024,
 };
 
 /**
@@ -65,15 +64,13 @@ const ORTHO_EXTRA_ZOOM = 3;
 /** How deep each source is downloaded, for a street map to `maxZoom`. */
 function sourceMaxZoom(source: TileSourceId, maxZoom: number): number {
   switch (source) {
-    // IGN's contours go as deep as the street map (tile-sources.ts).
+    // IGN's names go as deep as the street map (tile-sources.ts).
     case 'basemap':
-    case 'ign-contours':
+    case 'ign-names':
       return maxZoom;
-    case 'ign-ortho':
+    case 'ortho':
       return maxZoom + ORTHO_EXTRA_ZOOM;
     // Elevation is coarse: deeper tiles hold no more of it.
-    case 'ign-relief':
-      return RELIEF_MAX_ZOOM;
     case 'terrain':
       return TERRAIN_MAX_ZOOM;
   }
@@ -85,8 +82,12 @@ export function downloadLayers(
   maxZoom: number,
   extras: readonly Extra[],
 ): DownloadLayer[] {
-  const sources: TileSourceId[] = ['basemap', ...extras.flatMap((extra) => EXTRA_SOURCES[extra])];
-  return sources.map((source) => ({
+  // The topographic map and the relief share the elevation: it is downloaded once.
+  const sources = new Set<TileSourceId>([
+    'basemap',
+    ...extras.flatMap((extra) => EXTRA_SOURCES[extra]),
+  ]);
+  return [...sources].map((source) => ({
     source,
     archive: archives[source],
     maxZoom: sourceMaxZoom(source, maxZoom),

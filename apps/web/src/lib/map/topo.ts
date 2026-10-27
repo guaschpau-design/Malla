@@ -1,17 +1,18 @@
-// The topographic map (ADR-0034): the street map in a palette that lets the land show, under the
-// contour lines of IGN's vector map with their heights, and its names of the terrain — mountains,
-// ravines, places, caves — and of springs. IGN's contours are 5 or 10 m apart, as its source in
-// each region has them: at zoom 13 the map shows those every 25 m, from zoom 14 every one, with a
-// thicker index line every 100 m, then every 50 m, carrying its height.
+// The topographic map (ADR-0034, ADR-0037): the street map in a palette that lets the land show,
+// under contour lines worked out from the elevation (contours.ts), each index line carrying its
+// height, and, in Spain, IGN's names of the terrain — mountains, ravines, places, caves — and of
+// springs.
 
 import { namedFlavor, type Flavor } from '@protomaps/basemaps';
 import type { ExpressionSpecification, LayerSpecification } from 'maplibre-gl';
 
 import { themeColor } from '../ui/theme.ts';
+import { CONTOUR_LAYER, HEIGHT_KEY, RANK_KEY } from './contours.ts';
 import type { MapTheme } from './style.ts';
 
-/** The style's name for IGN's vector map. */
-export const CONTOURS_SOURCE = 'ign-contours';
+/** The style's names for the contour lines and for IGN's vector map. */
+export const CONTOURS_SOURCE = 'contours';
+export const NAMES_SOURCE = 'ign-names';
 
 /**
  * Changes to the street map's palette: woods and scrub greener than parks, which are only lines on
@@ -53,17 +54,7 @@ export function topoFlavor(theme: MapTheme): Flavor {
   return { ...namedFlavor(theme), ...TOPO_PALETTE[theme] };
 }
 
-const height: ExpressionSpecification = ['to-number', ['get', 'altitud']];
-const every = (metres: number): ExpressionSpecification => ['==', ['%', height, metres], 0];
-
-const isIndex: ExpressionSpecification = ['step', ['zoom'], every(100), 14, every(50)];
-const isMinor: ExpressionSpecification = [
-  'step',
-  ['zoom'],
-  ['all', every(25), ['!', every(100)]],
-  14,
-  ['!', every(50)],
-];
+const isIndex: ExpressionSpecification = ['==', ['get', RANK_KEY], 1];
 
 /** The contour lines, drawn over the relief shading and under every name. */
 export function contourLayers(): LayerSpecification[] {
@@ -71,14 +62,13 @@ export function contourLayers(): LayerSpecification[] {
   const common = {
     type: 'line',
     source: CONTOURS_SOURCE,
-    'source-layer': 'altimetria_lin',
+    'source-layer': CONTOUR_LAYER,
   } as const;
   return [
     {
       ...common,
       id: 'contours',
-      minzoom: 13,
-      filter: isMinor,
+      filter: ['!', isIndex],
       paint: {
         'line-color': colour,
         'line-opacity': 0.4,
@@ -88,7 +78,6 @@ export function contourLayers(): LayerSpecification[] {
     {
       ...common,
       id: 'contours-index',
-      minzoom: 11,
       filter: isIndex,
       paint: {
         'line-color': colour,
@@ -112,12 +101,12 @@ export function terrainNameLayers(): LayerSpecification[] {
       id: 'contour-heights',
       type: 'symbol',
       source: CONTOURS_SOURCE,
-      'source-layer': 'altimetria_lin',
+      'source-layer': CONTOUR_LAYER,
       minzoom: 13,
       filter: isIndex,
       layout: {
         'symbol-placement': 'line',
-        'text-field': ['get', 'altitud'],
+        'text-field': ['to-string', ['get', HEIGHT_KEY]],
         'text-font': ['Noto Sans Regular'],
         'text-size': 10,
         'text-max-angle': 30,
@@ -128,7 +117,7 @@ export function terrainNameLayers(): LayerSpecification[] {
     {
       id: 'terrain-names',
       type: 'symbol',
-      source: CONTOURS_SOURCE,
+      source: NAMES_SOURCE,
       'source-layer': 'nombre_orografia_pto',
       minzoom: 12,
       layout: {
@@ -143,7 +132,7 @@ export function terrainNameLayers(): LayerSpecification[] {
     {
       id: 'spring-names',
       type: 'symbol',
-      source: CONTOURS_SOURCE,
+      source: NAMES_SOURCE,
       'source-layer': 'nombre_hidrografia_pto',
       minzoom: 14,
       filter: ['==', ['get', 'clase'], 'surgencia'],

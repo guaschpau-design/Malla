@@ -16,8 +16,8 @@ function ground(samples: readonly LatLon[], base: number, ridge = 0): number[] {
 describe('line of sight', () => {
   const samples = sightSamples(A.at, B.at);
 
-  it('samples the way about every 30 m', () => {
-    expect(samples.length).toBeGreaterThan(95);
+  it('samples the way about every 10 m', () => {
+    expect(samples.length).toBeGreaterThan(290);
     expect(samples[0]).toEqual(A.at);
     expect(samples.at(-1)).toEqual(B.at);
   });

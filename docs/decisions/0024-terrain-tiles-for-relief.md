@@ -1,6 +1,6 @@
 # 0024. Relief from the open Terrain Tiles, read by the browser
 
-- Status: Accepted, amended by [0034](0034-vector-topographic-map.md) (the shading)
+- Status: Superseded by [0037](0037-maps-across-borders.md) (Mapterhorn for all elevation)
 - Date: 2026-10-26
 
 ## Context

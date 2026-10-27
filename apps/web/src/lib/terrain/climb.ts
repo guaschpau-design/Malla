@@ -1,11 +1,11 @@
 // How much a straight way climbs and descends, and its steepest stretch, from elevations sampled
-// along it. The elevation data is about 30 m apart, so the way is sampled about that often and
-// slopes are taken over a few samples, not between neighbours, to keep noise out.
+// along it, every 30 m: often enough for a way on foot, and slopes are taken over a few samples,
+// not between neighbours, to keep noise out.
 
 import { distanceMeters } from '@tesel/core';
 import type { LatLon } from '@tesel/protocol';
 
-/** About the spacing of the elevation data. */
+/** How far apart the way is sampled. */
 export const SAMPLE_SPACING_M = 30;
 /** Long ways are sampled less densely, to keep the work bounded. */
 export const MAX_SAMPLES = 200;

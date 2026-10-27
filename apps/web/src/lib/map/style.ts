@@ -1,6 +1,6 @@
 // MapLibre styles for each base map, light or dark: the Protomaps OpenStreetMap map as a street
-// map (streets.ts) or as a topographic map, with IGN's contour lines and names of the terrain
-// (topo.ts); or the IGN orthophotos with our labels over them. All served through our tile protocol
+// map (streets.ts) or as a topographic map, with contour lines and names of the terrain (topo.ts);
+// or the national orthophotos (ortho.ts) with our labels over them. All served through our tile protocol
 // (tile-source.ts), so downloaded areas work offline whichever is shown.
 
 import { layers, namedFlavor, type Flavor } from '@protomaps/basemaps';
@@ -12,18 +12,24 @@ import type {
 } from 'maplibre-gl';
 
 import { themeColor } from '../ui/theme.ts';
+import { CONTOURS_MAX_ZOOM, CONTOURS_MIN_ZOOM, contourTileUrl } from './contours.ts';
+import { ORTHO_ATTRIBUTION, ORTHO_MAX_ZOOM } from './ortho.ts';
 import { streetFlavor } from './streets.ts';
 import { tileUrlTemplate } from './tile-source.ts';
 import {
-  CONTOURS_ATTRIBUTION,
-  CONTOURS_MAX_ZOOM,
-  ORTHO_ATTRIBUTION,
-  ORTHO_MAX_ZOOM,
-  RELIEF_ATTRIBUTION,
-  RELIEF_MAX_ZOOM,
-  RELIEF_TILE_SIZE,
+  NAMES_ATTRIBUTION,
+  NAMES_MAX_ZOOM,
+  TERRAIN_ATTRIBUTION,
+  TERRAIN_MAX_ZOOM,
+  TERRAIN_TILE_SIZE,
 } from './tile-sources.ts';
-import { CONTOURS_SOURCE, contourLayers, terrainNameLayers, topoFlavor } from './topo.ts';
+import {
+  CONTOURS_SOURCE,
+  contourLayers,
+  NAMES_SOURCE,
+  terrainNameLayers,
+  topoFlavor,
+} from './topo.ts';
 
 export type MapTheme = 'light' | 'dark';
 
@@ -44,8 +50,8 @@ const OSM_ATTRIBUTION =
   '<a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap</a> · ' +
   '<a href="https://protomaps.com" target="_blank">Protomaps</a>';
 
-const ORTHO_SOURCE = 'ign-ortho';
-const RELIEF_SOURCE = 'ign-relief';
+const ORTHO_SOURCE = 'ortho';
+const RELIEF_SOURCE = 'terrain';
 
 export interface StyleChoice {
   readonly base: BaseMap;
@@ -96,13 +102,24 @@ function baseMapLayers({ base, theme, lang }: StyleChoice): BaseMapLayers {
   if (base === 'topo') {
     const contours: SourceSpecification = {
       type: 'vector',
-      tiles: [tileUrlTemplate('ign-contours')],
+      tiles: [contourTileUrl()],
+      minzoom: CONTOURS_MIN_ZOOM,
       maxzoom: CONTOURS_MAX_ZOOM,
-      attribution: CONTOURS_ATTRIBUTION,
+      attribution: TERRAIN_ATTRIBUTION,
+    };
+    const terrainNames: SourceSpecification = {
+      type: 'vector',
+      tiles: [tileUrlTemplate('ign-names')],
+      maxzoom: NAMES_MAX_ZOOM,
+      attribution: NAMES_ATTRIBUTION,
     };
     const { ground, names } = protomapsLayers(topoFlavor(theme), lang);
     return {
-      sources: { [BASEMAP_SOURCE]: basemap, [CONTOURS_SOURCE]: contours },
+      sources: {
+        [BASEMAP_SOURCE]: basemap,
+        [CONTOURS_SOURCE]: contours,
+        [NAMES_SOURCE]: terrainNames,
+      },
       ground,
       lines: contourLayers(),
       names: [...terrainNameLayers(), ...names],
@@ -110,7 +127,7 @@ function baseMapLayers({ base, theme, lang }: StyleChoice): BaseMapLayers {
   }
   const ortho: SourceSpecification = {
     type: 'raster',
-    tiles: [tileUrlTemplate('ign-ortho')],
+    tiles: [tileUrlTemplate('ortho')],
     tileSize: 256,
     maxzoom: ORTHO_MAX_ZOOM,
     attribution: ORTHO_ATTRIBUTION,
@@ -131,7 +148,7 @@ function protomapsLayers(flavor: Flavor, lang: string): Omit<BaseMapLayers, 'sou
   return { ground: all.slice(0, at), lines: [], names: all.slice(at) };
 }
 
-/** Shading of the terrain from IGN's terrain model (tile-sources.ts). */
+/** Shading of the terrain from the elevation tiles (tile-sources.ts). */
 function reliefShading(theme: MapTheme): {
   source: SourceSpecification;
   layer: HillshadeLayerSpecification;
@@ -139,11 +156,11 @@ function reliefShading(theme: MapTheme): {
   return {
     source: {
       type: 'raster-dem',
-      tiles: [tileUrlTemplate('ign-relief')],
-      encoding: 'mapbox',
-      tileSize: RELIEF_TILE_SIZE,
-      maxzoom: RELIEF_MAX_ZOOM,
-      attribution: RELIEF_ATTRIBUTION,
+      tiles: [tileUrlTemplate('terrain')],
+      encoding: 'terrarium',
+      tileSize: TERRAIN_TILE_SIZE,
+      maxzoom: TERRAIN_MAX_ZOOM,
+      attribution: TERRAIN_ATTRIBUTION,
     },
     layer: {
       id: 'relief',

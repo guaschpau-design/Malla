@@ -3,7 +3,7 @@
 // usual 4/3 radius for radio waves bent by the air), and the room a signal needs around that line
 // to arrive whole: 60 % of the first Fresnel zone at 869 MHz.
 //
-// The elevation data (about 30 m apart, a few metres off in height) sees hills and slopes, not
+// The elevation data (about 10 m apart, a few metres off in height) sees hills and slopes, not
 // buildings or trees. So the answer is sure only one way: terrain that rises above the line by
 // more than the data's error does cut it. A line clear of the terrain may still be cut by what the
 // data does not see, and the answer says so.
@@ -11,10 +11,10 @@
 import { distanceMeters, EARTH_RADIUS_M } from '@tesel/core';
 import type { LatLon } from '@tesel/protocol';
 
-/** About the spacing of the elevation data, in metres. */
-const SAMPLE_SPACING_M = 30;
+/** About the spacing of the elevation data, in metres (tile-sources.ts). */
+const SAMPLE_SPACING_M = 10;
 /** Enough samples for 30 km at the data's spacing; longer lines are sampled less finely. */
-const MAX_SAMPLES = 1000;
+const MAX_SAMPLES = 3000;
 /** How far off the elevation data may be, in metres; within it, nothing is sure. */
 export const ELEVATION_ERROR_M = 10;
 /** The EU band LoRa uses (MeshCore's EU preset), and its wavelength. */

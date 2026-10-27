@@ -3,27 +3,25 @@ import { describe, expect, it } from 'vitest';
 import type { TileArchive } from '../map/area-download.ts';
 import type { TileArchives } from '../map/tile-source.ts';
 import type { OfflineArea } from '../map/tile-store.ts';
-import { RELIEF_MAX_ZOOM, TERRAIN_MAX_ZOOM } from '../map/tile-sources.ts';
+import { TERRAIN_MAX_ZOOM } from '../map/tile-sources.ts';
 import { areaContents, downloadLayers } from './offline-maps.ts';
 
 const archive: TileArchive = { getTile: () => Promise.resolve(undefined) };
 const archives: TileArchives = {
   basemap: archive,
-  'ign-contours': archive,
-  'ign-ortho': archive,
-  'ign-relief': archive,
+  'ign-names': archive,
+  ortho: archive,
   terrain: archive,
 };
 
 describe('offline maps', () => {
-  it('downloads each extra from its sources, each to the zoom it needs', () => {
+  it('downloads each extra from its sources, each once and to the zoom it needs', () => {
     const layers = downloadLayers(archives, 14, ['topo', 'aerial', 'relief']);
     expect(layers.map(({ source, maxZoom }) => [source, maxZoom])).toEqual([
       ['basemap', 14],
-      ['ign-contours', 14],
-      ['ign-ortho', 17],
-      ['ign-relief', RELIEF_MAX_ZOOM],
+      ['ign-names', 14],
       ['terrain', TERRAIN_MAX_ZOOM],
+      ['ortho', 17],
     ]);
   });
 

@@ -1,6 +1,6 @@
 # 0034. Draw the topographic map from vector data, and shade the relief from IGN's terrain model
 
-- Status: Accepted
+- Status: Accepted, amended by [0037](0037-maps-across-borders.md) (contours and shading from Mapterhorn)
 - Date: 2026-10-27
 
 ## Context

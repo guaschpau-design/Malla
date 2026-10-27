@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
-import { cadastreImage } from './cadastre.ts';
+import { CADASTRES, cadastreImage, cadastresIn } from './cadastre.ts';
 
 const VALENCIA = { west: -0.38, south: 39.46, east: -0.37, north: 39.47 };
+/** Across the Bidasoa, Irun and Hendaye. */
+const BIDASOA = { west: -1.8, south: 43.33, east: -1.76, north: 43.37 };
+const [SPAIN, FRANCE] = CADASTRES;
 
 describe('cadastre', () => {
+  it('asks each country in view, and no other', () => {
+    expect(cadastresIn(VALENCIA).map((service) => service.id)).toEqual(['spain']);
+    expect(cadastresIn(BIDASOA).map((service) => service.id)).toEqual(['spain', 'france']);
+  });
+
   it('asks for one picture of the view in Web Mercator, and puts it at the view’s corners', () => {
-    const image = cadastreImage(VALENCIA, 800, 600);
+    if (SPAIN === undefined) throw new Error('no Spanish cadastre');
+    const image = cadastreImage(SPAIN, VALENCIA, 800, 600);
     const query = new URL(image.url).searchParams;
     expect(query.get('SRS')).toBe('EPSG:3857');
     expect(query.get('LAYERS')).toBe('Catastro');
@@ -23,8 +32,16 @@ describe('cadastre', () => {
     ]);
   });
 
-  it('keeps the picture within the largest the service draws, in proportion', () => {
-    const query = new URL(cadastreImage(VALENCIA, 4096, 1024).url).searchParams;
+  it('names the projection as each WMS version does', () => {
+    if (FRANCE === undefined) throw new Error('no French cadastre');
+    const query = new URL(cadastreImage(FRANCE, BIDASOA, 800, 600).url).searchParams;
+    expect(query.get('CRS')).toBe('EPSG:3857');
+    expect(query.get('SRS')).toBeNull();
+  });
+
+  it('keeps the picture within the largest the services draw, in proportion', () => {
+    if (SPAIN === undefined) throw new Error('no Spanish cadastre');
+    const query = new URL(cadastreImage(SPAIN, VALENCIA, 4096, 1024).url).searchParams;
     expect([query.get('WIDTH'), query.get('HEIGHT')]).toEqual(['2048', '512']);
   });
 });

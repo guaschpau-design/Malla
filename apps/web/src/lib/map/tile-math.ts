@@ -68,6 +68,27 @@ export function* tilesInBounds(
   }
 }
 
+/** Where a point falls in a tile's square, from 0 to 1 across and down; outside it beyond. */
+export function positionInTile(
+  [lon, lat]: readonly [number, number],
+  tile: TileCoord,
+): [number, number] {
+  const n = 2 ** tile.z;
+  const rad = (lat * Math.PI) / 180;
+  const x = ((lon + 180) / 360) * n;
+  const y = ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * n;
+  return [x - tile.x, y - tile.y];
+}
+
+/** The longitudes and latitudes a tile covers. */
+export function tileBounds({ z, x, y }: TileCoord): Bounds {
+  const n = 2 ** z;
+  const lon = (column: number) => (column / n) * 360 - 180;
+  const lat = (row: number) =>
+    (Math.atan(Math.sinh(Math.PI * (1 - (2 * row) / n))) * 180) / Math.PI;
+  return { west: lon(x), south: lat(y + 1), east: lon(x + 1), north: lat(y) };
+}
+
 export function tileKey(tile: TileCoord): string {
   return `${tile.z}/${tile.x}/${tile.y}`;
 }

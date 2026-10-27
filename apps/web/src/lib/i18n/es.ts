@@ -163,7 +163,7 @@ export const es: Messages = {
   baseMapAerial: 'Satélite',
   downloadAlso: 'Descargar también',
   downloadAlsoHint:
-    'Topográfico, satélite y sombreado del relieve: solo España. El satélite ocupa varias veces lo que el callejero.',
+    'Topográfico, satélite y relieve: España, Portugal y el sur de Francia. El satélite ocupa varias veces lo que el callejero.',
   keepScreenOn: 'Pantalla siempre encendida',
   diary: 'Diario de la operación',
   diaryIntro:

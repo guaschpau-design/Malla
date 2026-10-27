@@ -19,6 +19,7 @@
   import { linkOf, networkStatus, radioLinkOf } from './lib/links/links.ts';
   import MapView from './lib/map/MapView.svelte';
   import type { MapTheme } from './lib/map/style.ts';
+  import { registerContourProtocol } from './lib/map/contours.ts';
   import { findTile, registerTileProtocol, tileArchives } from './lib/map/tile-source.ts';
   import { openTileStore } from './lib/map/tile-store.ts';
   import type { OfflineMaps } from './lib/offline/offline-maps.ts';
@@ -97,6 +98,7 @@
 
     void openTileStore().then((opened) => {
       registerTileProtocol(opened, archives);
+      registerContourProtocol(opened, archives);
       elevations = new ElevationReader((tile) => findTile('terrain', tile, opened, archives));
       offline = { store: opened, archives };
     });

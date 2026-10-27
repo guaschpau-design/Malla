@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { climbOf, samplesAlong } from './climb.ts';
+import { TERRAIN_MAX_ZOOM } from '../map/tile-sources.ts';
 import { ElevationReader, terrariumMetres, tileAt, type Pixels } from './elevation.ts';
 
 const A = { lat: 39.47, lon: -0.37 };
@@ -39,7 +40,7 @@ describe('elevation tiles', () => {
     );
     const near = { lat: 39.47, lon: -0.37 };
     const [first] = await reader.elevations([near, near]);
-    const { tile } = tileAt(near, 12);
+    const { tile } = tileAt(near, TERRAIN_MAX_ZOOM);
     expect(first).toBe(tile.y % 2 === 0 ? 250.5 : null);
     expect(loads).toBe(1);
   });

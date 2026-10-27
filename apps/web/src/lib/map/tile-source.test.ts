@@ -16,9 +16,8 @@ const store = {
 
 const everywhere = (archive: TileArchive): TileArchives => ({
   basemap: archive,
-  'ign-contours': archive,
-  'ign-ortho': archive,
-  'ign-relief': archive,
+  'ign-names': archive,
+  ortho: archive,
   terrain: archive,
 });
 const online = everywhere({ getTile: () => Promise.resolve(remote) });
@@ -32,24 +31,24 @@ describe('tile loading', () => {
 
   it('falls back to the network for tiles not downloaded, of the source asked for', async () => {
     expect(await loadTile('tesel-tiles://basemap/5/1/3', store, online, signal)).toBe(remote);
-    expect(await loadTile('tesel-tiles://ign-ortho/5/1/2', store, online, signal)).toBe(remote);
+    expect(await loadTile('tesel-tiles://ortho/5/1/2', store, online, signal)).toBe(remote);
   });
 
   it('returns an empty tile when offline instead of failing, an image for raster sources', async () => {
     const isPng = (tile: ArrayBuffer) =>
       new Uint8Array(tile).slice(1, 4).every((byte, i) => byte === [0x50, 0x4e, 0x47][i]);
-    for (const source of ['basemap', 'ign-contours']) {
+    for (const source of ['basemap', 'ign-names']) {
       const vector = await loadTile(`tesel-tiles://${source}/5/1/3`, store, offline, signal);
       expect(vector.byteLength).toBe(0);
     }
     const tiles = await Promise.all(
-      ['ign-ortho', 'ign-relief', 'terrain'].map((source) =>
+      ['ortho', 'terrain'].map((source) =>
         loadTile(`tesel-tiles://${source}/5/1/3`, store, offline, signal),
       ),
     );
     expect(tiles.every(isPng)).toBe(true);
-    // A photograph and each elevation encoding have their own.
-    expect(new Set(tiles).size).toBe(3);
+    // A photograph and elevation have their own.
+    expect(new Set(tiles).size).toBe(2);
   });
 
   it('rejects URLs that are not ours', async () => {

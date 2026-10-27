@@ -4,6 +4,8 @@ import { EARTH_RADIUS_M } from '@tesel/core';
 import type { LatLon } from '@tesel/protocol';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 
+import type { Bounds } from './tile-math.ts';
+
 /** A circle as a closed ring of [lon, lat] positions, for drawing. */
 export function circleRing(center: LatLon, radius: number, steps = 48): [number, number][] {
   const rad = Math.PI / 180;
@@ -63,4 +65,75 @@ export function insideRing(
     if (yi > lat !== yj > lat && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) inside = !inside;
   }
   return inside;
+}
+
+/** How much of a box a ring covers. */
+export type Coverage = 'none' | 'part' | 'all';
+
+/**
+ * How much of `bounds` lies inside a ring of [lon, lat] positions: all of it when every corner is
+ * inside and the ring's edge does not enter the box, none when no corner is inside and the edge does
+ * not enter it either, part otherwise.
+ */
+export function ringCoverage(
+  ring: readonly (readonly [number, number])[],
+  bounds: Bounds,
+): Coverage {
+  const { west, south, east, north } = bounds;
+  const corners = [
+    { lon: west, lat: south },
+    { lon: east, lat: south },
+    { lon: east, lat: north },
+    { lon: west, lat: north },
+  ];
+  const inside = corners.filter((corner) => insideRing(ring, corner)).length;
+  if (inside > 0 && inside < corners.length) return 'part';
+  const entersBox = ring.some(([lon, lat], i) => {
+    if (lon > west && lon < east && lat > south && lat < north) return true;
+    const next = ring[i + 1];
+    return next !== undefined && segmentCrossesBox([lon, lat], next, bounds);
+  });
+  if (entersBox) return 'part';
+  return inside === 0 ? 'none' : 'all';
+}
+
+/** Whether a segment crosses one of the box's sides. */
+function segmentCrossesBox(
+  a: readonly [number, number],
+  b: readonly [number, number],
+  { west, south, east, north }: Bounds,
+): boolean {
+  const sides: [[number, number], [number, number]][] = [
+    [
+      [west, south],
+      [east, south],
+    ],
+    [
+      [east, south],
+      [east, north],
+    ],
+    [
+      [east, north],
+      [west, north],
+    ],
+    [
+      [west, north],
+      [west, south],
+    ],
+  ];
+  return sides.some(([c, d]) => segmentsCross(a, b, c, d));
+}
+
+function segmentsCross(
+  [ax, ay]: readonly [number, number],
+  [bx, by]: readonly [number, number],
+  [cx, cy]: readonly [number, number],
+  [dx, dy]: readonly [number, number],
+): boolean {
+  const side = (px: number, py: number, qx: number, qy: number, rx: number, ry: number) =>
+    Math.sign((qx - px) * (ry - py) - (qy - py) * (rx - px));
+  return (
+    side(ax, ay, bx, by, cx, cy) * side(ax, ay, bx, by, dx, dy) < 0 &&
+    side(cx, cy, dx, dy, ax, ay) * side(cx, cy, dx, dy, bx, by) < 0
+  );
 }

@@ -11,7 +11,7 @@ test('a radio link over flat ground is marginal in hand and clear on masts', asy
   browser,
 }) => {
   const page = await device(browser, 'Ana', '/#map=14/39.4699/-0.3763');
-  await page.route('**/elevation-tiles-prod/terrarium/**', (route) =>
+  await page.route('https://tiles.mapterhorn.com/**', (route) =>
     route.fulfill({ body: FLAT, contentType: 'image/png' }),
   );
   const canvas = page.locator('.maplibregl-canvas');

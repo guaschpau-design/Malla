@@ -40,7 +40,7 @@ describe('offline tile store', () => {
     expect(new Uint8Array(read ?? new ArrayBuffer(0))).toEqual(new Uint8Array(first.data));
     expect(await store.getTile('basemap', { z: 0, x: 0, y: 0 })).toBeUndefined();
     // The same coordinates of another source are another tile.
-    expect(await store.getTile('ign-ortho', first.tile)).toBeUndefined();
+    expect(await store.getTile('ortho', first.tile)).toBeUndefined();
   });
 
   it('keeps tiles shared with another area when one area is deleted', async () => {
@@ -118,5 +118,40 @@ describe('offline tile store', () => {
     raw.close();
     const [upgraded] = await store.listAreas();
     expect(upgraded?.layers).toEqual([{ source: 'basemap', maxZoom: 12 }]);
+  });
+
+  it('renames the sources of the third version, and drops the elevation of other encodings', async () => {
+    const name = `upgrade-${String(dbCounter++)}`;
+    const old = await openDB(name, 3, {
+      upgrade(database) {
+        database.createObjectStore('tiles');
+        database.createObjectStore('areas', { keyPath: 'id' });
+      },
+    });
+    const tile = { data: new Uint8Array([7]).buffer, areas: ['v'] };
+    for (const source of ['basemap', 'ign-contours', 'ign-ortho', 'ign-relief', 'terrain']) {
+      await old.put('tiles', tile, `${source}/3/4/5`);
+    }
+    await old.put('areas', {
+      ...area('v', { west: 2.1, south: 41.35, east: 2.2, north: 41.42 }),
+      layers: ['basemap', 'ign-contours', 'ign-ortho', 'ign-relief', 'terrain'].map((source) => ({
+        source,
+        maxZoom: 12,
+      })),
+    });
+    old.close();
+
+    const store = await openTileStore(name);
+    const at = { z: 3, x: 4, y: 5 };
+    for (const source of ['basemap', 'ign-names', 'ortho'] as const) {
+      expect(await store.getTile(source, at)).toBeDefined();
+    }
+    expect(await store.getTile('terrain', at)).toBeUndefined();
+    const [upgraded] = await store.listAreas();
+    expect(upgraded?.layers.map((layer) => layer.source)).toEqual([
+      'basemap',
+      'ign-names',
+      'ortho',
+    ]);
   });
 });

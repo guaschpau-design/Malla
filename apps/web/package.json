@@ -21,6 +21,7 @@
     "@tesel/scenario": "workspace:*",
     "idb": "^8.0.4",
     "jsqr": "1.4.0",
+    "maplibre-contour": "0.1.1",
     "maplibre-gl": "^6.15.0",
     "pmtiles": "^4.5.0",
     "uqr": "0.1.3"

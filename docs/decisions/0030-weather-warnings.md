@@ -1,6 +1,6 @@
 # 0030. Official weather warnings, gathered by the server from MeteoAlarm
 
-- Status: Accepted
+- Status: Accepted, amended by [0038](0038-official-warnings-look.md) (how warnings look)
 - Date: 2026-10-26
 
 ## Context

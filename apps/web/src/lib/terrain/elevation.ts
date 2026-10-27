@@ -41,7 +41,10 @@ export class ElevationReader {
   /** Decoded tiles, least recently used first; null for tiles that could not be had. */
   readonly #cache = new Map<string, Promise<Pixels | null>>();
 
-  constructor(tiles: ElevationTiles, decode: (bytes: ArrayBuffer) => Promise<Pixels> = decodePng) {
+  constructor(
+    tiles: ElevationTiles,
+    decode: (bytes: ArrayBuffer) => Promise<Pixels> = decodeImage,
+  ) {
     this.#tiles = tiles;
     this.#decode = decode;
   }
@@ -88,8 +91,9 @@ export class ElevationReader {
   }
 }
 
-async function decodePng(bytes: ArrayBuffer): Promise<Pixels> {
-  const bitmap = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+/** The pixels of an image file, whatever its format (the tiles are WebP, the fallback PNG). */
+async function decodeImage(bytes: ArrayBuffer): Promise<Pixels> {
+  const bitmap = await createImageBitmap(new Blob([bytes]));
   const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
   const context = canvas.getContext('2d');
   if (context === null) throw new Error('no 2D canvas');

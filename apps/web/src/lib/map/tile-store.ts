@@ -55,7 +55,7 @@ interface MapDb extends DBSchema {
 }
 
 const DB_NAME = 'tesel-map';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 /** Where a tile is kept: its source, then z/x/y. */
 function storageKey(source: TileSourceId, tile: TileCoord): string {
@@ -71,7 +71,7 @@ export async function openTileStore(name: string = DB_NAME): Promise<TileStore> 
       }
       // The upgrade transaction stays open while its requests run; openDB resolves after.
       if (oldVersion === 1) void keyBySource(transaction);
-      if (oldVersion === 2) void dropScannedTopo(transaction);
+      if (oldVersion === 2 || oldVersion === 3) void renameSources(transaction);
     },
   });
   return new IndexedDbTileStore(db);
@@ -100,26 +100,45 @@ async function keyBySource(
   }
 }
 
-/** The topographic map of version 2, scanned sheets, which version 3 draws from vector contours. */
-const SCANNED_TOPO = 'ign-topo';
-
 /**
- * Version 2 downloaded the scanned topographic map. Its tiles cannot be drawn as the topographic map
- * of version 3 (ADR-0034), so they go, and areas no longer list them.
+ * What became of the sources of versions 2 and 3: a new name, or nothing where their tiles cannot be
+ * drawn as the source of that name is now.
  */
-async function dropScannedTopo(
+const FORMER_SOURCES: Readonly<Record<string, TileSourceId | null>> = {
+  // Scanned topographic sheets; the topographic map is drawn from vector data (ADR-0034).
+  'ign-topo': null,
+  // IGN's vector map, read now only for the names of the terrain (ADR-0037).
+  'ign-contours': 'ign-names',
+  // Spain's orthophotos, now joined with Portugal's and France's (ADR-0037).
+  'ign-ortho': 'ortho',
+  // Elevation in other encodings and sizes than Mapterhorn's (ADR-0037).
+  'ign-relief': null,
+  terrain: null,
+};
+
+/** Moves the tiles of former sources to their new names, drops the rest, and updates the areas. */
+async function renameSources(
   transaction: IDBPTransaction<MapDb, StoreNames<MapDb>[], 'versionchange'>,
 ): Promise<void> {
   const tiles = transaction.objectStore('tiles');
-  const scanned = IDBKeyRange.bound(`${SCANNED_TOPO}/`, `${SCANNED_TOPO}/\uffff`);
-  for (let cursor = await tiles.openCursor(scanned); cursor; cursor = await cursor.continue()) {
-    await cursor.delete();
+  for (const [former, current] of Object.entries(FORMER_SOURCES)) {
+    const range = IDBKeyRange.bound(`${former}/`, `${former}/\uffff`);
+    for (let cursor = await tiles.openCursor(range); cursor; cursor = await cursor.continue()) {
+      if (current !== null) {
+        await tiles.put(cursor.value, `${current}${cursor.key.slice(former.length)}`);
+      }
+      await cursor.delete();
+    }
   }
   const areas = transaction.objectStore('areas');
   for (let cursor = await areas.openCursor(); cursor; cursor = await cursor.continue()) {
     const area = cursor.value;
-    const layers = area.layers.filter((layer) => (layer.source as string) !== SCANNED_TOPO);
-    if (layers.length < area.layers.length) await cursor.update({ ...area, layers });
+    const layers = area.layers.flatMap((layer) => {
+      const current = FORMER_SOURCES[layer.source];
+      if (current === undefined) return [layer];
+      return current === null ? [] : [{ ...layer, source: current }];
+    });
+    await cursor.update({ ...area, layers });
   }
 }
 

@@ -1,6 +1,6 @@
 # 0036. The cadastre's parcels as one picture of the view, online only
 
-- Status: Accepted
+- Status: Accepted, amended by [0037](0037-maps-across-borders.md) (France's cadastre too)
 - Date: 2026-10-27
 
 ## Context
