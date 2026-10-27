@@ -1,6 +1,6 @@
 # 0023. Topographic and aerial base maps from Spain's IGN, read by the browser
 
-- Status: Accepted
+- Status: Accepted, amended by [0034](0034-vector-topographic-map.md) (the topographic map)
 - Date: 2026-10-26
 
 ## Context

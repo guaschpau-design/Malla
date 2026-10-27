@@ -9,6 +9,7 @@
   import { formatDistance } from '../format.ts';
   import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
   import type { DeviceLocation } from '../position/device-location.svelte.ts';
+  import { TERRAIN_CREDIT } from '../map/tile-sources.ts';
   import MapCard from '../ui/MapCard.svelte';
   import { lineOfSight, sightSamples, type Sight, type Verdict } from './line-of-sight.ts';
   import SightLayer from './SightLayer.svelte';
@@ -119,6 +120,7 @@
             ? t('sightMarginalTouch')
             : t('sightMarginalRoom', { metres: metres(sight.worst.clearance) })}
     </p>
+    <p class="credit">{TERRAIN_CREDIT}</p>
   {/if}
   <div class="heights">
     {@render heightChoice(t('sightHere'), fromHeight, (height) => (fromHeight = height))}
@@ -137,6 +139,12 @@
   .detail {
     color: var(--muted);
     font-size: var(--text-secondary);
+  }
+
+  .credit {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--text-small);
   }
 
   .heights {

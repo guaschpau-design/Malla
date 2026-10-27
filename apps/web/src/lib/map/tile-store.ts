@@ -55,7 +55,7 @@ interface MapDb extends DBSchema {
 }
 
 const DB_NAME = 'tesel-map';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 /** Where a tile is kept: its source, then z/x/y. */
 function storageKey(source: TileSourceId, tile: TileCoord): string {
@@ -71,6 +71,7 @@ export async function openTileStore(name: string = DB_NAME): Promise<TileStore> 
       }
       // The upgrade transaction stays open while its requests run; openDB resolves after.
       if (oldVersion === 1) void keyBySource(transaction);
+      if (oldVersion === 2) void dropScannedTopo(transaction);
     },
   });
   return new IndexedDbTileStore(db);
@@ -96,6 +97,29 @@ async function keyBySource(
     if (old.maxZoom === undefined) continue;
     const { maxZoom, ...rest } = old;
     await cursor.update({ ...rest, layers: [{ source: 'basemap', maxZoom }] });
+  }
+}
+
+/** The topographic map of version 2, scanned sheets, which version 3 draws from vector contours. */
+const SCANNED_TOPO = 'ign-topo';
+
+/**
+ * Version 2 downloaded the scanned topographic map. Its tiles cannot be drawn as the topographic map
+ * of version 3 (ADR-0034), so they go, and areas no longer list them.
+ */
+async function dropScannedTopo(
+  transaction: IDBPTransaction<MapDb, StoreNames<MapDb>[], 'versionchange'>,
+): Promise<void> {
+  const tiles = transaction.objectStore('tiles');
+  const scanned = IDBKeyRange.bound(`${SCANNED_TOPO}/`, `${SCANNED_TOPO}/\uffff`);
+  for (let cursor = await tiles.openCursor(scanned); cursor; cursor = await cursor.continue()) {
+    await cursor.delete();
+  }
+  const areas = transaction.objectStore('areas');
+  for (let cursor = await areas.openCursor(); cursor; cursor = await cursor.continue()) {
+    const area = cursor.value;
+    const layers = area.layers.filter((layer) => (layer.source as string) !== SCANNED_TOPO);
+    if (layers.length < area.layers.length) await cursor.update({ ...area, layers });
   }
 }
 

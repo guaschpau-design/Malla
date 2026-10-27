@@ -5,11 +5,18 @@ import { addProtocol } from 'maplibre-gl';
 import { PMTiles } from 'pmtiles';
 
 import type { TileArchive } from './area-download.ts';
-import { EMPTY_RASTER_TILE, EMPTY_VECTOR_TILE, FLAT_TERRAIN_TILE } from './empty-tiles.ts';
+import {
+  EMPTY_RASTER_TILE,
+  EMPTY_VECTOR_TILE,
+  FLAT_RELIEF_TILE,
+  FLAT_TERRAIN_TILE,
+} from './empty-tiles.ts';
 import type { TileCoord } from './tile-math.ts';
 import type { TileStore } from './tile-store.ts';
 import {
-  ignTileUrl,
+  contoursTileUrl,
+  orthoTileUrl,
+  reliefTileUrl,
   terrainTileUrl,
   TILE_SOURCES,
   webArchive,
@@ -37,8 +44,9 @@ function pmtilesArchive(url: string): TileArchive {
 /** What each source shows where it has no tile (empty-tiles.ts). */
 const NOTHING: Readonly<Record<TileSourceId, ArrayBuffer>> = {
   basemap: EMPTY_VECTOR_TILE,
-  'ign-topo': EMPTY_RASTER_TILE,
+  'ign-contours': EMPTY_VECTOR_TILE,
   'ign-ortho': EMPTY_RASTER_TILE,
+  'ign-relief': FLAT_RELIEF_TILE,
   terrain: FLAT_TERRAIN_TILE,
 };
 
@@ -48,8 +56,9 @@ export type TileArchives = Readonly<Record<TileSourceId, TileArchive>>;
 export function tileArchives(basemapUrl: string): TileArchives {
   return {
     basemap: pmtilesArchive(basemapUrl),
-    'ign-topo': webArchive((z, x, y) => ignTileUrl('ign-topo', z, x, y)),
-    'ign-ortho': webArchive((z, x, y) => ignTileUrl('ign-ortho', z, x, y)),
+    'ign-contours': webArchive(contoursTileUrl),
+    'ign-ortho': webArchive(orthoTileUrl),
+    'ign-relief': webArchive(reliefTileUrl),
     terrain: webArchive(terrainTileUrl),
   };
 }

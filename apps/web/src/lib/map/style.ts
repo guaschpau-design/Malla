@@ -1,26 +1,28 @@
-// MapLibre styles for each base map: the Protomaps OpenStreetMap map in the app's theme, the IGN
-// topographic map, or the IGN orthophotos with our labels over them. All served through our tile
-// protocol (tile-source.ts), so downloaded areas work offline whichever is shown.
+// MapLibre styles for each base map: the Protomaps OpenStreetMap map in the app's theme; the same
+// map as a topographic map, with IGN's contour lines and names of the terrain (topo.ts); or the
+// IGN orthophotos with our labels over them. All served through our tile protocol
+// (tile-source.ts), so downloaded areas work offline whichever is shown.
 
-import { layers, namedFlavor } from '@protomaps/basemaps';
+import { layers, namedFlavor, type Flavor } from '@protomaps/basemaps';
 import type {
   HillshadeLayerSpecification,
-  RasterDEMSourceSpecification,
-  RasterLayerSpecification,
-  RasterSourceSpecification,
+  LayerSpecification,
+  SourceSpecification,
   StyleSpecification,
-  VectorSourceSpecification,
 } from 'maplibre-gl';
 
 import { themeColor } from '../ui/theme.ts';
 import { tileUrlTemplate } from './tile-source.ts';
 import {
-  IGN_ATTRIBUTION,
-  RASTER_MAX_ZOOM,
-  TERRAIN_ATTRIBUTION,
-  TERRAIN_MAX_ZOOM,
-  type RasterSourceId,
+  CONTOURS_ATTRIBUTION,
+  CONTOURS_MAX_ZOOM,
+  ORTHO_ATTRIBUTION,
+  ORTHO_MAX_ZOOM,
+  RELIEF_ATTRIBUTION,
+  RELIEF_MAX_ZOOM,
+  RELIEF_TILE_SIZE,
 } from './tile-sources.ts';
+import { CONTOURS_SOURCE, contourLayers, terrainNameLayers, topoFlavor } from './topo.ts';
 
 export type MapTheme = 'light' | 'dark';
 
@@ -41,99 +43,112 @@ const OSM_ATTRIBUTION =
   '<a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap</a> · ' +
   '<a href="https://protomaps.com" target="_blank">Protomaps</a>';
 
-/** The raster source under each base map, if any. */
-export const BASE_MAP_RASTER: Readonly<Record<BaseMap, RasterSourceId | null>> = {
-  streets: null,
-  topo: 'ign-topo',
-  aerial: 'ign-ortho',
-};
+const ORTHO_SOURCE = 'ign-ortho';
+const RELIEF_SOURCE = 'ign-relief';
 
 export interface StyleChoice {
   readonly base: BaseMap;
-  /** Shading of the terrain, over the base map and under its names. */
+  /** Shading of the terrain, over the base map's ground and under its lines and names. */
   readonly relief: boolean;
   readonly theme: MapTheme;
   readonly lang: string;
 }
 
-export function buildStyle(choice: StyleChoice, assetsUrl: string): StyleSpecification {
-  return withRelief(baseStyle(choice, assetsUrl), choice);
+/** A base map in three bands, so that the relief shading can go between the first two. */
+interface BaseMapLayers {
+  readonly sources: Readonly<Record<string, SourceSpecification>>;
+  /** What the relief shades: land, water, roads. */
+  readonly ground: LayerSpecification[];
+  /** Lines drawn over the shading. */
+  readonly lines: LayerSpecification[];
+  readonly names: LayerSpecification[];
 }
 
-function baseStyle({ base, theme, lang }: StyleChoice, assetsUrl: string): StyleSpecification {
+export function buildStyle(choice: StyleChoice, assetsUrl: string): StyleSpecification {
+  const { sources, ground, lines, names } = baseMapLayers(choice);
+  const relief = choice.relief ? reliefShading(choice.theme) : null;
   // Labels over photographs read best light on dark, whatever the app's theme.
-  const flavor = base === 'aerial' ? 'dark' : theme;
-  const vector: VectorSourceSpecification = {
+  const sprite = choice.base === 'aerial' ? 'dark' : choice.theme;
+  return {
+    version: 8,
+    glyphs: `${assetsUrl}fonts/{fontstack}/{range}.pbf`,
+    sprite: `${assetsUrl}sprites/${sprite}`,
+    sources: relief ? { ...sources, [RELIEF_SOURCE]: relief.source } : sources,
+    layers: [...ground, ...(relief ? [relief.layer] : []), ...lines, ...names],
+  };
+}
+
+function baseMapLayers({ base, theme, lang }: StyleChoice): BaseMapLayers {
+  // Every style has the vector base map, which the services read (services/ServicesLayer.svelte).
+  const basemap: SourceSpecification = {
     type: 'vector',
     tiles: [tileUrlTemplate('basemap')],
     maxzoom: BASEMAP_MAX_ZOOM,
     attribution: OSM_ATTRIBUTION,
   };
-  const common = {
-    version: 8,
-    glyphs: `${assetsUrl}fonts/{fontstack}/{range}.pbf`,
-    sprite: `${assetsUrl}sprites/${flavor}`,
-  } as const;
-  const raster = BASE_MAP_RASTER[base];
-  if (raster === null) {
-    return {
-      ...common,
-      sources: { [BASEMAP_SOURCE]: vector },
-      layers: layers(BASEMAP_SOURCE, namedFlavor(theme), { lang }),
-    };
+  if (base === 'streets') {
+    return { sources: { [BASEMAP_SOURCE]: basemap }, ...streetMap(namedFlavor(theme), lang) };
   }
-  const rasterSource: RasterSourceSpecification = {
-    type: 'raster',
-    tiles: [tileUrlTemplate(raster)],
-    tileSize: 256,
-    maxzoom: RASTER_MAX_ZOOM,
-    attribution: IGN_ATTRIBUTION[raster],
-  };
-  const rasterLayer: RasterLayerSpecification = { id: raster, type: 'raster', source: raster };
-  // The topographic map carries its own names; the photographs get ours. Every style has the
-  // vector source, which the services read (services/ServicesLayer.svelte).
   if (base === 'topo') {
+    const contours: SourceSpecification = {
+      type: 'vector',
+      tiles: [tileUrlTemplate('ign-contours')],
+      maxzoom: CONTOURS_MAX_ZOOM,
+      attribution: CONTOURS_ATTRIBUTION,
+    };
+    const { ground, names } = streetMap(topoFlavor(theme), lang);
     return {
-      ...common,
-      sources: { [raster]: rasterSource, [BASEMAP_SOURCE]: vector },
-      layers: [rasterLayer],
+      sources: { [BASEMAP_SOURCE]: basemap, [CONTOURS_SOURCE]: contours },
+      ground,
+      lines: contourLayers(),
+      names: [...terrainNameLayers(), ...names],
     };
   }
+  const ortho: SourceSpecification = {
+    type: 'raster',
+    tiles: [tileUrlTemplate('ign-ortho')],
+    tileSize: 256,
+    maxzoom: ORTHO_MAX_ZOOM,
+    attribution: ORTHO_ATTRIBUTION,
+  };
   return {
-    ...common,
-    sources: { [raster]: rasterSource, [BASEMAP_SOURCE]: vector },
-    layers: [
-      rasterLayer,
-      ...layers(BASEMAP_SOURCE, namedFlavor(flavor), { lang, labelsOnly: true }),
-    ],
+    sources: { [ORTHO_SOURCE]: ortho, [BASEMAP_SOURCE]: basemap },
+    ground: [{ id: ORTHO_SOURCE, type: 'raster', source: ORTHO_SOURCE }],
+    lines: [],
+    names: layers(BASEMAP_SOURCE, namedFlavor('dark'), { lang, labelsOnly: true }),
   };
 }
 
-/** Adds the shading of the terrain under the first layer of names, if asked for. */
-function withRelief(style: StyleSpecification, { relief, theme }: StyleChoice): StyleSpecification {
-  if (!relief) return style;
-  const terrain: RasterDEMSourceSpecification = {
-    type: 'raster-dem',
-    tiles: [tileUrlTemplate('terrain')],
-    encoding: 'terrarium',
-    tileSize: 256,
-    maxzoom: TERRAIN_MAX_ZOOM,
-    attribution: TERRAIN_ATTRIBUTION,
-  };
-  const shading: HillshadeLayerSpecification = {
-    id: 'relief',
-    type: 'hillshade',
-    source: 'terrain',
-    paint: {
-      'hillshade-exaggeration': theme === 'dark' ? 0.35 : 0.45,
-      'hillshade-shadow-color': themeColor('map-relief'),
-    },
-  };
-  const firstName = style.layers.findIndex((layer) => layer.type === 'symbol');
-  const at = firstName === -1 ? style.layers.length : firstName;
+/** The Protomaps map in a palette, split where its names begin. */
+function streetMap(flavor: Flavor, lang: string): Omit<BaseMapLayers, 'sources'> {
+  const all = layers(BASEMAP_SOURCE, flavor, { lang });
+  const firstName = all.findIndex((layer) => layer.type === 'symbol');
+  const at = firstName === -1 ? all.length : firstName;
+  return { ground: all.slice(0, at), lines: [], names: all.slice(at) };
+}
+
+/** Shading of the terrain from IGN's terrain model (tile-sources.ts). */
+function reliefShading(theme: MapTheme): {
+  source: SourceSpecification;
+  layer: HillshadeLayerSpecification;
+} {
   return {
-    ...style,
-    sources: { ...style.sources, terrain },
-    layers: [...style.layers.slice(0, at), shading, ...style.layers.slice(at)],
+    source: {
+      type: 'raster-dem',
+      tiles: [tileUrlTemplate('ign-relief')],
+      encoding: 'mapbox',
+      tileSize: RELIEF_TILE_SIZE,
+      maxzoom: RELIEF_MAX_ZOOM,
+      attribution: RELIEF_ATTRIBUTION,
+    },
+    layer: {
+      id: 'relief',
+      type: 'hillshade',
+      source: RELIEF_SOURCE,
+      paint: {
+        'hillshade-exaggeration': theme === 'dark' ? 0.35 : 0.45,
+        'hillshade-shadow-color': themeColor('map-relief'),
+      },
+    },
   };
 }

@@ -14,11 +14,12 @@
   import Panel from '../ui/Panel.svelte';
   import { DownloadJob } from './download-job.svelte.ts';
   import {
+    areaContents,
     downloadLayers,
     estimatedBytes,
-    EXTRA_SOURCES,
-    SOURCE_NAMES,
-    type ExtraSource,
+    EXTRA_NAMES,
+    EXTRAS,
+    type Extra,
     type OfflineMaps,
   } from './offline-maps.ts';
 
@@ -44,7 +45,7 @@
   let maxZoom: number = $state(BASEMAP_MAX_ZOOM);
   let name = $state('');
   let storage: { used: number; quota: number } | null = $state(null);
-  let extras: ExtraSource[] = $state([]);
+  let extras: Extra[] = $state([]);
   const job = new DownloadJob();
 
   const layers = $derived(downloadLayers(offline.archives, maxZoom, extras));
@@ -118,10 +119,10 @@
 
     <fieldset class="extras" disabled={job.running}>
       <legend>{t('downloadAlso')}</legend>
-      {#each EXTRA_SOURCES as source (source)}
+      {#each EXTRAS as extra (extra)}
         <label class="check">
-          <input type="checkbox" value={source} bind:group={extras} />
-          {t(SOURCE_NAMES[source])}
+          <input type="checkbox" value={extra} bind:group={extras} />
+          {t(EXTRA_NAMES[extra])}
         </label>
       {/each}
       <p class="hint">{t('downloadAlsoHint')}</p>
@@ -162,7 +163,9 @@
             <strong>{area.name}</strong>
             {#if !area.complete}<span class="badge danger">{t('incomplete')}</span>{/if}
             <span class="hint">
-              {area.layers.map((layer) => t(SOURCE_NAMES[layer.source])).join(' + ')} ·
+              {areaContents(area)
+                .map((key) => t(key))
+                .join(' + ')} ·
               {formatBytes(area.bytes, locale)} · {formatDateTime(area.createdAt, locale)}
             </span>
           </div>

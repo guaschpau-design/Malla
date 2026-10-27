@@ -90,4 +90,33 @@ describe('offline tile store', () => {
     expect(upgraded?.layers).toEqual([{ source: 'basemap', maxZoom: 12 }]);
     expect(upgraded).not.toHaveProperty('maxZoom');
   });
+
+  it('drops the scanned topographic map of the second version, and keeps the rest', async () => {
+    const name = `upgrade-${String(dbCounter++)}`;
+    const old = await openDB(name, 2, {
+      upgrade(database) {
+        database.createObjectStore('tiles');
+        database.createObjectStore('areas', { keyPath: 'id' });
+      },
+    });
+    const tile = { data: new Uint8Array([7]).buffer, areas: ['v'] };
+    await old.put('tiles', tile, 'basemap/3/4/5');
+    await old.put('tiles', tile, 'ign-topo/3/4/5');
+    await old.put('areas', {
+      ...area('v', { west: 2.1, south: 41.35, east: 2.2, north: 41.42 }),
+      layers: [
+        { source: 'basemap', maxZoom: 12 },
+        { source: 'ign-topo', maxZoom: 15 },
+      ],
+    });
+    old.close();
+
+    const store = await openTileStore(name);
+    expect(await store.getTile('basemap', { z: 3, x: 4, y: 5 })).toBeDefined();
+    const raw = await openDB(name);
+    expect(await raw.get('tiles', 'ign-topo/3/4/5')).toBeUndefined();
+    raw.close();
+    const [upgraded] = await store.listAreas();
+    expect(upgraded?.layers).toEqual([{ source: 'basemap', maxZoom: 12 }]);
+  });
 });

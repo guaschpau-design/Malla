@@ -1,0 +1,159 @@
+// The topographic map (ADR-0034): the street map in a palette that lets the land show, under the
+// contour lines of IGN's vector map with their heights, and its names of the terrain — mountains,
+// ravines, places, caves — and of springs. IGN's contours are 5 or 10 m apart, as its source in
+// each region has them: at zoom 13 the map shows those every 25 m, from zoom 14 every one, with a
+// thicker index line every 100 m, then every 50 m, carrying its height.
+
+import { namedFlavor, type Flavor } from '@protomaps/basemaps';
+import type { ExpressionSpecification, LayerSpecification } from 'maplibre-gl';
+
+import { themeColor } from '../ui/theme.ts';
+import type { MapTheme } from './style.ts';
+
+/** The style's name for IGN's vector map. */
+export const CONTOURS_SOURCE = 'ign-contours';
+
+/**
+ * Changes to the street map's palette: woods and scrub greener than parks, which are only lines on
+ * a plan, and tracks and paths brown, as topographic maps draw them.
+ */
+const TOPO_PALETTE: Readonly<Record<MapTheme, Partial<Flavor>>> = {
+  light: {
+    background: '#efebe2',
+    earth: '#efebe2',
+    park_a: '#e6ebdb',
+    park_b: '#dde7d0',
+    wood_a: '#dde8d2',
+    wood_b: '#c8dfb6',
+    scrub_a: '#e6eadb',
+    scrub_b: '#dce5cc',
+    other: '#a8754c',
+    landcover: {
+      grassland: 'rgba(228, 236, 214, 1)',
+      barren: 'rgba(240, 233, 216, 1)',
+      urban_area: 'rgba(230, 228, 224, 1)',
+      farmland: 'rgba(236, 238, 222, 1)',
+      glacier: 'rgba(255, 255, 255, 1)',
+      scrub: 'rgba(229, 234, 212, 1)',
+      forest: 'rgba(207, 226, 193, 1)',
+    },
+  },
+  dark: {
+    park_a: '#1f2421',
+    park_b: '#1f2622',
+    wood_a: '#1f2620',
+    wood_b: '#233024',
+    scrub_a: '#222520',
+    scrub_b: '#242a22',
+    other: '#7d6048',
+  },
+};
+
+export function topoFlavor(theme: MapTheme): Flavor {
+  return { ...namedFlavor(theme), ...TOPO_PALETTE[theme] };
+}
+
+const height: ExpressionSpecification = ['to-number', ['get', 'altitud']];
+const every = (metres: number): ExpressionSpecification => ['==', ['%', height, metres], 0];
+
+const isIndex: ExpressionSpecification = ['step', ['zoom'], every(100), 14, every(50)];
+const isMinor: ExpressionSpecification = [
+  'step',
+  ['zoom'],
+  ['all', every(25), ['!', every(100)]],
+  14,
+  ['!', every(50)],
+];
+
+/** The contour lines, drawn over the relief shading and under every name. */
+export function contourLayers(): LayerSpecification[] {
+  const colour = themeColor('map-contour');
+  const common = {
+    type: 'line',
+    source: CONTOURS_SOURCE,
+    'source-layer': 'altimetria_lin',
+  } as const;
+  return [
+    {
+      ...common,
+      id: 'contours',
+      minzoom: 13,
+      filter: isMinor,
+      paint: {
+        'line-color': colour,
+        'line-opacity': 0.4,
+        'line-width': ['interpolate', ['linear'], ['zoom'], 13, 0.4, 16, 0.7],
+      },
+    },
+    {
+      ...common,
+      id: 'contours-index',
+      minzoom: 11,
+      filter: isIndex,
+      paint: {
+        'line-color': colour,
+        'line-opacity': 0.75,
+        'line-width': ['interpolate', ['linear'], ['zoom'], 11, 0.6, 16, 1.3],
+      },
+    },
+  ];
+}
+
+/** The heights of index lines, and the names of the terrain and of springs, under the street map's. */
+export function terrainNameLayers(): LayerSpecification[] {
+  const halo = themeColor('map-halo');
+  const text = (colour: string) => ({
+    'text-color': colour,
+    'text-halo-color': halo,
+    'text-halo-width': 1.4,
+  });
+  return [
+    {
+      id: 'contour-heights',
+      type: 'symbol',
+      source: CONTOURS_SOURCE,
+      'source-layer': 'altimetria_lin',
+      minzoom: 13,
+      filter: isIndex,
+      layout: {
+        'symbol-placement': 'line',
+        'text-field': ['get', 'altitud'],
+        'text-font': ['Noto Sans Regular'],
+        'text-size': 10,
+        'text-max-angle': 30,
+        'text-padding': 8,
+      },
+      paint: text(themeColor('map-contour')),
+    },
+    {
+      id: 'terrain-names',
+      type: 'symbol',
+      source: CONTOURS_SOURCE,
+      'source-layer': 'nombre_orografia_pto',
+      minzoom: 12,
+      layout: {
+        'text-field': ['get', 'nombre'],
+        'text-font': ['Noto Sans Italic'],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 12, 10, 16, 12],
+        'text-max-width': 8,
+        'text-padding': 4,
+      },
+      paint: text(themeColor('map-terrain')),
+    },
+    {
+      id: 'spring-names',
+      type: 'symbol',
+      source: CONTOURS_SOURCE,
+      'source-layer': 'nombre_hidrografia_pto',
+      minzoom: 14,
+      filter: ['==', ['get', 'clase'], 'surgencia'],
+      layout: {
+        'text-field': ['get', 'nombre'],
+        'text-font': ['Noto Sans Italic'],
+        'text-size': 10.5,
+        'text-max-width': 8,
+      },
+      paint: text(themeColor('map-spring')),
+    },
+  ];
+}

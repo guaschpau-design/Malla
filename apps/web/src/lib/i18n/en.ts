@@ -160,7 +160,7 @@ export const en = {
   baseMapAerial: 'Satellite',
   downloadAlso: 'Also download',
   downloadAlsoHint:
-    'Topographic and satellite, Spain only. They take several times the space of the street map.',
+    'Topographic, satellite and relief shading: Spain only. Satellite takes several times the space of the street map.',
   keepScreenOn: 'Screen always on',
   diary: 'Operation diary',
   diaryIntro:

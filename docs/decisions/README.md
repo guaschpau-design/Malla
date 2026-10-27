@@ -28,8 +28,8 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0020](0020-colour-and-symbols.md)                 | Signal lime, colours defined once, and symbols of our own                | Accepted                      |
 | [0021](0021-coordinate-formats.md)                 | Write coordinates in four formats, converted by our own code             | Accepted                      |
 | [0022](0022-log-files.md)                          | Carry a group's log in files of sealed envelopes                         | Accepted                      |
-| [0023](0023-ign-base-maps.md)                      | Topographic and aerial base maps from Spain's IGN, read by the browser   | Accepted                      |
-| [0024](0024-terrain-tiles-for-relief.md)           | Relief from the open Terrain Tiles, read by the browser                  | Accepted                      |
+| [0023](0023-ign-base-maps.md)                      | Topographic and aerial base maps from Spain's IGN, read by the browser   | Accepted, amended by 0034     |
+| [0024](0024-terrain-tiles-for-relief.md)           | Relief from the open Terrain Tiles, read by the browser                  | Accepted, amended by 0034     |
 | [0025](0025-tasks.md)                              | Tasks as one event type, changed by anyone, last writer wins             | Accepted                      |
 | [0026](0026-one-kind-of-alert.md)                  | The app sends one kind of alert                                          | Accepted                      |
 | [0027](0027-public-services-from-the-base-map.md)  | Public services from the base map                                        | Accepted                      |
@@ -39,3 +39,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0031](0031-practice-mode.md)                      | Practice mode: a simulated group played on the device                    | Accepted                      |
 | [0032](0032-radio-line-of-sight.md)                | Radio line of sight from the terrain, sure only when it says no          | Accepted                      |
 | [0033](0033-danger-area-warning.md)                | Warning on entering a danger area, worked out on each device             | Accepted                      |
+| [0034](0034-vector-topographic-map.md)             | Topographic map from vector data, relief shaded from IGN's terrain model | Accepted                      |

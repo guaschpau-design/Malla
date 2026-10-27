@@ -1,6 +1,6 @@
 # 0024. Relief from the open Terrain Tiles, read by the browser
 
-- Status: Accepted
+- Status: Accepted, amended by [0034](0034-vector-topographic-map.md) (the shading)
 - Date: 2026-10-26
 
 ## Context

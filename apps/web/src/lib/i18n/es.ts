@@ -161,7 +161,8 @@ export const es: Messages = {
   baseMapTopo: 'Topográfico',
   baseMapAerial: 'Satélite',
   downloadAlso: 'Descargar también',
-  downloadAlsoHint: 'Topográfico y satélite, solo España. Ocupan varias veces lo que el callejero.',
+  downloadAlsoHint:
+    'Topográfico, satélite y sombreado del relieve: solo España. El satélite ocupa varias veces lo que el callejero.',
   keepScreenOn: 'Pantalla siempre encendida',
   diary: 'Diario de la operación',
   diaryIntro:
