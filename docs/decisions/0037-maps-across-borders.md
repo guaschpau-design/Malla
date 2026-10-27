@@ -1,6 +1,6 @@
 # 0037. Maps across Spain, Portugal and southern France
 
-- Status: Accepted
+- Status: Accepted, amended by [0041](0041-satellite-mosaic-and-national-photos.md) (the satellite map)
 - Date: 2026-10-27
 
 ## Context

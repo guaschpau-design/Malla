@@ -1,8 +1,8 @@
-// Where the map's tiles come from. The base vector map is our own PMTiles archive. The orthophotos
-// are the national ones of Spain, Portugal and France, joined at their borders (ortho.ts,
-// ADR-0023, ADR-0037). The topographic map's names of the terrain come from IGN's vector map of
-// Spain (ADR-0034). Elevation, for the relief, the contour lines and every measure, comes from
-// Mapterhorn (ADR-0037). Every source is read through the same protocol, which answers from the
+// Where the map's tiles come from. The base vector map is our own PMTiles archive. The satellite
+// map is a Sentinel-2 mosaic from afar and the national orthophotos of Spain, Portugal and France
+// close up (ortho.ts, ADR-0023, ADR-0041). The topographic map's names of the terrain come from
+// IGN's vector map of Spain (ADR-0034). Elevation, for the relief, the contour lines and every
+// measure, comes from Mapterhorn (ADR-0037). Every source is read through the same protocol, which answers from the
 // tiles downloaded for offline use first (tile-source.ts).
 
 import type { TileArchive } from './area-download.ts';

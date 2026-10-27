@@ -1,0 +1,29 @@
+# 0041. Show one Sentinel-2 mosaic from afar, and each country's photographs close up
+
+- Status: Accepted
+- Date: 2026-10-27
+
+## Context
+
+The satellite map took each tile from the country it lies in (ADR-0037). From afar, three services with different dates, cameras and colours made a patchwork along the borders, and Andorra, which none of them covers, was a blank. No single service is free, alike everywhere, sharp at street level and allowed offline:
+
+- Esri's World Imagery is uniform and sharp, but its terms forbid keeping its tiles outside Esri's apps, and it needs an account and a key.
+- Google, Bing and Mapbox are paid, or forbid it too.
+- EOX's Sentinel-2 cloudless 2024 is one cloud-free mosaic of the whole world at 10 m. It is free for non-commercial use (CC BY-NC-SA 4.0), which lets it be copied, so it can be kept offline.
+
+## Decision
+
+- Further out than zoom 13, about a town's view, the satellite map is EOX's Sentinel-2 cloudless 2024 mosaic alone: one picture alike for every country, Andorra included.
+- From zoom 13 each country's newest orthophotos are laid over the mosaic within its outline: Spain's PNOA, mainland Portugal's OrtoSat 2023 and France's BD ORTHO. Where none reaches, as in Andorra, the mosaic stays, enlarged.
+- Each outline is shaped by what its service paints beyond the border, and generated from Natural Earth by `apps/web/scripts/make-borders.py`:
+  - Spain's, with its islands, reaches 1 km out, since PNOA covers a little beyond; but not into Andorra.
+  - Portugal's and France's stay 400 m inside their borders, since their services paint the rest in a flat colour.
+- A tile inside one outline is that country's tile as its service gives it. A tile across outlines is put together on the device: the mosaic, or the country covering it whole, then each other country within its outline.
+- This replaces the joining of ADR-0037; the rest of that decision stands.
+
+## Consequences
+
+- The regional view is uniform across the three countries, and nothing is blank.
+- Close up, where the detail matters, the photographs are as sharp as before. Their colours still change at a border, but a street-level view seldom holds one.
+- Andorra has 10 m imagery only. Its government's orthophotos are published as a WMS that browsers cannot read from another site, and their terms forbid commercial use. Serving them through our server is the way, if it is ever wanted.
+- The mosaic is free for non-commercial use only. Tesel's use by volunteers and civil teams is that. Anyone deploying Tesel commercially must license it from EOX, or swap it for ESA WorldCover's 2021 mosaic (CC BY 4.0) in `map/ortho.ts`.

@@ -75,10 +75,7 @@ export type Coverage = 'none' | 'part' | 'all';
  * inside and the ring's edge does not enter the box, none when no corner is inside and the edge does
  * not enter it either, part otherwise.
  */
-export function ringCoverage(
-  ring: readonly (readonly [number, number])[],
-  bounds: Bounds,
-): Coverage {
+function ringCoverage(ring: readonly (readonly [number, number])[], bounds: Bounds): Coverage {
   const { west, south, east, north } = bounds;
   const corners = [
     { lon: west, lat: south },
@@ -95,6 +92,16 @@ export function ringCoverage(
   });
   if (entersBox) return 'part';
   return inside === 0 ? 'none' : 'all';
+}
+
+/** How much of `bounds` an outline of separate rings covers: all of it within one ring, or none. */
+export function outlineCoverage(
+  outline: readonly (readonly (readonly [number, number])[])[],
+  bounds: Bounds,
+): Coverage {
+  const coverages = outline.map((ring) => ringCoverage(ring, bounds));
+  if (coverages.includes('all')) return 'all';
+  return coverages.includes('part') ? 'part' : 'none';
 }
 
 /** Whether a segment crosses one of the box's sides. */
