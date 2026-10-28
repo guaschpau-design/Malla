@@ -19,17 +19,32 @@ export interface TileCoord {
 /** Web Mercator cannot represent the poles; latitudes are clamped to this value. */
 const MAX_MERCATOR_LAT = 85.0511287798;
 
-export function lonToTileX(lon: number, z: number): number {
+/**
+ * Where a point falls on the grid of tiles at zoom `z`, counted in tiles from the world's top left
+ * corner: the whole part names the tile, the fraction where in it the point lies.
+ */
+function gridPosition({ lat, lon }: LatLon, z: number): { x: number; y: number } {
   const n = 2 ** z;
-  return Math.min(n - 1, Math.max(0, Math.floor(((lon + 180) / 360) * n)));
+  const rad = (Math.max(-MAX_MERCATOR_LAT, Math.min(MAX_MERCATOR_LAT, lat)) * Math.PI) / 180;
+  return {
+    x: ((lon + 180) / 360) * n,
+    y: ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * n,
+  };
 }
 
-export function latToTileY(lat: number, z: number): number {
-  const n = 2 ** z;
-  const clamped = Math.max(-MAX_MERCATOR_LAT, Math.min(MAX_MERCATOR_LAT, lat));
-  const rad = (clamped * Math.PI) / 180;
-  const y = Math.floor(((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * n);
-  return Math.min(n - 1, Math.max(0, y));
+/**
+ * The tile of a point at zoom `z`, and where in it the point lies, from 0 to 1 across (`u`) and
+ * down (`v`). Points on the edges of the world fall in its edge tiles.
+ */
+export function tileAt(at: LatLon, z: number): { tile: TileCoord; u: number; v: number } {
+  const { x, y } = gridPosition(at, z);
+  const last = 2 ** z - 1;
+  const tile = {
+    z,
+    x: Math.min(last, Math.max(0, Math.floor(x))),
+    y: Math.min(last, Math.max(0, Math.floor(y))),
+  };
+  return { tile, u: x - tile.x, v: y - tile.y };
 }
 
 /** Inclusive tile ranges covering `bounds` at zoom `z`. Bounds must not cross the antimeridian. */
@@ -37,12 +52,9 @@ export function tileRange(
   bounds: Bounds,
   z: number,
 ): { minX: number; maxX: number; minY: number; maxY: number } {
-  return {
-    minX: lonToTileX(bounds.west, z),
-    maxX: lonToTileX(bounds.east, z),
-    minY: latToTileY(bounds.north, z),
-    maxY: latToTileY(bounds.south, z),
-  };
+  const topLeft = tileAt({ lat: bounds.north, lon: bounds.west }, z).tile;
+  const bottomRight = tileAt({ lat: bounds.south, lon: bounds.east }, z).tile;
+  return { minX: topLeft.x, maxX: bottomRight.x, minY: topLeft.y, maxY: bottomRight.y };
 }
 
 export function countTiles(bounds: Bounds, minZoom: number, maxZoom: number): number {
@@ -73,10 +85,7 @@ export function positionInTile(
   [lon, lat]: readonly [number, number],
   tile: TileCoord,
 ): [number, number] {
-  const n = 2 ** tile.z;
-  const rad = (lat * Math.PI) / 180;
-  const x = ((lon + 180) / 360) * n;
-  const y = ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * n;
+  const { x, y } = gridPosition({ lat, lon }, tile.z);
   return [x - tile.x, y - tile.y];
 }
 

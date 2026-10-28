@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import { FRANCE_SOUTH, PORTUGAL, SPAIN, type Outline } from './borders-data.ts';
 import { insideRing, outlineCoverage } from './geometry.ts';
-import { latToTileY, lonToTileX, positionInTile, tileBounds } from './tile-math.ts';
+import { positionInTile, tileAt, tileBounds } from './tile-math.ts';
 
 /** How much of the zoom-14 tile of a point an outline covers. */
 const coverage = (outline: Outline, lat: number, lon: number) =>
-  outlineCoverage(outline, tileBounds({ z: 14, x: lonToTileX(lon, 14), y: latToTileY(lat, 14) }));
+  outlineCoverage(outline, tileBounds(tileAt({ lat, lon }, 14).tile));
 
 /** Whether a point lies within an outline. */
 const covers = (outline: Outline, lat: number, lon: number) =>
