@@ -17,6 +17,7 @@
   import { formatDistance } from '../format.ts';
   import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
   import { useOverlay } from '../map/overlay.svelte.ts';
+  import type { Tone } from '../ui/theme.ts';
   import AssigneeSelect from '../members/AssigneeSelect.svelte';
   import MapCard from '../ui/MapCard.svelte';
   import { Submission } from '../ui/submission.svelte.ts';
@@ -24,7 +25,8 @@
   import { stripFeature } from './object-features.ts';
   import { stripLayers } from './strip-layers.ts';
   import type { SweepRecipe } from './sweep-actions.ts';
-  import { MAX_TEAMS, TEAM_TONES } from './sweeps.ts';
+  import { activeTeams } from '../teams/teams.ts';
+  import { MAX_STRIPS, walkerTone } from './sweeps.ts';
 
   interface Props {
     t: Translate;
@@ -59,11 +61,15 @@
   const corners = $derived(area?.geometry.kind === 'polygon' ? area.geometry.points : []);
 
   let spacing = $state(25);
-  let teams = $state(2);
+  // With teams in the group, one strip for each, as far as there are colours; else two.
+  const groupTeams = untrack(() => activeTeams(groupState.teams).slice(0, MAX_STRIPS));
+  let count = $state(groupTeams.length > 0 ? groupTeams.length : 2);
   // The lanes start along the area's longest way; "Turn" changes that.
   let heading = $state(untrack(() => (corners.length > 0 ? bestHeading(corners) : 0)));
   /** Who leads each team: a node ID, or empty for anyone. */
-  const teamLeads = $state(Array.from({ length: MAX_TEAMS }, () => ({ lead: '' })));
+  const teamLeads = $state(
+    Array.from({ length: MAX_STRIPS }, (_, index) => ({ lead: groupTeams[index]?.team ?? '' })),
+  );
   const submission = new Submission();
 
   const valid = $derived(
@@ -74,8 +80,8 @@
   );
   const laneCount = $derived(lanes?.lanes.length ?? 0);
   /** No more teams than lanes, nor than colours. */
-  const maxTeams = $derived(Math.max(1, Math.min(MAX_TEAMS, laneCount)));
-  const shown = $derived(Math.min(teams, maxTeams));
+  const maxTeams = $derived(Math.max(1, Math.min(MAX_STRIPS, laneCount)));
+  const shown = $derived(Math.min(count, maxTeams));
   const strips = $derived(
     lanes ? Array.from({ length: shown }, (_, strip) => stripLanes(lanes, strip, shown)) : [],
   );
@@ -89,7 +95,7 @@
       'tesel-sweep-plan': () => ({
         type: 'FeatureCollection',
         features: strips.map((strip, index) =>
-          stripFeature(String(index), index, sweepPath(strip)),
+          stripFeature(String(index), index, toneOf(index), sweepPath(strip)),
         ),
       }),
     },
@@ -99,6 +105,12 @@
   $effect(() => {
     if (area === null) onclose();
   });
+
+  /** A strip's colour: its team's, once a team is chosen for it. */
+  function toneOf(strip: number): Tone {
+    const lead = teamLeads[strip]?.lead ?? '';
+    return walkerTone(groupState.teams, lead === '' ? null : (lead as NodeId), strip);
+  }
 
   function plan(): void {
     void submission.run(async () => {
@@ -148,14 +160,14 @@
             type="button"
             aria-label={t('sweepFewerTeams')}
             disabled={shown <= 1}
-            onclick={() => (teams = shown - 1)}>−</button
+            onclick={() => (count = shown - 1)}>−</button
           >
           <strong>{shown}</strong>
           <button
             type="button"
             aria-label={t('sweepMoreTeams')}
             disabled={shown >= maxTeams}
-            onclick={() => (teams = shown + 1)}>+</button
+            onclick={() => (count = shown + 1)}>+</button
           >
         </div>
         <button type="button" onclick={() => (heading = (heading + TURN_DEGREES) % 180)}>
@@ -174,10 +186,7 @@
           <li>
             <label>
               <span class="team">
-                <span
-                  class="swatch"
-                  style:--swatch="var(--tone-{TEAM_TONES[index % TEAM_TONES.length]})"
-                ></span>
+                <span class="swatch" style:--swatch="var(--tone-{toneOf(index)})"></span>
                 {t('stripNumber', { number: index + 1 })}
               </span>
               <AssigneeSelect

@@ -6,7 +6,7 @@
   import { untrack } from 'svelte';
 
   import type { Translate } from '../i18n/index.ts';
-  import { aliasOf } from '../members/alias.ts';
+  import { aliasOf, nameOf } from '../members/alias.ts';
   import type { MapTaps } from '../map/taps.ts';
   import { notices } from '../ui/notices.svelte.ts';
   import { editTask } from './task-editor.ts';
@@ -20,13 +20,14 @@
     tasks: GroupState['tasks'];
     objects: GroupState['objects'];
     members: GroupState['members'];
+    teams: GroupState['teams'];
     self: NodeId;
     visible: boolean;
   }
 
-  let { t, map, taps, tasks, objects, members, self, visible }: Props = $props();
+  let { t, map, taps, tasks, objects, members, teams, self, visible }: Props = $props();
 
-  const mine = $derived(assignedTo({ tasks }, self));
+  const mine = $derived(assignedTo({ tasks, teams }, self));
   // What was already assigned when the group opened is not news.
   let known = untrack(() => mine);
 
@@ -35,8 +36,12 @@
     const [handed] = newlyAssigned(known, now, self);
     known = now;
     if (handed === undefined) return;
+    const name = aliasOf({ members }, handed.origin);
+    const { assignee, text } = handed;
     notices.show(
-      t('taskHandedToYou', { name: aliasOf({ members }, handed.origin), text: handed.text }),
+      assignee === self || assignee === null
+        ? t('taskHandedToYou', { name, text })
+        : t('taskHandedToTeam', { name, team: nameOf({ members, teams }, assignee), text }),
     );
   });
 </script>

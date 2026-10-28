@@ -447,6 +447,41 @@ describe('reserved values and unknown types', () => {
   });
 });
 
+describe('teams', () => {
+  const team: TeselEvent = {
+    type: 'team',
+    origin: ALICE,
+    seq: 9,
+    time: T0,
+    team: '5eed0001' as NodeId,
+    colour: 'teal',
+    dissolved: false,
+    members: [ALICE, BOB],
+    name: 'Sur',
+  };
+
+  it('matches the test vector computed from the spec', () => {
+    expect(toHex(encodeOrFail(team))).toBe(
+      '0110a1b2c3d4090000000013fc685eed0001020002a1b2c3d40f1e2d3c537572',
+    );
+  });
+
+  it('refuses a team ID of 00000000 and a team without a name', () => {
+    expect(encodeEvent({ ...team, team: '00000000' as NodeId }).ok).toBe(false);
+    expect(encodeEvent({ ...team, name: '' }).ok).toBe(false);
+  });
+
+  it('holds 28 members with the longest name', () => {
+    const members = Array.from(
+      { length: 28 },
+      (_, index) => (0x10000000 + index).toString(16) as NodeId,
+    );
+    const full = { ...team, members, name: 'x'.repeat(32) };
+    expect(encodeEvent(full).ok).toBe(true);
+    expect(encodeEvent({ ...full, members: [...members, '7fffffff' as NodeId] }).ok).toBe(false);
+  });
+});
+
 describe('member states', () => {
   const state: TeselEvent = {
     type: 'member-state',

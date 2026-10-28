@@ -61,7 +61,7 @@ test('a device catches up with thousands of waiting events in seconds', async ({
   expect(Date.now() - start).toBeLessThan(CATCH_UP_LIMIT_MS);
   await expect(ana.getByTitle('Conectado al servidor del grupo')).toBeVisible();
   await ana.getByRole('button', { name: 'Grupos: Operativo largo' }).click();
-  await expect(ana.getByRole('list', { name: `Miembros (${String(MEMBERS + 1)})` })).toBeVisible();
+  await expect(ana.getByRole('group', { name: `Miembros (${String(MEMBERS + 1)})` })).toBeVisible();
 });
 
 /** Fifty members sharing their position every ten seconds, as the relay would send them. */

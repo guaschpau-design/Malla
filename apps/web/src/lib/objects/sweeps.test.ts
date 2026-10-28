@@ -109,7 +109,7 @@ describe('sweeps', () => {
     expect(stripWalker(state.tasks, `${ANA}:2`)).toBe(BERTA);
     const record = state.objects.get(`${ANA}:2`);
     const first = record?.type === 'sweep' ? stripOf(record, state.objects) : null;
-    expect(first && sweptBy(first, state.trails, BERTA)).toBeCloseTo(0.5, 1);
+    expect(first && sweptBy(first, state, BERTA)).toBeCloseTo(0.5, 1);
   });
 
   it('marks the area cleared once every strip is done, from the device that finished last', () => {

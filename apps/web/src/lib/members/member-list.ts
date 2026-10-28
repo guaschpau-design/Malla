@@ -1,9 +1,10 @@
-// The members of a group as the panel lists them.
+// The members of a group as the panel lists them, team by team.
 
-import type { GroupState } from '@tesel/core';
-import type { NodeId, Role } from '@tesel/protocol';
+import { teamOf, type GroupState } from '@tesel/core';
+import type { NodeId, Role, TeamEvent } from '@tesel/protocol';
 
 import type { Heard } from '../links/heard.ts';
+import { activeTeams } from '../teams/teams.ts';
 import { STALE_AFTER_S } from './member-features.ts';
 
 export type PositionStatus = 'live' | 'stale' | 'hidden' | 'never';
@@ -44,4 +45,19 @@ export function memberRows(
     };
   });
   return rows.sort((a, b) => Number(b.self) - Number(a.self) || a.alias.localeCompare(b.alias));
+}
+
+/** The rows by team: each team in use, by name, even if empty, then those in none. */
+export function byTeam(
+  rows: readonly MemberRow[],
+  teams: GroupState['teams'],
+): { readonly team: TeamEvent | null; readonly rows: MemberRow[] }[] {
+  const groups = activeTeams(teams).map((team) => ({
+    team,
+    rows: rows.filter((row) => teamOf(teams, row.id)?.team === team.team),
+  }));
+  const loose = rows.filter((row) => teamOf(teams, row.id) === null);
+  return loose.length > 0 || groups.length === 0
+    ? [...groups, { team: null, rows: loose }]
+    : groups;
 }

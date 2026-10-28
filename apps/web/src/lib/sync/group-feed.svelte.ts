@@ -29,6 +29,7 @@ import {
   type ShapeEvent,
   type ShapeGeometry,
   type SosKind,
+  type TeamEvent,
   type TeselEvent,
 } from '@tesel/protocol';
 import { SvelteSet } from 'svelte/reactivity';
@@ -360,6 +361,11 @@ export class GroupFeed {
     await this.#publish((header) => ({ ...header, type: 'member-state', ...state }));
   }
 
+  /** Creates or changes a team (protocol §3.15). */
+  async writeTeam(team: TeamFields): Promise<void> {
+    await this.#publish((header) => ({ ...header, type: 'team', ...team }));
+  }
+
   /** Publishes MEMBER_INFO if the group does not know this device's current alias and role. */
   async #announceSelf(): Promise<void> {
     const known = this.state.members.get(this.#identity.nodeId);
@@ -507,6 +513,9 @@ export class GroupFeed {
     return events;
   }
 }
+
+/** What TEAM holds besides its header (protocol §3.15). */
+export type TeamFields = Pick<TeamEvent, 'team' | 'colour' | 'dissolved' | 'members' | 'name'>;
 
 /** What MEMBER_STATE tells about a member (protocol §3.14). */
 export type MemberStateFields = Pick<

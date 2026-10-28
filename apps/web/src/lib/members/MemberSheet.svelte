@@ -13,12 +13,13 @@
 </script>
 
 <script lang="ts">
-  import type { MemberStateEvent } from '@tesel/protocol';
+  import type { MemberStateEvent, TeamEvent } from '@tesel/protocol';
   import type { Snippet } from 'svelte';
 
   import type { Translate } from '../i18n/index.ts';
   import { editTask } from '../tasks/task-editor.ts';
   import type { TaskRow } from '../tasks/tasks.ts';
+  import { TEAM_COLOURS } from '../teams/teams.ts';
   import Fold from '../ui/Fold.svelte';
   import StatusDot from '../ui/StatusDot.svelte';
   import { DUTY_STATUSES, EQUIPMENT, PROFILES, profileLabel } from './member-catalog.ts';
@@ -26,6 +27,8 @@
   interface Props {
     t: Translate;
     state: Pick<MemberStateEvent, 'profile' | 'status' | 'battery' | 'equipment'>;
+    /** The team they are in, if any. */
+    team: TeamEvent | null;
     /** Set for this device's own sheet. */
     edits?: SheetEdits | undefined;
     /** Under the battery: why it may be unknown. */
@@ -39,7 +42,8 @@
     more?: Snippet;
   }
 
-  let { t, state, edits, batteryNote, tasks, positionSummary, position, more }: Props = $props();
+  let { t, state, team, edits, batteryNote, tasks, positionSummary, position, more }: Props =
+    $props();
 
   /** At or under this, the battery is shown as running out. */
   const LOW_BATTERY = 20;
@@ -62,6 +66,12 @@
 </script>
 
 <div class="sheet">
+  {#if team}
+    <p class="line">
+      <span class="swatch" style:--swatch="var(--tone-{TEAM_COLOURS[team.colour].tone})"></span>
+      {t('teamOf', { name: team.name })}
+    </p>
+  {/if}
   {#if edits}
     {@const { onprofile, onstatus } = edits}
     <label class="profile">
@@ -205,6 +215,13 @@
     gap: 0.45rem;
     align-items: center;
     margin: 0;
+  }
+
+  .swatch {
+    width: 0.8rem;
+    height: 0.8rem;
+    background: var(--swatch);
+    border-radius: 50%;
   }
 
   .chips {

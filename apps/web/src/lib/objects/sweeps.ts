@@ -1,5 +1,5 @@
 // Sweeps as the app shows them (protocol §3.13): each strip with its area and lanes, the strips
-// over an area, who walks each and how much of it is swept.
+// over an area, who walks each (a member or a team) and how much of it is swept, and its colour.
 
 import {
   compareEvents,
@@ -20,11 +20,23 @@ import {
   type TaskEvent,
 } from '@tesel/protocol';
 
+import { TEAM_COLOURS } from '../teams/teams.ts';
 import type { Tone } from '../ui/theme.ts';
 
-/** Each team's colour, by strip: as many teams as colours. */
-export const TEAM_TONES: readonly Tone[] = ['blue', 'orange', 'teal', 'red', 'green', 'ink'];
-export const MAX_TEAMS = TEAM_TONES.length;
+/** The colours strips take by their place, those of the teams: as many strips as colours. */
+const STRIP_TONES: readonly Tone[] = Object.values(TEAM_COLOURS).map((colour) => colour.tone);
+export const MAX_STRIPS = STRIP_TONES.length;
+
+/** A strip's colour by its place in the sweep. */
+function stripTone(strip: number): Tone {
+  return STRIP_TONES[strip % STRIP_TONES.length] ?? 'slate';
+}
+
+/** The colour of whoever a strip is for: their team's, or else the strip's own. */
+export function walkerTone(teams: GroupState['teams'], walker: NodeId | null, strip: number): Tone {
+  const team = walker === null ? undefined : teams.get(walker);
+  return team ? TEAM_COLOURS[team.colour].tone : stripTone(strip);
+}
 
 /** A strip of a sweep, with the area it sweeps and its lanes. */
 export interface Strip {
@@ -77,7 +89,7 @@ export function stripTasks(tasks: GroupState['tasks'], stripKey: string): TaskEv
   );
 }
 
-/** Who walks a strip: whoever its newest task is for, or no one in particular. */
+/** Who walks a strip: whoever its newest task is for, a member or a team, or no one in particular. */
 export function stripWalker(tasks: GroupState['tasks'], stripKey: string): NodeId | null {
   const newest = stripTasks(tasks, stripKey).sort((a, b) => b.time - a.time)[0];
   return newest?.assignee ?? null;
@@ -92,12 +104,17 @@ export function isStripDone(tasks: GroupState['tasks'], stripKey: string): boole
 }
 
 /**
- * How much of a strip, from 0 to 1, a member's trail has swept: within half the spacing of a lane,
- * the band that lane stands for.
+ * How much of a strip, from 0 to 1, the trail of a member, or those of a team's members, have
+ * swept: within half the spacing of a lane, the band that lane stands for.
  */
-export function sweptBy(strip: Strip, trails: GroupState['trails'], walker: NodeId): number {
-  const trail = trails.get(walker)?.points ?? [];
-  return sweptFraction(strip.lanes, trail, strip.sweep.spacing / 2);
+export function sweptBy(
+  strip: Strip,
+  state: Pick<GroupState, 'trails' | 'teams'>,
+  walker: NodeId,
+): number {
+  const walkers = state.teams.get(walker)?.members ?? [walker];
+  const trails = walkers.map((member) => state.trails.get(member)?.points ?? []);
+  return sweptFraction(strip.lanes, trails, strip.sweep.spacing / 2);
 }
 
 /**

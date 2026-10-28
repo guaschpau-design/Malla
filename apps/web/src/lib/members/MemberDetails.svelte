@@ -2,7 +2,7 @@
      profile, position and the way there, battery, equipment and tasks, and what of theirs has
      reached this device and how. -->
 <script lang="ts">
-  import type { GroupState } from '@tesel/core';
+  import { teamOf, type GroupState } from '@tesel/core';
   import type { NodeId } from '@tesel/protocol';
 
   import CoordinateBlock from '../coordinates/CoordinateBlock.svelte';
@@ -60,6 +60,7 @@
     <MemberSheet
       {t}
       {state}
+      team={teamOf(groupState.teams, id)}
       tasks={pendingFor(groupState, id, self)}
       positionSummary={report?.type === 'position' ? ago(report.time) : t('memberNoPosition')}
     >

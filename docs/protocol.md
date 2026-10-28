@@ -63,6 +63,7 @@ The payload follows, up to 151 bytes.
 | `0x0D` | `ROLL_CALL`       | §3.12                                                  |
 | `0x0E` | `SWEEP`           | §3.13                                                  |
 | `0x0F` | `MEMBER_STATE`    | §3.14                                                  |
+| `0x10` | `TEAM`            | §3.15                                                  |
 
 Codes are never reused. New capabilities are added as new types; existing layouts never change within version 1.
 
@@ -180,14 +181,14 @@ Map objects (`MARKER`, `SHAPE`, `SWEEP`) are identified by an **object reference
 
 Creates or replaces a task: a short text and, optionally, who should do it and where.
 
-| Size  | Field      | Notes                                                                            |
-| ----- | ---------- | -------------------------------------------------------------------------------- |
-| 8     | `task`     | Task reference, see below                                                        |
-| 1     | `status`   | `0` open, `1` in progress, `2` done, `3` cancelled; reserved values read as open |
-| 4     | `assignee` | Node ID of the member who should do it; `00000000` means anyone                  |
-| 1     | `place`    | `0` none, `1` point, `2` object; reserved values read as none                    |
-| 8     | `where`    | See below; zeros when `place` is none                                            |
-| 1–129 | `text`     | text-rest                                                                        |
+| Size  | Field      | Notes                                                                                      |
+| ----- | ---------- | ------------------------------------------------------------------------------------------ |
+| 8     | `task`     | Task reference, see below                                                                  |
+| 1     | `status`   | `0` open, `1` in progress, `2` done, `3` cancelled; reserved values read as open           |
+| 4     | `assignee` | Node ID of the member who should do it, or ID of the team (§3.15); `00000000` means anyone |
+| 1     | `place`    | `0` none, `1` point, `2` object; reserved values read as none                              |
+| 8     | `where`    | See below; zeros when `place` is none                                                      |
+| 1–129 | `text`     | text-rest                                                                                  |
 
 `where` holds, for a point, its `lat` and `lon` (4 bytes each, as coordinates); for an object, the object's reference (§3.10). A task at an object follows it: it is wherever the object is now, and has no place once the object is deleted. A route (a polyline with the Route style, §4.2) as the place of a task is the way to go.
 
@@ -248,6 +249,24 @@ What the team needs to know about a member besides where they are: what they do,
 | 4    | `equipment` | `u32` of bits, from the lowest: first-aid kit, defibrillator, stretcher, food, water, blankets, rope, lighting, radio, extinguisher, vehicle, drone, weapon; other bits are ignored |
 
 Encoded size: 21 bytes. Over LoRa, a device SHOULD NOT send it for every percent of battery: steps of 10 % are enough.
+
+### 3.15 `TEAM`
+
+Creates or replaces a team: a name, a colour and the members in it. Teams are how a group is split for the work; a task (§3.11) or a strip of a sweep (§3.13) can be for a whole team.
+
+| Size  | Field       | Notes                                                                                       |
+| ----- | ----------- | ------------------------------------------------------------------------------------------- |
+| 4     | `team`      | Team ID, see below                                                                          |
+| 1     | `colour`    | `0` blue, `1` orange, `2` teal, `3` red, `4` green, `5` black; reserved values read as blue |
+| 1     | `dissolved` | `0` no, `1` yes; a dissolved team is no longer shown; other values read as no               |
+| 1     | `count`     | `u8`, number of members                                                                     |
+| 4 × n | `members`   | Their node IDs                                                                              |
+| 1–32  | `name`      | text-rest                                                                                   |
+
+- A team ID is 4 bytes in the space of node IDs, so `TASK.assignee` can name a team. The member who creates a team picks it at random, never `00000000` and never the node ID of a member the group knows.
+- To change a team, any member sends a new `TEAM` with the same `team` and every field filled in; the newest by `(time, origin, seq)` is the team's current state.
+- A member is in one team at a time. A device that moves a member sends both teams; should two teams list the same member, the newest of them counts.
+- With the longest name, a team holds up to 28 members.
 
 ## 4. Symbol and style codes
 

@@ -1,4 +1,4 @@
-// The payload of every event type (docs/protocol.md §3.3–§3.14), each written next to the code
+// The payload of every event type (docs/protocol.md §3.3–§3.15), each written next to the code
 // that reads it, so that the two halves of a layout cannot drift apart. Adding an event type
 // means adding its entry here: the record is keyed by every `EventType`, so the compiler refuses
 // a type without a layout.
@@ -13,6 +13,7 @@ import {
   EquipmentBit,
   EventTypeCode,
   FULL_TURN_DEGREES,
+  NODE_ID_SIZE,
   HALF_TURN_DEGREES,
   ProfileCode,
   PUBLIC_KEY_SIZE,
@@ -21,10 +22,13 @@ import {
   SosKindCode,
   SPEED_SCALE,
   TaskStatusCode,
+  TEAM_NAME_MAX_BYTES,
+  TeamColourCode,
   UNKNOWN_BATTERY,
   UNKNOWN_U16,
 } from './constants.ts';
 import { nodeIdFromPublicKey } from './crypto.ts';
+import { nodeIdFromBytes, nodeIdToBytes } from './node-id.ts';
 import type { EventHeader, EventType, MemberInfoEvent, SweepEvent, TeselEvent } from './events.ts';
 import {
   ALERT_TEXT_MAX_BYTES,
@@ -263,6 +267,30 @@ export const PAYLOADS: { readonly [K in EventType]: PayloadCodec<EventOfType<K>>
       } as const;
       checkSweep(sweep);
       return sweep;
+    },
+  },
+  // §3.15
+  team: {
+    code: EventTypeCode.TEAM,
+    write(writer, event) {
+      writeAssignee(writer, event.team);
+      writer.u8(enumCode(TeamColourCode, event.colour, 'team colour'));
+      writer.u8(event.dissolved ? 1 : 0);
+      writer.u8(event.members.length);
+      for (const member of event.members) writer.raw(nodeIdToBytes(member));
+      writeTextRest(writer, event.name, 1, TEAM_NAME_MAX_BYTES, 'team name');
+    },
+    read(reader, header) {
+      const team = readAssignee(reader);
+      if (team === null) throw new ProtocolFailure('invalid-value', 'team ID cannot be 00000000');
+      const colour = enumValue(TeamColourCode, reader.u8(), 'blue');
+      const dissolved = reader.u8() === 1;
+      const count = reader.u8();
+      const members = Array.from({ length: count }, () =>
+        nodeIdFromBytes(reader.raw(NODE_ID_SIZE)),
+      );
+      const name = reader.textRest(1, TEAM_NAME_MAX_BYTES, 'team name');
+      return { ...header, type: 'team', team, colour, dissolved, members, name };
     },
   },
   // §3.14

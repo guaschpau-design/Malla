@@ -1,10 +1,11 @@
 <!-- The group in use: its name and this device's role, who is in it, and inviting or leaving; for
      a practice, ending it. -->
 <script lang="ts">
-  import type { NodeId } from '@tesel/protocol';
+  import type { NodeId, TeamEvent } from '@tesel/protocol';
 
   import type { Translate } from '../i18n/index.ts';
-  import type { GroupFeed } from '../sync/group-feed.svelte.ts';
+  import type { GroupFeed, TeamFields } from '../sync/group-feed.svelte.ts';
+  import { dissolveTeam, saveTeam } from '../teams/team-actions.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import { canInvite, type StoredGroup } from './group.ts';
   import MemberList from '../members/MemberList.svelte';
@@ -30,7 +31,16 @@
     <span class="badge role">{t(group.practice ? 'practice' : ROLE_LABELS[group.role])}</span>
   </header>
   {#if feed}
-    <MemberList {t} groupState={feed.state} heard={feed.heard} {self} />
+    {@const current = feed}
+    <MemberList
+      {t}
+      groupState={current.state}
+      heard={current.heard}
+      {self}
+      coordinator={group.role === 'coordinator'}
+      onsaveteam={(team: TeamFields) => saveTeam(current, team)}
+      ondissolveteam={(team: TeamEvent) => dissolveTeam(current, team)}
+    />
   {/if}
   <div class="row">
     {#if canInvite(group)}

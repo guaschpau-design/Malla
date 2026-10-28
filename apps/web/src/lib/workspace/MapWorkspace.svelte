@@ -247,7 +247,15 @@
 {#if group}
   {@const { feed, self, role } = group}
   <TrailLayer {map} trails={slices.trails} {self} visible={shown.trails} />
-  <ObjectLayer {map} {taps} objects={slices.objects} visible={shown.objects} onselect={select} />
+  <ObjectLayer
+    {map}
+    {taps}
+    objects={slices.objects}
+    tasks={slices.tasks}
+    teams={slices.teams}
+    visible={shown.objects}
+    onselect={select}
+  />
   {#key feed}
     <MapTasks
       {t}
@@ -256,6 +264,7 @@
       tasks={slices.tasks}
       objects={slices.objects}
       members={slices.members}
+      teams={slices.teams}
       {self}
       visible={shown.tasks}
     />
@@ -266,6 +275,7 @@
     positions={slices.positions}
     members={slices.members}
     memberStates={slices.memberStates}
+    teams={slices.teams}
     sos={slices.sos}
     sosCancels={slices.sosCancels}
     {self}

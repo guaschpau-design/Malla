@@ -21,9 +21,9 @@ export function toneColor(tone: Tone): string {
   return themeColor(`tone-${tone}`);
 }
 
-/** A map expression that colours a feature by its `tone` property. */
-export function toneExpression(): ExpressionSpecification {
+/** A map expression that colours a feature by its `tone` property; `fallback` without one. */
+export function toneExpression(fallback = toneColor('slate')): ExpressionSpecification {
   const [first, ...rest] = TONES;
   const others = rest.flatMap((tone) => [tone, toneColor(tone)]);
-  return ['match', ['get', 'tone'], first, toneColor(first), ...others, toneColor('slate')];
+  return ['match', ['get', 'tone'], first, toneColor(first), ...others, fallback];
 }

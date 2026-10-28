@@ -1,7 +1,7 @@
 // The team's tasks as the app shows them (protocol §3.11, ADR-0025): the list, what a tap on a
 // task's main button does, and which tasks were just handed to this device.
 
-import type { GroupState } from '@tesel/core';
+import { teamOf, type GroupState } from '@tesel/core';
 import {
   eventRefKey,
   type EventRef,
@@ -12,8 +12,9 @@ import {
   type TaskStatus,
 } from '@tesel/protocol';
 
-import { aliasOf } from '../members/alias.ts';
+import { aliasOf, nameOf } from '../members/alias.ts';
 import { objectAnchor } from '../objects/object-anchor.ts';
+import { isFor } from '../teams/teams.ts';
 
 /** What the tasks panel edits: a new task, at a place or nowhere in particular, or an existing one. */
 export type TaskEditing =
@@ -35,9 +36,9 @@ export interface TaskRow {
   readonly key: string;
   readonly task: EventRef;
   readonly fields: TaskFields;
-  /** Assigned to this device. */
+  /** For this device, or for its team. */
   readonly mine: boolean;
-  /** Who should do it, or null for anyone. */
+  /** Who should do it, a member or a team, or null for anyone. */
   readonly assigneeName: string | null;
   /** Who changed it last, and when (seconds). */
   readonly changedBy: string;
@@ -82,16 +83,19 @@ export function taskList(state: GroupState, self: NodeId): TaskList {
   return { pending, done };
 }
 
-/** A member's tasks still to do, in the order of the list. */
+/** A member's tasks still to do, theirs and their team's, in the order of the list. */
 export function pendingFor(state: GroupState, member: NodeId, self: NodeId): TaskRow[] {
-  return taskList(state, self).pending.filter((row) => row.fields.assignee === member);
+  const team = teamOf(state.teams, member)?.team;
+  return taskList(state, self).pending.filter(
+    (row) => row.fields.assignee === member || (team !== undefined && row.fields.assignee === team),
+  );
 }
 
-/** Tasks for this device still to do: the number on the dock. */
+/** Tasks for this device or its team still to do: the number on the dock. */
 export function myPendingCount(state: GroupState, self: NodeId): number {
   let count = 0;
   for (const task of state.tasks.values()) {
-    if (task.assignee === self && isPending(task.status)) count++;
+    if (isFor(task.assignee, self, state.teams) && isPending(task.status)) count++;
   }
   return count;
 }
@@ -124,26 +128,27 @@ export function placePoint(place: TaskPlace | null, objects: GroupState['objects
 
 /** A task of this device still to do along a route, given the route's key. */
 export function routeTaskOf(
-  tasks: GroupState['tasks'],
+  state: Pick<GroupState, 'tasks' | 'teams'>,
   routeKey: string,
   self: NodeId,
 ): TaskEvent | null {
-  for (const task of tasks.values()) {
+  for (const task of state.tasks.values()) {
     const { place } = task;
-    if (task.assignee !== self || !isPending(task.status) || place?.kind !== 'object') continue;
+    const mine = isFor(task.assignee, self, state.teams);
+    if (!mine || !isPending(task.status) || place?.kind !== 'object') continue;
     if (eventRefKey(place.object) === routeKey) return task;
   }
   return null;
 }
 
-/** Pending tasks of this device, by key: compared before and after to notice new ones. */
+/** Pending tasks of this device or its team, by key: compared before and after to notice new ones. */
 export function assignedTo(
-  state: Pick<GroupState, 'tasks'>,
+  state: Pick<GroupState, 'tasks' | 'teams'>,
   self: NodeId,
 ): ReadonlyMap<string, TaskEvent> {
   const mine = new Map<string, TaskEvent>();
   for (const [key, task] of state.tasks) {
-    if (task.assignee === self && isPending(task.status)) mine.set(key, task);
+    if (isFor(task.assignee, self, state.teams) && isPending(task.status)) mine.set(key, task);
   }
   return mine;
 }
@@ -164,8 +169,8 @@ function rowOf(state: GroupState, self: NodeId, key: string, event: TaskEvent): 
     key,
     task: event.task,
     fields: fieldsOf(event),
-    mine: event.assignee === self,
-    assigneeName: event.assignee === null ? null : aliasOf(state, event.assignee),
+    mine: isFor(event.assignee, self, state.teams),
+    assigneeName: event.assignee === null ? null : nameOf(state, event.assignee),
     changedBy: aliasOf(state, event.origin),
     changedAt: event.time,
   };

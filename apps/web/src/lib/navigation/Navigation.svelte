@@ -24,6 +24,8 @@
     positions: GroupState['positions'];
     /** The group's tasks: one of this device along a route can be marked done at its end. */
     tasks: GroupState['tasks'];
+    /** The group's teams: a task for this device's team is its own. */
+    teams: GroupState['teams'];
     /** The members' trails: this device's tells how much of a strip of a sweep it has swept. */
     trails: GroupState['trails'];
     /** This device in the active group, null without one. */
@@ -32,7 +34,8 @@
     onfinishtask: (task: TaskEvent) => Promise<void>;
   }
 
-  let { t, locale, map, objects, positions, tasks, trails, self, onfinishtask }: Props = $props();
+  let { t, locale, map, objects, positions, tasks, teams, trails, self, onfinishtask }: Props =
+    $props();
 
   const target = $derived(navigation.target);
   const destination = $derived(target && targetDestination(target, { objects, positions }));
@@ -40,7 +43,7 @@
   const swept = $derived.by(() => {
     const record = target?.kind === 'object' ? objects.get(target.key) : undefined;
     const strip = record?.type === 'sweep' ? stripOf(record, objects) : null;
-    return strip && self !== null ? sweptBy(strip, trails, self) : null;
+    return strip && self !== null ? sweptBy(strip, { trails, teams }, self) : null;
   });
 
   $effect(() => {
@@ -58,7 +61,9 @@
       points={destination.points}
       fix={deviceLocation.fix}
       {swept}
-      task={target.kind === 'object' && self !== null ? routeTaskOf(tasks, target.key, self) : null}
+      task={target.kind === 'object' && self !== null
+        ? routeTaskOf({ tasks, teams }, target.key, self)
+        : null}
       {onfinishtask}
       onstop={stopNavigating}
     />

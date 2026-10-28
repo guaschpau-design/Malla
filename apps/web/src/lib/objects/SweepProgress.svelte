@@ -5,8 +5,8 @@
   import type { SweepEvent } from '@tesel/protocol';
 
   import type { Translate } from '../i18n/index.ts';
-  import { aliasOf } from '../members/alias.ts';
-  import { isStripDone, stripOf, stripWalker, sweptBy, TEAM_TONES } from './sweeps.ts';
+  import { nameOf } from '../members/alias.ts';
+  import { isStripDone, stripOf, stripWalker, sweptBy, walkerTone } from './sweeps.ts';
 
   interface Props {
     t: Translate;
@@ -25,10 +25,10 @@
       return {
         key,
         number: sweep.strip + 1,
-        tone: TEAM_TONES[sweep.strip % TEAM_TONES.length] ?? 'slate',
-        who: walker === null ? t('anyone') : aliasOf(groupState, walker),
+        tone: walkerTone(groupState.teams, walker, sweep.strip),
+        who: walker === null ? t('anyone') : nameOf(groupState, walker),
         done: isStripDone(groupState.tasks, key),
-        swept: strip && walker !== null ? sweptBy(strip, groupState.trails, walker) : null,
+        swept: strip && walker !== null ? sweptBy(strip, groupState, walker) : null,
       };
     }),
   );

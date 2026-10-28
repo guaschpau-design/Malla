@@ -8,6 +8,7 @@ import type {
   Role,
   SosKind,
   TaskStatus,
+  TeamColour,
 } from './events.ts';
 
 /** §3.1 Protocol version carried in every event header. */
@@ -51,6 +52,7 @@ export const EventTypeCode = {
   ROLL_CALL: 0x0d,
   SWEEP: 0x0e,
   MEMBER_STATE: 0x0f,
+  TEAM: 0x10,
 } as const;
 
 /** §3.13 A sweep's lanes run in a direction below this, in degrees: the other half are the same. */
@@ -184,6 +186,19 @@ export const EquipmentBit = {
   drone: 11,
   weapon: 12,
 } as const satisfies Record<Equipment, number>;
+
+/** §3.15 TEAM.colour. Default: blue. */
+export const TeamColourCode = {
+  blue: 0,
+  orange: 1,
+  teal: 2,
+  red: 3,
+  green: 4,
+  black: 5,
+} as const satisfies Record<TeamColour, number>;
+
+/** §3.15 Team name length in bytes. */
+export const TEAM_NAME_MAX_BYTES = 32;
 
 /** §3.14 MEMBER_STATE.battery when unknown; values above 100 read as unknown too. */
 export const UNKNOWN_BATTERY = 0xff;

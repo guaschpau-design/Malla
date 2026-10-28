@@ -188,4 +188,15 @@ export const SAMPLE_EVENTS: readonly TeselEvent[] = [
     battery: 40,
     equipment: ['first-aid', 'water', 'radio'],
   },
+  {
+    type: 'team',
+    origin: ALICE,
+    seq: 12,
+    time: T0 + 19,
+    team: '5eed0001' as NodeId,
+    colour: 'orange',
+    dissolved: false,
+    members: [ALICE, BOB],
+    name: 'Equipo Norte',
+  },
 ];

@@ -17,6 +17,7 @@ import { rollCall } from './state/roll-call.ts';
 import type { Slice } from './state/slice.ts';
 import { sos, sosCancels } from './state/sos.ts';
 import { tasks } from './state/tasks.ts';
+import { teams } from './state/teams.ts';
 import { hasOutlived, outlivedPositions, trails } from './state/trails.ts';
 
 export type { ObjectRecord } from './state/objects.ts';
@@ -36,6 +37,7 @@ const SLICES = {
   alerts,
   acks,
   tasks,
+  teams,
   rollCall,
   journal,
 };

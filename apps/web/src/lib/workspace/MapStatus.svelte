@@ -166,6 +166,7 @@
     objects={slices.objects}
     positions={slices.positions}
     tasks={slices.tasks}
+    teams={slices.teams}
     trails={slices.trails}
     self={group?.self ?? null}
     onfinishtask={async (task: TaskEvent) => {

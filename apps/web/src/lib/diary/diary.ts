@@ -17,7 +17,7 @@ import {
 
 import type { MessageKey, Translate } from '../i18n/index.ts';
 import { ROLE_LABELS } from '../groups/role-label.ts';
-import { aliasOf } from '../members/alias.ts';
+import { aliasOf, nameOf } from '../members/alias.ts';
 import { DUTY_STATUSES } from '../members/member-catalog.ts';
 import { ALERT_LEVELS, SOS_KINDS } from '../incidents/sos-kinds.ts';
 import { objectAnchor } from '../objects/object-anchor.ts';
@@ -41,6 +41,8 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
   /** Each object as it was at the line being written. */
   const objects = new Map<string, MarkerEvent | ShapeEvent | SweepEvent>();
   const tasks = new Map<string, TaskEvent>();
+  /** The teams told of so far, by ID. */
+  const teams = new Set<NodeId>();
   /** Each member's status, as last told. */
   const statuses = new Map<NodeId, DutyStatus>();
   // Answers can be stamped before their roll call by a device whose clock runs early.
@@ -116,6 +118,13 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
           ? null
           : t('diaryStatus', { status: t(DUTY_STATUSES[event.status].label) });
       }
+      case 'team': {
+        const known = teams.has(event.team);
+        teams.add(event.team);
+        const vars = { name: event.name };
+        if (event.dissolved) return t('diaryTeamDissolved', vars);
+        return t(known ? 'diaryTeamChanged' : 'diaryTeamCreated', vars);
+      }
       case 'task': {
         const key = eventRefKey(event.task);
         const before = tasks.get(key);
@@ -129,7 +138,7 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
   function describeTask(before: TaskEvent | undefined, task: TaskEvent): string {
     const vars = {
       text: task.text,
-      name: task.assignee === null ? t('anyone') : aliasOf(state, task.assignee),
+      name: task.assignee === null ? t('anyone') : nameOf(state, task.assignee),
     };
     if (before === undefined) {
       return t(task.assignee === null ? 'diaryTaskCreated' : 'diaryTaskCreatedFor', vars);

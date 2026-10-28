@@ -2,7 +2,7 @@
      and their position: one switch to share it, and where they are. The GPS runs while the panel
      is open. -->
 <script lang="ts">
-  import type { GroupState } from '@tesel/core';
+  import { teamOf, type GroupState } from '@tesel/core';
   import type { DutyStatus, Equipment, NodeId, Profile } from '@tesel/protocol';
   import { onMount } from 'svelte';
 
@@ -66,6 +66,7 @@
         onstatus: (status: DutyStatus) => void preferences.dutyStatus.set(status),
         onequipment: (equipment: readonly Equipment[]) => void preferences.equipment.set(equipment),
       }}
+      team={group ? teamOf(group.state.teams, group.self) : null}
       batteryNote={deviceBattery.supported ? undefined : t('batteryUnsupported')}
       tasks={group ? pendingFor(group.state, group.self, group.self) : null}
       {positionSummary}

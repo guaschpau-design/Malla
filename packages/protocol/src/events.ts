@@ -127,7 +127,7 @@ export interface TaskEvent extends EventHeader {
   /** The reference of the event that created the task. */
   readonly task: EventRef;
   readonly status: TaskStatus;
-  /** Who should do it, or null for anyone. */
+  /** Who should do it: a member, a team (§3.15), or null for anyone. */
   readonly assignee: NodeId | null;
   /** Where, or null for nowhere in particular. */
   readonly place: TaskPlace | null;
@@ -176,6 +176,23 @@ export interface MemberStateEvent extends EventHeader {
   readonly equipment: readonly Equipment[];
 }
 
+/** §3.15 The colour a team is shown in. */
+export type TeamColour = 'blue' | 'orange' | 'teal' | 'red' | 'green' | 'black';
+
+/**
+ * §3.15 Creates or replaces a team: its name, colour and members. A team's ID is in the space of
+ * node IDs, so a task (§3.11) can be for a team as for a member.
+ */
+export interface TeamEvent extends EventHeader {
+  readonly type: 'team';
+  readonly team: NodeId;
+  readonly colour: TeamColour;
+  /** A dissolved team has no members and is no longer shown. */
+  readonly dissolved: boolean;
+  readonly members: readonly NodeId[];
+  readonly name: string;
+}
+
 /**
  * §3.13 One strip of a sweep of a search area: the lanes one team walks. A map object (§3.10),
  * drawn from its area and the sweep's recipe, which every device works out alike.
@@ -217,6 +234,7 @@ export type TeselEvent =
   | TaskEvent
   | RollCallEvent
   | SweepEvent
-  | MemberStateEvent;
+  | MemberStateEvent
+  | TeamEvent;
 
 export type EventType = TeselEvent['type'];

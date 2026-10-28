@@ -72,12 +72,15 @@ describe('sweeping an area', () => {
     expect(sweptFraction(strip, [], 12)).toBe(0);
     // Up the first lane, a few metres off it.
     const up = [at(0, 15), at(200, 10), at(400, 14)];
-    expect(sweptFraction(strip, up, 12)).toBeCloseTo(0.5, 1);
+    expect(sweptFraction(strip, [up], 12)).toBeCloseTo(0.5, 1);
     // And halfway down the second.
     const back = [...up, at(400, 38), at(200, 36)];
-    expect(sweptFraction(strip, back, 12)).toBeCloseTo(0.75, 1);
+    expect(sweptFraction(strip, [back], 12)).toBeCloseTo(0.75, 1);
+    // Two walkers, one up each lane, sweep it all.
+    const down = [at(400, 38), at(0, 37)];
+    expect(sweptFraction(strip, [up, down], 12)).toBeCloseTo(1, 1);
     // Walking across the lanes sweeps next to nothing.
-    expect(sweptFraction(strip, [at(200, -50), at(200, 150)], 12)).toBeLessThan(0.1);
+    expect(sweptFraction(strip, [[at(200, -50), at(200, 150)]], 12)).toBeLessThan(0.1);
   });
 
   it('runs the lanes along the area, so there are fewest', () => {

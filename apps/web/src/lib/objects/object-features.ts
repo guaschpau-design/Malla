@@ -7,7 +7,7 @@ import type { Feature, FeatureCollection, Geometry, LineString, Point } from 'ge
 import { circleRing, toPosition } from '../map/geometry.ts';
 import type { Tone } from '../ui/theme.ts';
 import { styleInfo, symbolImageName } from './catalog.ts';
-import { stripOf, stripPath, TEAM_TONES } from './sweeps.ts';
+import { stripOf, stripPath, stripWalker, walkerTone } from './sweeps.ts';
 
 interface ObjectProperties {
   /** Object reference key (protocol §3.10), used to select the object. */
@@ -56,13 +56,15 @@ export function shapeFeatures(
 
 /** The way through each strip of a sweep, in its team's colour, with its number. */
 export function stripFeatures(
-  state: Pick<GroupState, 'objects'>,
+  state: Pick<GroupState, 'objects' | 'tasks' | 'teams'>,
 ): FeatureCollection<LineString, ShapeProperties> {
   const features: Feature<LineString, ShapeProperties>[] = [];
   for (const [key, record] of state.objects) {
     if (record.type !== 'sweep') continue;
     const strip = stripOf(record, state.objects);
-    if (strip) features.push(stripFeature(key, record.strip, stripPath(strip)));
+    if (strip === null) continue;
+    const tone = walkerTone(state.teams, stripWalker(state.tasks, key), record.strip);
+    features.push(stripFeature(key, record.strip, tone, stripPath(strip)));
   }
   return { type: 'FeatureCollection', features };
 }
@@ -71,6 +73,7 @@ export function stripFeatures(
 export function stripFeature(
   key: string,
   strip: number,
+  tone: Tone,
   path: readonly LatLon[],
 ): Feature<LineString, ShapeProperties> {
   return {
@@ -79,7 +82,7 @@ export function stripFeature(
     properties: {
       key,
       label: String(strip + 1),
-      tone: TEAM_TONES[strip % TEAM_TONES.length] ?? 'slate',
+      tone,
     },
   };
 }

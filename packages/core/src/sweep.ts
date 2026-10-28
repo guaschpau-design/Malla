@@ -88,14 +88,20 @@ export function lanesLength(sweep: SweepLanes): number {
 }
 
 /**
- * How much of the lanes, from 0 to 1, a trail has passed along within `reach` metres: the part
- * swept, from the positions of whoever walks them.
+ * How much of the lanes, from 0 to 1, some trails have passed along within `reach` metres: the
+ * part swept, from the positions of whoever walks them.
  */
-export function sweptFraction(sweep: SweepLanes, trail: readonly LatLon[], reach: number): number {
+export function sweptFraction(
+  sweep: SweepLanes,
+  trails: readonly (readonly LatLon[])[],
+  reach: number,
+): number {
   const total = lanesLength(sweep);
   if (total === 0) return 0;
-  const points = trail.map((point) => toPlane(sweep.origin, sweep.heading, point));
-  const steps = points.length === 1 ? [[points[0], points[0]] as const] : pairs(points);
+  const steps = trails.flatMap((trail) => {
+    const points = trail.map((point) => toPlane(sweep.origin, sweep.heading, point));
+    return points.length === 1 ? [[points[0], points[0]] as const] : pairs(points);
+  });
   let swept = 0;
   for (const lane of sweep.lanes) {
     const passed = merged(steps.flatMap(([from, to]) => passedAlong(lane.u, from, to, reach)));

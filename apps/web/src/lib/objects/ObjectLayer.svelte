@@ -15,12 +15,15 @@
     map: MapLibreMap;
     taps: MapTaps;
     objects: GroupState['objects'];
+    /** Strips of sweeps take the colour of the team they are for. */
+    tasks: GroupState['tasks'];
+    teams: GroupState['teams'];
     /** Whether markers and shapes are shown. */
     visible: boolean;
     onselect: (key: string) => void;
   }
 
-  let { map, taps, objects, visible, onselect }: Props = $props();
+  let { map, taps, objects, tasks, teams, visible, onselect }: Props = $props();
 
   const MARKERS = 'tesel-markers';
   const SHAPES = 'tesel-shapes';
@@ -30,7 +33,7 @@
     level: 'objects',
     data: {
       [SHAPES]: () => shapeFeatures({ objects }),
-      [STRIPS]: () => stripFeatures({ objects }),
+      [STRIPS]: () => stripFeatures({ objects, tasks, teams }),
       [MARKERS]: () => markerFeatures({ objects }),
     },
     visible: () => visible,

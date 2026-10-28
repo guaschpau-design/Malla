@@ -29,7 +29,7 @@ describe('member features', () => {
     ]);
     const { features } = memberFeatures(state, ANA, T0 + 10);
     expect(features.map((f) => f.properties)).toEqual([
-      { id: BERTA, label: 'Berta', stale: true, sos: false, away: false },
+      { id: BERTA, label: 'Berta', stale: true, sos: false, away: false, tone: 'none' },
     ]);
     expect(features[0]?.geometry.coordinates).toEqual([-0.37, 39.47]);
   });
