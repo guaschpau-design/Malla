@@ -1,5 +1,5 @@
 <!-- Warns on entering a danger area of the group, from this device's own position: a card on top
-     of the map and a vibration. Closing it lasts until the device leaves the area; entering again
+     of the map, a vibration, and an announcement for screen readers. Closing it lasts until the device leaves the area; entering again
      warns again. While the group has a danger area the GPS stays on for this, on the device only:
      nothing is shared that the user has not chosen to share. -->
 <script lang="ts">
@@ -8,6 +8,7 @@
 
   import type { Translate } from '../i18n/index.ts';
   import type { DeviceLocation } from '../position/device-location.svelte.ts';
+  import { announcer } from '../ui/announcer.svelte.ts';
   import MapCard from '../ui/MapCard.svelte';
   import { dangerZones, zonesAt } from './danger-zones.ts';
 
@@ -35,9 +36,13 @@
   $effect(() => {
     const now = new Set(inside.map((zone) => zone.key));
     for (const key of dismissed) if (!now.has(key)) dismissed.delete(key);
-    const entered = [...now].some((key) => !known.has(key));
-    // Safari has no vibration API.
-    if (entered && 'vibrate' in navigator) navigator.vibrate([500, 200, 500]);
+    const entered = inside.filter((zone) => !known.has(zone.key));
+    if (entered.length > 0) {
+      // Safari has no vibration API.
+      if ('vibrate' in navigator) navigator.vibrate([500, 200, 500]);
+      const names = entered.map((zone) => zone.label || t('styleDanger')).join(' · ');
+      announcer.say(`${t('dangerZoneEntered')}: ${names}`);
+    }
     known = now;
   });
 </script>

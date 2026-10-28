@@ -12,7 +12,7 @@
   import type { DeviceLocation } from '../position/device-location.svelte.ts';
   import type { Heard } from '../links/heard.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
-  import { useNow } from '../ui/now.svelte.ts';
+  import { clockEvery } from '../ui/now.svelte.ts';
   import ActionButton from '../ui/ActionButton.svelte';
   import Panel from '../ui/Panel.svelte';
   import { ROLE_LABELS } from '../groups/role-label.ts';
@@ -35,7 +35,7 @@
   const alias = $derived(aliasOf(groupState, id));
   const role = $derived(groupState.members.get(id)?.role);
   const report = $derived(groupState.positions.get(id));
-  const now = useNow(15_000);
+  const now = clockEvery(15_000);
   const channels = $derived(heard.get(id) ?? {});
   const ago = (time: number) => formatAgo(time, locale, now.seconds);
 </script>

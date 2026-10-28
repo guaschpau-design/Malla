@@ -132,13 +132,30 @@ describe('a download of an area', () => {
     const store = await freshStore();
     const job = new DownloadJob();
     const running = job.run(store, plan(heldService().archive));
-    await vi.waitFor(() => {
-      expect(job.running).toBe(true);
+    // Once the area is recorded, its tiles are on their way.
+    await vi.waitFor(async () => {
+      expect(await store.listAreas()).toHaveLength(1);
     });
     job.cancel();
     await expect(running).resolves.toBe(false);
     expect(job.failure).toBeNull();
     const [area] = await store.listAreas();
     expect(area?.complete).toBe(false);
+  });
+
+  it('can be cancelled while it still checks for room, and then downloads nothing', async () => {
+    const { promise: answered, resolve: answer } = Promise.withResolvers<StorageEstimate>();
+    vi.stubGlobal('navigator', {
+      storage: { persist: () => Promise.resolve(true), estimate: () => answered },
+    });
+    const store = await freshStore();
+    const job = new DownloadJob();
+    const running = job.run(store, plan(everyTile));
+    expect(job.running).toBe(true);
+    job.cancel();
+    answer({ usage: 0, quota: 1024 ** 3 });
+    await expect(running).resolves.toBe(false);
+    expect(job.failure).toBeNull();
+    expect(await store.listAreas()).toEqual([]);
   });
 });

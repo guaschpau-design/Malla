@@ -8,7 +8,7 @@
   import { formatTime } from '../format.ts';
   import type { Locale, Translate } from '../i18n/index.ts';
   import { confirmations } from '../ui/confirmations.svelte.ts';
-  import { useNow } from '../ui/now.svelte.ts';
+  import { clockEvery } from '../ui/now.svelte.ts';
   import { activeSos, openRollCall, recentAlerts } from './incidents.ts';
   import { ALERT_LEVELS, SOS_KINDS } from './sos-kinds.ts';
 
@@ -44,7 +44,7 @@
   /** Alerts are shown for an hour, or until dismissed on this device. */
   const ALERT_WINDOW_S = 60 * 60;
   const dismissed = new SvelteSet<string>();
-  const now = useNow(60_000);
+  const now = clockEvery(60_000);
 
   const calls = $derived(activeSos(groupState, self));
   const alerts = $derived(

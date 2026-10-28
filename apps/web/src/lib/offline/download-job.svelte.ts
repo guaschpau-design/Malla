@@ -38,16 +38,18 @@ export class DownloadJob {
    */
   async run(store: TileStore, plan: DownloadPlan): Promise<boolean> {
     this.failure = null;
-    const needed = estimatedBytes(plan.bounds, plan.layers);
-    const room = await roomForMaps();
-    if (room !== null && room < needed) {
-      this.failure = { kind: 'no-room', needed, free: room };
-      return false;
-    }
+    // Running, and so cancellable, from the start: the check for room takes a moment too.
     const controller = new AbortController();
     this.#controller = controller;
     this.progress = { done: 0, total: countAreaTiles(plan.bounds, plan.layers) };
     try {
+      const needed = estimatedBytes(plan.bounds, plan.layers);
+      const room = await roomForMaps();
+      if (controller.signal.aborted) return false;
+      if (room !== null && room < needed) {
+        this.failure = { kind: 'no-room', needed, free: room };
+        return false;
+      }
       const area = await downloadArea(store, {
         id: plan.resumes?.id ?? crypto.randomUUID(),
         createdAt: plan.resumes?.createdAt ?? Date.now(),

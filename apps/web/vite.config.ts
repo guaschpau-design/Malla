@@ -11,6 +11,8 @@ const base = process.env['TESEL_BASE'] ?? '/';
 export default defineConfig({
   base,
   build: {
+    // MapLibre's chunk is about 1 MB on its own, by design; anything else that big is news.
+    chunkSizeWarningLimit: 1100,
     rolldownOptions: {
       output: {
         // MapLibre, about half the app, in a file of its own: a release of the app leaves its name

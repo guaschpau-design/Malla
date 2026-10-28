@@ -12,7 +12,7 @@
   import { useOverlay } from '../map/overlay.svelte.ts';
   import type { DeviceLocation } from '../position/device-location.svelte.ts';
   import { themeColor } from '../ui/theme.ts';
-  import { useNow } from '../ui/now.svelte.ts';
+  import { clockEvery } from '../ui/now.svelte.ts';
   import { nearestMembers, ringFeatures, ringStep, vectorFeatures } from './radar.ts';
 
   interface Props {
@@ -31,7 +31,7 @@
 
   /** The map's zoom, read when it mounts and after each zoom. */
   let zoom = $state(0);
-  const now = useNow(30_000);
+  const now = clockEvery(30_000);
   const here = $derived(location.fix?.at ?? null);
   const rings = $derived(here ? ringFeatures(here, ringStep(zoom, here.lat), locale) : NOTHING);
   const vectors = $derived(

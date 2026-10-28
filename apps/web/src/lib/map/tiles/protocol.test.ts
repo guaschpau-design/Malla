@@ -45,6 +45,14 @@ describe('tile loading', () => {
     expect(seen).toEqual(['basemap/5/1/3', 'ortho/5/1/2']);
   });
 
+  it('gives a new empty tile each time, since MapLibre takes the bytes it is given', async () => {
+    const first = await loadTile('tesel-tiles://ortho/5/1/3', store, offline, signal);
+    structuredClone(first, { transfer: [first] });
+    const second = await loadTile('tesel-tiles://ortho/5/1/4', store, offline, signal);
+    expect(first.byteLength).toBe(0);
+    expect(second.byteLength).toBeGreaterThan(0);
+  });
+
   it('returns an empty tile when offline instead of failing, an image for raster sources', async () => {
     const isPng = (tile: ArrayBuffer) =>
       new Uint8Array(tile).slice(1, 4).every((byte, i) => byte === [0x50, 0x4e, 0x47][i]);

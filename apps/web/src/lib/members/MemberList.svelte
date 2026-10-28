@@ -8,7 +8,7 @@
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import type { Heard } from '../links/heard.ts';
   import { initialOf } from '../text.ts';
-  import { useNow } from '../ui/now.svelte.ts';
+  import { clockEvery } from '../ui/now.svelte.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import { memberRows, type PositionStatus } from './member-list.ts';
   import { ROLE_LABELS } from '../groups/role-label.ts';
@@ -29,7 +29,7 @@
     never: 'positionNever',
   };
 
-  const now = useNow(30_000);
+  const now = clockEvery(30_000);
   const rows = $derived(memberRows(groupState, self, now.seconds, heard));
 </script>
 

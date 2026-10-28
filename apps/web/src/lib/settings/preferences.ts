@@ -1,12 +1,12 @@
 // Every preference this device remembers, in one place: what it is, its choices and its default.
 
-import { COORDINATE_FORMATS, type CoordinateFormat } from '../coordinates/coordinates.ts';
-import { LANGUAGE_CHOICES, type LanguageChoice } from '../i18n/index.ts';
-import { MAP_LAYERS, type MapLayer } from '../map/layers.ts';
-import { BASE_MAPS, type BaseMap } from '../map/style/style.ts';
-import { POSITION_MODES, type PositionMode } from '../position/position-mode.ts';
+import { COORDINATE_FORMATS } from '../coordinates/coordinates.ts';
+import { LANGUAGE_CHOICES } from '../i18n/index.ts';
+import { MAP_LAYERS } from '../map/layers.ts';
+import { BASE_MAPS } from '../map/style/style.ts';
+import { POSITION_MODES } from '../position/position-mode.ts';
 import type { AppDb } from '../storage/app-db.ts';
-import { choice, flag, Preference, subset } from './preference.svelte.ts';
+import { choice, flag, Preference, subset, type PreferenceSpec } from './preference.svelte.ts';
 
 export const PREFERENCES = {
   /** How this device shares its position: hidden until the user chooses otherwise. */
@@ -37,40 +37,24 @@ export const PREFERENCES = {
   language: choice('language', LANGUAGE_CHOICES, 'auto'),
 };
 
-/** The preferences the interface reads and changes as the user works. */
-export interface Preferences {
-  readonly positionMode: Preference<PositionMode>;
-  readonly coordinateFormat: Preference<CoordinateFormat>;
-  readonly baseMap: Preference<BaseMap>;
-  readonly relief: Preference<boolean>;
-  readonly grid: Preference<boolean>;
-  readonly radar: Preference<boolean>;
-  readonly cadastre: Preference<boolean>;
-  readonly hiddenLayers: Preference<readonly MapLayer[]>;
-  readonly keepScreenOn: Preference<boolean>;
-  readonly fullscreen: Preference<boolean>;
-  readonly alarmSound: Preference<boolean>;
-  readonly notifications: Preference<boolean>;
-  readonly language: Preference<LanguageChoice>;
-}
+type Specs = typeof PREFERENCES;
+type ValueOf<S> = S extends PreferenceSpec<infer T> ? T : never;
 
+/** The preferences the interface reads and changes as the user works: one for each above. */
+export type Preferences = { readonly [K in keyof Specs]: Preference<ValueOf<Specs[K]>> };
+
+/** Reads every preference in one transaction. */
 export async function loadPreferences(db: AppDb): Promise<Preferences> {
   await moveRenamed(db);
-  return {
-    positionMode: await Preference.load(db, PREFERENCES.positionMode),
-    coordinateFormat: await Preference.load(db, PREFERENCES.coordinateFormat),
-    baseMap: await Preference.load(db, PREFERENCES.baseMap),
-    relief: await Preference.load(db, PREFERENCES.relief),
-    grid: await Preference.load(db, PREFERENCES.grid),
-    radar: await Preference.load(db, PREFERENCES.radar),
-    cadastre: await Preference.load(db, PREFERENCES.cadastre),
-    hiddenLayers: await Preference.load(db, PREFERENCES.hiddenLayers),
-    keepScreenOn: await Preference.load(db, PREFERENCES.keepScreenOn),
-    fullscreen: await Preference.load(db, PREFERENCES.fullscreen),
-    alarmSound: await Preference.load(db, PREFERENCES.alarmSound),
-    notifications: await Preference.load(db, PREFERENCES.notifications),
-    language: await Preference.load(db, PREFERENCES.language),
-  };
+  const settings = db.transaction('settings').store;
+  const entries = await Promise.all(
+    Object.entries(PREFERENCES).map(async ([name, spec]: [string, PreferenceSpec<unknown>]) => {
+      const preference = Preference.fromStored(db, spec, await settings.get(spec.key));
+      return [name, preference] as const;
+    }),
+  );
+  // Each entry was made from the spec under the same name, which is what the type says.
+  return Object.fromEntries(entries) as Preferences;
 }
 
 /**

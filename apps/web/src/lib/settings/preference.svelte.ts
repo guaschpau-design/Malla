@@ -38,10 +38,6 @@ export function subset<const T extends string>(
   };
 }
 
-async function loadPreference<T>(db: AppDb, spec: PreferenceSpec<T>): Promise<T> {
-  return spec.read(await db.get('settings', spec.key)) ?? spec.fallback;
-}
-
 async function savePreference<T>(db: AppDb, spec: PreferenceSpec<T>, value: T): Promise<void> {
   await db.put('settings', value, spec.key);
 }
@@ -60,7 +56,12 @@ export class Preference<T> {
   }
 
   static async load<T>(db: AppDb, spec: PreferenceSpec<T>): Promise<Preference<T>> {
-    return new Preference(db, spec, await loadPreference(db, spec));
+    return Preference.fromStored(db, spec, await db.get('settings', spec.key));
+  }
+
+  /** The preference with what the settings store holds for it, read elsewhere. */
+  static fromStored<T>(db: AppDb, spec: PreferenceSpec<T>, stored: unknown): Preference<T> {
+    return new Preference(db, spec, spec.read(stored) ?? spec.fallback);
   }
 
   /**

@@ -115,7 +115,9 @@ export async function loadTile(
   const source = TILE_SOURCES.find((id) => id === match?.[1]);
   if (!match || source === undefined) throw new Error(`not a ${PROTOCOL} URL: ${url}`);
   const [z, x, y] = match.slice(2).map(Number) as [number, number, number];
-  return (await findTile(source, { z, x, y }, store, archives, signal)) ?? NOTHING[source];
+  // A copy of the empty tile each time: MapLibre gives the bytes away to a worker, which leaves the
+  // shared one empty for the next tile.
+  return (await findTile(source, { z, x, y }, store, archives, signal)) ?? NOTHING[source].slice(0);
 }
 
 export function registerTileProtocol(store: TileReader, archives: TileArchives): void {

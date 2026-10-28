@@ -29,6 +29,7 @@
   import { PositionSharing } from './lib/position/position-sharing.svelte.ts';
   import UpdatePrompt from './lib/pwa/UpdatePrompt.svelte';
   import { activeSos } from './lib/incidents/incidents.ts';
+  import Announcer from './lib/ui/Announcer.svelte';
   import ConfirmDialog from './lib/ui/ConfirmDialog.svelte';
   import StartupProblem from './lib/ui/StartupProblem.svelte';
   import type { StartupFailure, VersionChange } from './lib/storage/version-change.ts';
@@ -356,6 +357,7 @@
     {/if}
 
     <ConfirmDialog {t} />
+    <Announcer />
     <UpdatePrompt
       {t}
       hold={feed !== undefined && session?.identity !== undefined && ownSosOpen}

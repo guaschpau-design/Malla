@@ -5,18 +5,19 @@
 import { parseWeatherWarnings, weatherWarningsUrl, type WeatherWarnings } from '@tesel/protocol';
 
 import type { AppDb } from '../storage/app-db.ts';
+import { clockEvery } from '../ui/now.svelte.ts';
 import { activeRegions, type ActiveRegion } from './weather-warnings.ts';
 
 /** The server gathers them every 10 minutes. */
 const REFRESH_MS = 10 * 60 * 1000;
+/** How often to see whether it is time to ask again, and warnings expire. */
 const TICK_MS = 60 * 1000;
+const clock = clockEvery(TICK_MS);
 
 export class WeatherFeed {
   readonly #db: AppDb;
   readonly #url: string;
   #document: WeatherWarnings | null = $state.raw(null);
-  /** The current time in seconds, moved on every minute. */
-  #now = $state(Date.now() / 1000);
   #askedAt = -Infinity;
   #timer: ReturnType<typeof setInterval> | null = null;
   readonly #wake = () => {
@@ -25,7 +26,7 @@ export class WeatherFeed {
 
   /** The regions under some warning now; empty until the first warnings arrive. */
   readonly regions: readonly ActiveRegion[] = $derived(
-    this.#document === null ? [] : activeRegions(this.#document, this.#now),
+    this.#document === null ? [] : activeRegions(this.#document, clock.seconds),
   );
 
   private constructor(db: AppDb, server: string) {
@@ -46,7 +47,6 @@ export class WeatherFeed {
     });
     void feed.#refresh();
     feed.#timer = setInterval(() => {
-      feed.#now = Date.now() / 1000;
       void feed.#refresh();
     }, TICK_MS);
     window.addEventListener('online', feed.#wake);
