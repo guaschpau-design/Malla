@@ -1,28 +1,35 @@
-<!-- A modal card for decisions that must be taken before going on (first launch, joining). -->
+<!-- A modal card for decisions that must be taken before going on (first launch, joining, a
+     confirmation). -->
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
 
   interface Props {
     title: string;
+    /** What Escape does; without it Escape does nothing, and the parent decides when it closes. */
+    oncancel?: () => void;
     children: Snippet;
   }
 
-  let { title, children }: Props = $props();
+  let { title, oncancel, children }: Props = $props();
 
   let dialog: HTMLDialogElement;
   const titleId = `dialog-${crypto.randomUUID()}`;
 
   onMount(() => {
     dialog.showModal();
+    // Closed before it goes, the browser gives the focus back to what had it before.
+    return () => {
+      dialog.close();
+    };
   });
 </script>
 
-<!-- Escape must not dismiss it: the parent decides when it closes. -->
 <dialog
   bind:this={dialog}
   aria-labelledby={titleId}
   oncancel={(event) => {
     event.preventDefault();
+    oncancel?.();
   }}
 >
   <h2 id={titleId}>{title}</h2>

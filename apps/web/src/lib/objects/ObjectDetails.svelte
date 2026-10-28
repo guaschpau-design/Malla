@@ -13,6 +13,7 @@
   import type { DeviceLocation } from '../position/device-location.svelte.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import ActionButton from '../ui/ActionButton.svelte';
+  import { confirmations } from '../ui/confirmations.svelte.ts';
   import Panel from '../ui/Panel.svelte';
   import { objectKind } from './catalog.ts';
   import { attempt } from '../ui/submission.svelte.ts';
@@ -65,8 +66,9 @@
     record && record.type !== 'object-delete' && record.label ? record.label : kindName,
   );
 
-  function remove(): void {
-    if (!confirm(t('confirmDeleteObject', { name: title }))) return;
+  async function remove(): Promise<void> {
+    const text = t('confirmDeleteObject', { name: title });
+    if (!(await confirmations.ask({ text, confirm: t('delete') }))) return;
     attempt(async () => {
       await ondelete();
       onclose();

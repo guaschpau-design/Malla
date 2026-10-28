@@ -28,6 +28,7 @@
   import { PositionSharing } from './lib/position/position-sharing.svelte.ts';
   import UpdatePrompt from './lib/pwa/UpdatePrompt.svelte';
   import { activeSos } from './lib/incidents/incidents.ts';
+  import ConfirmDialog from './lib/ui/ConfirmDialog.svelte';
   import StartupProblem from './lib/ui/StartupProblem.svelte';
   import type { StartupFailure, VersionChange } from './lib/storage/version-change.ts';
   import { RadioSession } from './lib/radio/radio.svelte.ts';
@@ -231,7 +232,7 @@
 </script>
 
 <div class="app">
-  <header class="bar">
+  <header class="bar chrome">
     <span class="brand">
       <img class="lockup" src={lockupUrl} alt="Tesel" />
       <img class="mark" src={markUrl} alt="Tesel" />
@@ -335,6 +336,7 @@
       />
     {/if}
 
+    <ConfirmDialog {t} />
     <UpdatePrompt
       {t}
       hold={feed !== undefined && session?.identity !== undefined && ownSosOpen}
@@ -359,9 +361,9 @@
     display: flex;
     gap: 0.75rem;
     align-items: center;
-    padding: calc(0.5rem + env(safe-area-inset-top)) 1rem 0.5rem;
-    color: var(--chrome-fg);
-    background: var(--chrome-bg);
+    /* Clear of a notch at the top, or at a side when the phone is held sideways. */
+    padding: calc(0.5rem + env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) 0.5rem
+      max(1rem, env(safe-area-inset-left));
   }
 
   .brand {

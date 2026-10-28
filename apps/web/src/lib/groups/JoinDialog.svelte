@@ -20,7 +20,7 @@
   const submission = new Submission();
 </script>
 
-<Dialog title={t('joinTitle')}>
+<Dialog title={t('joinTitle')} oncancel={ondismiss}>
   <div class="stack">
     {#if invitation}
       <p>

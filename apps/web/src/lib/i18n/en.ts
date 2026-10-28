@@ -1,4 +1,5 @@
-// The English dictionary defines the set of keys. Every other language must provide all of them.
+// The English dictionary defines the set of keys. Every other language must provide all of them,
+// and give plural forms (a `Plural`) to the same keys as English does.
 
 export const en = {
   connections: 'Connections',
@@ -35,7 +36,7 @@ export const en = {
   detailStreets: 'Streets (zoom {zoom})',
   detailTown: 'Town (zoom {zoom})',
   detailRegion: 'Region (zoom {zoom})',
-  estimate: '{tiles} tiles, about {size}',
+  estimate: { one: '{count} tile, about {size}', other: '{count} tiles, about {size}' },
   areaTooLarge: 'This area is too large. Zoom in or choose less detail.',
   operationAreaTitle: 'Operation area “{name}”',
   operationAreaOffer: 'Download its map to have it without a connection (about {size}).',
@@ -213,7 +214,10 @@ export const en = {
   logTitle: 'The group log',
   logHint:
     'The log is every event of the group, encrypted: only members can read it. Load it on another device of the group to bring it what it is missing.',
-  logLoaded: 'Log loaded: {added} new events of {total}.',
+  logLoaded: {
+    one: 'Log loaded: {count} new event of {total}.',
+    other: 'Log loaded: {count} new events of {total}.',
+  },
   logOtherGroup: 'This log belongs to another group.',
   logUnreadable: 'This file is not a Tesel log.',
   measureHint: 'Tap the map to measure from point to point.',
@@ -314,7 +318,10 @@ export const en = {
   rollCallQuestion: 'Is everyone well?',
   imWell: 'I’m well',
   needHelp: 'I need help',
-  rollCallAnswered: '{answered} of {expected} have answered',
+  rollCallAnswered: {
+    one: '{count} of {expected} has answered',
+    other: '{count} of {expected} have answered',
+  },
   rollCallPending: 'Not yet: {names}',
   rollCallAll: 'Everyone has answered.',
   cancelSos: 'Cancel SOS',
@@ -418,7 +425,8 @@ export const en = {
   warningRed: 'Red warning',
   warningUntil: 'Until {until}',
   warningFromUntil: 'From {from} to {until}',
-  warningSource: 'Source: {source}',
+  warningSource: 'Source:',
+  warningThrough: 'through',
   details: 'Details',
   practice: 'Practice',
   practiceHint: 'Nothing leaves this device.',
@@ -439,5 +447,17 @@ export const en = {
   thirdPartyLicences: 'Third-party licences',
 } as const;
 
+/**
+ * A text that changes with a number, one form per plural category of its language
+ * (Intl.PluralRules). Every language has `other`; English and Spanish use `one` too.
+ */
+export type Plural = Readonly<Partial<Record<Intl.LDMLPluralRule, string>>> & {
+  readonly other: string;
+};
+
 export type MessageKey = keyof typeof en;
-export type Messages = { readonly [K in MessageKey]: string };
+/** The keys whose text has plural forms, chosen by its `count`. */
+export type PluralKey = {
+  [K in MessageKey]: (typeof en)[K] extends string ? never : K;
+}[MessageKey];
+export type Messages = { readonly [K in MessageKey]: K extends PluralKey ? Plural : string };

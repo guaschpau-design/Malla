@@ -142,13 +142,14 @@
 </div>
 
 <style>
-  /* Clear of the map's controls on the right: one control wide, with MapLibre's 10 px margin. */
+  /* Clear of the map's controls on the right: one control wide, with MapLibre's 10 px margin; and
+     of a notch on either side when the phone is held sideways. */
   .top {
     position: absolute;
     z-index: var(--layer-status);
     top: 0.75rem;
-    right: calc(var(--control-size) + 1.25rem);
-    left: 0.75rem;
+    right: calc(var(--control-size) + 1.25rem + env(safe-area-inset-right));
+    left: max(0.75rem, env(safe-area-inset-left));
     display: grid;
     align-content: start;
     gap: 0.5rem;

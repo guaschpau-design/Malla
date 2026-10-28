@@ -1,5 +1,6 @@
 // The official weather warnings a server publishes (docs/protocol.md §8.4), as the app uses them:
-// the regions still under some warning, which of them hold a point, and how each level looks.
+// the regions still under some warning, which of them hold a point, who issued them, and how each
+// level looks.
 
 import { highestLevel } from '@tesel/protocol';
 import type {
@@ -24,6 +25,31 @@ export const WARNING_LOOKS: Readonly<Record<WarningLevel, { label: MessageKey; t
   4: { label: 'warningRed', tone: 'red' },
 };
 
+/** A national weather service, named and linked wherever its warnings are shown. */
+export interface WarningIssuer {
+  readonly name: string;
+  readonly url: string;
+}
+
+/**
+ * The services of the countries a server gathers by default (ADR-0030), by the country code that
+ * begins each region's MeteoAlarm code (EMMA_ID): "ES521" is AEMET's. A country added to a server
+ * needs its service here; until then its warnings are credited to MeteoAlarm alone.
+ */
+const ISSUERS: Readonly<Record<string, WarningIssuer>> = {
+  ES: { name: 'AEMET', url: 'https://www.aemet.es' },
+  PT: { name: 'IPMA', url: 'https://www.ipma.pt' },
+};
+
+/** Where the server gathers every warning from (ADR-0030), which its `source` names. */
+export const METEOALARM_URL = 'https://meteoalarm.org';
+
+/** The warnings at a point, and the services that issued them. */
+export interface WarningsHere {
+  readonly warnings: readonly WeatherWarning[];
+  readonly issuers: readonly WarningIssuer[];
+}
+
 /** A region still under warning, with its bounds to rule points out quickly. */
 export interface ActiveRegion {
   readonly region: WarningRegion;
@@ -45,12 +71,18 @@ export function activeRegions(document: WeatherWarnings, now: number): ActiveReg
   });
 }
 
-/** The warnings in force or announced at a point, highest level first. */
-export function warningsAt(regions: readonly ActiveRegion[], at: LatLon): WeatherWarning[] {
-  return regions
+/** The warnings in force or announced at a point, highest level first, and who issued them. */
+export function warningsAt(regions: readonly ActiveRegion[], at: LatLon): WarningsHere {
+  const holding = regions
     .filter(({ region, bounds }) => withinBounds(bounds, at) && contains(region.geometry, at))
-    .flatMap(({ region }) => region.properties.warnings)
-    .sort((a, b) => b.level - a.level || a.onset - b.onset);
+    .map(({ region }) => region.properties);
+  const issuers = holding.flatMap(({ code }) => ISSUERS[code.slice(0, 2)] ?? []);
+  return {
+    warnings: holding
+      .flatMap(({ warnings }) => warnings)
+      .sort((a, b) => b.level - a.level || a.onset - b.onset),
+    issuers: [...new Set(issuers)],
+  };
 }
 
 /** The regions to draw, each with its level as a `tone` the map colours (ui/theme.ts). */

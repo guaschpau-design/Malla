@@ -56,7 +56,7 @@ test('members are offered the map of the operation area their coordinator marks'
   await ana.getByLabel('Etiqueta (opcional)').fill('Sector norte');
   await ana.getByRole('button', { name: 'Guardar' }).click();
 
-  const offer = berta.getByRole('status').filter({ hasText: 'Zona del operativo «Sector norte»' });
+  const offer = berta.getByRole('region', { name: 'Zona del operativo «Sector norte»' });
   await offer.getByRole('button', { name: 'Descargar' }).click();
   await expect(offer).toBeHidden();
   await openMore(berta, 'Mapas sin conexión');

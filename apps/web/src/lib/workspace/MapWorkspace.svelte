@@ -316,7 +316,7 @@
 
 {#if panels.open === 'point' && point}
   {@const { at, name } = point}
-  {@const warnings = weather && shown.weather ? warningsAt(weather.regions, at) : []}
+  {@const here = weather && shown.weather ? warningsAt(weather.regions, at) : null}
   <PointLayer {map} point={at} />
   <PointPanel
     {t}
@@ -344,8 +344,8 @@
     onclose={closePanel}
   >
     {#snippet about()}
-      {#if weather && warnings.length > 0}
-        <WarningList {t} {locale} {warnings} source={weather.source} />
+      {#if weather && here && here.warnings.length > 0}
+        <WarningList {t} {locale} {here} source={weather.source} />
       {/if}
     {/snippet}
   </PointPanel>

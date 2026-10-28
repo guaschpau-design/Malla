@@ -42,7 +42,7 @@
   });
 </script>
 
-<MapCard>
+<MapCard label={t('navigatingTo', { name })}>
   <div class="navigation">
     {#if leg && !leg.arrived}
       <span class="arrow" style:rotate="{leg.bearing - mapBearing}deg">

@@ -71,8 +71,25 @@ describe('weather warnings', () => {
       document(region('A', [warning(2, NOW + 60)]), region('B', [warning(4, NOW + 60)])),
       NOW,
     );
-    expect(warningsAt(regions, { lat: 1, lon: 1 }).map((w) => w.level)).toEqual([4, 2]);
-    expect(warningsAt(regions, { lat: 3, lon: 1 })).toEqual([]);
+    expect(warningsAt(regions, { lat: 1, lon: 1 }).warnings.map((w) => w.level)).toEqual([4, 2]);
+    expect(warningsAt(regions, { lat: 3, lon: 1 }).warnings).toEqual([]);
+  });
+
+  it('names the national services that issued the warnings at a point, once each', () => {
+    const regions = activeRegions(
+      document(
+        region('ES521', [warning(2, NOW + 60)]),
+        region('ES522', [warning(3, NOW + 60)]),
+        region('PT004', [warning(2, NOW + 60)]),
+        region('FR801', [warning(2, NOW + 60)]),
+      ),
+      NOW,
+    );
+    expect(warningsAt(regions, { lat: 1, lon: 1 }).issuers.map(({ name }) => name)).toEqual([
+      'AEMET',
+      'IPMA',
+    ]);
+    expect(warningsAt(regions, { lat: 3, lon: 1 }).issuers).toEqual([]);
   });
 
   it('tells whether a point is inside an outline, holes left out', () => {

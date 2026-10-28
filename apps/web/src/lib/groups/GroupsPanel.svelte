@@ -8,6 +8,7 @@
   import type { Translate } from '../i18n/index.ts';
   import type { Session } from '../session.svelte.ts';
   import type { GroupFeed } from '../sync/group-feed.svelte.ts';
+  import { confirmations } from '../ui/confirmations.svelte.ts';
   import Panel from '../ui/Panel.svelte';
   import Pictogram from '../ui/Pictogram.svelte';
   import ActiveGroup from './ActiveGroup.svelte';
@@ -48,12 +49,13 @@
     oninvitation(invitation);
   }
 
-  function leave(group: StoredGroup): void {
+  async function leave(group: StoredGroup): Promise<void> {
     if (group.practice) {
       attempt(() => session.endPractice(), t('actionFailed'));
       return;
     }
-    if (!confirm(t('confirmLeave', { group: group.name }))) return;
+    const text = t('confirmLeave', { group: group.name });
+    if (!(await confirmations.ask({ text, confirm: t('leave') }))) return;
     attempt(async () => {
       await session.leave(group.id);
       onleft(group);
@@ -88,7 +90,7 @@
           self={session.identity.nodeId}
           oninvite={() => (view = { kind: 'invite', group })}
           onleave={() => {
-            leave(group);
+            void leave(group);
           }}
         />
       {:else if session.groups.length === 0}

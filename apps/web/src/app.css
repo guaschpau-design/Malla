@@ -24,11 +24,18 @@
   --surface: #ffffff;
   --fg: var(--ink);
   --muted: #4f6069;
+  /* Lines that only separate (cards, lists) are soft. The edge of a control that must be found to
+     be used (a text field, a switch) stands out 3:1 from the surface, as WCAG asks. */
   --border: #cfd8d3;
+  --control-line: #76857f;
   --chrome-bg: var(--ink);
   --chrome-fg: var(--pale);
   --chrome-line: rgb(230 235 232 / 25%);
   --chrome-pressed: rgb(230 235 232 / 14%);
+  /* What has the keyboard's focus is ringed in the line colour; on the chrome, in lime (.chrome). */
+  --focus: var(--accent-line);
+  /* Links, such as the user guide's: the line colour, underlined. */
+  --link: var(--accent-line);
 
   /* The one action on a screen: lime, with ink on it. Lines and outlines on light surfaces take
      the deep shade, since lime alone does not stand out on white. */
@@ -36,8 +43,12 @@
   --on-accent: var(--ink);
   --accent-line: var(--signal-deep);
 
-  /* Meanings */
-  --danger: #e5383b;
+  /* Meanings. Danger fills the SOS button and the buttons that destroy, with white on it; text
+     and lines in danger on a surface take --danger, which the dark theme lightens, since one red
+     cannot carry white text and be read on a dark surface as well. */
+  --danger-fill: #cc2b2f;
+  --on-danger: #ffffff;
+  --danger: var(--danger-fill);
   --warning: #f2a516;
   --info: #2f6fde;
 
@@ -98,6 +109,7 @@
     --fg: var(--pale);
     --muted: #93a6ad;
     --border: #2a4654;
+    --control-line: #5f7f8c;
     --chrome-bg: #050c12;
     --accent-line: var(--signal);
     --danger: #ff5c5f;
@@ -141,9 +153,9 @@ button.primary {
 
 button.danger {
   font-weight: 700;
-  color: #fff;
-  background: var(--danger);
-  border-color: var(--danger);
+  color: var(--on-danger);
+  background: var(--danger-fill);
+  border-color: var(--danger-fill);
 }
 
 button.ghost {
@@ -167,10 +179,26 @@ input[type='radio'] {
 }
 
 button:focus-visible,
+a:focus-visible,
 input:focus-visible,
-select:focus-visible {
-  outline: 2px solid var(--accent-line);
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
+}
+
+a {
+  color: var(--link);
+}
+
+/* The chrome around the map: the top bar, the dock and the map's controls. It is ink in both
+   themes, where the line colour of a light surface would not show. */
+.chrome {
+  --focus: var(--signal);
+
+  color: var(--chrome-fg);
+  background: var(--chrome-bg);
 }
 
 /* Shared building blocks for panels and dialogs. */
@@ -187,14 +215,19 @@ label {
 }
 
 input,
-select {
+select,
+textarea {
   min-height: var(--control-size);
   padding: 0 0.6rem;
   font: inherit;
   color: inherit;
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: 1px solid var(--control-line);
   border-radius: var(--radius-control);
+}
+
+textarea {
+  padding: 0.5rem 0.6rem;
 }
 
 .intro,

@@ -1,26 +1,30 @@
 <!-- Official weather warnings, each with its level, what it warns of and when, and its full text
-     on demand; then who issued them. -->
+     on demand; then who issued them and through whom, each linked, as their licence asks. -->
 <script lang="ts">
-  import type { WeatherWarning } from '@tesel/protocol';
-
   import { formatTime } from '../format.ts';
   import type { Locale, Translate } from '../i18n/index.ts';
-  import { WARNING_LOOKS, warningText } from './weather-warnings.ts';
+  import {
+    METEOALARM_URL,
+    WARNING_LOOKS,
+    warningText,
+    type WarningsHere,
+  } from './weather-warnings.ts';
 
   interface Props {
     t: Translate;
     locale: Locale;
-    warnings: readonly WeatherWarning[];
+    here: WarningsHere;
+    /** Who the server gathered them from (protocol §8.4). */
     source: string | null;
   }
 
-  let { t, locale, warnings, source }: Props = $props();
+  let { t, locale, here, source }: Props = $props();
 
   const time = (seconds: number) => formatTime(seconds * 1000, locale);
 </script>
 
 <ul class="warnings">
-  {#each warnings as warning, index (index)}
+  {#each here.warnings as warning, index (index)}
     {@const look = WARNING_LOOKS[warning.level]}
     {@const text = warningText(warning, locale)}
     <li style:--level="var(--tone-{look.tone})">
@@ -39,7 +43,16 @@
     </li>
   {/each}
 </ul>
-{#if source}<p class="source">{t('warningSource', { source })}</p>{/if}
+{#if source}
+  <p class="source">
+    {t('warningSource')}
+    {#each here.issuers as issuer (issuer.name)}
+      <a href={issuer.url} target="_blank" rel="noopener">{issuer.name}</a>,
+    {/each}
+    {#if here.issuers.length > 0}{t('warningThrough')}{/if}
+    <a href={METEOALARM_URL} target="_blank" rel="noopener">{source}</a>
+  </p>
+{/if}
 
 <style>
   .warnings {

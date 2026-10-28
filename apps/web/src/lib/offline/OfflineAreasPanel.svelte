@@ -11,6 +11,7 @@
   import { BASEMAP_MAX_ZOOM } from '../map/style.ts';
   import type { Bounds } from '../map/tile-math.ts';
   import type { OfflineArea } from '../map/tile-store.ts';
+  import { confirmations } from '../ui/confirmations.svelte.ts';
   import Panel from '../ui/Panel.svelte';
   import { DownloadJob } from './download-job.svelte.ts';
   import {
@@ -74,8 +75,9 @@
     }, t('actionFailed'));
   }
 
-  function remove(area: OfflineArea): void {
-    if (!confirm(t('confirmDelete', { name: area.name }))) return;
+  async function remove(area: OfflineArea): Promise<void> {
+    const text = t('confirmDelete', { name: area.name });
+    if (!(await confirmations.ask({ text, confirm: t('delete') }))) return;
     attempt(async () => {
       await offline.store.deleteArea(area);
       await refresh();
@@ -149,7 +151,7 @@
     {:else}
       <p class="hint">
         {t('estimate', {
-          tiles: tileCount.toLocaleString(locale),
+          count: tileCount,
           size: formatBytes(bytes, locale),
         })}
       </p>
@@ -182,7 +184,7 @@
             >
             <button
               onclick={() => {
-                remove(area);
+                void remove(area);
               }}>{t('delete')}</button
             >
           </div>

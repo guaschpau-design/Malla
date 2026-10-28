@@ -7,6 +7,7 @@
 
   import { formatTime } from '../format.ts';
   import type { Locale, Translate } from '../i18n/index.ts';
+  import { confirmations } from '../ui/confirmations.svelte.ts';
   import { useNow } from '../ui/now.svelte.ts';
   import { activeSos, openRollCall, recentAlerts } from './incidents.ts';
   import { ALERT_LEVELS, SOS_KINDS } from './sos-kinds.ts';
@@ -58,8 +59,9 @@
     return open.mine || !open.answeredBySelf ? open : null;
   });
 
-  function cancel(sos: EventRef): void {
-    if (confirm(t('confirmCancelSos'))) oncancel(sos);
+  async function cancel(sos: EventRef): Promise<void> {
+    const text = t('confirmCancelSos');
+    if (await confirmations.ask({ text, confirm: t('cancelSos') })) oncancel(sos);
   }
 </script>
 
@@ -102,7 +104,7 @@
         {#if call.mine || canCancelOthers}
           <button
             onclick={() => {
-              cancel(call.event);
+              void cancel(call.event);
             }}>{t('cancelSos')}</button
           >
         {/if}
@@ -118,7 +120,7 @@
       {#if call.mine}
         <p>
           {t('rollCallAnswered', {
-            answered: call.answered.length,
+            count: call.answered.length,
             expected: call.answered.length + call.pending.length,
           })}
         </p>

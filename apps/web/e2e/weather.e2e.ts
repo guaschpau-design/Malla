@@ -58,9 +58,18 @@ async function deviceUnderWarning(browser: Parameters<typeof device>[0]): Promis
 test('a warning shows where this device is and at a point picked in it', async ({ browser }) => {
   const page = await deviceUnderWarning(browser);
   await page.getByRole('button', { name: 'Mostrar mi ubicación' }).click();
-  const card = page.getByRole('status').filter({ hasText: 'Aviso meteorológico donde estás' });
+  const card = page.getByRole('region', { name: 'Aviso meteorológico donde estás' });
   await expect(card).toContainText('Aviso naranja · Lluvias');
-  await expect(card).toContainText('Fuente: MeteoAlarm (EUMETNET)');
+  // Credited to who issued it and who gathered it, each linked.
+  await expect(card).toContainText('Fuente: AEMET, a través de MeteoAlarm (EUMETNET)');
+  await expect(card.getByRole('link', { name: 'AEMET' })).toHaveAttribute(
+    'href',
+    'https://www.aemet.es',
+  );
+  await expect(card.getByRole('link', { name: 'MeteoAlarm (EUMETNET)' })).toHaveAttribute(
+    'href',
+    'https://meteoalarm.org',
+  );
   await card.getByRole('button', { name: 'Cerrar' }).click();
   await expect(card).toBeHidden();
 
@@ -74,7 +83,7 @@ test('a warning shows where this device is and at a point picked in it', async (
 test('warnings go away with their layer', async ({ browser }) => {
   const page = await deviceUnderWarning(browser);
   await page.getByRole('button', { name: 'Mostrar mi ubicación' }).click();
-  const card = page.getByRole('status').filter({ hasText: 'Aviso meteorológico donde estás' });
+  const card = page.getByRole('region', { name: 'Aviso meteorológico donde estás' });
   await expect(card).toBeVisible();
 
   await page.getByRole('button', { name: 'Capas del mapa' }).click();

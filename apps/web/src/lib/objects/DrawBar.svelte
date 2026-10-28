@@ -2,7 +2,7 @@
 <script lang="ts">
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import MapCard from '../ui/MapCard.svelte';
-  import { isComplete, type Draft, type DraftKind } from './draft.ts';
+  import { DRAFT_TITLES, isComplete, type Draft, type DraftKind } from './draft.ts';
 
   interface Props {
     t: Translate;
@@ -20,7 +20,7 @@
   };
 </script>
 
-<MapCard>
+<MapCard label={t(DRAFT_TITLES[draft.kind])}>
   <p>{t(HINTS[draft.kind])}</p>
   <div class="row">
     <button onclick={onundo} disabled={draft.points.length === 0}>{t('undo')}</button>

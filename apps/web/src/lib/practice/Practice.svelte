@@ -42,7 +42,7 @@
   });
 </script>
 
-<MapCard edge="var(--info)">
+<MapCard label={t('practice')} edge="var(--info)">
   <p><strong>{t('practice')}</strong> · {scenario.description} {t('practiceHint')}</p>
   <div class="row">
     <button onclick={onend}>{t('endPractice')}</button>

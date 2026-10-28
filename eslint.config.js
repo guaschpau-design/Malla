@@ -24,6 +24,8 @@ export default tseslint.config(
       '@typescript-eslint/switch-exhaustiveness-check': 'error',
       '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
       'no-console': ['error', { allow: ['warn', 'error'] }],
+      // The app asks in its own dialogs (apps/web/src/lib/ui/confirmations.svelte.ts).
+      'no-alert': 'error',
     },
   },
   {

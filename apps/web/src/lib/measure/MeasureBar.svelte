@@ -19,7 +19,7 @@
   let { t, locale, points, onundo, onclose }: Props = $props();
 </script>
 
-<MapCard>
+<MapCard label={t('measure')}>
   {#if points.length < 2}
     <p>{t('measureHint')}</p>
   {:else}
