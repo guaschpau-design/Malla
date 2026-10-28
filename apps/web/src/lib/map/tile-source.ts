@@ -27,7 +27,7 @@ export function tileUrlTemplate(source: TileSourceId): string {
 const TILE_URL_PATTERN = new RegExp(`^${PROTOCOL}://([a-z-]+)/(\\d+)/(\\d+)/(\\d+)$`);
 
 /** Our base map: one PMTiles archive, which also says what part of the world it covers. */
-export interface BasemapArchive extends TileArchive {
+interface BasemapArchive extends TileArchive {
   bounds(): Promise<Bounds>;
 }
 

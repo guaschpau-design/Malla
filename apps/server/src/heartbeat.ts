@@ -5,7 +5,7 @@
 import type WebSocket from 'ws';
 
 /** Connections that do not answer a ping within this time are closed. */
-export const HEARTBEAT_MS = 30_000;
+const HEARTBEAT_MS = 30_000;
 
 /** Pings every watched socket on each beat and terminates those that missed the previous ping. */
 export class Heartbeat {

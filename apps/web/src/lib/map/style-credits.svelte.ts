@@ -7,7 +7,7 @@ import type { Map as MapLibreMap } from 'maplibre-gl';
 import { untrack } from 'svelte';
 
 /** Each source's attribution once, in the order of the style's sources. */
-export function styleCredits(map: MapLibreMap): string[] {
+function styleCredits(map: MapLibreMap): string[] {
   const sources = Object.values(map.getStyle().sources);
   const credits = sources.flatMap((source) =>
     'attribution' in source && typeof source.attribution === 'string' ? [source.attribution] : [],

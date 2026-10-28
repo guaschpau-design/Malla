@@ -6,11 +6,11 @@ import type { LatLon } from '@tesel/protocol';
 import { distanceMeters } from '@tesel/core';
 
 /** Never more often than this, however fast the device moves. */
-export const MIN_INTERVAL_S = 5;
+const MIN_INTERVAL_S = 5;
 /** Report after moving this far... */
-export const MIN_DISTANCE_M = 10;
+const MIN_DISTANCE_M = 10;
 /** ...or after this long, so others can tell the position is still live. */
-export const HEARTBEAT_S = 60;
+const HEARTBEAT_S = 60;
 
 export interface Report {
   readonly at: LatLon;

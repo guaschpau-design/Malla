@@ -1,9 +1,10 @@
-// Which task the tasks panel is editing, wherever the editing starts: the panel itself, a point or
-// an object of the map ("Task here"), or a task tapped on the map.
+// Editing a task, wherever the editing starts: the tasks panel itself, a point or an object of the
+// map ("Task here"), or a task tapped on the map. The tasks panel carries what it edits
+// (ui/panels.svelte.ts).
 
 import type { LatLon } from '@tesel/protocol';
 
-import { panels } from '../ui/panels.svelte.ts';
+import { openPanel } from '../ui/panels.svelte.ts';
 
 export type TaskEditing =
   /** A new task, at a place of the map or nowhere in particular. */
@@ -11,19 +12,18 @@ export type TaskEditing =
   /** An existing task, by its reference's key. */
   | { readonly kind: 'existing'; readonly key: string };
 
-export const taskEditor = $state({ editing: null as TaskEditing | null });
+/** The tasks panel with its list. */
+export const TASK_LIST = { name: 'tasks', editing: null } as const;
 
 export function newTask(place: LatLon | null): void {
-  taskEditor.editing = { kind: 'new', place };
-  panels.open = 'tasks';
+  openPanel({ name: 'tasks', editing: { kind: 'new', place } });
 }
 
 export function editTask(key: string): void {
-  taskEditor.editing = { kind: 'existing', key };
-  panels.open = 'tasks';
+  openPanel({ name: 'tasks', editing: { kind: 'existing', key } });
 }
 
 /** Back to the list. */
 export function stopEditingTask(): void {
-  taskEditor.editing = null;
+  openPanel(TASK_LIST);
 }

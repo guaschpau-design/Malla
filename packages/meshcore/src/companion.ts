@@ -7,7 +7,7 @@ export interface ChannelInfo {
   readonly secret: Uint8Array;
 }
 
-export interface ChannelData {
+interface ChannelData {
   readonly snr: number;
   readonly channelIdx: number;
   readonly dataType: number;

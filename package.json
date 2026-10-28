@@ -17,8 +17,9 @@
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
-    "test:e2e": "pnpm --filter @tesel/web test:e2e"
+    "check": "pnpm format:check && pnpm lint && pnpm knip && pnpm typecheck && pnpm test && pnpm build",
+    "test:e2e": "pnpm --filter @tesel/web test:e2e",
+    "knip": "knip"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",

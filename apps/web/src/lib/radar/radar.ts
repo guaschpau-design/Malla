@@ -18,7 +18,7 @@ const RING_STEPS = [10, 25, 50, 100, 250, 500, 1_000, 2_500, 5_000, 10_000, 25_0
 /** Rings closer than this on screen, in pixels, would crowd the map. */
 const MIN_RING_GAP_PX = 60;
 /** Lines are drawn to this many members at most, the nearest. */
-export const NEAREST_MEMBERS = 5;
+const NEAREST_MEMBERS = 5;
 
 /** The distance between rings at a zoom and latitude: the smallest that leaves room. */
 export function ringStep(zoom: number, lat: number): number {

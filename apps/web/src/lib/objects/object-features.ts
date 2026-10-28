@@ -8,7 +8,7 @@ import { circleRing, toPosition } from '../map/geometry.ts';
 import type { Tone } from '../ui/theme.ts';
 import { styleInfo, symbolImageName } from './catalog.ts';
 
-export interface ObjectProperties {
+interface ObjectProperties {
   /** Object reference key (protocol §3.10), used to select the object. */
   readonly key: string;
   readonly label: string;

@@ -3,14 +3,14 @@
 // browser's confirm(), which stops the whole page, cannot take the app's look or language, and
 // which some installed apps never show.
 
-export interface Question {
+interface Question {
   /** What is asked, e.g. "Delete “Fire” for the whole group?". */
   readonly text: string;
   /** The button that goes ahead, named after what it does: "Delete". */
   readonly confirm: string;
 }
 
-export interface AskedQuestion extends Question {
+interface AskedQuestion extends Question {
   readonly id: number;
 }
 

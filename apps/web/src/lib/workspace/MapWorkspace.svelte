@@ -56,7 +56,7 @@
   import { deviceClock } from '../sync/device-clock.svelte.ts';
   import { notices, useStandingNotice } from '../ui/notices.svelte.ts';
   import { attempt } from '../ui/submission.svelte.ts';
-  import { closePanel, panels, togglePanel } from '../ui/panels.svelte.ts';
+  import { closePanel, isOpen, openPanel, panels, togglePanel } from '../ui/panels.svelte.ts';
   import { keepScreenAwake } from '../ui/screen-awake.svelte.ts';
   import WarningList from '../weather/WarningList.svelte';
   import type { WeatherFeed } from '../weather/weather-feed.svelte.ts';
@@ -126,10 +126,6 @@
   const credits = $derived(
     preferences.cadastre.value ? [...styleCredits.list, ...CADASTRE_CREDITS] : styleCredits.list,
   );
-  let selected: string | null = $state(null);
-  let selectedMember: NodeId | null = $state(null);
-  /** The point shown in the point panel, and what to call it: a service's name, or "map point". */
-  let point: { readonly at: LatLon; readonly name: string } | null = $state.raw(null);
   let sosOpen = $state(false);
 
   useStandingNotice(() => (radio.reconnecting ? { text: t('radioReconnecting') } : null));
@@ -158,8 +154,7 @@
   }
 
   function inspect(at: LatLon, name = t('mapPoint')): void {
-    point = { at, name };
-    panels.open = 'point';
+    openPanel({ name: 'point', at, title: name });
   }
 
   /** A service of the base map tapped: its point, under its name or its kind. */
@@ -207,13 +202,11 @@
   }
 
   function select(key: string): void {
-    selected = key;
-    panels.open = 'object';
+    openPanel({ name: 'object', key });
   }
 
-  function selectMember(id: NodeId): void {
-    selectedMember = id;
-    panels.open = 'member';
+  function selectMember(member: NodeId): void {
+    openPanel({ name: 'member', member });
   }
 
   function startTool(next: MapTool): void {
@@ -323,27 +316,15 @@
     />
   {/if}
 
-  <GroupPanels
-    {t}
-    {locale}
-    {feed}
-    {self}
-    {role}
-    {radio}
-    {location}
-    {preferences}
-    objectKey={selected}
-    memberId={selectedMember}
-    onshow={find}
-  />
+  <GroupPanels {t} {locale} {feed} {self} {role} {radio} {location} {preferences} onshow={find} />
 
   {#if sosOpen}
     <SosDialog {t} {location} onsend={sendSos} oncancel={() => (sosOpen = false)} />
   {/if}
 {/if}
 
-{#if panels.open === 'point' && point}
-  {@const { at, name } = point}
+{#if panels.open?.name === 'point'}
+  {@const { at, title: name } = panels.open}
   {@const here = weather && shown.weather ? warningsAt(weather.regions, at) : null}
   <PointLayer {map} point={at} />
   <PointPanel
@@ -377,9 +358,9 @@
       {/if}
     {/snippet}
   </PointPanel>
-{:else if panels.open === 'find'}
+{:else if isOpen('find')}
   <FindCoordinatePanel {t} onfind={find} onclose={closePanel} />
-{:else if panels.open === 'me'}
+{:else if isOpen('me')}
   <MePanel
     {t}
     {locale}
@@ -392,7 +373,7 @@
 
 <SelfLayer {map} {location} />
 
-{#if panels.open === 'layers'}
+{#if isOpen('layers')}
   <LayersPanel
     {t}
     base={preferences.baseMap}
@@ -442,7 +423,7 @@
   <button
     aria-label={t('layers')}
     title={t('layers')}
-    aria-expanded={panels.open === 'layers'}
+    aria-expanded={isOpen('layers')}
     onclick={() => {
       togglePanel('layers');
     }}

@@ -14,7 +14,6 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@tesel/core": "workspace:*",
     "@tesel/protocol": "workspace:*",
     "@tesel/scenario": "workspace:*",
     "ws": "^8.22.0"

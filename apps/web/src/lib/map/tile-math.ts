@@ -48,7 +48,7 @@ export function tileAt(at: LatLon, z: number): { tile: TileCoord; u: number; v: 
 }
 
 /** Inclusive tile ranges covering `bounds` at zoom `z`. Bounds must not cross the antimeridian. */
-export function tileRange(
+function tileRange(
   bounds: Bounds,
   z: number,
 ): { minX: number; maxX: number; minY: number; maxY: number } {

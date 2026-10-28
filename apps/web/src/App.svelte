@@ -41,7 +41,7 @@
   import { openAppDb, type AppDb } from './lib/storage/app-db.ts';
   import { GroupFeed } from './lib/sync/group-feed.svelte.ts';
   import { fullscreenAtFirstTap, fullscreenSupported } from './lib/ui/fullscreen.svelte.ts';
-  import { closePanel, openPanel, panels, togglePanel } from './lib/ui/panels.svelte.ts';
+  import { closePanel, isOpen, openPanel, togglePanel } from './lib/ui/panels.svelte.ts';
   import { notices } from './lib/ui/notices.svelte.ts';
   import { attempt, useStorageFullNotice } from './lib/ui/submission.svelte.ts';
   import { WeatherFeed } from './lib/weather/weather-feed.svelte.ts';
@@ -259,7 +259,7 @@
       {link}
       network={connection.network}
       detail={t(networkStatus(linkInput).label)}
-      expanded={panels.open === 'connections'}
+      expanded={isOpen('connections')}
       onclick={() => {
         togglePanel('connections');
       }}
@@ -271,7 +271,7 @@
         onclick={() => {
           togglePanel('groups');
         }}
-        aria-expanded={panels.open === 'groups'}
+        aria-expanded={isOpen('groups')}
         aria-label="{t('groups')}: {groupLabel}"
       >
         {groupLabel}
@@ -312,11 +312,11 @@
       />
     {/if}
 
-    {#if map && offline && panels.open === 'offline'}
+    {#if map && offline && isOpen('offline')}
       <OfflineAreasPanel {t} {locale} {map} {offline} onclose={closePanel} />
     {/if}
 
-    {#if panels.open === 'connections'}
+    {#if isOpen('connections')}
       <ConnectionsPanel
         {t}
         input={linkInput}
@@ -327,7 +327,7 @@
       />
     {/if}
 
-    {#if session && panels.open === 'groups'}
+    {#if session && isOpen('groups')}
       <GroupsPanel
         {t}
         {session}

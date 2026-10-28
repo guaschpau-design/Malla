@@ -14,7 +14,7 @@ import type { TileSourceId } from './tile-sources.ts';
 import { keyBySource, renameSources } from './tile-store-upgrades.ts';
 
 /** One source of an area and the zoom up to which its tiles were downloaded. */
-export interface AreaLayer {
+interface AreaLayer {
   readonly source: TileSourceId;
   readonly maxZoom: number;
 }
@@ -40,7 +40,7 @@ export interface StoredTile {
 }
 
 /** Which of the tiles an owner asked for were stored already, and which are still to download. */
-export interface KeptTiles {
+interface KeptTiles {
   readonly missing: TileCoord[];
   /** How many were stored, and their size. */
   readonly kept: number;

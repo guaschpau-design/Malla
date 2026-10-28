@@ -4,9 +4,9 @@
 import { en, type MessageKey, type Messages, type PluralKey } from './en.ts';
 import { es } from './es.ts';
 
-export const LOCALES = ['es', 'en'] as const;
+const LOCALES = ['es', 'en'] as const;
 export type Locale = (typeof LOCALES)[number];
-export type { MessageKey, Messages, PluralKey };
+export type { MessageKey, Messages };
 
 export const locales: Readonly<Record<Locale, Messages>> = { es, en };
 

@@ -12,7 +12,7 @@ export const TILE_SOURCES = ['basemap', 'ign-names', 'ortho', 'terrain'] as cons
 export type TileSourceId = (typeof TILE_SOURCES)[number];
 
 /** CC BY 4.0, as the services of Spain's national mapping system (SCNE) ask to be credited. */
-export const SCNE = '<a href="https://www.scne.es" target="_blank">CC BY 4.0 scne.es</a>';
+const SCNE = '<a href="https://www.scne.es" target="_blank">CC BY 4.0 scne.es</a>';
 
 /** The orthophotos are drawn and downloaded up to this zoom; MapLibre enlarges them beyond it. */
 export const ORTHO_MAX_ZOOM = 18;

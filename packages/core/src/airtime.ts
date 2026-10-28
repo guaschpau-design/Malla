@@ -28,7 +28,7 @@ const DATA_TYPE_BYTES = 2;
 const AES_BLOCK_BYTES = 16;
 
 /** Size on the air of a channel datagram carrying `eventBytes`, in a flood (no path yet). */
-export function meshcorePacketSize(eventBytes: number): number {
+function meshcorePacketSize(eventBytes: number): number {
   const encrypted = Math.ceil((eventBytes + DATA_TYPE_BYTES) / AES_BLOCK_BYTES) * AES_BLOCK_BYTES;
   return MESHCORE_CLEAR_BYTES + encrypted;
 }

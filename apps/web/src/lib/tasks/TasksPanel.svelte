@@ -10,7 +10,7 @@
   import ActionButton from '../ui/ActionButton.svelte';
   import Panel from '../ui/Panel.svelte';
   import Pictogram from '../ui/Pictogram.svelte';
-  import { editTask, newTask, stopEditingTask, taskEditor } from './task-editor.svelte.ts';
+  import { editTask, newTask, stopEditingTask, type TaskEditing } from './task-editor.svelte.ts';
   import TaskForm from './TaskForm.svelte';
   import { advance, taskList, type TaskFields, type TaskRow } from './tasks.ts';
 
@@ -19,13 +19,15 @@
     groupState: GroupState;
     self: NodeId;
     format: Preference<CoordinateFormat>;
+    /** The task being edited, or null for the list. */
+    editing: TaskEditing | null;
     onsave: (task: EventRef | null, fields: TaskFields) => Promise<void>;
     /** Shows a task's place on the map. */
     onshow: (at: LatLon) => void;
     onclose: () => void;
   }
 
-  let { t, groupState, self, format, onsave, onshow, onclose }: Props = $props();
+  let { t, groupState, self, format, editing, onsave, onshow, onclose }: Props = $props();
 
   const list = $derived(taskList(groupState, self));
 
@@ -35,11 +37,6 @@
     done: 'taskReopen',
     cancelled: 'taskReopen',
   };
-
-  function close(): void {
-    stopEditingTask();
-    onclose();
-  }
 </script>
 
 {#snippet item(row: TaskRow)}
@@ -77,18 +74,10 @@
   </li>
 {/snippet}
 
-<Panel title={t('tasks')} closeLabel={t('close')} onclose={close}>
-  {#if taskEditor.editing}
-    {#key taskEditor.editing}
-      <TaskForm
-        {t}
-        {groupState}
-        {self}
-        editing={taskEditor.editing}
-        {format}
-        {onsave}
-        onback={stopEditingTask}
-      />
+<Panel title={t('tasks')} closeLabel={t('close')} {onclose}>
+  {#if editing}
+    {#key editing}
+      <TaskForm {t} {groupState} {self} {editing} {format} {onsave} onback={stopEditingTask} />
     {/key}
   {:else}
     <div class="stack section">

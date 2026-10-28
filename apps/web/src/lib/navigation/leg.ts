@@ -4,7 +4,7 @@ import { bearingDegrees, distanceMeters } from '@tesel/core';
 import type { LatLon } from '@tesel/protocol';
 
 /** Closer than this, or than the GPS can tell, the target is reached. */
-export const ARRIVED_M = 15;
+const ARRIVED_M = 15;
 
 export interface Leg {
   readonly metres: number;

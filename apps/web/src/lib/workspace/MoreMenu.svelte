@@ -19,7 +19,7 @@
   } from '../ui/fullscreen.svelte.ts';
   import type { GlyphName } from '../ui/glyphs.ts';
   import { notices } from '../ui/notices.svelte.ts';
-  import { panels } from '../ui/panels.svelte.ts';
+  import { openPanel } from '../ui/panels.svelte.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import { screenWakeSupported } from '../ui/screen-awake.svelte.ts';
   import Switch from '../ui/Switch.svelte';
@@ -69,9 +69,28 @@
         onmeasure();
       },
     },
-    { icon: 'search', label: 'findCoordinate', run: () => (panels.open = 'find') },
-    { icon: 'journal', label: 'diary', run: () => (panels.open = 'diary'), needsGroup: true },
-    { icon: 'download', label: 'offlineAreas', run: () => (panels.open = 'offline') },
+    {
+      icon: 'search',
+      label: 'findCoordinate',
+      run: () => {
+        openPanel('find');
+      },
+    },
+    {
+      icon: 'journal',
+      label: 'diary',
+      run: () => {
+        openPanel('diary');
+      },
+      needsGroup: true,
+    },
+    {
+      icon: 'download',
+      label: 'offlineAreas',
+      run: () => {
+        openPanel('offline');
+      },
+    },
   ];
 </script>
 

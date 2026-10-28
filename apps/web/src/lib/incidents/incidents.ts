@@ -12,7 +12,7 @@ import {
   type SosEvent,
 } from '@tesel/protocol';
 
-export interface Acknowledgement {
+interface Acknowledgement {
   /** Members who acknowledged, by alias. */
   readonly by: readonly string[];
   readonly bySelf: boolean;

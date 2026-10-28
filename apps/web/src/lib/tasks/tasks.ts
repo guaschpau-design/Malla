@@ -73,11 +73,6 @@ export function taskList(state: GroupState, self: NodeId): TaskList {
   return { pending, done };
 }
 
-export function taskRow(state: GroupState, self: NodeId, key: string): TaskRow | null {
-  const event = state.tasks.get(key);
-  return event ? rowOf(state, self, key, event) : null;
-}
-
 /** Tasks for this device still to do: the number on the dock. */
 export function myPendingCount(state: GroupState, self: NodeId): number {
   let count = 0;

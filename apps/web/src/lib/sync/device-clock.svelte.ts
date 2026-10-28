@@ -2,7 +2,7 @@
 // ADR-0044). Events are stamped with it, and a clock that is wrong orders the group's edits wrong.
 
 /** Off by more than this, the user is told. Phones set by the network are within a second. */
-export const CLOCK_TOLERANCE_S = 120;
+const CLOCK_TOLERANCE_S = 120;
 
 class DeviceClock {
   /** How far this clock runs ahead of the last server's, in seconds; negative if behind. */

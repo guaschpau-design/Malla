@@ -8,7 +8,7 @@ import fastifyStatic from '@fastify/static';
 import type { FastifyInstance } from 'fastify';
 
 /** Where the web app lives under the site (TESEL_BASE when it is built). */
-export const APP_PREFIX = '/app/';
+const APP_PREFIX = '/app/';
 
 export async function serveWeb(app: FastifyInstance, root: string): Promise<void> {
   await app.register(fastifyStatic, { root, wildcard: false, cacheControl: false });

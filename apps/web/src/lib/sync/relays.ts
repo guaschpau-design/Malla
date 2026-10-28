@@ -37,7 +37,7 @@ export function relayOrder(
  * What a server says about itself now, or null if it cannot be reached. Its clock, when it gives
  * it, is checked against this device's on the way.
  */
-export async function fetchServerInfo(
+async function fetchServerInfo(
   server: string,
   fetchFn: typeof fetch = fetch,
 ): Promise<ServerInfo | null> {

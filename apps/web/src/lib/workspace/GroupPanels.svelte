@@ -15,7 +15,7 @@
   import { newTask } from '../tasks/task-editor.svelte.ts';
   import TasksPanel from '../tasks/TasksPanel.svelte';
   import type { TaskFields } from '../tasks/tasks.ts';
-  import { closePanel, panels } from '../ui/panels.svelte.ts';
+  import { closePanel, isOpen, panels } from '../ui/panels.svelte.ts';
   import { attempt } from '../ui/submission.svelte.ts';
 
   interface Props {
@@ -27,30 +27,15 @@
     radio: RadioSession;
     location: DeviceLocation;
     preferences: Preferences;
-    /** The object or member last tapped on the map. */
-    objectKey: string | null;
-    memberId: NodeId | null;
     /** Shows a point of the map with what can be done there. */
     onshow: (at: LatLon) => void;
   }
 
-  let {
-    t,
-    locale,
-    feed,
-    self,
-    role,
-    radio,
-    location,
-    preferences,
-    objectKey,
-    memberId,
-    onshow,
-  }: Props = $props();
+  let { t, locale, feed, self, role, radio, location, preferences, onshow }: Props = $props();
 </script>
 
-{#if panels.open === 'object' && objectKey}
-  {@const key = objectKey}
+{#if panels.open?.name === 'object'}
+  {@const key = panels.open.key}
   <ObjectDetails
     {t}
     {locale}
@@ -70,8 +55,8 @@
   />
 {/if}
 
-{#if panels.open === 'member' && memberId}
-  {@const id = memberId}
+{#if panels.open?.name === 'member'}
+  {@const id = panels.open.member}
   <MemberDetails
     {t}
     {locale}
@@ -87,11 +72,11 @@
   />
 {/if}
 
-{#if panels.open === 'diary'}
+{#if isOpen('diary')}
   <DiaryPanel {t} {locale} {feed} format={preferences.coordinateFormat} onclose={closePanel} />
 {/if}
 
-{#if panels.open === 'chat'}
+{#if isOpen('chat')}
   <ChatPanel
     {t}
     {locale}
@@ -112,8 +97,9 @@
   />
 {/if}
 
-{#if panels.open === 'tasks'}
+{#if panels.open?.name === 'tasks'}
   <TasksPanel
+    editing={panels.open.editing}
     {t}
     groupState={feed.state}
     {self}

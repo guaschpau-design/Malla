@@ -26,7 +26,7 @@ export const WARNING_LOOKS: Readonly<Record<WarningLevel, { label: MessageKey; t
 };
 
 /** A national weather service, named and linked wherever its warnings are shown. */
-export interface WarningIssuer {
+interface WarningIssuer {
   readonly name: string;
   readonly url: string;
 }

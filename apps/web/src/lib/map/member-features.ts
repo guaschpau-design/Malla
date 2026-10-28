@@ -8,7 +8,7 @@ import type { Feature, FeatureCollection, Point } from 'geojson';
 /** A position older than this is drawn as stale. */
 export const STALE_AFTER_S = 10 * 60;
 
-export interface MemberProperties {
+interface MemberProperties {
   /** Node ID, used to select the member. */
   readonly id: NodeId;
   readonly label: string;

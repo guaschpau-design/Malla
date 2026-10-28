@@ -55,7 +55,7 @@ export interface StyleInfo {
 /** Also what a style this version does not know is drawn as. */
 const NEUTRAL_STYLE: StyleInfo = { code: 0x0000, label: 'styleNeutral', tone: 'slate' };
 
-export const SHAPE_STYLES: readonly StyleInfo[] = [
+const SHAPE_STYLES: readonly StyleInfo[] = [
   NEUTRAL_STYLE,
   { code: DANGER_STYLE, label: 'styleDanger', tone: 'red' },
   { code: 0x0002, label: 'styleSearchAssigned', tone: 'amber' },

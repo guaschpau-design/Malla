@@ -27,7 +27,7 @@ export function utf8ByteLength(text: string): number {
   return utf8Encoder.encode(text).length;
 }
 
-export function decodeUtf8(bytes: Uint8Array): string {
+function decodeUtf8(bytes: Uint8Array): string {
   try {
     return utf8Decoder.decode(bytes);
   } catch {

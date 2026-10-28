@@ -6,9 +6,9 @@ import { distanceMeters } from '@tesel/core';
 import type { LatLon } from '@tesel/protocol';
 
 /** How far apart the way is sampled. */
-export const SAMPLE_SPACING_M = 30;
+const SAMPLE_SPACING_M = 30;
 /** Long ways are sampled less densely, to keep the work bounded. */
-export const MAX_SAMPLES = 200;
+const MAX_SAMPLES = 200;
 /** Slopes are measured over this many samples (about 90 m). */
 const SLOPE_SPAN = 3;
 

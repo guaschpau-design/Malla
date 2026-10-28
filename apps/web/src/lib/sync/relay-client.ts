@@ -42,7 +42,7 @@ export interface RelayPosition {
 }
 
 /** Handlers that receive `relay`, the server base URL of the connection, get its own cursors. */
-export interface RelayHandlers {
+interface RelayHandlers {
   /** Where to join from: what this device last stored for the group and relay. */
   readonly position: (relay: string) => Promise<RelayPosition>;
   /**

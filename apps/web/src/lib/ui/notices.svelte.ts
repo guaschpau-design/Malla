@@ -4,12 +4,12 @@
 // owner withdraws it.
 
 /** Something the user can do from a notice, besides closing it. */
-export interface NoticeAction {
+interface NoticeAction {
   readonly label: string;
   readonly run: () => void;
 }
 
-export interface Notice {
+interface Notice {
   readonly id: number;
   readonly text: string;
   readonly action: NoticeAction | null;
@@ -17,7 +17,7 @@ export interface Notice {
   readonly stays: boolean;
 }
 
-export interface NoticeOptions {
+interface NoticeOptions {
   readonly action?: NoticeAction;
   /** Stays until closed or withdrawn, instead of going away after a few seconds. */
   readonly stays?: boolean;

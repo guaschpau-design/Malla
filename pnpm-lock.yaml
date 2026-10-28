@@ -175,9 +175,6 @@ importers:
 
   tools/simulator:
     dependencies:
-      '@tesel/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@tesel/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol

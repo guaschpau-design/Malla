@@ -20,7 +20,7 @@ export interface View {
 }
 
 /** What a feature of the grid is: a grid line, the edge of a zone, or the name of a square. */
-export type GridKind = 'line' | 'zone' | 'square';
+type GridKind = 'line' | 'zone' | 'square';
 
 /** Line spacings, finest first, in metres. */
 const SPACINGS = [100, 1_000, 10_000, 100_000] as const;

@@ -8,8 +8,8 @@
   import type { PositionSharing } from '../position/position-sharing.svelte.ts';
   import type { Preferences } from '../settings/preferences.ts';
   import DockButton from '../ui/DockButton.svelte';
-  import { stopEditingTask } from '../tasks/task-editor.svelte.ts';
-  import { panels, togglePanel } from '../ui/panels.svelte.ts';
+  import { TASK_LIST } from '../tasks/task-editor.svelte.ts';
+  import { isOpen, togglePanel } from '../ui/panels.svelte.ts';
   import MoreMenu from './MoreMenu.svelte';
 
   interface Props {
@@ -48,7 +48,7 @@
         label={t('me')}
         ariaLabel={sharing ? `${t('me')}: ${t(STATES[sharing.mode])}` : t('me')}
         on={sharing?.mode === 'sharing'}
-        expanded={panels.open === 'me'}
+        expanded={isOpen('me')}
         onclick={() => {
           togglePanel('me');
         }}
@@ -58,7 +58,7 @@
         <DockButton
           icon="chat"
           label={t('chat')}
-          expanded={panels.open === 'chat'}
+          expanded={isOpen('chat')}
           onclick={() => {
             togglePanel('chat');
           }}
@@ -68,10 +68,9 @@
           label={t('tasks')}
           ariaLabel={tasksForMe > 0 ? t('tasksForYou', { count: tasksForMe }) : t('tasks')}
           count={tasksForMe}
-          expanded={panels.open === 'tasks'}
+          expanded={isOpen('tasks')}
           onclick={() => {
-            stopEditingTask();
-            togglePanel('tasks');
+            togglePanel(TASK_LIST);
           }}
         />
       {/if}

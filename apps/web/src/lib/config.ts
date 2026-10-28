@@ -35,7 +35,7 @@ export function defaultServerUrl(): string | null {
 }
 
 /** EOX's Sentinel-2 cloudless mosaics the satellite map can show from afar (ADR-0051). */
-export const SATELLITE_MOSAICS = ['s2cloudless-2024', 's2cloudless-2016'] as const;
+const SATELLITE_MOSAICS = ['s2cloudless-2024', 's2cloudless-2016'] as const;
 export type SatelliteMosaic = (typeof SATELLITE_MOSAICS)[number];
 
 /**

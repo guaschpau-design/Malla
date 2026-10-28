@@ -24,7 +24,7 @@ export interface DownloadLayer {
   readonly concurrency: number;
 }
 
-export interface DownloadProgress {
+interface DownloadProgress {
   readonly done: number;
   readonly total: number;
 }

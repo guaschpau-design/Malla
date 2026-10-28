@@ -12,7 +12,7 @@ import type { RelayPosition } from '../sync/relay-client.ts';
 import { IGNORE_VERSION_CHANGE, type VersionChange } from './version-change.ts';
 
 /** An event of a group as received or created: its encoded bytes, keyed by group and ref. */
-export interface StoredEvent extends OutboxEntry {
+interface StoredEvent extends OutboxEntry {
   readonly bytes: Uint8Array;
 }
 
@@ -47,9 +47,9 @@ export type SettingKey =
 export type EventKey = [groupId: string, origin: NodeId, seq: number];
 
 /** A group and a relay it syncs through: the group's server or a command post (protocol §8.3). */
-export type CursorKey = [groupId: string, relay: string];
+type CursorKey = [groupId: string, relay: string];
 
-export interface AppSchema extends DBSchema {
+interface AppSchema extends DBSchema {
   /** A single record under the key `self`. */
   identity: { key: 'self'; value: LocalIdentity };
   groups: { key: string; value: StoredGroup };
