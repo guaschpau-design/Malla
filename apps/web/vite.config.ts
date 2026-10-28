@@ -10,6 +10,17 @@ const base = process.env['TESEL_BASE'] ?? '/';
 
 export default defineConfig({
   base,
+  build: {
+    rolldownOptions: {
+      output: {
+        // MapLibre, about half the app, in a file of its own: a release of the app leaves its name
+        // unchanged, so browsers and the service worker keep the copy they have (ADR-0053).
+        codeSplitting: {
+          groups: [{ name: 'maplibre', test: /[\\/]node_modules[\\/]maplibre-gl[\\/]/ }],
+        },
+      },
+    },
+  },
   plugins: [
     svelte(),
     contentSecurityPolicy(),

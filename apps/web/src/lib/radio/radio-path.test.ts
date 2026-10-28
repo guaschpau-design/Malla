@@ -2,7 +2,7 @@
 
 import 'fake-indexeddb/auto';
 
-import type { RadioLink, RadioLinkState, ReceivedFrame, SendOutcome } from '@tesel/meshcore';
+import type { RadioLink, RadioLinkState, ReceivedFrame, SendOutcome } from '@tesel/meshcore/link';
 import { describe, expect, it, vi } from 'vitest';
 
 import { applyInvitation, createGroup, invitationFor } from '../groups/group.ts';
@@ -91,7 +91,10 @@ describe('the radio path', () => {
       [anaFeed, air.link()],
       [bertaFeed, air.link()],
     ] as const) {
-      const radio = new RadioSession(link, () => 0);
+      const radio = new RadioSession(
+        () => Promise.resolve(link),
+        () => 0,
+      );
       await radio.connect();
       await radio.useFeed(feed);
     }
@@ -122,14 +125,20 @@ describe('the radio path', () => {
     const air = new Air();
     const anaFeed = await GroupFeed.open(await openAppDb('radio-late-ana'), group, ana);
     const bertaFeed = await GroupFeed.open(await openAppDb('radio-late-berta'), bertaGroup, berta);
-    const bertaRadio = new RadioSession(air.link(), () => 0);
+    const bertaRadio = new RadioSession(
+      () => Promise.resolve(air.link()),
+      () => 0,
+    );
     await bertaRadio.connect();
     await bertaRadio.useFeed(bertaFeed);
 
     // Ana's radio is off when she calls for help.
     await anaFeed.sendSos('trapped', { lat: 39.47, lon: -0.37 }, 10, 'Atrapada');
     expect(anaFeed.undelivered.size).toBeGreaterThan(0);
-    const anaRadio = new RadioSession(air.link(), () => 0);
+    const anaRadio = new RadioSession(
+      () => Promise.resolve(air.link()),
+      () => 0,
+    );
     await anaRadio.connect();
     await anaRadio.useFeed(anaFeed);
 

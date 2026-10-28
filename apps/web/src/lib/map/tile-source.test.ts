@@ -4,7 +4,7 @@ import type { TileArchive } from './area-download.ts';
 import type { TileCoord } from './tile-math.ts';
 import { loadTile, type TileArchives } from './tile-source.ts';
 import type { TileStore } from './tile-store.ts';
-import type { TileSourceId } from './tile-sources.ts';
+import { lazyArchive, type TileSourceId } from './tile-sources.ts';
 
 const stored = new Uint8Array([1]).buffer;
 const remote = new Uint8Array([2]).buffer;
@@ -54,5 +54,20 @@ describe('tile loading', () => {
   it('rejects URLs that are not ours', async () => {
     await expect(loadTile('https://example.com/5/1/2', store, online, signal)).rejects.toThrow();
     await expect(loadTile('tesel-tiles://other/5/1/2', store, online, signal)).rejects.toThrow();
+  });
+
+  it('loads an archive kept for later once, with its first tile', async () => {
+    let loads = 0;
+    const archive = lazyArchive(() => {
+      loads++;
+      return Promise.resolve({ getTile: () => Promise.resolve(remote) });
+    });
+    expect(loads).toBe(0);
+    const tiles = await Promise.all([
+      archive.getTile(5, 1, 2, signal),
+      archive.getTile(5, 1, 3, signal),
+    ]);
+    expect(tiles).toEqual([remote, remote]);
+    expect(loads).toBe(1);
   });
 });

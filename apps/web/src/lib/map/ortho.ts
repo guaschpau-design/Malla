@@ -3,49 +3,14 @@
 // outline (borders-data.ts) — Spain's (IGN, PNOA), mainland Portugal's (DGT, OrtoSat 2023) and
 // France's (IGN France, BD ORTHO). Where no country's photographs reach, such as Andorra, the
 // mosaic stays. A tile inside one outline is that country's tile as its service gives it; a tile
-// across outlines is put together on the device.
+// across outlines is put together on the device. This module and the outlines are loaded with the
+// first tile of the satellite map (tile-source.ts); its credit and zooms are in tile-sources.ts.
 
-import { satelliteMosaic, type SatelliteMosaic } from '../config.ts';
 import type { TileArchive } from './area-download.ts';
 import { FRANCE_SOUTH, PORTUGAL, SPAIN, type Outline } from './borders-data.ts';
 import { outlineCoverage, toWebMercator } from './geometry.ts';
 import { positionInTile, tileBounds, type TileCoord } from './tile-math.ts';
-import { SCNE, webArchive } from './tile-sources.ts';
-
-/** The orthophotos are drawn and downloaded up to this zoom; MapLibre enlarges them beyond it. */
-export const ORTHO_MAX_ZOOM = 18;
-
-/** A mosaic of EOX's: its layer in the WMTS, and the credit its licence asks for, licence named. */
-interface Mosaic {
-  readonly layer: string;
-  readonly credit: string;
-}
-
-const EOX = '<a href="https://cloudless.eox.at" target="_blank">EOxCloudless</a>';
-
-/** The mosaics a build can choose (config.ts, ADR-0051). */
-const MOSAICS: Readonly<Record<SatelliteMosaic, Mosaic>> = {
-  's2cloudless-2024': {
-    layer: 's2cloudless-2024_3857',
-    credit:
-      `${EOX} 2024 by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2024), ` +
-      '<a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a>',
-  },
-  's2cloudless-2016': {
-    layer: 's2cloudless_3857',
-    credit:
-      `${EOX} 2016 by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2016 & ` +
-      '2017), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC BY 4.0</a>',
-  },
-};
-
-const MOSAIC = MOSAICS[satelliteMosaic()];
-
-export const ORTHO_ATTRIBUTION =
-  `${MOSAIC.credit} | ` +
-  `${SCNE} · PNOA | ` +
-  '<a href="https://www.dgterritorio.gov.pt" target="_blank">CC BY 4.0 DGT</a> · OrtoSat 2023 | ' +
-  '<a href="https://www.ign.fr" target="_blank">IGN – BD ORTHO</a>';
+import { MOSAIC, webArchive } from './tile-sources.ts';
 
 /**
  * From this zoom, about a town's view, each country's photographs are laid over the mosaic: further

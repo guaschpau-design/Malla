@@ -1,16 +1,14 @@
 // The LoRa radio of this device: connecting it, giving it the active group's channel, and
 // feeding the group's events through the airtime scheduler (ARCHITECTURE.md §4.2–4.3,
-// ADR-0043).
+// ADR-0043). The MeshCore library is loaded with the first connection, not with the app.
 
 import { LIMITS, LoraScheduler, type LoraPacket } from '@tesel/core';
 import {
-  MeshCoreRadio,
   RadioError,
-  webBleConnector,
   type RadioLink,
   type RadioLinkState,
   type ReceivedFrame,
-} from '@tesel/meshcore';
+} from '@tesel/meshcore/link';
 import { toBase64url } from '@tesel/protocol';
 
 import { receiveEvents } from '../events/event-log.ts';
@@ -45,6 +43,12 @@ interface Unstored {
   readonly attempts: number;
 }
 
+/** A link to a MeshCore companion radio over Web Bluetooth. */
+async function meshCoreLink(): Promise<RadioLink> {
+  const { MeshCoreRadio, webBleConnector } = await import('@tesel/meshcore');
+  return new MeshCoreRadio(webBleConnector);
+}
+
 export class RadioSession {
   state: RadioLinkState = $state('disconnected');
   name: string | null = $state(null);
@@ -60,7 +64,9 @@ export class RadioSession {
   /** Text messages of other MeshCore apps, oldest first, the newest `MAX_RADIO_TEXTS`. */
   texts: readonly StoredRadioText[] = $state.raw([]);
 
-  readonly #link: RadioLink;
+  readonly #makeLink: () => Promise<RadioLink>;
+  /** The link to radios, made at the first connection. */
+  #link: RadioLink | null = null;
   readonly #scheduler: LoraScheduler;
   #feed: RadioFeed | null = null;
   #db: AppDb | null = null;
@@ -77,9 +83,20 @@ export class RadioSession {
     },
   };
 
-  constructor(link: RadioLink = new MeshCoreRadio(webBleConnector), random = Math.random) {
-    this.#link = link;
+  constructor(makeLink: () => Promise<RadioLink> = meshCoreLink, random = Math.random) {
+    this.#makeLink = makeLink;
     this.#scheduler = new LoraScheduler({ random });
+  }
+
+  /** The link, made once; a second connection while the first is being made keeps the first. */
+  async #linkMade(): Promise<RadioLink> {
+    const made = this.#link ?? (await this.#makeLink());
+    this.#link ??= this.#follow(made);
+    return this.#link;
+  }
+
+  /** Keeps this session in step with what the link says. */
+  #follow(link: RadioLink): RadioLink {
     link.onStateChange((state) => {
       const wasLinked = this.linked;
       this.state = state;
@@ -101,6 +118,7 @@ export class RadioSession {
       this.texts = [...this.texts, stored].slice(-MAX_RADIO_TEXTS);
       if (this.#db) void saveRadioText(this.#db, stored);
     });
+    return link;
   }
 
   /** Where heard MeshCore text messages and other groups' events are kept. */
@@ -113,7 +131,7 @@ export class RadioSession {
   async connect(): Promise<void> {
     this.problem = null;
     try {
-      await this.#link.connect();
+      await (await this.#linkMade()).connect();
     } catch (error) {
       // Closing the browser's picker is not a problem worth reporting.
       if (!(error instanceof DOMException && error.name === 'NotFoundError')) {
@@ -126,7 +144,7 @@ export class RadioSession {
   }
 
   async disconnect(): Promise<void> {
-    await this.#link.disconnect();
+    await this.#link?.disconnect();
   }
 
   /**
@@ -146,7 +164,7 @@ export class RadioSession {
    */
   async forgetGroup(secret: Uint8Array): Promise<void> {
     const left = groupId(secret);
-    if (this.#link.state === 'ready') {
+    if (this.#link?.state === 'ready') {
       await this.#link.forgetChannels((held) => groupId(held) === left);
       return;
     }
@@ -159,11 +177,12 @@ export class RadioSession {
 
   async #linkFeed(): Promise<void> {
     const feed = this.#feed;
-    if (feed === null || this.#link.state !== 'ready') return;
+    const link = this.#link;
+    if (feed === null || link?.state !== 'ready') return;
     const { name, secret } = feed.radioChannel;
     try {
-      await this.#freeLeftChannels();
-      await this.#link.configureGroupChannel(name, secret);
+      await this.#freeLeftChannels(link);
+      await link.configureGroupChannel(name, secret);
     } catch (error) {
       this.problem = problemOf(error);
       return;
@@ -175,11 +194,11 @@ export class RadioSession {
   }
 
   /** Clears the channels of groups left while no radio was linked. */
-  async #freeLeftChannels(): Promise<void> {
+  async #freeLeftChannels(link: RadioLink): Promise<void> {
     if (this.#db === null) return;
     const left = await this.#channelsToFree(this.#db);
     if (left.length === 0) return;
-    await this.#link.forgetChannels((held) => left.includes(groupId(held)));
+    await link.forgetChannels((held) => left.includes(groupId(held)));
     await this.#db.delete('settings', 'radioChannelsToFree');
   }
 
@@ -229,14 +248,15 @@ export class RadioSession {
   }
 
   async #sendNext(): Promise<void> {
-    if (this.#sending || !this.linked) return;
+    const link = this.#link;
+    if (this.#sending || !this.linked || link === null) return;
     const now = Date.now();
     const packet = this.#scheduler.next(now);
     this.airtimeUsed = this.#scheduler.spentMs(now) / LIMITS.urgentBudgetMs;
     if (packet === null) return;
     this.#sending = true;
     try {
-      const outcome = await this.#link.send(packet.bytes);
+      const outcome = await link.send(packet.bytes);
       if (outcome.status === 'sent') await this.#sent(packet);
       else this.#scheduler.retry(Date.now());
     } catch (error) {

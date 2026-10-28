@@ -13,12 +13,13 @@ import type {
 
 import { themeColor } from '../ui/theme.ts';
 import { CONTOURS_MAX_ZOOM, CONTOURS_MIN_ZOOM, contourTileUrl } from './contours.ts';
-import { ORTHO_ATTRIBUTION, ORTHO_MAX_ZOOM } from './ortho.ts';
 import { streetFlavor } from './streets.ts';
 import { tileUrlTemplate } from './tile-source.ts';
 import {
   NAMES_ATTRIBUTION,
   NAMES_MAX_ZOOM,
+  ORTHO_ATTRIBUTION,
+  ORTHO_MAX_ZOOM,
   TERRAIN_ATTRIBUTION,
   TERRAIN_MAX_ZOOM,
   TERRAIN_TILE_SIZE,

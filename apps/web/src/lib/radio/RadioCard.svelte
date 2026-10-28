@@ -1,7 +1,7 @@
 <!-- The LoRa radio in the connections panel: whether one is paired and on the group, the button to
      pair or unpair it, and how much it is transmitting. -->
 <script lang="ts">
-  import { isWebBluetoothAvailable } from '@tesel/meshcore';
+  import { isWebBluetoothAvailable } from '@tesel/meshcore/link';
 
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import ChannelCard from '../links/ChannelCard.svelte';
