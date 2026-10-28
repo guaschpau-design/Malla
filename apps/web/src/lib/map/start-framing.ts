@@ -16,6 +16,11 @@ import { boundsAround } from './tile-math.ts';
 const MAX_ZOOM = 15;
 /** Room around the points, in CSS pixels, so no dot sits on the edge or under a control. */
 const PADDING_PX = 64;
+/**
+ * A short glide, in milliseconds: MapLibre's own flight from a whole country down to a street lasts
+ * several seconds, and starts over each time someone else appears.
+ */
+const GLIDE_MS = 1000;
 /** Marks the moves of the map that framing makes, in MapLibre's event data. */
 const FRAMING = 'teselFraming';
 
@@ -49,7 +54,7 @@ export class StartFraming {
     const { west, south, east, north } = boundsAround([...points.values()]);
     this.#map.fitBounds(
       [toPosition({ lat: south, lon: west }), toPosition({ lat: north, lon: east })],
-      { padding: PADDING_PX, maxZoom: MAX_ZOOM },
+      { padding: PADDING_PX, maxZoom: MAX_ZOOM, linear: true, duration: GLIDE_MS },
       { [FRAMING]: true },
     );
   }
