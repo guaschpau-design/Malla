@@ -166,4 +166,16 @@ export const SAMPLE_EVENTS: readonly TeselEvent[] = [
   },
   { type: 'roll-call', origin: CAROL, seq: 2, time: T0 + 15, text: '' },
   { type: 'roll-call', origin: CAROL, seq: 3, time: T0 + 16, text: '¿Todos en el punto B?' },
+  {
+    type: 'sweep',
+    origin: CAROL,
+    seq: 4,
+    time: T0 + 17,
+    object: { origin: CAROL, seq: 4 },
+    area: { origin: BOB, seq: 3 },
+    spacing: 25,
+    heading: 135,
+    strip: 1,
+    strips: 3,
+  },
 ];

@@ -8,6 +8,7 @@
   import type { Locale, Translate } from '../i18n/index.ts';
   import { navigateTo } from '../navigation/navigation.svelte.ts';
   import ObjectDetails from '../objects/ObjectDetails.svelte';
+  import { removeSweep } from '../objects/sweep-actions.ts';
   import { radio } from '../radio/radio.svelte.ts';
   import type { Preferences } from '../settings/preferences.ts';
   import type { GroupFeed } from '../sync/group-feed.svelte.ts';
@@ -26,9 +27,11 @@
     preferences: Preferences;
     /** Shows a task's place on the map, with its panel. */
     onplace: (place: TaskPlace) => void;
+    /** Starts planning the sweep of a search area, by its key. */
+    onplansweep: (area: string) => void;
   }
 
-  let { t, locale, feed, self, role, preferences, onplace }: Props = $props();
+  let { t, locale, feed, self, role, preferences, onplace, onplansweep }: Props = $props();
 </script>
 
 {#if panels.open?.name === 'object'}
@@ -42,7 +45,12 @@
     onnavigate={(name: string) => {
       navigateTo({ kind: 'object', key, name });
     }}
+    coordinator={role === 'coordinator'}
     ontask={newTask}
+    onplansweep={() => {
+      onplansweep(key);
+    }}
+    onremovesweep={(strips: readonly string[]) => removeSweep(feed, strips)}
     ondelete={async () => {
       const record = feed.state.objects.get(key);
       if (record) await feed.deleteObject(record.object);

@@ -1,13 +1,14 @@
 <!-- What a map object is, who last changed it, guidance there or along it, a task at it, and
-     deleting it for the whole group. -->
+     deleting it for the whole group. A search area tells how its sweep goes, and lets whoever
+     coordinates plan one or remove it; a strip of a sweep, how far it is swept. -->
 <script lang="ts">
-  import { areaSquareMeters, pathMeters, type GroupState } from '@tesel/core';
-  import type { TaskPlace } from '@tesel/protocol';
+  import { areaSquareMeters, lanesLength, pathMeters, type GroupState } from '@tesel/core';
+  import { eventRefKey, ShapeStyleCode, type TaskPlace } from '@tesel/protocol';
 
   import CoordinateBlock from '../coordinates/CoordinateBlock.svelte';
   import type { CoordinateFormat } from '../coordinates/coordinates.ts';
   import { formatArea, formatDistance, formatTime } from '../format.ts';
-  import type { Locale, Translate } from '../i18n/index.ts';
+  import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
   import { aliasOf } from '../members/alias.ts';
   import FromHere from '../navigation/FromHere.svelte';
   import { objectDestination } from '../navigation/target.ts';
@@ -15,8 +16,12 @@
   import ActionButton from '../ui/ActionButton.svelte';
   import { confirmations } from '../ui/confirmations.svelte.ts';
   import Panel from '../ui/Panel.svelte';
-  import { objectKind } from './catalog.ts';
+  import { openPanel } from '../ui/panels.svelte.ts';
   import { attempt } from '../ui/submission.svelte.ts';
+  import { objectKind } from './catalog.ts';
+  import { objectTitle } from './object-names.ts';
+  import SweepProgress from './SweepProgress.svelte';
+  import { stripOf, stripsOver } from './sweeps.ts';
 
   interface Props {
     t: Translate;
@@ -24,24 +29,75 @@
     groupState: GroupState;
     objectKey: string;
     format: Preference<CoordinateFormat>;
+    /** This device coordinates: it plans sweeps. */
+    coordinator: boolean;
     /** Guide this device there, or along it; the name says where to. */
     onnavigate: (name: string) => void;
     /** Starts a task at the object. */
     ontask: (place: TaskPlace) => void;
+    /** Starts planning a sweep of this area. */
+    onplansweep: () => void;
+    /** Removes the sweep of this area: its strips, by key, and what is left of their tasks. */
+    onremovesweep: (strips: readonly string[]) => Promise<void>;
     ondelete: () => Promise<void>;
     onclose: () => void;
   }
 
-  let { t, locale, groupState, objectKey, format, onnavigate, ontask, ondelete, onclose }: Props =
-    $props();
+  let {
+    t,
+    locale,
+    groupState,
+    objectKey,
+    format,
+    coordinator,
+    onnavigate,
+    ontask,
+    onplansweep,
+    onremovesweep,
+    ondelete,
+    onclose,
+  }: Props = $props();
 
   const record = $derived(groupState.objects.get(objectKey));
-  const kindName = $derived(record && record.type !== 'object-delete' ? t(objectKind(record)) : '');
-  const destination = $derived(objectDestination(record));
+  const object = $derived(record?.type === 'object-delete' ? undefined : record);
+  const kindName = $derived(object ? t(objectKind(object)) : '');
+  const title = $derived(object ? objectTitle(object, groupState.objects, t) : '');
+  const destination = $derived(objectDestination(record, groupState.objects));
   const at = $derived(destination?.kind === 'point' ? destination.at : null);
-  const isRoute = $derived(destination?.kind === 'route');
-  /** What can be measured of a line, an area or a circle. */
+  const strip = $derived(record?.type === 'sweep' ? stripOf(record, groupState.objects) : null);
+  const isArea = $derived(record?.type === 'shape' && record.geometry.kind === 'polygon');
+  /** The strips of this area's sweep, if it has one. */
+  const strips = $derived(isArea ? stripsOver(groupState.objects, objectKey) : []);
+  const canPlan = $derived(
+    coordinator &&
+      record?.type === 'shape' &&
+      isArea &&
+      record.style === ShapeStyleCode.SEARCH_ASSIGNED &&
+      strips.length === 0,
+  );
+  const follow: MessageKey = $derived(
+    record?.type === 'sweep'
+      ? 'followStrip'
+      : destination?.kind === 'route'
+        ? 'followRoute'
+        : 'guideMe',
+  );
+  const taskLabel: MessageKey = $derived(
+    record?.type === 'sweep'
+      ? 'taskOnStrip'
+      : destination?.kind === 'route'
+        ? 'taskOnRoute'
+        : 'taskHere',
+  );
+  /** What can be measured of a line, an area, a circle or the lanes of a strip. */
   const measure = $derived.by(() => {
+    if (strip) {
+      return t('stripMeasure', {
+        length: formatDistance(lanesLength(strip.lanes), locale),
+        lanes: strip.lanes.lanes.length,
+        spacing: strip.sweep.spacing,
+      });
+    }
     if (record?.type !== 'shape') return null;
     const { geometry } = record;
     switch (geometry.kind) {
@@ -53,9 +109,6 @@
         return t('measureRadius', { radius: formatDistance(geometry.radius, locale) });
     }
   });
-  const title = $derived(
-    record && record.type !== 'object-delete' && record.label ? record.label : kindName,
-  );
 
   async function remove(): Promise<void> {
     const text = t('confirmDeleteObject', { name: title });
@@ -65,9 +118,16 @@
       onclose();
     }, t('actionFailed'));
   }
+
+  async function removeSweep(): Promise<void> {
+    const text = t('confirmRemoveSweep', { name: title });
+    if (!(await confirmations.ask({ text, confirm: t('sweepRemove') }))) return;
+    const keys = strips.map((item) => item.key);
+    attempt(() => onremovesweep(keys), t('actionFailed'));
+  }
 </script>
 
-{#if record && record.type !== 'object-delete'}
+{#if object}
   <Panel {title} closeLabel={t('close')} {onclose}>
     <div class="stack section">
       <p>
@@ -77,29 +137,59 @@
         <CoordinateBlock {t} {at} {format} />
         <FromHere {t} {locale} {at} />
       {/if}
+      {#if object.type === 'sweep'}
+        <SweepProgress {t} {groupState} strips={[{ key: objectKey, sweep: object }]} />
+      {/if}
+      {#if strips.length > 0}
+        <h3>{t('sweepTitle')}</h3>
+        <SweepProgress
+          {t}
+          {groupState}
+          {strips}
+          onselect={(key: string) => {
+            openPanel({ name: 'object', key });
+          }}
+        />
+      {/if}
       <p class="hint">
         {t('changedBy', {
-          name: aliasOf(groupState, record.origin),
-          time: formatTime(record.time * 1000, locale),
+          name: aliasOf(groupState, object.origin),
+          time: formatTime(object.time * 1000, locale),
         })}
       </p>
       <div class="row">
+        {#if canPlan}
+          <ActionButton icon="sweep" label={t('sweepPlan')} onclick={onplansweep} />
+        {/if}
         {#if destination}
           <ActionButton
-            icon={isRoute ? 'route' : 'heading'}
-            label={isRoute ? t('followRoute') : t('guideMe')}
+            icon={destination.kind === 'route' ? 'route' : 'heading'}
+            label={t(follow)}
             onclick={() => {
               onnavigate(title);
             }}
           />
         {/if}
+        {#if strip}
+          {@const area = strip.area}
+          <ActionButton
+            icon="area"
+            label={t('stripShowArea')}
+            onclick={() => {
+              openPanel({ name: 'object', key: eventRefKey(area.object) });
+            }}
+          />
+        {/if}
         <ActionButton
           icon="task"
-          label={isRoute ? t('taskOnRoute') : t('taskHere')}
+          label={t(taskLabel)}
           onclick={() => {
-            ontask({ kind: 'object', object: record.object });
+            ontask({ kind: 'object', object: object.object });
           }}
         />
+        {#if coordinator && strips.length > 0}
+          <button onclick={removeSweep}>{t('sweepRemove')}</button>
+        {/if}
         <button onclick={remove}>{t('delete')}</button>
       </div>
     </div>

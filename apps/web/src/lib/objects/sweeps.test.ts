@@ -1,0 +1,130 @@
+import { offsetMeters, stateOf } from '@tesel/core';
+import { ShapeStyleCode, type NodeId, type TeselEvent } from '@tesel/protocol';
+import { describe, expect, it } from 'vitest';
+
+import { translator } from '../i18n/index.ts';
+import { objectName } from './object-names.ts';
+import {
+  areasToClear,
+  isStripDone,
+  stripOf,
+  stripPath,
+  stripsOver,
+  stripWalker,
+  sweptBy,
+} from './sweeps.ts';
+
+const ANA = 'a1b2c3d4' as NodeId;
+const BERTA = '0f1e2d3c' as NodeId;
+const T0 = 1_761_350_400;
+const CORNER = { lat: 42.5, lon: 1.5 };
+const at = (north: number, east: number) => offsetMeters(CORNER, north, east);
+const t = translator('es');
+
+/** A search area 100 m wide and 400 m long, swept in two strips of two lanes 25 m apart. */
+const AREA: TeselEvent = {
+  type: 'shape',
+  origin: ANA,
+  seq: 1,
+  time: T0,
+  object: { origin: ANA, seq: 1 },
+  style: ShapeStyleCode.SEARCH_ASSIGNED,
+  label: 'Ladera',
+  geometry: { kind: 'polygon', points: [CORNER, at(0, 100), at(400, 100), at(400, 0)] },
+};
+
+function strip(seq: number, index: number): TeselEvent {
+  return {
+    type: 'sweep',
+    origin: ANA,
+    seq,
+    time: T0 + seq,
+    object: { origin: ANA, seq },
+    area: { origin: ANA, seq: 1 },
+    spacing: 25,
+    heading: 0,
+    strip: index,
+    strips: 2,
+  };
+}
+
+function task(seq: number, stripSeq: number, status: 'open' | 'done', origin = ANA): TeselEvent {
+  return {
+    type: 'task',
+    origin,
+    seq,
+    time: T0 + seq,
+    task: { origin: ANA, seq: stripSeq + 10 },
+    status,
+    assignee: BERTA,
+    place: { kind: 'object', object: { origin: ANA, seq: stripSeq } },
+    text: 'Batida',
+  };
+}
+
+const PLANNED = [AREA, strip(2, 0), strip(3, 1), task(12, 2, 'open'), task(13, 3, 'open')];
+
+describe('sweeps', () => {
+  it('finds the strips over an area, in order, with their lanes and names', () => {
+    const state = stateOf(PLANNED);
+    expect(stripsOver(state.objects, `${ANA}:1`).map((item) => item.key)).toEqual([
+      `${ANA}:2`,
+      `${ANA}:3`,
+    ]);
+    const record = state.objects.get(`${ANA}:3`);
+    if (record?.type !== 'sweep') throw new Error('no strip');
+    const second = stripOf(record, state.objects);
+    expect(second?.lanes.lanes).toHaveLength(2);
+    expect(second && stripPath(second)).toHaveLength(4);
+    expect(objectName(record, state.objects, t)).toBe('Batida «Ladera» · franja 2 de 2');
+  });
+
+  it('has no lanes once its area is gone', () => {
+    const state = stateOf([
+      ...PLANNED,
+      {
+        type: 'object-delete',
+        origin: ANA,
+        seq: 20,
+        time: T0 + 20,
+        object: { origin: ANA, seq: 1 },
+      },
+    ]);
+    const record = state.objects.get(`${ANA}:2`);
+    expect(record?.type === 'sweep' && stripOf(record, state.objects)).toBeNull();
+  });
+
+  it('knows who walks a strip and how much of it their trail has swept', () => {
+    const walk = [at(0, 12), at(400, 13)].map((point, index) => ({
+      type: 'position' as const,
+      origin: BERTA,
+      seq: 30 + index,
+      time: T0 + 30 + index,
+      ...point,
+      accuracy: 5,
+      heading: null,
+      speed: null,
+    }));
+    const state = stateOf([...PLANNED, ...walk]);
+    expect(stripWalker(state.tasks, `${ANA}:2`)).toBe(BERTA);
+    const record = state.objects.get(`${ANA}:2`);
+    const first = record?.type === 'sweep' ? stripOf(record, state.objects) : null;
+    expect(first && sweptBy(first, state.trails, BERTA)).toBeCloseTo(0.5, 1);
+  });
+
+  it('marks the area cleared once every strip is done, from the device that finished last', () => {
+    const half = stateOf([...PLANNED, task(14, 2, 'done', BERTA)]);
+    expect(isStripDone(half.tasks, `${ANA}:2`)).toBe(true);
+    expect(areasToClear(half, BERTA)).toEqual([]);
+    const all = stateOf([...PLANNED, task(14, 2, 'done', ANA), task(15, 3, 'done', BERTA)]);
+    expect(areasToClear(all, ANA)).toEqual([]);
+    expect(areasToClear(all, BERTA)).toEqual([AREA]);
+    const cleared = stateOf([
+      ...PLANNED,
+      task(14, 2, 'done', ANA),
+      task(15, 3, 'done', BERTA),
+      { ...AREA, seq: 16, time: T0 + 16, style: ShapeStyleCode.SEARCH_CLEARED },
+    ]);
+    expect(areasToClear(cleared, BERTA)).toEqual([]);
+  });
+});

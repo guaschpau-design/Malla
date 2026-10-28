@@ -61,6 +61,7 @@ The payload follows, up to 151 bytes.
 | `0x0B` | `ACK`             | Event reference (8 bytes) of the event acknowledged    |
 | `0x0C` | `TASK`            | §3.11                                                  |
 | `0x0D` | `ROLL_CALL`       | §3.12                                                  |
+| `0x0E` | `SWEEP`           | §3.13                                                  |
 
 Codes are never reused. New capabilities are added as new types; existing layouts never change within version 1.
 
@@ -166,10 +167,10 @@ An `SOS` stays active until a `SOS_CANCEL` referencing it is received. Any membe
 
 ### 3.10 Objects
 
-Map objects (`MARKER`, `SHAPE`) are identified by an **object reference**: the event reference of the event that created the object.
+Map objects (`MARKER`, `SHAPE`, `SWEEP`) are identified by an **object reference**: the event reference of the event that created the object.
 
 - To create an object, an event uses its own `(origin, seq)` as `object`.
-- To change an object, any member sends a new `MARKER` or `SHAPE` with the same `object`. A change MAY switch between `MARKER` and `SHAPE`.
+- To change an object, any member sends a new `MARKER`, `SHAPE` or `SWEEP` with the same `object`. A change MAY switch between these types.
 - To delete it, a member sends `OBJECT_DELETE` with the same `object`.
 - The current state of an object is given by the event with the greatest `(time, origin, seq)` among all events with that `object`, compared in that order, with `origin` compared as 4 unsigned bytes. If that event is an `OBJECT_DELETE`, the object does not exist.
 - Deletion is ordinary last-writer-wins: an edit newer than the delete brings the object back, and an older edit arriving late does not. This is intended; receivers MUST keep `OBJECT_DELETE` events so late edits can be compared against them.
@@ -209,6 +210,30 @@ Asks every member of the group to say they are well.
 - Each member answers once, with an `ACK` referencing the `ROLL_CALL`. A member who needs help sends an `SOS` instead.
 - The newest `ROLL_CALL` by `(time, origin, seq)` is the current one; older ones are history.
 - Over LoRa, answers wait the same random 2–30 seconds as other acknowledgements but, unlike them (§3.8), are never dropped for having heard another member's answer: each member answers for themselves.
+
+### 3.13 `SWEEP`
+
+One strip of a sweep: a search area walked in parallel lanes, the lanes split among teams. Each strip is a map object (§3.10), so it can be handed out as a task's place (§3.11) and deleted when the sweep is called off. Only the recipe travels; every device works out the same lanes from it and from the area.
+
+| Size | Field     | Notes                                                                     |
+| ---- | --------- | ------------------------------------------------------------------------- |
+| 8    | `object`  | Object reference, see §3.10                                               |
+| 8    | `area`    | Object reference of the polygon swept (a `SHAPE` of kind polygon)         |
+| 2    | `spacing` | `u16`, metres between lanes, at least 1                                   |
+| 2    | `heading` | `u16`, direction of the lanes in degrees clockwise from true north, 0–179 |
+| 1    | `strip`   | `u8`, which strip this is, from 0                                         |
+| 1    | `strips`  | `u8`, how many strips the sweep has; greater than `strip`                 |
+
+Encoded size: 36 bytes. An event whose `spacing`, `heading` or `strip` is out of range is discarded. The strips of one sweep share `area`, `spacing`, `heading` and `strips`.
+
+**Lanes.** The strip follows the area's current geometry; while the area is not a polygon, or is deleted, the strip has no lanes. Receivers SHOULD draw them as follows, so that every device shows the same:
+
+1. Place each corner of the area on a plane: `east = (lon − lon₀) · R · cos(lat₀)` and `north = (lat − lat₀) · R`, in metres, with the area's first point as `(lat₀, lon₀)`, angles in radians and R = 6 371 000 m.
+2. With h the heading, measure each corner along the lanes, `v = east · sin h + north · cos h`, and across them, `u = east · cos h − north · sin h`.
+3. Lanes run at `u = u_min + spacing · (i + ½)` for i = 0, 1, 2… while below `u_max`; if there is none, one runs at `(u_min + u_max) / 2`.
+4. Each lane crosses the edges whose ends have `u` on either side of it (one end's `u` at most the lane's and the other's above it). Sorted by `v`, the crossings pair up: the lane is inside the area from the first to the second, from the third to the fourth, and so on.
+5. Of L lanes and `strips` strips, strip k holds lanes ⌊k · L / strips⌋ to ⌊(k + 1) · L / strips⌋ − 1.
+6. A strip is walked lane after lane in increasing `u`: its first lane in increasing `v`, the next in decreasing `v`, and so on.
 
 ## 4. Symbol and style codes
 

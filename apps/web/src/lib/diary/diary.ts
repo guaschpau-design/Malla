@@ -8,6 +8,7 @@ import {
   type LatLon,
   type MarkerEvent,
   type ShapeEvent,
+  type SweepEvent,
   type TaskEvent,
   type TaskStatus,
 } from '@tesel/protocol';
@@ -16,8 +17,8 @@ import type { MessageKey, Translate } from '../i18n/index.ts';
 import { ROLE_LABELS } from '../groups/role-label.ts';
 import { aliasOf } from '../members/alias.ts';
 import { ALERT_LEVELS, SOS_KINDS } from '../incidents/sos-kinds.ts';
-import { objectKind } from '../objects/catalog.ts';
 import { objectAnchor } from '../objects/object-anchor.ts';
+import { objectName } from '../objects/object-names.ts';
 import { placePoint } from '../tasks/tasks.ts';
 
 export interface DiaryLine {
@@ -34,7 +35,8 @@ export interface DiaryLine {
 /** Every line of the diary, oldest first. */
 export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
   const introduced = new Set<string>();
-  const objects = new Map<string, MarkerEvent | ShapeEvent>();
+  /** Each object as it was at the line being written. */
+  const objects = new Map<string, MarkerEvent | ShapeEvent | SweepEvent>();
   const tasks = new Map<string, TaskEvent>();
   // Answers can be stamped before their roll call by a device whose clock runs early.
   const rollCalls = new Set(
@@ -88,15 +90,18 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
       case 'roll-call':
         return withText(t('diaryRollCall'), event.text);
       case 'marker':
-      case 'shape': {
+      case 'shape':
+      case 'sweep': {
         const key = eventRefKey(event.object);
         const known = objects.has(key);
         objects.set(key, event);
-        return t(known ? 'diaryChanged' : 'diaryCreated', { object: objectName(event) });
+        return t(known ? 'diaryChanged' : 'diaryCreated', {
+          object: objectName(event, objects, t),
+        });
       }
       case 'object-delete': {
         const last = objects.get(eventRefKey(event.object));
-        return last ? t('diaryDeleted', { object: objectName(last) }) : null;
+        return last ? t('diaryDeleted', { object: objectName(last, objects, t) }) : null;
       }
       case 'task': {
         const key = eventRefKey(event.task);
@@ -120,11 +125,6 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
     if (before.assignee !== task.assignee) return t('diaryTaskAssigned', vars);
     return t('diaryTaskChanged', vars);
   }
-
-  function objectName(object: MarkerEvent | ShapeEvent): string {
-    const kind = t(objectKind(object));
-    return object.label ? `${kind} «${object.label}»` : kind;
-  }
 }
 
 const TASK_STATUS_LINES = {
@@ -141,9 +141,11 @@ function withText(sentence: string, text: string): string {
 /** Where an event happened; a task at an object, where the object was then. */
 function placeOf(
   event: JournalEvent,
-  objects: ReadonlyMap<string, MarkerEvent | ShapeEvent>,
+  objects: ReadonlyMap<string, MarkerEvent | ShapeEvent | SweepEvent>,
 ): LatLon | null {
-  if (event.type === 'marker' || event.type === 'shape') return objectAnchor(event);
+  if (event.type === 'marker' || event.type === 'shape' || event.type === 'sweep') {
+    return objectAnchor(event, objects);
+  }
   if (event.type === 'sos') return sosPlace(event);
   if (event.type === 'task') return placePoint(event.place, objects);
   return null;

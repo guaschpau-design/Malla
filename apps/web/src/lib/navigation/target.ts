@@ -6,6 +6,8 @@
 import type { GroupState, ObjectRecord } from '@tesel/core';
 import type { LatLon, NodeId } from '@tesel/protocol';
 
+import { stripOf, stripPath } from '../objects/sweeps.ts';
+
 export type NavigationTarget = { readonly name: string } & (
   | { readonly kind: 'point'; readonly at: LatLon }
   | { readonly kind: 'object'; readonly key: string }
@@ -26,7 +28,7 @@ export function targetDestination(
     case 'point':
       return { kind: 'point', at: target.at };
     case 'object':
-      return objectDestination(state.objects.get(target.key));
+      return objectDestination(state.objects.get(target.key), state.objects);
     case 'member': {
       const report = state.positions.get(target.id);
       return report?.type === 'position'
@@ -37,11 +39,19 @@ export function targetDestination(
 }
 
 /**
- * Where guidance to an object leads: a marker, a circle's centre, or along a line. An area has no
- * one place to go to, and a deleted object none at all.
+ * Where guidance to an object leads: a marker, a circle's centre, along a line or the lanes of a
+ * strip of a sweep. An area has no one place to go to, and a deleted object none at all.
  */
-export function objectDestination(record: ObjectRecord | undefined): Destination | null {
+export function objectDestination(
+  record: ObjectRecord | undefined,
+  objects: GroupState['objects'],
+): Destination | null {
   if (record?.type === 'marker') return { kind: 'point', at: { lat: record.lat, lon: record.lon } };
+  if (record?.type === 'sweep') {
+    const strip = stripOf(record, objects);
+    const points = strip ? stripPath(strip) : [];
+    return points.length >= 2 ? { kind: 'route', points } : null;
+  }
   if (record?.type !== 'shape') return null;
   const { geometry } = record;
   switch (geometry.kind) {

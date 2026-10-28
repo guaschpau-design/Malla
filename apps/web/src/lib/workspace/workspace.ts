@@ -18,5 +18,10 @@ export interface WorkspaceGroup {
   readonly practice: boolean;
 }
 
-/** A tool that takes taps on the map: measuring, from a point if any. */
-export type MapTool = { readonly kind: 'measure'; readonly from: LatLon | null };
+/**
+ * A tool in use on the map, which takes its taps: measuring, from a point if any, or planning the
+ * sweep of a search area, by its key.
+ */
+export type MapTool =
+  | { readonly kind: 'measure'; readonly from: LatLon | null }
+  | { readonly kind: 'sweep'; readonly area: string };

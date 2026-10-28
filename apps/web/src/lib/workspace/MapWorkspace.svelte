@@ -35,6 +35,7 @@
   import { Drawing } from '../objects/drawing.svelte.ts';
   import ObjectForm from '../objects/ObjectForm.svelte';
   import ObjectLayer from '../objects/ObjectLayer.svelte';
+  import { useSweepCompletion } from '../objects/sweep-completion.svelte.ts';
   import type { OfflineMaps } from '../offline/offline-maps.ts';
   import { deviceLocation } from '../position/device-location.svelte.ts';
   import LocateButton from '../position/LocateButton.svelte';
@@ -118,6 +119,7 @@
   let sosOpen = $state(false);
 
   useStandingNotice(() => (radio.reconnecting ? { text: t('radioReconnecting') } : null));
+  useSweepCompletion(() => group);
 
   useStandingNotice(() => {
     const minutes = deviceClock.wrongByMinutes;
@@ -285,7 +287,18 @@
     />
   {/if}
 
-  <GroupPanels {t} {locale} {feed} {self} {role} {preferences} onplace={showPlace} />
+  <GroupPanels
+    {t}
+    {locale}
+    {feed}
+    {self}
+    {role}
+    {preferences}
+    onplace={showPlace}
+    onplansweep={(area: string) => {
+      startTool({ kind: 'sweep', area });
+    }}
+  />
 
   {#key feed}
     <SosCall {t} {group} open={sosOpen} onclose={() => (sosOpen = false)} />

@@ -25,6 +25,7 @@ import {
   type GroupKeys,
   type LatLon,
   type ObjectRef,
+  type ShapeEvent,
   type ShapeGeometry,
   type SosKind,
   type TeselEvent,
@@ -278,6 +279,30 @@ export class GroupFeed {
     }));
   }
 
+  /** Gives a shape another style, keeping all else (protocol §3.10). */
+  async restyleShape(shape: ShapeEvent, style: number): Promise<void> {
+    const { object, label, geometry } = shape;
+    await this.#publish((header) => ({ ...header, type: 'shape', object, style, label, geometry }));
+  }
+
+  /** Creates one strip of a sweep of `area` (protocol §3.13) and returns its object reference. */
+  async addSweepStrip(
+    area: ObjectRef,
+    recipe: { readonly spacing: number; readonly heading: number },
+    strip: number,
+    strips: number,
+  ): Promise<ObjectRef> {
+    return this.#publish((header) => ({
+      ...header,
+      type: 'sweep',
+      object: { origin: header.origin, seq: header.seq },
+      area,
+      ...recipe,
+      strip,
+      strips,
+    }));
+  }
+
   async deleteObject(object: ObjectRef): Promise<void> {
     await this.#publish((header) => ({ ...header, type: 'object-delete', object }));
   }
@@ -337,13 +362,15 @@ export class GroupFeed {
     }));
   }
 
-  async #publish(build: (header: EventHeader) => TeselEvent): Promise<void> {
+  /** Creates an event of this device, sends it every way there is, and returns its reference. */
+  async #publish(build: (header: EventHeader) => TeselEvent): Promise<EventRef> {
     const header = { origin: this.#identity.nodeId, time: Math.floor(Date.now() / 1000) };
     const { entry, bytes } = await publishEvent(this.#db, this.#group.id, build, header);
     if (!this.#group.practice) this.#undelivered.add(eventRefKey(entry));
     const [event] = await this.#apply([bytes]);
     this.#push(entry, bytes);
     if (event) this.#lora?.offer({ event, bytes }, 'own');
+    return { origin: entry.origin, seq: entry.seq };
   }
 
   /**

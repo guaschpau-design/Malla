@@ -111,6 +111,7 @@ export const GLYPHS = {
   trail: glyph(['M4 19c2.4 0 3.2-3.4 5.6-3.4s3 2.2 5.4.2c2.4-2 2.6-7.8 5-10.3']),
   relief: glyph(['M2.5 19.5l6.2-10.3 4.1 6.2 2.6-3.6 6.1 7.7z']),
   area: glyph(['M5 8.5L12 4l7 5-2.2 10.5H7.2z']),
+  sweep: glyph(['M5 19.5V4.5h4.7v15h4.6v-15H19v15']),
   route: glyph(
     ['M5.5 18.5L10 10.5l4.5 4L18.5 5.5'],
     [

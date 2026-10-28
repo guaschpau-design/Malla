@@ -4,7 +4,7 @@
      dock: past its height it scrolls. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
-  import type { EventRef, LatLon, TaskEvent } from '@tesel/protocol';
+  import type { EventRef, LatLon, NodeId, TaskEvent } from '@tesel/protocol';
   import type { Map as MapLibreMap } from 'maplibre-gl';
 
   import type { Locale, Translate } from '../i18n/index.ts';
@@ -17,7 +17,10 @@
   import DrawBar from '../objects/DrawBar.svelte';
   import type { Drawing } from '../objects/drawing.svelte.ts';
   import DrawLayer from '../objects/DrawLayer.svelte';
+  import { objectTitle } from '../objects/object-names.ts';
   import type { ImportedRoute } from '../objects/route-import.ts';
+  import { planSweep, type SweepRecipe } from '../objects/sweep-actions.ts';
+  import SweepPlanner from '../objects/SweepPlanner.svelte';
   import type { OfflineMaps } from '../offline/offline-maps.ts';
   import OperationAreaOffer from '../offline/OperationAreaOffer.svelte';
   import { deviceLocation } from '../position/device-location.svelte.ts';
@@ -110,6 +113,28 @@
     />
   {:else if tool?.kind === 'measure'}
     <Measuring {t} {locale} {map} {taps} from={tool.from} onclose={onclosetool} />
+  {:else if tool?.kind === 'sweep' && group}
+    {@const { feed } = group}
+    <SweepPlanner
+      {t}
+      {locale}
+      {map}
+      groupState={feed.state}
+      self={group.self}
+      areaKey={tool.area}
+      onplan={async (recipe: SweepRecipe, teams: readonly (NodeId | null)[]) => {
+        const area = feed.state.objects.get(tool.area);
+        if (area?.type !== 'shape') return;
+        await planSweep(feed, area, recipe, teams, (strip) =>
+          t('stripName', {
+            area: objectTitle(area, feed.state.objects, t),
+            strip: strip + 1,
+            strips: teams.length,
+          }),
+        );
+      }}
+      onclose={onclosetool}
+    />
   {/if}
   <!-- While a drawing or a measure takes the taps, the cards in "aside" step out of the way. They
        stay mounted, so what they hold lasts: the cards a member closed, a download under way. -->
@@ -141,6 +166,7 @@
     objects={slices.objects}
     positions={slices.positions}
     tasks={slices.tasks}
+    trails={slices.trails}
     self={group?.self ?? null}
     onfinishtask={async (task: TaskEvent) => {
       await group?.feed.writeTask(task.task, { ...fieldsOf(task), status: 'done' });

@@ -134,6 +134,25 @@ export interface TaskEvent extends EventHeader {
   readonly text: string;
 }
 
+/**
+ * §3.13 One strip of a sweep of a search area: the lanes one team walks. A map object (§3.10),
+ * drawn from its area and the sweep's recipe, which every device works out alike.
+ */
+export interface SweepEvent extends EventHeader {
+  readonly type: 'sweep';
+  readonly object: ObjectRef;
+  /** The polygon swept. */
+  readonly area: ObjectRef;
+  /** Metres between lanes, at least 1. */
+  readonly spacing: number;
+  /** Direction of the lanes, in degrees clockwise from true north, 0–179. */
+  readonly heading: number;
+  /** Which strip this is, from 0. */
+  readonly strip: number;
+  /** How many strips the sweep has, more than `strip`. */
+  readonly strips: number;
+}
+
 /** §3.12 Asks every member to say they are well; each answers with an ACK. */
 export interface RollCallEvent extends EventHeader {
   readonly type: 'roll-call';
@@ -154,6 +173,7 @@ export type TeselEvent =
   | AlertEvent
   | AckEvent
   | TaskEvent
-  | RollCallEvent;
+  | RollCallEvent
+  | SweepEvent;
 
 export type EventType = TeselEvent['type'];

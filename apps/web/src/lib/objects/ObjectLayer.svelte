@@ -1,4 +1,4 @@
-<!-- Draws the group's markers and shapes, and reports taps on them. -->
+<!-- Draws the group's markers, shapes and strips of sweeps, and reports taps on them. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
   import type { Map as MapLibreMap } from 'maplibre-gl';
@@ -7,7 +7,8 @@
   import { useOverlay } from '../map/overlay.svelte.ts';
   import { textProperty, type MapTaps } from '../map/taps.ts';
   import { themeColor, toneExpression } from '../ui/theme.ts';
-  import { markerFeatures, shapeFeatures } from './object-features.ts';
+  import { markerFeatures, shapeFeatures, stripFeatures } from './object-features.ts';
+  import { stripLayers } from './strip-layers.ts';
   import { addSymbolImages } from './symbol-images.ts';
 
   interface Props {
@@ -23,11 +24,13 @@
 
   const MARKERS = 'tesel-markers';
   const SHAPES = 'tesel-shapes';
+  const STRIPS = 'tesel-strips';
 
   useOverlay(() => map, {
     level: 'objects',
     data: {
       [SHAPES]: () => shapeFeatures({ objects }),
+      [STRIPS]: () => stripFeatures({ objects }),
       [MARKERS]: () => markerFeatures({ objects }),
     },
     visible: () => visible,
@@ -64,6 +67,7 @@
           },
           paint: { 'text-color': tone, 'text-halo-color': halo, 'text-halo-width': 1.5 },
         },
+        ...stripLayers(STRIPS),
         {
           id: `${MARKERS}-icon`,
           type: 'symbol',
@@ -85,9 +89,12 @@
   });
 
   onMount(() =>
-    taps.onFeature([`${MARKERS}-icon`, `${SHAPES}-fill`, `${SHAPES}-line`], (feature) => {
-      const key = textProperty(feature, 'key');
-      if (key !== null) onselect(key);
-    }),
+    taps.onFeature(
+      [`${MARKERS}-icon`, `${STRIPS}-line`, `${SHAPES}-fill`, `${SHAPES}-line`],
+      (feature) => {
+        const key = textProperty(feature, 'key');
+        if (key !== null) onselect(key);
+      },
+    ),
   );
 </script>

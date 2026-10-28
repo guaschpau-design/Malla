@@ -1,4 +1,4 @@
-// The payload of every event type (docs/protocol.md §3.3–§3.12), each written next to the code
+// The payload of every event type (docs/protocol.md §3.3–§3.13), each written next to the code
 // that reads it, so that the two halves of a layout cannot drift apart. Adding an event type
 // means adding its entry here: the record is keyed by every `EventType`, so the compiler refuses
 // a type without a layout.
@@ -11,6 +11,7 @@ import {
   AlertLevelCode,
   EventTypeCode,
   FULL_TURN_DEGREES,
+  HALF_TURN_DEGREES,
   PUBLIC_KEY_SIZE,
   RoleCode,
   SHAPE_LABEL_MAX_BYTES,
@@ -20,7 +21,7 @@ import {
   UNKNOWN_U16,
 } from './constants.ts';
 import { nodeIdFromPublicKey } from './crypto.ts';
-import type { EventHeader, EventType, MemberInfoEvent, TeselEvent } from './events.ts';
+import type { EventHeader, EventType, MemberInfoEvent, SweepEvent, TeselEvent } from './events.ts';
 import {
   ALERT_TEXT_MAX_BYTES,
   CHAT_MAX_BYTES,
@@ -234,7 +235,43 @@ export const PAYLOADS: { readonly [K in EventType]: PayloadCodec<EventOfType<K>>
       text: reader.textRest(0, ROLL_CALL_TEXT_MAX_BYTES, 'roll call text'),
     }),
   },
+  // §3.13
+  sweep: {
+    code: EventTypeCode.SWEEP,
+    write(writer, event) {
+      checkSweep(event);
+      writeRef(writer, event.object);
+      writeRef(writer, event.area);
+      writer.u16(event.spacing).u16(event.heading).u8(event.strip).u8(event.strips);
+    },
+    read(reader, header) {
+      const sweep = {
+        ...header,
+        type: 'sweep',
+        object: readRef(reader),
+        area: readRef(reader),
+        spacing: reader.u16(),
+        heading: reader.u16(),
+        strip: reader.u8(),
+        strips: reader.u8(),
+      } as const;
+      checkSweep(sweep);
+      return sweep;
+    },
+  },
 };
+
+/** §3.13 The recipe of a sweep must make sense: lanes apart, a direction, a strip of those there are. */
+function checkSweep(sweep: SweepEvent): void {
+  if (sweep.spacing < 1)
+    throw new ProtocolFailure('invalid-value', 'sweep spacing must be at least 1 m');
+  if (sweep.heading >= HALF_TURN_DEGREES) {
+    throw new ProtocolFailure('invalid-value', 'sweep heading must be below 180°');
+  }
+  if (sweep.strip >= sweep.strips) {
+    throw new ProtocolFailure('invalid-value', 'sweep strip must be below the number of strips');
+  }
+}
 
 /** Every event type this version knows, in type-code order. */
 export const EVENT_TYPES: readonly EventType[] = (Object.keys(PAYLOADS) as EventType[]).sort(

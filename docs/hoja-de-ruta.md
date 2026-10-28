@@ -25,6 +25,12 @@ Una ruta se dibuja punto a punto con «Añadir» → «Ruta», hasta 25 puntos, 
 
 Hecha el 28 de octubre de 2026.
 
+## Batidas
+
+Quien coordina abre una zona de búsqueda y pulsa «Planificar batida»: elige el terreno (abierto 25 m, matorral 10 m, bosque denso 5 m, o la separación que quiera), cuántos equipos y quién lleva cada uno, y ve las calles en el mapa antes de crearla. Cada equipo recibe su franja como tarea, la sigue con «Seguir franja» y ve cuánto lleva barrido según su propio recorrido; cuando todas las franjas están hechas, la zona pasa a «despejada». Solo viaja la receta, en un tipo de evento nuevo, `SWEEP` (protocolo §3.13, ADR-0060).
+
+Hecha el 28 de octubre de 2026.
+
 ## Fase 2 — Más sencilla, mejor mapa y tareas
 
 Principio: que la app sea versátil y cada equipo la use a su manera, sin menús dentro de menús. Casi todo empieza donde se toca el mapa.
@@ -48,17 +54,22 @@ Una ruta se dibuja punto a punto con «Añadir» → «Ruta», hasta 25 puntos, 
 
 Hecha el 28 de octubre de 2026.
 
+## Batidas
+
+Quien coordina abre una zona de búsqueda y pulsa «Planificar batida»: elige el terreno (abierto 25 m, matorral 10 m, bosque denso 5 m, o la separación que quiera), cuántos equipos y quién lleva cada uno, y ve las calles en el mapa antes de crearla. Cada equipo recibe su franja como tarea, la sigue con «Seguir franja» y ve cuánto lleva barrido según su propio recorrido; cuando todas las franjas están hechas, la zona pasa a «despejada». Solo viaja la receta, en un tipo de evento nuevo, `SWEEP` (protocolo §3.13, ADR-0060).
+
+Hecha el 28 de octubre de 2026.
+
 ## Después, por orden
 
 Lo previsto en el briefing más lo aprendido de ATAK. Cada fase se detalla al empezarla.
 
-1. Batidas: quien coordina reparte una zona de búsqueda en calles paralelas, una franja por equipo, cada una como tarea; la zona queda revisada cuando acaban todas.
-2. Rutas por calles y caminos de OpenStreetMap: con internet, calculadas por el servidor; sin conexión, con la red de caminos de cada zona descargada.
-3. Partes rápidos (situación, heridos, daños) con formularios fijos que caben por radio.
-4. Fotos adjuntas (solo por internet; la radio no da para imágenes).
-5. Exportar el mapa (objetos y recorridos) a KML y GeoJSON para otras herramientas.
-6. Mapa náutico, e imagen de satélite fuera de España.
-7. Simbología OTAN APP-6.
-8. Radios Meshtastic.
-9. Compatibilidad con ATAK (CoT).
-10. Apps de Android e iPhone con el mismo código: segundo plano, radio en iPhone y avisos con la app cerrada. Aplazadas a propósito: primero la app web completa.
+1. Rutas por calles y caminos de OpenStreetMap: con internet, calculadas por el servidor; sin conexión, con la red de caminos de cada zona descargada.
+2. Partes rápidos (situación, heridos, daños) con formularios fijos que caben por radio.
+3. Fotos adjuntas (solo por internet; la radio no da para imágenes).
+4. Exportar el mapa (objetos y recorridos) a KML y GeoJSON para otras herramientas.
+5. Mapa náutico, e imagen de satélite fuera de España.
+6. Simbología OTAN APP-6.
+7. Radios Meshtastic.
+8. Compatibilidad con ATAK (CoT).
+9. Apps de Android e iPhone con el mismo código: segundo plano, radio en iPhone y avisos con la app cerrada. Aplazadas a propósito: primero la app web completa.

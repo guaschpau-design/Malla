@@ -1,12 +1,13 @@
-// Map objects as GeoJSON for the map layers: markers, and the shapes drawn.
+// Map objects as GeoJSON for the map layers: markers, the shapes drawn and the strips of sweeps.
 
 import type { GroupState } from '@tesel/core';
-import type { ShapeEvent } from '@tesel/protocol';
-import type { Feature, FeatureCollection, Geometry, Point } from 'geojson';
+import type { LatLon, ShapeEvent } from '@tesel/protocol';
+import type { Feature, FeatureCollection, Geometry, LineString, Point } from 'geojson';
 
 import { circleRing, toPosition } from '../map/geometry.ts';
 import type { Tone } from '../ui/theme.ts';
 import { styleInfo, symbolImageName } from './catalog.ts';
+import { stripOf, stripPath, TEAM_TONES } from './sweeps.ts';
 
 interface ObjectProperties {
   /** Object reference key (protocol §3.10), used to select the object. */
@@ -51,6 +52,36 @@ export function shapeFeatures(
     });
   }
   return { type: 'FeatureCollection', features };
+}
+
+/** The way through each strip of a sweep, in its team's colour, with its number. */
+export function stripFeatures(
+  state: Pick<GroupState, 'objects'>,
+): FeatureCollection<LineString, ShapeProperties> {
+  const features: Feature<LineString, ShapeProperties>[] = [];
+  for (const [key, record] of state.objects) {
+    if (record.type !== 'sweep') continue;
+    const strip = stripOf(record, state.objects);
+    if (strip) features.push(stripFeature(key, record.strip, stripPath(strip)));
+  }
+  return { type: 'FeatureCollection', features };
+}
+
+/** One strip's way, drawn alike on the map and while a sweep is planned. */
+export function stripFeature(
+  key: string,
+  strip: number,
+  path: readonly LatLon[],
+): Feature<LineString, ShapeProperties> {
+  return {
+    type: 'Feature',
+    geometry: { type: 'LineString', coordinates: path.map(toPosition) },
+    properties: {
+      key,
+      label: String(strip + 1),
+      tone: TEAM_TONES[strip % TEAM_TONES.length] ?? 'slate',
+    },
+  };
 }
 
 function shapeGeometry(shape: ShapeEvent): Geometry {

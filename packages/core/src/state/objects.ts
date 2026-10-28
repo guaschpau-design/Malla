@@ -7,16 +7,17 @@ import {
   type MarkerEvent,
   type ObjectDeleteEvent,
   type ShapeEvent,
+  type SweepEvent,
 } from '@tesel/protocol';
 
 import { keepNewest } from '../collections.ts';
 import { defineSlice } from './slice.ts';
 
 /** The latest event about a map object; OBJECT_DELETE means the object is gone. */
-export type ObjectRecord = MarkerEvent | ShapeEvent | ObjectDeleteEvent;
+export type ObjectRecord = MarkerEvent | ShapeEvent | SweepEvent | ObjectDeleteEvent;
 
 export const objects = defineSlice({
-  handles: ['marker', 'shape', 'object-delete'],
+  handles: ['marker', 'shape', 'sweep', 'object-delete'],
   empty: new Map() as ReadonlyMap<string, ObjectRecord>,
   apply: (state, event) => keepNewest(state, eventRefKey(event.object), event),
 });

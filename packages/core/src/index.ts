@@ -33,5 +33,16 @@ export {
   type LoraSource,
   type OpaqueEvent,
 } from './lora-scheduler.ts';
+export {
+  bestHeading,
+  laneLines,
+  lanesLength,
+  stripLanes,
+  sweepLanes,
+  sweepPath,
+  sweptFraction,
+  type Lane,
+  type SweepLanes,
+} from './sweep.ts';
 export { TokenBucket } from './token-bucket.ts';
 export { URGENCY, urgencyOf } from './urgency.ts';

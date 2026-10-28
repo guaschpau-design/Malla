@@ -41,7 +41,11 @@ export const EventTypeCode = {
   ACK: 0x0b,
   TASK: 0x0c,
   ROLL_CALL: 0x0d,
+  SWEEP: 0x0e,
 } as const;
+
+/** §3.13 A sweep's lanes run in a direction below this, in degrees: the other half are the same. */
+export const HALF_TURN_DEGREES = 180;
 
 /** §3.3 Ed25519 key sizes. */
 export const PUBLIC_KEY_SIZE = 32;

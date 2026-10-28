@@ -43,7 +43,8 @@
   /** Whether a task's place is a route of the map, whose own panel offers to follow it. */
   function isRoute(place: TaskPlace): boolean {
     if (place.kind !== 'object') return false;
-    return objectDestination(groupState.objects.get(eventRefKey(place.object)))?.kind === 'route';
+    const object = groupState.objects.get(eventRefKey(place.object));
+    return objectDestination(object, groupState.objects)?.kind === 'route';
   }
 
   const NEXT: Readonly<Record<TaskFields['status'], MessageKey>> = {

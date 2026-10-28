@@ -112,7 +112,9 @@ export function placePoint(place: TaskPlace | null, objects: GroupState['objects
   if (place === null) return null;
   if (place.kind === 'point') return place.at;
   const object = objects.get(eventRefKey(place.object));
-  return object === undefined || object.type === 'object-delete' ? null : objectAnchor(object);
+  return object === undefined || object.type === 'object-delete'
+    ? null
+    : objectAnchor(object, objects);
 }
 
 /** A task of this device still to do along a route, given the route's key. */

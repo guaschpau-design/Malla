@@ -21,6 +21,8 @@
     name: string;
     points: readonly LatLon[];
     fix: DeviceFix | null;
+    /** How much of a strip of a sweep this device has swept, 0–1; null for other routes. */
+    swept: number | null;
     /** This device's task along the route, if it has one still to do. */
     task: TaskEvent | null;
     /** Marks the task done. */
@@ -28,7 +30,7 @@
     onstop: () => void;
   }
 
-  let { t, locale, map, name, points, fix, task, onfinishtask, onstop }: Props = $props();
+  let { t, locale, map, name, points, fix, swept, task, onfinishtask, onstop }: Props = $props();
 
   const tracker = $derived(new RouteTracker(points));
   // Each position moves the tracker on; progress never goes back.
@@ -72,6 +74,12 @@
   {:else}
     <p>{t('routeArrived')}</p>
   {/if}
+  {#if swept !== null}
+    <p class="swept">
+      <span class="bar"><span style:width="{swept * 100}%"></span></span>
+      {t('sweptPercent', { percent: Math.round(swept * 100) })}
+    </p>
+  {/if}
   {#snippet actions()}
     {#if task && progress?.stage === 'arrived'}
       {@const done = task}
@@ -87,3 +95,26 @@
     {/if}
   {/snippet}
 </NavigationBar>
+
+<style>
+  .swept {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .bar {
+    flex: 1;
+    max-width: 8rem;
+    height: 0.4rem;
+    overflow: hidden;
+    background: var(--border);
+    border-radius: var(--radius-pill);
+  }
+
+  .bar span {
+    display: block;
+    height: 100%;
+    background: var(--accent-line);
+  }
+</style>

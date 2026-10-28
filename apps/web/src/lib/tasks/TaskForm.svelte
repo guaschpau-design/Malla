@@ -14,8 +14,8 @@
 
   import { formatCoordinate, type CoordinateFormat } from '../coordinates/coordinates.ts';
   import type { MessageKey, Translate } from '../i18n/index.ts';
-  import { aliasOf } from '../members/alias.ts';
-  import { objectKind } from '../objects/catalog.ts';
+  import AssigneeSelect from '../members/AssigneeSelect.svelte';
+  import { objectName } from '../objects/object-names.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import { confirmations } from '../ui/confirmations.svelte.ts';
   import { Submission } from '../ui/submission.svelte.ts';
@@ -74,19 +74,10 @@
     }
     const object = groupState.objects.get(eventRefKey(place.object));
     if (object === undefined || object.type === 'object-delete') return t('taskPlaceGone');
-    const kind = t(objectKind(object));
-    return object.label ? `${kind} «${object.label}»` : kind;
+    return objectName(object, groupState.objects, t);
   });
   const size = $derived(utf8ByteLength(text.trim()));
   const tooLong = $derived(size > TASK_TEXT_MAX_BYTES);
-  /** This device first, then everyone else the group knows, by alias. */
-  const people = $derived(
-    [...new Set<NodeId>([self, ...groupState.members.keys()])]
-      .map((id) => ({ id, alias: aliasOf(groupState, id) }))
-      .sort(
-        (a, b) => Number(b.id === self) - Number(a.id === self) || a.alias.localeCompare(b.alias),
-      ),
-  );
 
   async function save(fields: TaskFields): Promise<void> {
     if (await submission.run(() => onsave(existing?.task ?? null, fields))) onback();
@@ -143,14 +134,13 @@
   {#if tooLong}<p class="warning">{t('taskTooLong')}</p>{/if}
   <label>
     {t('taskAssignee')}
-    <select bind:value={assignee}>
-      <option value="">{t('anyoneOption')}</option>
-      {#each people as person (person.id)}
-        <option value={person.id}>
-          {person.id === self ? `${person.alias} (${t('you')})` : person.alias}
-        </option>
-      {/each}
-    </select>
+    <AssigneeSelect
+      {t}
+      {groupState}
+      {self}
+      value={assignee}
+      onchange={(value: string) => (assignee = value)}
+    />
   </label>
   {#if existing}
     <fieldset>

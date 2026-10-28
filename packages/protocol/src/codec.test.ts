@@ -447,6 +447,39 @@ describe('reserved values and unknown types', () => {
   });
 });
 
+describe('sweeps', () => {
+  const sweep: TeselEvent = {
+    type: 'sweep',
+    origin: ALICE,
+    seq: 7,
+    time: T0,
+    object: { origin: ALICE, seq: 7 },
+    area: { origin: BOB, seq: 3 },
+    spacing: 25,
+    heading: 135,
+    strip: 1,
+    strips: 3,
+  };
+
+  it('matches the test vector computed from the spec', () => {
+    expect(toHex(encodeOrFail(sweep))).toBe(
+      '010ea1b2c3d4070000000013fc68a1b2c3d4070000000f1e2d3c03000000190087000103',
+    );
+  });
+
+  it('refuses lanes on top of one another, a heading of a full turn and a strip past the last', () => {
+    expect(encodeEvent({ ...sweep, spacing: 0 }).ok).toBe(false);
+    expect(encodeEvent({ ...sweep, heading: 180 }).ok).toBe(false);
+    expect(encodeEvent({ ...sweep, strip: 3 }).ok).toBe(false);
+  });
+
+  it('discards a sweep whose strip is past the last', () => {
+    const bytes = encodeOrFail(sweep);
+    bytes[bytes.length - 2] = 3;
+    expect(decodeEvent(bytes).ok).toBe(false);
+  });
+});
+
 describe('tasks', () => {
   const task: TeselEvent = {
     type: 'task',

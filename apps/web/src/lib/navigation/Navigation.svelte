@@ -8,6 +8,7 @@
 
   import type { Locale, Translate } from '../i18n/index.ts';
   import { deviceLocation } from '../position/device-location.svelte.ts';
+  import { stripOf, sweptBy } from '../objects/sweeps.ts';
   import { routeTaskOf } from '../tasks/tasks.ts';
   import { navigation, stopNavigating } from './navigation.svelte.ts';
   import PointGuide from './PointGuide.svelte';
@@ -23,16 +24,24 @@
     positions: GroupState['positions'];
     /** The group's tasks: one of this device along a route can be marked done at its end. */
     tasks: GroupState['tasks'];
+    /** The members' trails: this device's tells how much of a strip of a sweep it has swept. */
+    trails: GroupState['trails'];
     /** This device in the active group, null without one. */
     self: NodeId | null;
     /** Marks a task done. */
     onfinishtask: (task: TaskEvent) => Promise<void>;
   }
 
-  let { t, locale, map, objects, positions, tasks, self, onfinishtask }: Props = $props();
+  let { t, locale, map, objects, positions, tasks, trails, self, onfinishtask }: Props = $props();
 
   const target = $derived(navigation.target);
   const destination = $derived(target && targetDestination(target, { objects, positions }));
+  /** How much of a strip of a sweep followed this device has swept, from its own trail. */
+  const swept = $derived.by(() => {
+    const record = target?.kind === 'object' ? objects.get(target.key) : undefined;
+    const strip = record?.type === 'sweep' ? stripOf(record, objects) : null;
+    return strip && self !== null ? sweptBy(strip, trails, self) : null;
+  });
 
   $effect(() => {
     if (target !== null) return deviceLocation.use();
@@ -48,6 +57,7 @@
       name={target.name}
       points={destination.points}
       fix={deviceLocation.fix}
+      {swept}
       task={target.kind === 'object' && self !== null ? routeTaskOf(tasks, target.key, self) : null}
       {onfinishtask}
       onstop={stopNavigating}
