@@ -372,6 +372,7 @@
   onclosetool={() => (tool = null)}
   {onendpractice}
   onneedhelp={() => (sosOpen = true)}
+  dutyActive={preferences.dutyStatus.value === 'active'}
 />
 <MapControl {map}>
   <CompassButton {t} {map} />

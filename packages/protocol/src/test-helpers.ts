@@ -212,4 +212,5 @@ export const SAMPLE_EVENTS: readonly TeselEvent[] = [
     resources: ['ambulance', 'firefighters'],
     note: 'Nave industrial, dos plantas',
   },
+  { type: 'check-in-timer', origin: ALICE, seq: 14, time: T0 + 21, minutes: 30 },
 ];

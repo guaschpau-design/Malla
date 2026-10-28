@@ -119,6 +119,10 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
           ? null
           : t('diaryStatus', { status: t(DUTY_STATUSES[event.status].label) });
       }
+      case 'check-in-timer':
+        return event.minutes > 0
+          ? t('diaryCheckInOn', { minutes: event.minutes })
+          : t('diaryCheckInOff');
       case 'report':
         return t('diaryReport', { text: reportLine(event, t) });
       case 'team': {

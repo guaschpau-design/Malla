@@ -9,6 +9,7 @@
 
   import type { Locale, Translate } from '../i18n/index.ts';
   import IncidentBanners from '../incidents/IncidentBanners.svelte';
+  import CheckInCard from '../me/CheckInCard.svelte';
   import { mapCentre, showPoint, showPoints } from '../map/geometry.ts';
   import type { MapTaps } from '../map/taps.ts';
   import Measuring from '../measure/Measuring.svelte';
@@ -49,6 +50,8 @@
     offline: OfflineMaps;
     onclosetool: () => void;
     onendpractice: () => void;
+    /** This member is active: only then does the safety check-in ask (protocol §3.17). */
+    dutyActive: boolean;
     /** Answers a roll call with "I need help": opens the SOS dialog. */
     onneedhelp: () => void;
   }
@@ -66,6 +69,7 @@
     weather,
     offline,
     onclosetool,
+    dutyActive,
     onendpractice,
     onneedhelp,
   }: Props = $props();
@@ -158,6 +162,25 @@
   </div>
   {#if group}
     <DangerZoneAlert {t} groupState={group.feed.state} />
+    {@const checkIn = group.feed.state.checkIn}
+    {#if checkIn && checkIn.minutes > 0 && dutyActive}
+      {@const { feed } = group}
+      {#key feed}
+        <CheckInCard
+          {t}
+          minutes={checkIn.minutes}
+          onsos={() => {
+            const fix = deviceLocation.fix;
+            return feed.sendSos(
+              'general',
+              fix?.at ?? null,
+              fix?.accuracy ?? null,
+              t('checkInSosText'),
+            );
+          }}
+        />
+      {/key}
+    {/if}
   {/if}
   <Navigation
     {t}

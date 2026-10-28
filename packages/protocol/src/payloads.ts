@@ -1,4 +1,4 @@
-// The payload of every event type (docs/protocol.md §3.3–§3.16), each written next to the code
+// The payload of every event type (docs/protocol.md §3.3–§3.17), each written next to the code
 // that reads it, so that the two halves of a layout cannot drift apart. Adding an event type
 // means adding its entry here: the record is keyed by every `EventType`, so the compiler refuses
 // a type without a layout.
@@ -275,6 +275,14 @@ export const PAYLOADS: { readonly [K in EventType]: PayloadCodec<EventOfType<K>>
       checkSweep(sweep);
       return sweep;
     },
+  },
+  // §3.17
+  'check-in-timer': {
+    code: EventTypeCode.CHECK_IN_TIMER,
+    write(writer, event) {
+      writer.u16(event.minutes);
+    },
+    read: (reader, header) => ({ ...header, type: 'check-in-timer', minutes: reader.u16() }),
   },
   // §3.16
   report: {

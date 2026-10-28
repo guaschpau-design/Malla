@@ -362,6 +362,11 @@ export class GroupFeed {
     await this.#publish((header) => ({ ...header, type: 'member-state', ...state }));
   }
 
+  /** Turns the group's safety check-in on after `minutes`, or off with 0 (protocol §3.17). */
+  async setCheckInTimer(minutes: number): Promise<void> {
+    await this.#publish((header) => ({ ...header, type: 'check-in-timer', minutes }));
+  }
+
   /** Sends a situation report (protocol §3.16). */
   async sendReport(report: ReportFields): Promise<void> {
     await this.#publish((header) => ({ ...header, type: 'report', ...report }));

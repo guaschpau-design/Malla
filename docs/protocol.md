@@ -65,6 +65,7 @@ The payload follows, up to 151 bytes.
 | `0x0F` | `MEMBER_STATE`    | §3.14                                                  |
 | `0x10` | `TEAM`            | §3.15                                                  |
 | `0x11` | `REPORT`          | §3.16                                                  |
+| `0x12` | `CHECK_IN_TIMER`  | §3.17                                                  |
 
 Codes are never reused. New capabilities are added as new types; existing layouts never change within version 1.
 
@@ -283,6 +284,18 @@ A situation report from the scene, in the order emergency services use (METHANE)
 | 4     | `casualties` | One `u8` each for the triage categories red, yellow, green and black: how many, 0–254; `255` unknown                                                                    |
 | 2     | `resources`  | `u16` of bits, from the lowest: ambulance, firefighters, police, rescue, helicopter, machinery, more people, supplies, shelter; other bits are ignored                  |
 | 0–131 | `note`       | text-rest                                                                                                                                                               |
+
+### 3.17 `CHECK_IN_TIMER`
+
+Turns on, changes or turns off the group's safety check-in: a device asks its member whether they are well after they have gone this long without moving or touching it.
+
+| Size | Field     | Notes                   |
+| ---- | --------- | ----------------------- |
+| 2    | `minutes` | `u16`; `0` turns it off |
+
+- The newest `CHECK_IN_TIMER` by `(time, origin, seq)` is the one in force.
+- A device SHOULD ask only while its member's status is active (§3.14), and only for time the app was in use on screen.
+- A member who does not answer within 2 minutes is presumed in trouble: their device SHOULD send an `SOS` (§3.8) of kind general, from where it last was. Answering sends nothing.
 
 ## 4. Symbol and style codes
 

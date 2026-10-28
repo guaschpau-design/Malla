@@ -176,6 +176,15 @@ export interface MemberStateEvent extends EventHeader {
   readonly equipment: readonly Equipment[];
 }
 
+/**
+ * §3.17 How long a member may go without moving or touching their device before it asks whether
+ * they are well; 0 turns the question off.
+ */
+export interface CheckInTimerEvent extends EventHeader {
+  readonly type: 'check-in-timer';
+  readonly minutes: number;
+}
+
 /** §3.16 What a situation report is about. */
 export type IncidentType =
   | 'other'
@@ -297,6 +306,7 @@ export type TeselEvent =
   | SweepEvent
   | MemberStateEvent
   | TeamEvent
-  | ReportEvent;
+  | ReportEvent
+  | CheckInTimerEvent;
 
 export type EventType = TeselEvent['type'];

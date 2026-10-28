@@ -6,6 +6,9 @@
   import type { Translate } from '../i18n/index.ts';
   import type { GroupFeed, TeamFields } from '../sync/group-feed.svelte.ts';
   import { dissolveTeam, saveTeam } from '../teams/team-actions.ts';
+  import { CHECK_IN_MINUTES } from '../me/check-in.ts';
+  import Switch from '../ui/Switch.svelte';
+  import { attempt } from '../ui/submission.svelte.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import { canInvite, type StoredGroup } from './group.ts';
   import MemberList from '../members/MemberList.svelte';
@@ -41,6 +44,21 @@
       onsaveteam={(team: TeamFields) => saveTeam(current, team)}
       ondissolveteam={(team: TeamEvent) => dissolveTeam(current, team)}
     />
+    {#if group.role === 'coordinator'}
+      {@const on = (current.state.checkIn?.minutes ?? 0) > 0}
+      <button
+        class="toggle"
+        role="switch"
+        aria-checked={on}
+        onclick={() => {
+          attempt(() => current.setCheckInTimer(on ? 0 : CHECK_IN_MINUTES), t('actionFailed'));
+        }}
+      >
+        {t('checkInSwitch')}
+        <Switch {on} />
+      </button>
+      <p class="hint">{t('checkInHint', { minutes: CHECK_IN_MINUTES })}</p>
+    {/if}
   {/if}
   <div class="row">
     {#if canInvite(group)}
@@ -56,6 +74,15 @@
 </section>
 
 <style>
+  .toggle {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    text-align: left;
+  }
+
   .group {
     display: grid;
     gap: 0.75rem;

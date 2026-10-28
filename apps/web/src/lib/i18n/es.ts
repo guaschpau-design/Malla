@@ -498,6 +498,17 @@ export const es: Messages = {
   presetWatchAndReport: 'Vigilar y avisar',
   presetSetUpMeetingPoint: 'Montar el punto de encuentro',
   taskHandedToYou: '{name} te ha pasado una tarea: «{text}»',
+  checkInTitle: '¿Sigues bien?',
+  checkInAsking:
+    'Llevas un rato sin moverte ni tocar el móvil. Si no respondes, en {seconds} s se enviará un SOS.',
+  checkInCalled: 'No respondiste: se ha enviado un SOS con tu última posición.',
+  checkInFine: 'Estoy bien',
+  checkInSosText: 'Sin respuesta al aviso «¿Sigues bien?»',
+  checkInSwitch: 'Aviso «¿Sigues bien?»',
+  checkInHint:
+    'Pregunta a quien esté activo y lleve {minutes} min sin moverse ni tocar el móvil; si no responde en 2 min, envía un SOS. Solo funciona con Tesel abierta.',
+  diaryCheckInOn: 'Activa el aviso «¿Sigues bien?» a los {minutes} min.',
+  diaryCheckInOff: 'Desactiva el aviso «¿Sigues bien?».',
   incidentFire: 'Incendio',
   incidentFlood: 'Inundación',
   incidentTrafficAccident: 'Accidente de tráfico',

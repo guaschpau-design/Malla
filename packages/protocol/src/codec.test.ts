@@ -447,6 +447,19 @@ describe('reserved values and unknown types', () => {
   });
 });
 
+describe('check-in timers', () => {
+  it('matches the test vector computed from the spec', () => {
+    const timer: TeselEvent = {
+      type: 'check-in-timer',
+      origin: ALICE,
+      seq: 11,
+      time: T0,
+      minutes: 30,
+    };
+    expect(toHex(encodeOrFail(timer))).toBe('0112a1b2c3d40b0000000013fc681e00');
+  });
+});
+
 describe('reports', () => {
   const report: TeselEvent = {
     type: 'report',

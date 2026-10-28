@@ -8,6 +8,7 @@
 import type { EventType, PositionEvent, TeselEvent } from '@tesel/protocol';
 
 import { acks } from './state/acks.ts';
+import { checkIn } from './state/check-in.ts';
 import { journal } from './state/journal.ts';
 import { members, memberStates } from './state/members.ts';
 import { alerts, chat, reports } from './state/messages.ts';
@@ -40,6 +41,7 @@ const SLICES = {
   tasks,
   teams,
   rollCall,
+  checkIn,
   journal,
 };
 

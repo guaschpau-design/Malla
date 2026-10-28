@@ -58,6 +58,7 @@ export const EventTypeCode = {
   MEMBER_STATE: 0x0f,
   TEAM: 0x10,
   REPORT: 0x11,
+  CHECK_IN_TIMER: 0x12,
 } as const;
 
 /** §3.13 A sweep's lanes run in a direction below this, in degrees: the other half are the same. */

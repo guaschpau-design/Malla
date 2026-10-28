@@ -496,6 +496,17 @@ export const en = {
   presetWatchAndReport: 'Watch and report',
   presetSetUpMeetingPoint: 'Set up the meeting point',
   taskHandedToYou: '{name} has given you a task: “{text}”',
+  checkInTitle: 'Are you OK?',
+  checkInAsking:
+    'You have not moved or touched your phone for a while. Without an answer, an SOS goes out in {seconds} s.',
+  checkInCalled: 'No answer: an SOS went out with your last position.',
+  checkInFine: 'I am OK',
+  checkInSosText: 'No answer to “Are you OK?”',
+  checkInSwitch: '“Are you OK?” check',
+  checkInHint:
+    'Asks anyone active who has not moved or touched their phone for {minutes} min; without an answer in 2 min, it sends an SOS. Only while Tesel is open.',
+  diaryCheckInOn: 'Turns on the “Are you OK?” check after {minutes} min.',
+  diaryCheckInOff: 'Turns off the “Are you OK?” check.',
   incidentFire: 'Fire',
   incidentFlood: 'Flood',
   incidentTrafficAccident: 'Traffic accident',
