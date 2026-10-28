@@ -10,7 +10,7 @@
   import type { LatLon, NodeId, SosKind } from '@tesel/protocol';
   import type { Map as MapLibreMap } from 'maplibre-gl';
 
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
 
   import { CADASTRE_CREDITS } from '../cadastre/cadastre.ts';
   import CadastreLayer from '../cadastre/CadastreLayer.svelte';
@@ -24,6 +24,7 @@
   import { MAP_LAYERS, type MapLayer } from '../map/layers.ts';
   import { onLongPress } from '../map/long-press.ts';
   import { useStyleCredits } from '../map/style-credits.svelte.ts';
+  import { groupPoints, StartFraming } from '../map/start-framing.ts';
   import { MapTaps } from '../map/taps.ts';
   import LayersPanel from '../map/LayersPanel.svelte';
   import CompassButton from '../map/CompassButton.svelte';
@@ -71,6 +72,8 @@
     t: Translate;
     locale: Locale;
     map: MapLibreMap;
+    /** The map opened on its wide view, not on one the address gave: it frames the group. */
+    mapOpenedWide: boolean;
     /** The active group and this device's place in it, when there is an active group. */
     group: WorkspaceGroup | null;
     radio: RadioSession;
@@ -87,6 +90,7 @@
     t,
     locale,
     map,
+    mapOpenedWide,
     group,
     radio,
     location,
@@ -170,6 +174,21 @@
   }
 
   onMount(() => taps.listen(map));
+
+  // Until the user chooses a view, the map follows who appears: this device, the members.
+  $effect(() => {
+    const framing = new StartFraming(
+      map,
+      untrack(() => mapOpenedWide),
+    );
+    $effect(() => {
+      const fix = location.fix?.at ?? null;
+      framing.show(groupPoints(slices.positions, group?.self ?? null, fix, Date.now() / 1000));
+    });
+    return () => {
+      framing.remove();
+    };
+  });
 
   onMount(() =>
     onLongPress(map, (at) => {

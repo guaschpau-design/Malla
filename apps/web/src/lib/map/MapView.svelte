@@ -13,7 +13,11 @@
   interface Props {
     /** What the map looks like: base map, relief, theme and the language of its names. */
     choice: StyleChoice;
-    onready: (map: MapLibreMap) => void;
+    /**
+     * Called once with the map, and whether it opened on its wide view of Spain and Portugal
+     * rather than on a view the address gave (#map=…).
+     */
+    onready: (map: MapLibreMap, openedWide: boolean) => void;
   }
 
   let { choice, onready }: Props = $props();
@@ -27,10 +31,11 @@
    */
   let busy = $state(true);
 
-  // Spain and Portugal, until the user's own position or areas say otherwise.
+  // Spain and Portugal, until the group is brought into view (start-framing.ts).
   const INITIAL_VIEW = { center: [-3.7, 40.2] as [number, number], zoom: 5 };
 
   onMount(() => {
+    const openedWide = !new URLSearchParams(window.location.hash.slice(1)).has('map');
     setWorkerUrl(maplibreWorkerUrl);
     appliedStyle = JSON.stringify(choice);
     const instance = new MapLibreMap({
@@ -47,7 +52,7 @@
     instance.on('movestart', startBusy);
     instance.on('idle', () => (busy = false));
     map = instance;
-    onready(instance);
+    onready(instance, openedWide);
     return () => {
       instance.remove();
     };

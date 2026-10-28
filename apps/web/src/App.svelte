@@ -75,6 +75,8 @@
   let sharing: PositionSharing | undefined;
   let feed: GroupFeed | undefined = $state.raw();
   let map: MapLibreMap | undefined = $state();
+  /** The map opened on its wide view, not on one the address gave: it may frame the group. */
+  let mapOpenedWide = $state(false);
   /** Official weather warnings from the app's own server, once the database is open. */
   let weather: WeatherFeed | null = $state.raw(null);
   const radio = new RadioSession();
@@ -146,7 +148,8 @@
     };
   });
 
-  function onMapReady(instance: MapLibreMap): void {
+  function onMapReady(instance: MapLibreMap, openedWide: boolean): void {
+    mapOpenedWide = openedWide;
     map = instance;
   }
 
@@ -281,6 +284,7 @@
         {t}
         {locale}
         {map}
+        {mapOpenedWide}
         group={workspaceGroup}
         {radio}
         {location}
