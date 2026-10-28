@@ -82,6 +82,11 @@ export function taskList(state: GroupState, self: NodeId): TaskList {
   return { pending, done };
 }
 
+/** A member's tasks still to do, in the order of the list. */
+export function pendingFor(state: GroupState, member: NodeId, self: NodeId): TaskRow[] {
+  return taskList(state, self).pending.filter((row) => row.fields.assignee === member);
+}
+
 /** Tasks for this device still to do: the number on the dock. */
 export function myPendingCount(state: GroupState, self: NodeId): number {
   let count = 0;

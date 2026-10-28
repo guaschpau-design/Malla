@@ -1,4 +1,4 @@
-// The payload of every event type (docs/protocol.md §3.3–§3.13), each written next to the code
+// The payload of every event type (docs/protocol.md §3.3–§3.14), each written next to the code
 // that reads it, so that the two halves of a layout cannot drift apart. Adding an event type
 // means adding its entry here: the record is keyed by every `EventType`, so the compiler refuses
 // a type without a layout.
@@ -9,15 +9,19 @@ import {
   ALIAS_MAX_BYTES,
   ALIAS_MIN_BYTES,
   AlertLevelCode,
+  DutyStatusCode,
+  EquipmentBit,
   EventTypeCode,
   FULL_TURN_DEGREES,
   HALF_TURN_DEGREES,
+  ProfileCode,
   PUBLIC_KEY_SIZE,
   RoleCode,
   SHAPE_LABEL_MAX_BYTES,
   SosKindCode,
   SPEED_SCALE,
   TaskStatusCode,
+  UNKNOWN_BATTERY,
   UNKNOWN_U16,
 } from './constants.ts';
 import { nodeIdFromPublicKey } from './crypto.ts';
@@ -29,6 +33,7 @@ import {
   enumValue,
   MARKER_LABEL_MAX_BYTES,
   readAssignee,
+  readFlags,
   readGeometry,
   readMeasurement,
   readPlace,
@@ -38,6 +43,7 @@ import {
   ROLL_CALL_TEXT_MAX_BYTES,
   TASK_TEXT_MAX_BYTES,
   writeAssignee,
+  writeFlags,
   writeGeometry,
   writeMeasurement,
   writePlace,
@@ -259,7 +265,34 @@ export const PAYLOADS: { readonly [K in EventType]: PayloadCodec<EventOfType<K>>
       return sweep;
     },
   },
+  // §3.14
+  'member-state': {
+    code: EventTypeCode.MEMBER_STATE,
+    write(writer, event) {
+      const { battery } = event;
+      if (battery !== null && !(Number.isInteger(battery) && battery >= 0 && battery <= 100)) {
+        throw new ProtocolFailure('invalid-value', 'battery must be a whole percent');
+      }
+      writer.u8(enumCode(ProfileCode, event.profile, 'profile'));
+      writer.u8(enumCode(DutyStatusCode, event.status, 'duty status'));
+      writer.u8(battery ?? UNKNOWN_BATTERY);
+      writeFlags(writer, EquipmentBit, event.equipment);
+    },
+    read: (reader, header) => ({
+      ...header,
+      type: 'member-state',
+      profile: enumValue(ProfileCode, reader.u8(), 'unspecified'),
+      status: enumValue(DutyStatusCode, reader.u8(), 'active'),
+      battery: readBattery(reader.u8()),
+      equipment: readFlags(reader, EquipmentBit),
+    }),
+  },
 };
+
+/** §3.14 A battery level as a percent, or null when unknown or out of range. */
+function readBattery(code: number): number | null {
+  return code <= 100 ? code : null;
+}
 
 /** §3.13 The recipe of a sweep must make sense: lanes apart, a direction, a strip of those there are. */
 function checkSweep(sweep: SweepEvent): void {

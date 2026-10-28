@@ -4,6 +4,7 @@ import { COORDINATE_FORMATS } from '../coordinates/coordinates.ts';
 import { LANGUAGE_CHOICES } from '../i18n/index.ts';
 import { MAP_LAYERS } from '../map/layers.ts';
 import { BASE_MAPS } from '../map/style/style.ts';
+import { DUTY_STATUSES, EQUIPMENT, PROFILES } from '../members/member-catalog.ts';
 import { POSITION_MODES } from '../position/position-mode.ts';
 import type { AppDb } from '../storage/app-db.ts';
 import { choice, flag, Preference, subset, type PreferenceSpec } from './preference.svelte.ts';
@@ -11,6 +12,24 @@ import { choice, flag, Preference, subset, type PreferenceSpec } from './prefere
 const PREFERENCES = {
   /** How this device shares its position: hidden until the user chooses otherwise. */
   positionMode: choice('positionMode', POSITION_MODES, 'hidden'),
+  /** What this person does, as the team sees it: unspecified until chosen in Me. */
+  profile: choice(
+    'profile',
+    PROFILES.map((item) => item.value),
+    'unspecified',
+  ),
+  /** Whether this person can be counted on now: active, until changed in Me. */
+  dutyStatus: choice(
+    'dutyStatus',
+    Object.keys(DUTY_STATUSES) as (keyof typeof DUTY_STATUSES)[],
+    'active',
+  ),
+  /** What this person carries: nothing marked at first. */
+  equipment: subset(
+    'equipment',
+    EQUIPMENT.map((item) => item.value),
+    [],
+  ),
   /** How coordinates are written: decimal degrees, as phones and 112 apps share them. */
   coordinateFormat: choice('coordinateFormat', COORDINATE_FORMATS, 'decimal'),
   /** The map under everything: the street map, which covers everywhere and is the lightest. */

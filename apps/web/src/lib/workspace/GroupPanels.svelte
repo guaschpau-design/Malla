@@ -63,6 +63,7 @@
   {@const id = panels.open.member}
   <MemberDetails
     {t}
+    {self}
     {locale}
     groupState={feed.state}
     heard={feed.heard}

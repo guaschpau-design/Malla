@@ -24,6 +24,7 @@ import {
   type EventRef,
   type GroupKeys,
   type LatLon,
+  type MemberStateEvent,
   type ObjectRef,
   type ShapeEvent,
   type ShapeGeometry,
@@ -349,6 +350,16 @@ export class GroupFeed {
     }));
   }
 
+  /**
+   * Tells the group this device's profile, status, battery and equipment (protocol §3.14), unless
+   * it knows them already; nothing is sent for a device that never set any of them.
+   */
+  async shareState(state: MemberStateFields): Promise<void> {
+    const known = this.state.memberStates.get(this.#identity.nodeId);
+    if (known === undefined ? isUntold(state) : sameState(known, state)) return;
+    await this.#publish((header) => ({ ...header, type: 'member-state', ...state }));
+  }
+
   /** Publishes MEMBER_INFO if the group does not know this device's current alias and role. */
   async #announceSelf(): Promise<void> {
     const known = this.state.members.get(this.#identity.nodeId);
@@ -495,4 +506,30 @@ export class GroupFeed {
     }
     return events;
   }
+}
+
+/** What MEMBER_STATE tells about a member (protocol §3.14). */
+export type MemberStateFields = Pick<
+  MemberStateEvent,
+  'profile' | 'status' | 'battery' | 'equipment'
+>;
+
+/** Nothing set: what the group assumes of a member who has said nothing. */
+function isUntold(state: MemberStateFields): boolean {
+  return (
+    state.profile === 'unspecified' &&
+    state.status === 'active' &&
+    state.battery === null &&
+    state.equipment.length === 0
+  );
+}
+
+function sameState(a: MemberStateFields, b: MemberStateFields): boolean {
+  return (
+    a.profile === b.profile &&
+    a.status === b.status &&
+    a.battery === b.battery &&
+    a.equipment.length === b.equipment.length &&
+    a.equipment.every((item) => b.equipment.includes(item))
+  );
 }

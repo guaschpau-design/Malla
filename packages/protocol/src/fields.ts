@@ -128,6 +128,28 @@ export function readPlace(reader: ByteReader): TaskPlace | null {
   }
 }
 
+// --- Sets of flags (§3.14) ----------------------------------------------------------------
+
+/** Writes a set as a u32 of bits, each value at its bit. */
+export function writeFlags<T extends string>(
+  writer: ByteWriter,
+  bits: Readonly<Record<T, number>>,
+  values: readonly T[],
+): void {
+  writer.u32(values.reduce((flags, value) => (flags | (1 << bits[value])) >>> 0, 0));
+}
+
+/** Reads a u32 of bits as the set of values whose bits are on, in the order of their bits. */
+export function readFlags<T extends string>(
+  reader: ByteReader,
+  bits: Readonly<Record<T, number>>,
+): T[] {
+  const flags = reader.u32();
+  return (Object.keys(bits) as T[])
+    .filter((value) => (flags & (1 << bits[value])) !== 0)
+    .sort((a, b) => bits[a] - bits[b]);
+}
+
 // --- Text --------------------------------------------------------------------------------
 
 export function writeTextRest(

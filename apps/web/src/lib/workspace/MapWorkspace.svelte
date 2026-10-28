@@ -36,6 +36,7 @@
   import ObjectForm from '../objects/ObjectForm.svelte';
   import ObjectLayer from '../objects/ObjectLayer.svelte';
   import { useSweepCompletion } from '../objects/sweep-completion.svelte.ts';
+  import { useSelfState } from '../me/self-state.svelte.ts';
   import type { OfflineMaps } from '../offline/offline-maps.ts';
   import { deviceLocation } from '../position/device-location.svelte.ts';
   import LocateButton from '../position/LocateButton.svelte';
@@ -120,6 +121,10 @@
 
   useStandingNotice(() => (radio.reconnecting ? { text: t('radioReconnecting') } : null));
   useSweepCompletion(() => group);
+  useSelfState(
+    () => group?.feed ?? null,
+    () => preferences,
+  );
 
   useStandingNotice(() => {
     const minutes = deviceClock.wrongByMinutes;
@@ -260,6 +265,7 @@
     {taps}
     positions={slices.positions}
     members={slices.members}
+    memberStates={slices.memberStates}
     sos={slices.sos}
     sosCancels={slices.sosCancels}
     {self}

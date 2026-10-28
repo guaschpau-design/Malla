@@ -17,6 +17,7 @@
     taps: MapTaps;
     positions: GroupState['positions'];
     members: GroupState['members'];
+    memberStates: GroupState['memberStates'];
     sos: GroupState['sos'];
     sosCancels: GroupState['sosCancels'];
     self: NodeId;
@@ -24,13 +25,26 @@
     onselect: (id: NodeId) => void;
   }
 
-  let { map, taps, positions, members, sos, sosCancels, self, visible, onselect }: Props = $props();
+  let {
+    map,
+    taps,
+    positions,
+    members,
+    memberStates,
+    sos,
+    sosCancels,
+    self,
+    visible,
+    onselect,
+  }: Props = $props();
 
   const SOURCE = 'tesel-members';
   /** Stale markers are re-evaluated this often even when no event arrives. */
   const REFRESH_MS = 30_000;
   const now = clockEvery(REFRESH_MS);
-  const data = $derived(memberFeatures({ positions, members, sos, sosCancels }, self, now.seconds));
+  const data = $derived(
+    memberFeatures({ positions, members, memberStates, sos, sosCancels }, self, now.seconds),
+  );
 
   useOverlay(() => map, {
     level: 'members',
@@ -68,10 +82,11 @@
           source: SOURCE,
           paint: {
             'circle-radius': 8,
-            'circle-color': themeColor('member'),
+            // Someone resting or off duty is a ring in the member's colour: there, but not now.
+            'circle-color': ['case', ['get', 'away'], halo, themeColor('member')],
             'circle-opacity': ['case', ['get', 'stale'], 0.4, 1],
-            'circle-stroke-width': 2,
-            'circle-stroke-color': halo,
+            'circle-stroke-width': ['case', ['get', 'away'], 3, 2],
+            'circle-stroke-color': ['case', ['get', 'away'], themeColor('member'), halo],
           },
         },
         label(false),

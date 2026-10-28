@@ -29,9 +29,21 @@ describe('member features', () => {
     ]);
     const { features } = memberFeatures(state, ANA, T0 + 10);
     expect(features.map((f) => f.properties)).toEqual([
-      { id: BERTA, label: 'Berta', stale: true, sos: false },
+      { id: BERTA, label: 'Berta', stale: true, sos: false, away: false },
     ]);
     expect(features[0]?.geometry.coordinates).toEqual([-0.37, 39.47]);
+  });
+
+  it('marks the members resting or off duty', () => {
+    const told = { profile: 'rescue', battery: null, equipment: [] } as const;
+    const state = stateOf([
+      { type: 'position', origin: BERTA, seq: 1, time: T0, ...fix },
+      { type: 'position', origin: CARLA, seq: 1, time: T0, ...fix },
+      { type: 'member-state', origin: BERTA, seq: 2, time: T0, ...told, status: 'resting' },
+      { type: 'member-state', origin: CARLA, seq: 2, time: T0, ...told, status: 'active' },
+    ]);
+    const away = memberFeatures(state, ANA, T0).features.filter((f) => f.properties.away);
+    expect(away.map((f) => f.properties.id)).toEqual([BERTA]);
   });
 
   it('marks the members whose SOS is still open', () => {

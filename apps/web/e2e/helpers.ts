@@ -3,6 +3,7 @@ import {
   expect,
   type Browser,
   type BrowserContextOptions,
+  type Locator,
   type Page,
 } from '@playwright/test';
 
@@ -87,16 +88,34 @@ export async function twoMembers(
   return { ana, berta };
 }
 
-/** Chooses how this device shares its position, in the "Me" panel, and closes the panel. */
+/**
+ * Chooses how this device shares its position, in the "Me" panel's position section: sharing,
+ * paused (the group keeps where it was) or hidden; then closes the panel.
+ */
 export async function shareAs(
   page: Page,
   choice: 'Compartir' | 'Pausar' | 'Ocultar',
 ): Promise<void> {
   await page.getByRole('button', { name: /^Yo/ }).click();
   const panel = page.getByRole('region', { name: 'Yo' });
-  await panel.getByRole('radio', { name: new RegExp(`^${choice}`) }).click();
-  await expect(panel.getByRole('radio', { name: new RegExp(`^${choice}`) })).toBeChecked();
+  await panel.getByText('Posición', { exact: true }).click();
+  await setSwitch(
+    panel.getByRole('switch', { name: 'Compartir mi posición' }),
+    choice === 'Compartir',
+  );
+  if (choice !== 'Compartir') {
+    await setSwitch(
+      panel.getByRole('switch', { name: 'Ocultar también dónde estaba' }),
+      choice === 'Ocultar',
+    );
+  }
   await panel.getByRole('button', { name: 'Cerrar' }).click();
+}
+
+/** Turns a switch on or off, whichever it is now. */
+async function setSwitch(control: Locator, on: boolean): Promise<void> {
+  if ((await control.getAttribute('aria-checked')) !== String(on)) await control.click();
+  await expect(control).toHaveAttribute('aria-checked', String(on));
 }
 
 /**

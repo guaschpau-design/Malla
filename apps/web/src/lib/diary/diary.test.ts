@@ -122,6 +122,33 @@ describe('the operation diary', () => {
     ]);
   });
 
+  it('tells when a member changes status, and nothing of battery or equipment', () => {
+    const state = (seq: number, status: 'active' | 'resting', battery: number) =>
+      ({
+        type: 'member-state',
+        origin: BERTA,
+        seq,
+        time: T0 + seq,
+        profile: 'volunteer',
+        status,
+        battery,
+        equipment: [],
+      }) as const;
+    const lines = diaryLines(
+      stateOf([
+        ...EVENTS,
+        state(30, 'active', 90),
+        state(31, 'active', 80),
+        state(32, 'resting', 80),
+      ]),
+      translator('es'),
+    );
+    const told = lines.filter((line) => line.text.startsWith('Estado'));
+    expect(told.map((line) => `${line.author}: ${line.text}`)).toEqual([
+      'Berta: Estado: En descanso.',
+    ]);
+  });
+
   it('tells who called the roll and who answered it, even if an answer is stamped earlier', () => {
     const call = { type: 'roll-call', origin: ANA, seq: 20, time: T0 + 80, text: '' } as const;
     const answer = {

@@ -178,4 +178,14 @@ export const SAMPLE_EVENTS: readonly TeselEvent[] = [
     strip: 1,
     strips: 3,
   },
+  {
+    type: 'member-state',
+    origin: BOB,
+    seq: 11,
+    time: T0 + 18,
+    profile: 'civil-protection',
+    status: 'resting',
+    battery: 40,
+    equipment: ['first-aid', 'water', 'radio'],
+  },
 ];

@@ -15,12 +15,14 @@ interface MemberProperties {
   readonly stale: boolean;
   /** The member has an SOS open: their name is always shown, however crowded the map. */
   readonly sos: boolean;
+  /** Resting or off duty: drawn hollow, as not to be counted on now. */
+  readonly away: boolean;
 }
 
 export type MemberCollection = FeatureCollection<Point, MemberProperties>;
 
 export function memberFeatures(
-  state: Pick<GroupState, 'positions' | 'members' | 'sos' | 'sosCancels'>,
+  state: Pick<GroupState, 'positions' | 'members' | 'memberStates' | 'sos' | 'sosCancels'>,
   self: NodeId,
   now: number,
 ): MemberCollection {
@@ -36,6 +38,7 @@ export function memberFeatures(
         label: state.members.get(origin)?.alias ?? origin,
         stale: now - report.time > STALE_AFTER_S,
         sos: calling.has(origin),
+        away: (state.memberStates.get(origin)?.status ?? 'active') !== 'active',
       },
     });
   }

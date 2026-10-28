@@ -6,7 +6,9 @@ import {
   eventRefKey,
   sosPlace,
   type LatLon,
+  type DutyStatus,
   type MarkerEvent,
+  type NodeId,
   type ShapeEvent,
   type SweepEvent,
   type TaskEvent,
@@ -16,6 +18,7 @@ import {
 import type { MessageKey, Translate } from '../i18n/index.ts';
 import { ROLE_LABELS } from '../groups/role-label.ts';
 import { aliasOf } from '../members/alias.ts';
+import { DUTY_STATUSES } from '../members/member-catalog.ts';
 import { ALERT_LEVELS, SOS_KINDS } from '../incidents/sos-kinds.ts';
 import { objectAnchor } from '../objects/object-anchor.ts';
 import { objectName } from '../objects/object-names.ts';
@@ -38,6 +41,8 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
   /** Each object as it was at the line being written. */
   const objects = new Map<string, MarkerEvent | ShapeEvent | SweepEvent>();
   const tasks = new Map<string, TaskEvent>();
+  /** Each member's status, as last told. */
+  const statuses = new Map<NodeId, DutyStatus>();
   // Answers can be stamped before their roll call by a device whose clock runs early.
   const rollCalls = new Set(
     state.journal.flatMap((event) => (event.type === 'roll-call' ? [eventRefKey(event)] : [])),
@@ -102,6 +107,14 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
       case 'object-delete': {
         const last = objects.get(eventRefKey(event.object));
         return last ? t('diaryDeleted', { object: objectName(last, objects, t) }) : null;
+      }
+      case 'member-state': {
+        // Only a change of status is news; battery and equipment come and go.
+        const before = statuses.get(event.origin) ?? 'active';
+        statuses.set(event.origin, event.status);
+        return before === event.status
+          ? null
+          : t('diaryStatus', { status: t(DUTY_STATUSES[event.status].label) });
       }
       case 'task': {
         const key = eventRefKey(event.task);

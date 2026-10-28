@@ -18,6 +18,7 @@ export const URGENCY: Readonly<Record<EventType, number>> = {
   'object-delete': 6,
   sweep: 6,
   'member-info': 7,
+  'member-state': 7,
   position: 8,
 };
 

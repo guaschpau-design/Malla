@@ -447,6 +447,44 @@ describe('reserved values and unknown types', () => {
   });
 });
 
+describe('member states', () => {
+  const state: TeselEvent = {
+    type: 'member-state',
+    origin: ALICE,
+    seq: 8,
+    time: T0,
+    profile: 'firefighters',
+    status: 'active',
+    battery: 64,
+    equipment: ['first-aid', 'rope', 'weapon'],
+  };
+
+  it('matches the test vector computed from the spec', () => {
+    // Profile 3, status 0, battery 64, bits 0, 6 and 12: 0x1041.
+    expect(toHex(encodeOrFail(state))).toBe('010fa1b2c3d4080000000013fc6803004041100000');
+  });
+
+  it('reads reserved codes as their defaults, and unknown equipment as absent', () => {
+    const bytes = encodeOrFail(state);
+    bytes[14] = 99;
+    bytes[15] = 7;
+    bytes[16] = 101;
+    bytes[20] = 0x80;
+    const decoded = decodeEvent(bytes);
+    expect(decoded.ok && decoded.value).toMatchObject({
+      profile: 'unspecified',
+      status: 'active',
+      battery: null,
+      equipment: ['first-aid', 'rope', 'weapon'],
+    });
+  });
+
+  it('refuses a battery that is not a whole percent', () => {
+    expect(encodeEvent({ ...state, battery: 101 }).ok).toBe(false);
+    expect(encodeEvent({ ...state, battery: 50.5 }).ok).toBe(false);
+  });
+});
+
 describe('sweeps', () => {
   const sweep: TeselEvent = {
     type: 'sweep',

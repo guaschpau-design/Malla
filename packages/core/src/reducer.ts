@@ -9,7 +9,7 @@ import type { EventType, PositionEvent, TeselEvent } from '@tesel/protocol';
 
 import { acks } from './state/acks.ts';
 import { journal } from './state/journal.ts';
-import { members } from './state/members.ts';
+import { members, memberStates } from './state/members.ts';
 import { alerts, chat } from './state/messages.ts';
 import { objects } from './state/objects.ts';
 import { positions } from './state/positions.ts';
@@ -26,6 +26,7 @@ export type { Trail } from './state/trails.ts';
 /** Every slice of the group state, by its name in the state. */
 const SLICES = {
   members,
+  memberStates,
   positions,
   trails,
   chat,

@@ -66,3 +66,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0058](0058-no-command-posts.md)                     | Drop command posts: one server per group, radios when there is no internet                  | Accepted                                    |
 | [0059](0059-routes.md)                               | Routes: drawn or read from a file, followed leg by leg, and a task's place may be an object | Accepted                                    |
 | [0060](0060-sweeps.md)                               | Sweeps: parallel lanes over a search area, one strip per team, sent as a recipe             | Accepted                                    |
+| [0061](0061-member-state.md)                         | What members tell about themselves: one event, one card                                     | Accepted                                    |

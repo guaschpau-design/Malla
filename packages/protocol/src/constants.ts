@@ -1,6 +1,14 @@
 // Every numeric constant of the wire format. Section numbers refer to docs/protocol.md.
 
-import type { AlertLevel, Role, SosKind, TaskStatus } from './events.ts';
+import type {
+  AlertLevel,
+  DutyStatus,
+  Equipment,
+  Profile,
+  Role,
+  SosKind,
+  TaskStatus,
+} from './events.ts';
 
 /** §3.1 Protocol version carried in every event header. */
 export const PROTOCOL_VERSION = 1;
@@ -42,6 +50,7 @@ export const EventTypeCode = {
   TASK: 0x0c,
   ROLL_CALL: 0x0d,
   SWEEP: 0x0e,
+  MEMBER_STATE: 0x0f,
 } as const;
 
 /** §3.13 A sweep's lanes run in a direction below this, in degrees: the other half are the same. */
@@ -138,6 +147,46 @@ export const TaskStatusCode = {
   done: 2,
   cancelled: 3,
 } as const satisfies Record<TaskStatus, number>;
+
+/** §3.14 MEMBER_STATE.profile. Default: unspecified. */
+export const ProfileCode = {
+  unspecified: 0,
+  police: 1,
+  'civil-protection': 2,
+  firefighters: 3,
+  medical: 4,
+  rescue: 5,
+  volunteer: 6,
+  military: 7,
+  other: 8,
+} as const satisfies Record<Profile, number>;
+
+/** §3.14 MEMBER_STATE.status. Default: active. */
+export const DutyStatusCode = {
+  active: 0,
+  resting: 1,
+  'off-duty': 2,
+} as const satisfies Record<DutyStatus, number>;
+
+/** §3.14 MEMBER_STATE.equipment: the bit of each item, from the lowest. Other bits are ignored. */
+export const EquipmentBit = {
+  'first-aid': 0,
+  defibrillator: 1,
+  stretcher: 2,
+  food: 3,
+  water: 4,
+  blankets: 5,
+  rope: 6,
+  light: 7,
+  radio: 8,
+  extinguisher: 9,
+  vehicle: 10,
+  drone: 11,
+  weapon: 12,
+} as const satisfies Record<Equipment, number>;
+
+/** §3.14 MEMBER_STATE.battery when unknown; values above 100 read as unknown too. */
+export const UNKNOWN_BATTERY = 0xff;
 
 /** §5 Group secret size; also the MeshCore channel key size. */
 export const GROUP_SECRET_SIZE = 16;

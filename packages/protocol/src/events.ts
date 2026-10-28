@@ -134,6 +134,48 @@ export interface TaskEvent extends EventHeader {
   readonly text: string;
 }
 
+/** §3.14 What a member does for a living, as far as the team needs to know. */
+export type Profile =
+  | 'unspecified'
+  | 'police'
+  | 'civil-protection'
+  | 'firefighters'
+  | 'medical'
+  | 'rescue'
+  | 'volunteer'
+  | 'military'
+  | 'other';
+
+/** §3.14 Whether a member can be counted on now. */
+export type DutyStatus = 'active' | 'resting' | 'off-duty';
+
+/** §3.14 What a member carries. */
+export type Equipment =
+  | 'first-aid'
+  | 'defibrillator'
+  | 'stretcher'
+  | 'food'
+  | 'water'
+  | 'blankets'
+  | 'rope'
+  | 'light'
+  | 'radio'
+  | 'extinguisher'
+  | 'vehicle'
+  | 'drone'
+  | 'weapon';
+
+/** §3.14 A member's profile, status, battery and equipment; each newer one replaces the last. */
+export interface MemberStateEvent extends EventHeader {
+  readonly type: 'member-state';
+  readonly profile: Profile;
+  readonly status: DutyStatus;
+  /** Percent, 0–100, or null if unknown. */
+  readonly battery: number | null;
+  /** In the order of their codes (§3.14), each once. */
+  readonly equipment: readonly Equipment[];
+}
+
 /**
  * §3.13 One strip of a sweep of a search area: the lanes one team walks. A map object (§3.10),
  * drawn from its area and the sweep's recipe, which every device works out alike.
@@ -174,6 +216,7 @@ export type TeselEvent =
   | AckEvent
   | TaskEvent
   | RollCallEvent
-  | SweepEvent;
+  | SweepEvent
+  | MemberStateEvent;
 
 export type EventType = TeselEvent['type'];

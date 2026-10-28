@@ -35,6 +35,9 @@ export interface OutboxEntry extends GroupEventRef {
 export type SettingKey =
   | 'activeGroupId'
   | 'positionMode'
+  | 'profile'
+  | 'dutyStatus'
+  | 'equipment'
   | 'coordinateFormat'
   | 'baseMap'
   | 'relief'

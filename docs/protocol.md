@@ -62,6 +62,7 @@ The payload follows, up to 151 bytes.
 | `0x0C` | `TASK`            | §3.11                                                  |
 | `0x0D` | `ROLL_CALL`       | §3.12                                                  |
 | `0x0E` | `SWEEP`           | §3.13                                                  |
+| `0x0F` | `MEMBER_STATE`    | §3.14                                                  |
 
 Codes are never reused. New capabilities are added as new types; existing layouts never change within version 1.
 
@@ -234,6 +235,19 @@ Encoded size: 36 bytes. An event whose `spacing`, `heading` or `strip` is out of
 4. Each lane crosses the edges whose ends have `u` on either side of it (one end's `u` at most the lane's and the other's above it). Sorted by `v`, the crossings pair up: the lane is inside the area from the first to the second, from the third to the fourth, and so on.
 5. Of L lanes and `strips` strips, strip k holds lanes ⌊k · L / strips⌋ to ⌊(k + 1) · L / strips⌋ − 1.
 6. A strip is walked lane after lane in increasing `u`: its first lane in increasing `v`, the next in decreasing `v`, and so on.
+
+### 3.14 `MEMBER_STATE`
+
+What the team needs to know about a member besides where they are: what they do, whether they can be counted on now, how much battery their device has left and what they carry. A member sends it when any of these changes; the newest by `(time, origin, seq)` of each origin replaces the others.
+
+| Size | Field       | Notes                                                                                                                                                                               |
+| ---- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | `profile`   | `0` unspecified, `1` police, `2` civil protection, `3` firefighters, `4` medical, `5` rescue, `6` volunteer, `7` military, `8` other; reserved values read as unspecified           |
+| 1    | `status`    | `0` active, `1` resting, `2` off duty; reserved values read as active                                                                                                               |
+| 1    | `battery`   | Percent, 0–100; `255` unknown; other values read as unknown                                                                                                                         |
+| 4    | `equipment` | `u32` of bits, from the lowest: first-aid kit, defibrillator, stretcher, food, water, blankets, rope, lighting, radio, extinguisher, vehicle, drone, weapon; other bits are ignored |
+
+Encoded size: 21 bytes. Over LoRa, a device SHOULD NOT send it for every percent of battery: steps of 10 % are enough.
 
 ## 4. Symbol and style codes
 

@@ -10,7 +10,7 @@
   import type { Locale, Translate } from '../i18n/index.ts';
   import LayersPanel from '../map/LayersPanel.svelte';
   import { navigateTo } from '../navigation/navigation.svelte.ts';
-  import MePanel from '../position/MePanel.svelte';
+  import MePanel from '../me/MePanel.svelte';
   import type { Preferences } from '../settings/preferences.ts';
   import { newTask } from '../tasks/task-editor.ts';
   import { closePanel, isOpen, panels } from '../ui/panels.svelte.ts';
@@ -81,8 +81,8 @@
   <MePanel
     {t}
     {locale}
-    format={preferences.coordinateFormat}
-    sharing={group?.sharing ?? null}
+    {preferences}
+    group={group && { state: group.feed.state, self: group.self, sharing: group.sharing }}
     onclose={closePanel}
   />
 {:else if isOpen('layers')}
