@@ -1,9 +1,10 @@
 // What a planned action becomes on the wire: an event of the member who acts, still without its
-// header, which the sending device fills in with its own origin, sequence number and time.
+// header, which the sending device fills in with its own origin, sequence number and time. The
+// simulator and the app's practice both send a scenario's actions through a ScenarioPerformer.
 
 import type { EventHeader, EventRef, Identity, TeselEvent } from '@tesel/protocol';
 
-import type { PlannedAction } from './scenario.ts';
+import type { PlannedAction, PlannedEvent } from './scenario.ts';
 
 /** An event without its header. */
 export type EventDraft = (header: EventHeader) => TeselEvent;
@@ -22,7 +23,7 @@ const ACCURACY_M = 6;
  * so far, by the `id` the scenario gives them; an action that refers to one not sent yet is an
  * error in the scenario.
  */
-export function eventDraft(
+function eventDraft(
   action: PlannedAction,
   actor: Actor,
   named: ReadonlyMap<string, EventRef>,
@@ -89,5 +90,23 @@ export function eventDraft(
       const sos = ref(action.of);
       return (header) => ({ ...header, type: 'sos-cancel', sos });
     }
+  }
+}
+
+/**
+ * Performs a scenario's planned events in order, each sent by its member's device. The objects and
+ * SOS calls the scenario names are remembered as they are sent, for the actions that refer to them.
+ */
+export class ScenarioPerformer {
+  readonly #named = new Map<string, EventRef>();
+
+  /** Sends one planned event through `send`, which returns the reference of the event it sent. */
+  async perform(
+    { action }: PlannedEvent,
+    actor: Actor,
+    send: (draft: EventDraft) => Promise<EventRef>,
+  ): Promise<void> {
+    const ref = await send(eventDraft(action, actor, this.#named));
+    if ('id' in action) this.#named.set(action.id, ref);
   }
 }

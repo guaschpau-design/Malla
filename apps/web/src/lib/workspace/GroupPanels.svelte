@@ -8,8 +8,7 @@
   import type { Locale, Translate } from '../i18n/index.ts';
   import { navigateTo } from '../navigation/navigation.svelte.ts';
   import ObjectDetails from '../objects/ObjectDetails.svelte';
-  import type { DeviceLocation } from '../position/device-location.svelte.ts';
-  import type { RadioSession } from '../radio/radio.svelte.ts';
+  import { radio } from '../radio/radio.svelte.ts';
   import type { Preferences } from '../settings/preferences.ts';
   import type { GroupFeed } from '../sync/group-feed.svelte.ts';
   import { newTask } from '../tasks/task-editor.svelte.ts';
@@ -24,14 +23,12 @@
     feed: GroupFeed;
     self: NodeId;
     role: Role;
-    radio: RadioSession;
-    location: DeviceLocation;
     preferences: Preferences;
-    /** Shows a point of the map with what can be done there. */
-    onshow: (at: LatLon) => void;
+    /** Opens the panel of a point of the map, shown on the map. */
+    onpoint: (at: LatLon) => void;
   }
 
-  let { t, locale, feed, self, role, radio, location, preferences, onshow }: Props = $props();
+  let { t, locale, feed, self, role, preferences, onpoint }: Props = $props();
 </script>
 
 {#if panels.open?.name === 'object'}
@@ -42,7 +39,6 @@
     groupState={feed.state}
     objectKey={key}
     format={preferences.coordinateFormat}
-    {location}
     onnavigate={(name: string) => {
       navigateTo({ kind: 'object', key, name });
     }}
@@ -64,7 +60,6 @@
     heard={feed.heard}
     {id}
     format={preferences.coordinateFormat}
-    {location}
     onnavigate={(name: string) => {
       navigateTo({ kind: 'member', id, name });
     }}
@@ -105,7 +100,7 @@
     {self}
     format={preferences.coordinateFormat}
     onsave={(task: EventRef | null, fields: TaskFields) => feed.writeTask(task, fields)}
-    {onshow}
+    {onpoint}
     onclose={closePanel}
   />
 {/if}

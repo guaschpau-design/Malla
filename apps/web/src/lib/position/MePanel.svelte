@@ -15,21 +15,20 @@
   import StatusDot from '../ui/StatusDot.svelte';
   import type { StatusTone } from '../ui/status-tone.ts';
   import { accuracyQuality } from './accuracy.ts';
-  import type { DeviceLocation } from './device-location.svelte.ts';
+  import { deviceLocation } from './device-location.svelte.ts';
   import { POSITION_MODES, type PositionMode } from './position-mode.ts';
   import type { PositionSharing } from './position-sharing.svelte.ts';
 
   interface Props {
     t: Translate;
     locale: Locale;
-    location: DeviceLocation;
     format: Preference<CoordinateFormat>;
     /** How the position is shared with the active group; null without one. */
     sharing: PositionSharing | null;
     onclose: () => void;
   }
 
-  let { t, locale, location, format, sharing, onclose }: Props = $props();
+  let { t, locale, format, sharing, onclose }: Props = $props();
 
   const MODES: Readonly<
     Record<PositionMode, { label: MessageKey; hint: MessageKey; icon: GlyphName }>
@@ -45,7 +44,7 @@
     poor: 'accuracyPoor',
   };
 
-  onMount(() => location.use());
+  onMount(() => deviceLocation.use());
 </script>
 
 <Panel title={t('me')} closeLabel={t('close')} {onclose}>
@@ -71,19 +70,19 @@
 
   <section class="stack section" aria-labelledby="me-where">
     <h3 id="me-where">{t('whereYouAre')}</h3>
-    {#if location.fix}
-      <CoordinateBlock {t} at={location.fix.at} {format} />
-      {#if location.fix.accuracy !== null}
-        {@const quality = accuracyQuality(location.fix.accuracy)}
+    {#if deviceLocation.fix}
+      <CoordinateBlock {t} at={deviceLocation.fix.at} {format} />
+      {#if deviceLocation.fix.accuracy !== null}
+        {@const quality = accuracyQuality(deviceLocation.fix.accuracy)}
         <p class="accuracy">
           <StatusDot tone={quality} />
-          {t('accuracyWithin', { distance: formatDistance(location.fix.accuracy, locale) })}
+          {t('accuracyWithin', { distance: formatDistance(deviceLocation.fix.accuracy, locale) })}
           · {t(QUALITY[quality])}
         </p>
       {/if}
-    {:else if location.problem}
+    {:else if deviceLocation.problem}
       <p class="warning">
-        {location.problem === 'denied' ? t('locationDenied') : t('locationUnavailable')}
+        {deviceLocation.problem === 'denied' ? t('locationDenied') : t('locationUnavailable')}
       </p>
     {:else}
       <p class="hint">{t('navigationWaitingFix')}</p>

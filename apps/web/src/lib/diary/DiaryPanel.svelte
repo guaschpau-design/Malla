@@ -5,7 +5,8 @@
   import { formatTime } from '../format.ts';
   import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
-  import type { GroupFeed, LogImport } from '../sync/group-feed.svelte.ts';
+  import type { GroupFeed } from '../sync/group-feed.svelte.ts';
+  import type { LogImport } from '../sync/log-file.ts';
   import { downloadFile } from '../ui/download.ts';
   import Panel from '../ui/Panel.svelte';
   import { diaryLines } from './diary.ts';

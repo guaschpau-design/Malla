@@ -22,12 +22,12 @@
     /** The task being edited, or null for the list. */
     editing: TaskEditing | null;
     onsave: (task: EventRef | null, fields: TaskFields) => Promise<void>;
-    /** Shows a task's place on the map. */
-    onshow: (at: LatLon) => void;
+    /** Opens the panel of a task's place, shown on the map. */
+    onpoint: (at: LatLon) => void;
     onclose: () => void;
   }
 
-  let { t, groupState, self, format, editing, onsave, onshow, onclose }: Props = $props();
+  let { t, groupState, self, format, editing, onsave, onpoint, onclose }: Props = $props();
 
   const list = $derived(taskList(groupState, self));
 
@@ -61,7 +61,7 @@
           aria-label={t('taskShowPlace')}
           title={t('taskShowPlace')}
           onclick={() => {
-            onshow(at);
+            onpoint(at);
           }}
         >
           <Pictogram name="pin" size={18} />

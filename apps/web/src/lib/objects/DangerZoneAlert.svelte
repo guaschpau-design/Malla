@@ -7,7 +7,7 @@
   import { SvelteSet } from 'svelte/reactivity';
 
   import type { Translate } from '../i18n/index.ts';
-  import type { DeviceLocation } from '../position/device-location.svelte.ts';
+  import { deviceLocation } from '../position/device-location.svelte.ts';
   import { announcer } from '../ui/announcer.svelte.ts';
   import MapCard from '../ui/MapCard.svelte';
   import { dangerZones, zonesAt } from './danger-zones.ts';
@@ -15,18 +15,17 @@
   interface Props {
     t: Translate;
     groupState: GroupState;
-    location: DeviceLocation;
   }
 
-  let { t, groupState, location }: Props = $props();
+  let { t, groupState }: Props = $props();
 
   const zones = $derived(dangerZones(groupState));
   const watching = $derived(zones.length > 0);
 
   $effect(() => {
-    if (watching) return location.use();
+    if (watching) return deviceLocation.use();
   });
-  const inside = $derived(location.fix ? zonesAt(zones, location.fix.at) : []);
+  const inside = $derived(deviceLocation.fix ? zonesAt(zones, deviceLocation.fix.at) : []);
   /** Areas closed on this device while still inside them. */
   const dismissed = new SvelteSet<string>();
   const warned = $derived(inside.filter((zone) => !dismissed.has(zone.key)));

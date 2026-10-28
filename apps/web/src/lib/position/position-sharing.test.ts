@@ -4,8 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createGroup } from '../groups/group.ts';
 import { createLocalIdentity } from '../identity/identity.ts';
-import { Preference } from '../settings/preference.svelte.ts';
-import { PREFERENCES } from '../settings/preferences.ts';
+import { loadPreferences } from '../settings/preferences.ts';
 import { openAppDb, type AppDb } from '../storage/app-db.ts';
 import { GroupFeed } from '../sync/group-feed.svelte.ts';
 import { DeviceLocation } from './device-location.svelte.ts';
@@ -20,7 +19,7 @@ async function anaDevice(db?: AppDb) {
   const ana = createLocalIdentity('Ana', 0);
   const feed = await GroupFeed.open(database, createGroup('Rescate', null, 0), ana);
   const gps = new FakeGps();
-  const mode = await Preference.load(database, PREFERENCES.positionMode);
+  const mode = (await loadPreferences(database)).positionMode;
   const sharing = new PositionSharing(mode, new DeviceLocation(gps));
   sharing.attach(feed);
   /** What the group's map shows of Ana: her last position, or that she hid it. */

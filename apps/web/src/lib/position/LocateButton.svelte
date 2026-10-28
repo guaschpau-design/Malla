@@ -5,16 +5,15 @@
 
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import Pictogram from '../ui/Pictogram.svelte';
-  import type { DeviceLocation } from './device-location.svelte.ts';
+  import { deviceLocation } from './device-location.svelte.ts';
   import { afterPan, afterPress, type FollowMode } from './follow.ts';
 
   interface Props {
     t: Translate;
     map: MapLibreMap;
-    location: DeviceLocation;
   }
 
-  let { t, map, location }: Props = $props();
+  let { t, map }: Props = $props();
 
   /** How close the map zooms in when it starts following. */
   const FOLLOW_ZOOM = 16;
@@ -37,11 +36,11 @@
 
   // The GPS stays on while this device is shown.
   $effect(() => {
-    if (on) return location.use();
+    if (on) return deviceLocation.use();
   });
 
   $effect(() => {
-    const fix = location.fix;
+    const fix = deviceLocation.fix;
     if (mode !== 'follow' || fix === null) return;
     untrack(() => {
       const zoom = zoomIn ? Math.max(map.getZoom(), FOLLOW_ZOOM) : map.getZoom();

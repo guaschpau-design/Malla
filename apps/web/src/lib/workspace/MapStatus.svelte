@@ -9,7 +9,7 @@
 
   import type { Locale, Translate } from '../i18n/index.ts';
   import IncidentBanners from '../incidents/IncidentBanners.svelte';
-  import { mapCentre } from '../map/geometry.ts';
+  import { mapCentre, showPoint } from '../map/geometry.ts';
   import type { MapTaps } from '../map/taps.ts';
   import Measuring from '../measure/Measuring.svelte';
   import Navigation from '../navigation/Navigation.svelte';
@@ -19,7 +19,7 @@
   import DrawLayer from '../objects/DrawLayer.svelte';
   import type { OfflineMaps } from '../offline/offline-maps.ts';
   import OperationAreaOffer from '../offline/OperationAreaOffer.svelte';
-  import type { DeviceLocation } from '../position/device-location.svelte.ts';
+  import { deviceLocation } from '../position/device-location.svelte.ts';
   import Practice from '../practice/Practice.svelte';
   import Notices from '../ui/Notices.svelte';
   import { attempt } from '../ui/submission.svelte.ts';
@@ -32,7 +32,6 @@
     locale: Locale;
     map: MapLibreMap;
     taps: MapTaps;
-    location: DeviceLocation;
     group: WorkspaceGroup | null;
     /** The group's state slice by slice (state-slices.svelte.ts), empty without a group. */
     slices: GroupState;
@@ -54,7 +53,6 @@
     locale,
     map,
     taps,
-    location,
     group,
     slices,
     drawing,
@@ -66,10 +64,6 @@
     onendpractice,
     onneedhelp,
   }: Props = $props();
-
-  function show(at: LatLon): void {
-    map.flyTo({ center: [at.lon, at.lat], zoom: Math.max(map.getZoom(), 15) });
-  }
 
   function acknowledge(target: EventRef): void {
     const feed = group?.feed;
@@ -122,29 +116,31 @@
         undelivered={group.feed.undelivered}
         onacknowledge={acknowledge}
         oncancel={cancelSos}
-        onshow={show}
+        onshow={(at: LatLon) => {
+          showPoint(map, at);
+        }}
         {onneedhelp}
       />
     {/if}
   </div>
   {#if group}
-    <DangerZoneAlert {t} groupState={group.feed.state} {location} />
+    <DangerZoneAlert {t} groupState={group.feed.state} />
   {/if}
-  <Navigation {t} {locale} {map} {location} objects={slices.objects} positions={slices.positions} />
+  <Navigation {t} {locale} {map} objects={slices.objects} positions={slices.positions} />
   {#if group?.practice}
     {#key group.feed}
       <Practice
         {t}
         feed={group.feed}
         self={group.self}
-        centre={location.fix?.at ?? mapCentre(map)}
+        centre={deviceLocation.fix?.at ?? mapCentre(map)}
         onend={onendpractice}
       />
     {/key}
   {/if}
   <div class="aside" hidden={tapping}>
     {#if weather}
-      <WeatherCard {t} {locale} {weather} {location} />
+      <WeatherCard {t} {locale} {weather} />
     {/if}
     {#if group}
       {#key group.feed}

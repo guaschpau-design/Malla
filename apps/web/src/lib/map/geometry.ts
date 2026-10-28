@@ -37,6 +37,14 @@ export function toWebMercator({ lat, lon }: LatLon): [number, number] {
   ];
 }
 
+/** The least zoom at which a point is shown: where a street and its buildings can be told apart. */
+const SHOW_ZOOM = 15;
+
+/** Flies to a point, closer if the map is further out than a street's detail. */
+export function showPoint(map: MapLibreMap, at: LatLon): void {
+  map.flyTo({ center: [at.lon, at.lat], zoom: Math.max(map.getZoom(), SHOW_ZOOM) });
+}
+
 /** The point at the middle of the map's view. */
 export function mapCentre(map: MapLibreMap): LatLon {
   const centre = map.getCenter();

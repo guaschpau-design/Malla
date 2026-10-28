@@ -22,8 +22,22 @@ export type TileSourceId = (typeof TILE_SOURCES)[number];
 /** CC BY 4.0, as the services of Spain's national mapping system (SCNE) ask to be credited. */
 const SCNE = '<a href="https://www.scne.es" target="_blank">CC BY 4.0 scne.es</a>';
 
+/**
+ * Highest zoom of the vector base map we download and request; MapLibre over-zooms beyond it. It
+ * is the last level of the Protomaps builds, the only one that holds every point of interest:
+ * pharmacies, most police stations and doctors are not in the levels above. The other sources'
+ * limits follow from it, so an area downloaded holds each to the same detail.
+ */
+export const BASEMAP_MAX_ZOOM = 15;
+
+/**
+ * Photographs need three zooms more than the vector map for the same detail: their tiles cannot be
+ * enlarged without blurring.
+ */
+export const ORTHO_EXTRA_ZOOM = 3;
+
 /** The orthophotos are drawn and downloaded up to this zoom; MapLibre enlarges them beyond it. */
-export const ORTHO_MAX_ZOOM = 18;
+export const ORTHO_MAX_ZOOM = BASEMAP_MAX_ZOOM + ORTHO_EXTRA_ZOOM;
 
 /** A mosaic of EOX's: its layer in the WMTS, and the credit its licence asks for, licence named. */
 interface Mosaic {
@@ -59,11 +73,8 @@ export const ORTHO_ATTRIBUTION =
 
 /**
  * IGN's vector map of Spain (Mapa Base): the topographic map reads its names of the terrain. Its
- * tiles go deeper, but the street map's last zoom holds them all, so that an area downloaded holds
- * both to the same detail.
+ * tiles go deeper, but the street map's last zoom holds them all, so they are read to that zoom.
  */
-export const NAMES_MAX_ZOOM = 15;
-
 export const NAMES_ATTRIBUTION = `${SCNE} · Mapa Base`;
 
 export function namesTileUrl(z: number, x: number, y: number): string {

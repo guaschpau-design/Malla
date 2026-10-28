@@ -10,7 +10,7 @@ The audit of 27 October 2026 found three ways of sharing state in apps/web, with
 ## Decision
 
 - **Props** carry everything that belongs to the session and the open group: the session, the group's feed and state, preferences, the language and `t`. They flow down from `App.svelte`. A component's props say what it depends on, and a test mounts it with them.
-- **A module's reactive object** holds state that exists once on the device and does not depend on the open group: what the screen shows (the open panel, notices, the navigation target, the task being edited, full screen), and facts about the device (its connection, its clock, the elevation reader while relief is on). Such a module lives in a `*.svelte.ts` file, exports one object or class instance, and changes it only through its own functions or methods.
+- **A module's reactive object** holds state that exists once on the device and does not depend on the open group: what the screen shows (the open panel, notices, the navigation target, the task being edited, full screen), and facts about the device (its connection, its clock, its location, its radio, the elevation reader while relief is on). Such a module lives in a `*.svelte.ts` file, exports one object or class instance, and changes it only through its own functions or methods.
 - **Svelte contexts** are not used. The elevation reader becomes a module like the others.
 - **A panel carries what it shows.** The open panel is one value of a discriminated union, `{ name: 'object', key }`, `{ name: 'member', member }`, `{ name: 'point', at }` or a plain panel name; opening a panel sets its subject in the same step, and closing it drops the subject.
 

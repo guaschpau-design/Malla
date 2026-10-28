@@ -55,11 +55,7 @@ export class Preference<T> {
     this.value = value;
   }
 
-  static async load<T>(db: AppDb, spec: PreferenceSpec<T>): Promise<Preference<T>> {
-    return Preference.fromStored(db, spec, await db.get('settings', spec.key));
-  }
-
-  /** The preference with what the settings store holds for it, read elsewhere. */
+  /** The preference with what the settings store holds for it (loadPreferences reads them all). */
   static fromStored<T>(db: AppDb, spec: PreferenceSpec<T>, stored: unknown): Preference<T> {
     return new Preference(db, spec, spec.read(stored) ?? spec.fallback);
   }

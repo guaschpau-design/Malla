@@ -19,3 +19,13 @@ export const sosCancels = defineSlice({
   empty: new Map() as ReadonlyMap<string, SosCancelEvent>,
   apply: (state, event) => keepOldest(state, eventRefKey(event.sos), event),
 });
+
+/** The calls for help not cancelled yet, with their reference keys. */
+export function* openSosCalls(state: {
+  readonly sos: ReadonlyMap<string, SosEvent>;
+  readonly sosCancels: ReadonlyMap<string, SosCancelEvent>;
+}): Generator<[key: string, call: SosEvent]> {
+  for (const [key, call] of state.sos) {
+    if (!state.sosCancels.has(key)) yield [key, call];
+  }
+}

@@ -8,7 +8,7 @@
 
   import { formatBytes } from '../format.ts';
   import type { Locale, Translate } from '../i18n/index.ts';
-  import { BASEMAP_MAX_ZOOM } from '../map/style/style.ts';
+  import { BASEMAP_MAX_ZOOM } from '../map/tiles/sources.ts';
   import type { OfflineArea } from '../map/tiles/store-schema.ts';
   import { operationAreas } from '../objects/operation-areas.ts';
   import MapCard from '../ui/MapCard.svelte';

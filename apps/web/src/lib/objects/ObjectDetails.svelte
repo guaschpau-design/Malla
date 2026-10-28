@@ -10,7 +10,6 @@
   import { aliasOf } from '../members/alias.ts';
   import FromHere from '../navigation/FromHere.svelte';
   import { objectPosition } from '../navigation/target.ts';
-  import type { DeviceLocation } from '../position/device-location.svelte.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import ActionButton from '../ui/ActionButton.svelte';
   import { confirmations } from '../ui/confirmations.svelte.ts';
@@ -24,7 +23,6 @@
     groupState: GroupState;
     objectKey: string;
     format: Preference<CoordinateFormat>;
-    location: DeviceLocation;
     /** Guide this device there; the name says where to. */
     onnavigate: (name: string) => void;
     /** Starts a task at the object's place. */
@@ -33,18 +31,8 @@
     onclose: () => void;
   }
 
-  let {
-    t,
-    locale,
-    groupState,
-    objectKey,
-    format,
-    location,
-    onnavigate,
-    ontask,
-    ondelete,
-    onclose,
-  }: Props = $props();
+  let { t, locale, groupState, objectKey, format, onnavigate, ontask, ondelete, onclose }: Props =
+    $props();
 
   const record = $derived(groupState.objects.get(objectKey));
   const kindName = $derived(record && record.type !== 'object-delete' ? t(objectKind(record)) : '');
@@ -84,7 +72,7 @@
       </p>
       {#if at}
         <CoordinateBlock {t} {at} {format} />
-        <FromHere {t} {locale} {at} {location} />
+        <FromHere {t} {locale} {at} />
       {/if}
       <p class="hint">
         {t('changedBy', {

@@ -7,63 +7,56 @@
 -->
 <script lang="ts">
   import { EMPTY_STATE } from '@tesel/core';
-  import type { LatLon, NodeId, SosKind } from '@tesel/protocol';
+  import type { LatLon, NodeId } from '@tesel/protocol';
   import type { Map as MapLibreMap } from 'maplibre-gl';
 
   import { onMount, untrack } from 'svelte';
 
   import { CADASTRE_CREDITS } from '../cadastre/cadastre.ts';
   import CadastreLayer from '../cadastre/CadastreLayer.svelte';
-  import FindCoordinatePanel from '../coordinates/FindCoordinatePanel.svelte';
   import MgrsGridLayer from '../coordinates/MgrsGridLayer.svelte';
-  import PointLayer from '../coordinates/PointLayer.svelte';
-  import PointPanel from '../coordinates/PointPanel.svelte';
-  import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
-  import SosDialog from '../incidents/SosDialog.svelte';
+  import type { Locale, Translate } from '../i18n/index.ts';
+  import SosCall from '../incidents/SosCall.svelte';
   import SosLayer from '../incidents/SosLayer.svelte';
   import { MAP_LAYERS, type MapLayer } from '../map/layers.ts';
+  import { showPoint } from '../map/geometry.ts';
   import { onLongPress } from '../map/long-press.ts';
   import { useStyleCredits } from '../map/style/style-credits.svelte.ts';
   import { groupPoints, StartFraming } from '../map/start-framing.ts';
   import { MapTaps } from '../map/taps.ts';
-  import LayersPanel from '../map/LayersPanel.svelte';
   import CompassButton from '../map/CompassButton.svelte';
   import MapControl from '../map/MapControl.svelte';
   import MapCredits from '../map/MapCredits.svelte';
   import MapScale from '../map/MapScale.svelte';
   import MemberLayer from '../members/MemberLayer.svelte';
   import TrailLayer from '../members/TrailLayer.svelte';
-  import { navigateTo, navigation } from '../navigation/navigation.svelte.ts';
+  import { navigation } from '../navigation/navigation.svelte.ts';
   import { draftGeometry, type DraftKind } from '../objects/draft.ts';
   import { Drawing } from '../objects/drawing.svelte.ts';
   import ObjectForm from '../objects/ObjectForm.svelte';
   import ObjectLayer from '../objects/ObjectLayer.svelte';
   import type { OfflineMaps } from '../offline/offline-maps.ts';
-  import type { DeviceLocation } from '../position/device-location.svelte.ts';
+  import { deviceLocation } from '../position/device-location.svelte.ts';
   import LocateButton from '../position/LocateButton.svelte';
-  import MePanel from '../position/MePanel.svelte';
   import SelfLayer from '../position/SelfLayer.svelte';
   import IncidentAlarm from '../incidents/IncidentAlarm.svelte';
-  import type { RadioSession } from '../radio/radio.svelte.ts';
+  import { radio } from '../radio/radio.svelte.ts';
   import type { TappedService } from '../services/services.ts';
   import ServicesLayer from '../services/ServicesLayer.svelte';
   import RadarLayer from '../radar/RadarLayer.svelte';
   import type { Preferences } from '../settings/preferences.ts';
   import MapTasks from '../tasks/MapTasks.svelte';
-  import { newTask } from '../tasks/task-editor.svelte.ts';
   import { myPendingCount } from '../tasks/tasks.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import { deviceClock } from '../sync/device-clock.svelte.ts';
-  import { notices, useStandingNotice } from '../ui/notices.svelte.ts';
-  import { attempt } from '../ui/submission.svelte.ts';
-  import { closePanel, isOpen, openPanel, panels, togglePanel } from '../ui/panels.svelte.ts';
+  import { useStandingNotice } from '../ui/notices.svelte.ts';
+  import { closePanel, isOpen, openPanel, togglePanel } from '../ui/panels.svelte.ts';
   import { keepScreenAwake } from '../ui/screen-awake.svelte.ts';
-  import WarningList from '../weather/WarningList.svelte';
   import type { WeatherFeed } from '../weather/weather-feed.svelte.ts';
   import WeatherLayer from '../weather/WeatherLayer.svelte';
-  import { warningsAt } from '../weather/weather-warnings.ts';
   import Dock from './Dock.svelte';
   import GroupPanels from './GroupPanels.svelte';
+  import MapPanels from './MapPanels.svelte';
   import MapStatus from './MapStatus.svelte';
   import { stateSlices } from './state-slices.svelte.ts';
   import type { MapTool, WorkspaceGroup } from './workspace.ts';
@@ -76,8 +69,6 @@
     mapOpenedWide: boolean;
     /** The active group and this device's place in it, when there is an active group. */
     group: WorkspaceGroup | null;
-    radio: RadioSession;
-    location: DeviceLocation;
     preferences: Preferences;
     /** Downloaded maps: the operation area is offered for download. */
     offline: OfflineMaps;
@@ -92,8 +83,6 @@
     map,
     mapOpenedWide,
     group,
-    radio,
-    location,
     preferences,
     offline,
     weather,
@@ -137,8 +126,10 @@
   });
 
   useStandingNotice(() => {
-    if (location.problem === null) return null;
-    return { text: location.problem === 'denied' ? t('locationDenied') : t('locationUnavailable') };
+    if (deviceLocation.problem === null) return null;
+    return {
+      text: deviceLocation.problem === 'denied' ? t('locationDenied') : t('locationUnavailable'),
+    };
   });
 
   function startDrawing(kind: DraftKind): void {
@@ -165,7 +156,7 @@
   /** A coordinate typed in the panel: shown on the map. */
   function find(at: LatLon): void {
     inspect(at);
-    show(at);
+    showPoint(map, at);
   }
 
   onMount(() => taps.listen(map));
@@ -177,7 +168,7 @@
       untrack(() => mapOpenedWide),
     );
     $effect(() => {
-      const fix = location.fix?.at ?? null;
+      const fix = deviceLocation.fix?.at ?? null;
       framing.show(groupPoints(slices.positions, group?.self ?? null, fix, Date.now() / 1000));
     });
     return () => {
@@ -214,41 +205,6 @@
     drawing.stop();
     tool = next;
   }
-
-  /** An SOS went out with no place: the GPS stays on until the first fix, which follows it. */
-  let sosWithoutPlace = $state(false);
-
-  $effect(() => {
-    const feed = group?.feed;
-    if (!sosWithoutPlace || feed === undefined) return;
-    return location.use((fix) => {
-      sosWithoutPlace = false;
-      attempt(() => feed.sharePosition(fix), t('actionFailed'));
-    });
-  });
-
-  async function sendSos(
-    kind: SosKind,
-    at: LatLon | null,
-    accuracy: number | null,
-    text: string,
-  ): Promise<void> {
-    if (group === null) return;
-    await group.feed.sendSos(kind, at, accuracy, text);
-    sosOpen = false;
-    sosWithoutPlace = at === null;
-    notices.show(t(sosNotice()));
-  }
-
-  /** What became of an SOS just sent: it is with the group, on its way by radio, or waiting. */
-  function sosNotice(): MessageKey {
-    if (group === null || group.practice || group.feed.status === 'synced') return 'sosSent';
-    return radio.linked ? 'sosByRadio' : 'sosWaiting';
-  }
-
-  function show(at: LatLon): void {
-    map.flyTo({ center: [at.lon, at.lat], zoom: Math.max(map.getZoom(), 15) });
-  }
 </script>
 
 {#if preferences.cadastre.value}
@@ -261,7 +217,6 @@
   <RadarLayer
     {map}
     {locale}
-    {location}
     group={group ? { positions: slices.positions, self: group.self } : null}
   />
 {/if}
@@ -316,78 +271,28 @@
     />
   {/if}
 
-  <GroupPanels {t} {locale} {feed} {self} {role} {radio} {location} {preferences} onshow={find} />
+  <GroupPanels {t} {locale} {feed} {self} {role} {preferences} onpoint={find} />
 
-  {#if sosOpen}
-    <SosDialog {t} {location} onsend={sendSos} oncancel={() => (sosOpen = false)} />
-  {/if}
+  {#key feed}
+    <SosCall {t} {group} open={sosOpen} onclose={() => (sosOpen = false)} />
+  {/key}
 {/if}
 
-{#if panels.open?.name === 'point'}
-  {@const { at, title: name } = panels.open}
-  {@const here = weather && shown.weather ? warningsAt(weather.regions, at) : null}
-  <PointLayer {map} point={at} />
-  <PointPanel
-    {t}
-    {locale}
-    title={name}
-    {at}
-    {location}
-    format={preferences.coordinateFormat}
-    onnavigate={() => {
-      navigateTo({ kind: 'point', at, name });
-    }}
-    onmeasure={() => {
-      startTool({ kind: 'measure', from: at });
-    }}
-    onmark={group
-      ? () => {
-          markAt(at);
-        }
-      : null}
-    ontask={group
-      ? () => {
-          newTask(at);
-        }
-      : null}
-    onclose={closePanel}
-  >
-    {#snippet about()}
-      {#if weather && here && here.warnings.length > 0}
-        <WarningList {t} {locale} {here} source={weather.source} />
-      {/if}
-    {/snippet}
-  </PointPanel>
-{:else if isOpen('find')}
-  <FindCoordinatePanel {t} onfind={find} onclose={closePanel} />
-{:else if isOpen('me')}
-  <MePanel
-    {t}
-    {locale}
-    {location}
-    format={preferences.coordinateFormat}
-    sharing={group?.sharing ?? null}
-    onclose={closePanel}
-  />
-{/if}
-
-<SelfLayer {map} {location} />
-
-{#if isOpen('layers')}
-  <LayersPanel
-    {t}
-    base={preferences.baseMap}
-    flags={{
-      relief: preferences.relief,
-      cadastre: preferences.cadastre,
-      grid: preferences.grid,
-      radar: preferences.radar,
-    }}
-    hidden={preferences.hiddenLayers}
-    {credits}
-    onclose={closePanel}
-  />
-{/if}
+<MapPanels
+  {t}
+  {locale}
+  {map}
+  {group}
+  {preferences}
+  weather={shown.weather ? weather : null}
+  {credits}
+  onfind={find}
+  onmeasure={(from: LatLon) => {
+    startTool({ kind: 'measure', from });
+  }}
+  onmark={markAt}
+/>
+<SelfLayer {map} />
 
 {#if group}
   <IncidentAlarm
@@ -405,7 +310,6 @@
   {locale}
   {map}
   {taps}
-  {location}
   {group}
   {slices}
   {drawing}
@@ -419,7 +323,7 @@
 />
 <MapControl {map}>
   <CompassButton {t} {map} />
-  <LocateButton {t} {map} {location} />
+  <LocateButton {t} {map} />
   <button
     aria-label={t('layers')}
     title={t('layers')}

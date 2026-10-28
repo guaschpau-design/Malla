@@ -6,7 +6,7 @@
   import type { Map as MapLibreMap } from 'maplibre-gl';
 
   import type { Locale, Translate } from '../i18n/index.ts';
-  import type { DeviceLocation } from '../position/device-location.svelte.ts';
+  import { deviceLocation } from '../position/device-location.svelte.ts';
   import NavigationBar from './NavigationBar.svelte';
   import NavigationLayer from './NavigationLayer.svelte';
   import { navigation, stopNavigating } from './navigation.svelte.ts';
@@ -16,31 +16,30 @@
     t: Translate;
     locale: Locale;
     map: MapLibreMap;
-    location: DeviceLocation;
     /** The active group's objects and positions, none without a group: targets may move. */
     objects: GroupState['objects'];
     positions: GroupState['positions'];
   }
 
-  let { t, locale, map, location, objects, positions }: Props = $props();
+  let { t, locale, map, objects, positions }: Props = $props();
 
   const target = $derived(navigation.target);
   const at = $derived(target && targetPosition(target, { objects, positions }));
 
   $effect(() => {
-    if (target !== null) return location.use();
+    if (target !== null) return deviceLocation.use();
   });
 </script>
 
 {#if target}
-  <NavigationLayer {map} from={location.fix?.at ?? null} to={at} />
+  <NavigationLayer {map} from={deviceLocation.fix?.at ?? null} to={at} />
   <NavigationBar
     {t}
     {locale}
     {map}
     name={target.name}
     target={at}
-    fix={location.fix}
+    fix={deviceLocation.fix}
     onstop={stopNavigating}
   />
 {/if}

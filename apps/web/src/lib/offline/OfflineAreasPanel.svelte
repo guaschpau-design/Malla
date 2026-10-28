@@ -9,7 +9,7 @@
   import type { Locale, Translate } from '../i18n/index.ts';
   import { countAreaTiles, MAX_AREA_TILES } from '../map/tiles/area-download.ts';
   import { mapBounds } from '../map/geometry.ts';
-  import { BASEMAP_MAX_ZOOM } from '../map/style/style.ts';
+  import { BASEMAP_MAX_ZOOM } from '../map/tiles/sources.ts';
   import type { Bounds } from '../map/tiles/math.ts';
   import type { OfflineArea } from '../map/tiles/store-schema.ts';
   import { confirmations } from '../ui/confirmations.svelte.ts';

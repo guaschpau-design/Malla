@@ -17,7 +17,7 @@ import { streetFlavor } from './streets.ts';
 import { tileUrlTemplate } from '../tiles/protocol.ts';
 import {
   NAMES_ATTRIBUTION,
-  NAMES_MAX_ZOOM,
+  BASEMAP_MAX_ZOOM,
   ORTHO_ATTRIBUTION,
   ORTHO_MAX_ZOOM,
   TERRAIN_ATTRIBUTION,
@@ -34,13 +34,6 @@ import {
 
 export const BASE_MAPS = ['streets', 'topo', 'aerial'] as const;
 export type BaseMap = (typeof BASE_MAPS)[number];
-
-/**
- * Highest zoom of the vector base map we download and request; MapLibre over-zooms beyond it. It
- * is the last level of the Protomaps builds, the only one that holds every point of interest:
- * pharmacies, most police stations and doctors are not in the levels above.
- */
-export const BASEMAP_MAX_ZOOM = 15;
 
 /** The style's name for the vector base map, in the Protomaps schema. Every style has it. */
 export const BASEMAP_SOURCE = 'protomaps';
@@ -109,7 +102,7 @@ function baseMapLayers({ base, theme, lang }: StyleChoice): BaseMapLayers {
     const terrainNames: SourceSpecification = {
       type: 'vector',
       tiles: [tileUrlTemplate('ign-names')],
-      maxzoom: NAMES_MAX_ZOOM,
+      maxzoom: BASEMAP_MAX_ZOOM,
       attribution: NAMES_ATTRIBUTION,
     };
     const { ground, names } = protomapsLayers(topoFlavor(theme), lang);

@@ -4,21 +4,20 @@
 
   import { useOverlay } from '../map/overlay.svelte.ts';
   import { themeColor } from '../ui/theme.ts';
-  import type { DeviceLocation } from './device-location.svelte.ts';
+  import { deviceLocation } from './device-location.svelte.ts';
   import { selfFeatures } from './self-features.ts';
 
   interface Props {
     map: MapLibreMap;
-    location: DeviceLocation;
   }
 
-  let { map, location }: Props = $props();
+  let { map }: Props = $props();
 
   const SOURCE = 'tesel-self';
 
   useOverlay(() => map, {
     level: 'self',
-    data: { [SOURCE]: () => selfFeatures(location.fix) },
+    data: { [SOURCE]: () => selfFeatures(deviceLocation.fix) },
     layers: () => {
       const self = themeColor('self');
       const ring = themeColor('self-ring');

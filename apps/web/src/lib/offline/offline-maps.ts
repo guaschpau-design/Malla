@@ -5,12 +5,16 @@
 import { formatBytes } from '../format.ts';
 import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
 import { countAreaTiles, MAX_AREA_TILES, type DownloadLayer } from '../map/tiles/area-download.ts';
-import { BASEMAP_MAX_ZOOM } from '../map/style/style.ts';
 import { containsBounds, type Bounds } from '../map/tiles/math.ts';
 import type { TileArchives } from '../map/tiles/protocol.ts';
 import type { TileStore } from '../map/tiles/store.ts';
 import type { OfflineArea } from '../map/tiles/store-schema.ts';
-import { TERRAIN_MAX_ZOOM, type TileSourceId } from '../map/tiles/sources.ts';
+import {
+  BASEMAP_MAX_ZOOM,
+  ORTHO_EXTRA_ZOOM,
+  TERRAIN_MAX_ZOOM,
+  type TileSourceId,
+} from '../map/tiles/sources.ts';
 
 /** Why a download stopped short of the whole area. */
 export type DownloadFailure =
@@ -82,12 +86,6 @@ const CONCURRENCY: Readonly<Record<TileSourceId, number>> = {
   ortho: 2,
   terrain: 2,
 };
-
-/**
- * Photographs need three zooms more than the vector map for the same detail: their tiles cannot be
- * enlarged without blurring.
- */
-const ORTHO_EXTRA_ZOOM = 3;
 
 /** How deep each source is downloaded, for a street map to `maxZoom`. */
 function sourceMaxZoom(source: TileSourceId, maxZoom: number): number {

@@ -8,19 +8,15 @@ import {
   reduceAll,
   type GroupState,
   type LoraEvent,
-  type LoraPacket,
-  type LoraSource,
 } from '@tesel/core';
 import {
+  bytesEqual,
   decodeEvent,
   deriveGroupKeys,
-  encodeEvent,
-  encodeLogFile,
   eventKey,
   eventRefKey,
   NO_SOS_PLACE,
   openEnvelope,
-  parseLogFile,
   peekHeader,
   sameServer,
   sealEnvelope,
@@ -50,7 +46,7 @@ import type { StoredGroup } from '../groups/group.ts';
 import type { LocalIdentity } from '../identity/identity.ts';
 import { hear, NOTHING_HEARD, type Channel, type Heard } from '../links/heard.ts';
 import type { DeviceFix } from '../position/device-location.svelte.ts';
-import type { AppDb, OutboxEntry } from '../storage/app-db.ts';
+import type { AppDb, GroupEventRef } from '../storage/app-db.ts';
 import { storageRefusals } from '../storage/storage-space.svelte.ts';
 import { defaultServerUrl } from '../config.ts';
 import type { TaskFields } from '../tasks/tasks.ts';
@@ -61,29 +57,12 @@ import {
   type RelayStatus,
   type SocketLike,
 } from './relay-client.ts';
-import { loraEventOf, peekType } from './lora-events.ts';
+import { openLogFile, sealLogFile, type LogImport } from './log-file.ts';
+import { catchUpPackets, loraEventOf, peekType, type LoraSink } from './lora-events.ts';
 import { relaysFor } from './relays.ts';
 
 /** `local-only` when the group has no server: events stay on this device (and LoRa, later). */
 export type FeedStatus = RelayStatus | 'local-only';
-
-/** What loading a log file did (protocol §10). */
-export type LogImport =
-  | { readonly kind: 'loaded'; readonly added: number; readonly total: number }
-  | { readonly kind: 'other-group' }
-  | { readonly kind: 'unreadable' };
-
-/** Where the feed hands events for the radio: the LoRa scheduler of a connected radio. */
-export interface LoraSink {
-  offer(packet: LoraPacket, source: LoraSource): void;
-  heard(event: LoraEvent): void;
-}
-
-/**
- * How far an own event has gone: still only on this device, or handed to a relay that stored it
- * or put on the air by the radio.
- */
-export type Delivery = 'queued' | 'delivered';
 
 export class GroupFeed {
   state: GroupState = $state.raw(EMPTY_STATE);
@@ -108,7 +87,7 @@ export class GroupFeed {
   readonly #client: RelayClient | null;
   /** Outbox entries pushed on this connection, by event key, until the server stores them. */
   // eslint-disable-next-line svelte/prefer-svelte-reactivity -- bookkeeping, never rendered
-  readonly #pushed = new Map<string, OutboxEntry>();
+  readonly #pushed = new Map<string, GroupEventRef>();
   readonly #retry = () => this.#client?.retryNow();
   #lora: LoraSink | null = null;
 
@@ -166,8 +145,12 @@ export class GroupFeed {
     const feed = new GroupFeed(db, group, identity, createSocket);
     await feed.#apply(await loadEvents(db, group.id));
     if (!group.practice) {
-      for (const { entry } of await feed.#ownPending()) {
-        if (entry.aired !== true) feed.#undelivered.add(eventRefKey(entry));
+      // The outbox also holds other members' events this device heard by radio and forwards: those
+      // are not its to deliver.
+      for (const { entry } of await pendingEvents(db, group.id)) {
+        if (entry.origin === identity.nodeId && entry.aired !== true) {
+          feed.#undelivered.add(eventRefKey(entry));
+        }
       }
     }
     await feed.#announceSelf();
@@ -195,41 +178,17 @@ export class GroupFeed {
   /**
    * Connects the feed to a radio, or disconnects it with null. While connected, own events go
    * on the air too, and so do events from the server: this device bridges them (ARCHITECTURE.md
-   * §4.3). On connecting, the radio is given what it missed while there was none: this device's
-   * announcement, its SOS calls still open, which repeat until answered, and its events that
-   * have reached no one (ADR-0043).
+   * §4.3). On connecting, the radio is given what it missed while there was none
+   * (`catchUpPackets`).
    */
   async attachRadio(sink: LoraSink | null): Promise<void> {
     // A practice never reaches the air, whatever the caller does (ADR-0031).
     this.#lora = this.#group.practice === true ? null : sink;
-    if (this.#lora === null || sink === null) return;
-    const self = this.#identity.nodeId;
-    const due: TeselEvent[] = [];
-    // Members who only hear the radio learn this device's alias from its announcement.
-    const announcement = this.state.members.get(self);
-    if (announcement !== undefined) due.push(announcement);
-    for (const [key, call] of this.state.sos) {
-      if (call.origin === self && !this.state.sosCancels.has(key)) due.push(call);
-    }
-    for (const event of due) {
-      const bytes = encodeEvent(event);
-      if (bytes.ok) sink.offer({ event, bytes: bytes.value }, 'own');
-    }
-    for (const { entry, bytes } of await this.#ownPending()) {
-      const event = loraEventOf(bytes);
-      if (entry.aired !== true && event !== null) sink.offer({ event, bytes }, 'own');
-    }
-  }
-
-  /**
-   * This device's own events still waiting for the server. The outbox also holds other members'
-   * events this device heard by radio and forwards: those are not its to deliver or to put on the
-   * air as its own.
-   */
-  async #ownPending(): Promise<{ entry: OutboxEntry; bytes: Uint8Array }[]> {
-    const self = this.#identity.nodeId;
+    if (this.#lora === null) return;
     const pending = await pendingEvents(this.#db, this.#group.id);
-    return pending.filter(({ entry }) => entry.origin === self);
+    for (const packet of catchUpPackets(this.state, this.#identity.nodeId, pending)) {
+      this.#lora.offer(packet, 'own');
+    }
   }
 
   /**
@@ -244,64 +203,36 @@ export class GroupFeed {
     else await markAired(this.#db, entry);
   }
 
-  /** Whether an own event has reached anyone yet. */
-  deliveryOf(event: EventRef): Delivery {
-    return this.undelivered.has(eventRefKey(event)) ? 'queued' : 'delivered';
-  }
-
-  /** An event heard over the radio. New ones are applied and, with a server, forwarded to it. */
+  /** An event heard over the radio. */
   async receiveFromRadio(bytes: Uint8Array): Promise<void> {
     const heard = loraEventOf(bytes);
     if (heard) this.#lora?.heard(heard);
     this.#hear('radio', [bytes]);
-    const forward = this.#client !== null;
-    const [received] = await receiveEvents(this.#db, this.#group.id, this.#current([bytes]), {
-      forward,
-    });
-    if (received === undefined) return;
-    await this.#apply([bytes]);
-    this.#push(received.entry, bytes);
+    await this.#take([bytes]);
   }
 
   /**
-   * An event of a simulated member of a practice (lib/practice): applied like any other, and
-   * never sent anywhere, as a practice group has no server and no radio.
+   * An event of a simulated member of a practice (lib/practice), taken like any other; a practice
+   * group has no server and no radio, so it goes nowhere.
    */
   async receiveSimulated(bytes: Uint8Array): Promise<void> {
-    const received = await receiveEvents(this.#db, this.#group.id, this.#current([bytes]), {
-      forward: false,
-    });
-    if (received.length > 0) await this.#apply([bytes]);
+    await this.#take([bytes]);
   }
 
   /**
-   * The group's log as a log file, sealed so that only the group can read it: every event this
-   * device keeps, which is all but the positions its state has outlived (ADR-0055).
+   * The group's log as a log file: every event this device keeps, which is all but the positions
+   * its state has outlived (ADR-0055).
    */
   async exportLog(): Promise<string> {
-    const events = await loadEvents(this.#db, this.#group.id);
-    const envelopes = events.map((bytes) => sealEnvelope(this.#keys, bytes));
-    return encodeLogFile({ groupId: this.#keys.groupId, envelopes });
+    return sealLogFile(this.#keys, await loadEvents(this.#db, this.#group.id));
   }
 
-  /**
-   * Adds the events of a log file of this group that this device is missing, as if a relay had
-   * brought them: they are applied and, with a server, passed on to it.
-   */
+  /** Takes the events of a log file of this group that this device is missing. */
   async importLog(text: string): Promise<LogImport> {
-    const file = parseLogFile(text);
-    if (!file.ok) return { kind: 'unreadable' };
-    if (toBase64url(file.value.groupId) !== toBase64url(this.#keys.groupId)) {
-      return { kind: 'other-group' };
-    }
-    const opened = file.value.envelopes.flatMap((env) => openEnvelope(this.#keys, env) ?? []);
-    const forward = this.#client !== null;
-    const received = await receiveEvents(this.#db, this.#group.id, this.#current(opened), {
-      forward,
-    });
-    await this.#apply(received.map(({ bytes }) => bytes));
-    for (const { entry, bytes } of received) this.#push(entry, bytes);
-    return { kind: 'loaded', added: received.length, total: opened.length };
+    const opened = openLogFile(this.#keys, text);
+    if (!Array.isArray(opened)) return opened;
+    const received = await this.#take(opened);
+    return { kind: 'loaded', added: received, total: opened.length };
   }
 
   close(): void {
@@ -421,6 +352,20 @@ export class GroupFeed {
   }
 
   /**
+   * Events that did not come from the group's server (by radio, from a file, from a practice):
+   * the new ones are stored, applied and, with a server, passed on to it. Returns how many were new.
+   */
+  async #take(batch: readonly Uint8Array[]): Promise<number> {
+    const forward = this.#client !== null;
+    const received = await receiveEvents(this.#db, this.#group.id, this.#current(batch), {
+      forward,
+    });
+    await this.#apply(received.map(({ bytes }) => bytes));
+    for (const { entry, bytes } of received) this.#push(entry, bytes);
+    return received.length;
+  }
+
+  /**
    * A batch from the relay: stored with its cursor, then applied to the picture at once. If it
    * cannot be stored, the cursor stays behind it and the relay sends it again on reconnecting; a
    * full storage is told to the user meanwhile.
@@ -459,7 +404,7 @@ export class GroupFeed {
     if (bytes === null) return null;
     const header = peekHeader(bytes);
     if (!header.ok) return null;
-    return toBase64url(eventKey(this.#keys, header.value)) === toBase64url(key) ? bytes : null;
+    return bytesEqual(eventKey(this.#keys, header.value), key) ? bytes : null;
   }
 
   /** Notes the members heard through a channel; own events are not news about anyone. */
@@ -477,7 +422,7 @@ export class GroupFeed {
     }
   }
 
-  #push(entry: OutboxEntry, bytes: Uint8Array): void {
+  #push(entry: GroupEventRef, bytes: Uint8Array): void {
     if (this.#client === null) return;
     const key = eventKey(this.#keys, entry);
     const type = peekType(bytes);

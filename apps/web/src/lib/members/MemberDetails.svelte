@@ -9,7 +9,6 @@
   import type { Locale, Translate } from '../i18n/index.ts';
   import { aliasOf } from '../members/alias.ts';
   import FromHere from '../navigation/FromHere.svelte';
-  import type { DeviceLocation } from '../position/device-location.svelte.ts';
   import type { Heard } from '../links/heard.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import { clockEvery } from '../ui/now.svelte.ts';
@@ -24,13 +23,12 @@
     heard: Heard;
     id: NodeId;
     format: Preference<CoordinateFormat>;
-    location: DeviceLocation;
     /** Guide this device there; the name says where to. */
     onnavigate: (name: string) => void;
     onclose: () => void;
   }
 
-  let { t, locale, groupState, heard, id, format, location, onnavigate, onclose }: Props = $props();
+  let { t, locale, groupState, heard, id, format, onnavigate, onclose }: Props = $props();
 
   const alias = $derived(aliasOf(groupState, id));
   const role = $derived(groupState.members.get(id)?.role);
@@ -47,7 +45,7 @@
       {@const at = { lat: report.lat, lon: report.lon }}
       <p class="hint">{t('positionAt', { time: formatTime(report.time * 1000, locale) })}</p>
       <CoordinateBlock {t} {at} {format} />
-      <FromHere {t} {locale} {at} {location} />
+      <FromHere {t} {locale} {at} />
       <div class="row">
         <ActionButton
           icon="heading"

@@ -11,7 +11,7 @@ import type {
 } from '@tesel/meshcore/link';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { LoraSink } from '../sync/group-feed.svelte.ts';
+import type { LoraSink } from '../sync/lora-events.ts';
 import { loadEvents } from '../events/event-log.ts';
 import { createGroup } from '../groups/group.ts';
 import { saveGroup } from '../groups/group-store.ts';

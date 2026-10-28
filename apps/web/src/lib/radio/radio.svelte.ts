@@ -9,14 +9,15 @@ import {
   type RadioLinkState,
   type ReceivedFrame,
 } from '@tesel/meshcore/link';
-import { toBase64url } from '@tesel/protocol';
+import { bytesEqual } from '@tesel/protocol';
 
 import { receiveEvents } from '../events/event-log.ts';
 import { groupId } from '../groups/group.ts';
 import { getGroup } from '../groups/group-store.ts';
 import type { AppDb } from '../storage/app-db.ts';
 import { storageRefusals } from '../storage/storage-space.svelte.ts';
-import type { GroupFeed, LoraSink } from '../sync/group-feed.svelte.ts';
+import type { GroupFeed } from '../sync/group-feed.svelte.ts';
+import type { LoraSink } from '../sync/lora-events.ts';
 import { loadRadioTexts, saveRadioText } from './radio-text-store.ts';
 import { MAX_RADIO_TEXTS, type StoredRadioText } from './radio-texts.ts';
 
@@ -219,7 +220,7 @@ export class RadioSession {
   async #store({ frame, attempts }: Unstored): Promise<void> {
     try {
       const feed = this.#feed;
-      if (feed !== null && sameBytes(frame.secret, feed.radioChannel.secret)) {
+      if (feed !== null && bytesEqual(frame.secret, feed.radioChannel.secret)) {
         await feed.receiveFromRadio(frame.bytes);
         return;
       }
@@ -276,14 +277,13 @@ export class RadioSession {
   }
 }
 
+/** This device's LoRa radio, linked or not (ADR-0048). */
+export const radio = new RadioSession();
+
 function problemOf(error: unknown): RadioProblem {
   if (error instanceof RadioError) {
     if (error.code === 'no-free-channel') return 'no-free-channel';
     if (error.code === 'timeout') return 'no-answer';
   }
   return 'failed';
-}
-
-function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
-  return toBase64url(a) === toBase64url(b);
 }

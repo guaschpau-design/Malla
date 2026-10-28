@@ -25,7 +25,7 @@
   import type { OfflineMaps } from './lib/offline/offline-maps.ts';
   import OfflineAreasPanel from './lib/offline/OfflineAreasPanel.svelte';
   import { keepOverview } from './lib/offline/overview.ts';
-  import { DeviceLocation } from './lib/position/device-location.svelte.ts';
+  import { deviceLocation } from './lib/position/device-location.svelte.ts';
   import { PositionSharing } from './lib/position/position-sharing.svelte.ts';
   import UpdatePrompt from './lib/pwa/UpdatePrompt.svelte';
   import { activeSos } from './lib/incidents/incidents.ts';
@@ -33,7 +33,7 @@
   import ConfirmDialog from './lib/ui/ConfirmDialog.svelte';
   import StartupProblem from './lib/ui/StartupProblem.svelte';
   import type { StartupFailure, VersionChange } from './lib/storage/version-change.ts';
-  import { RadioSession } from './lib/radio/radio.svelte.ts';
+  import { radio } from './lib/radio/radio.svelte.ts';
   import { loadPreferences, type Preferences } from './lib/settings/preferences.ts';
   import { Session } from './lib/session.svelte.ts';
   import { ElevationReader } from './lib/terrain/elevation.ts';
@@ -82,8 +82,6 @@
   let mapOpenedWide = $state(false);
   /** Official weather warnings from the app's own server, once the database is open. */
   let weather: WeatherFeed | null = $state.raw(null);
-  const radio = new RadioSession();
-  const location = new DeviceLocation();
   /** How this device reaches its group now (lib/links). */
   // A practice syncs with nothing: the indicator shows this device's own connection, as without a
   // group.
@@ -150,7 +148,7 @@
         if (fullscreenSupported && preferences.fullscreen.value) {
           stopWaitingForTap = fullscreenAtFirstTap();
         }
-        sharing = new PositionSharing(preferences.positionMode, location);
+        sharing = new PositionSharing(preferences.positionMode, deviceLocation);
         session = await Session.load(database);
       })
       .catch(failed);
@@ -302,8 +300,6 @@
         {map}
         {mapOpenedWide}
         group={workspaceGroup}
-        {radio}
-        {location}
         {preferences}
         {offline}
         {weather}
@@ -323,7 +319,6 @@
         {t}
         input={linkInput}
         network={connection.network}
-        {radio}
         groupName={session?.activeGroup?.name ?? null}
         onclose={closePanel}
       />

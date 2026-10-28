@@ -1,4 +1,4 @@
-export { eventDraft, type Actor, type EventDraft } from './event-draft.ts';
+export { ScenarioPerformer, type Actor, type EventDraft } from './event-draft.ts';
 export {
   plan,
   whereAt,

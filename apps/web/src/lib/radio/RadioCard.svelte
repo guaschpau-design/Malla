@@ -6,16 +6,15 @@
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import ChannelCard from '../links/ChannelCard.svelte';
   import type { Link } from '../links/links.ts';
-  import type { RadioProblem, RadioSession } from './radio.svelte.ts';
+  import { radio, type RadioProblem } from './radio.svelte.ts';
 
   interface Props {
     t: Translate;
-    radio: RadioSession;
     /** Name of the active group, or null if there is none. */
     groupName: string | null;
   }
 
-  let { t, radio, groupName }: Props = $props();
+  let { t, groupName }: Props = $props();
 
   const supported = isWebBluetoothAvailable();
 

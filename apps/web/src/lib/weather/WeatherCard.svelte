@@ -4,7 +4,7 @@
   import { SvelteSet } from 'svelte/reactivity';
 
   import type { Locale, Translate } from '../i18n/index.ts';
-  import type { DeviceLocation } from '../position/device-location.svelte.ts';
+  import { deviceLocation } from '../position/device-location.svelte.ts';
   import MapCard from '../ui/MapCard.svelte';
   import WarningList from './WarningList.svelte';
   import type { WeatherFeed } from './weather-feed.svelte.ts';
@@ -14,14 +14,15 @@
     t: Translate;
     locale: Locale;
     weather: WeatherFeed;
-    location: DeviceLocation;
   }
 
-  let { t, locale, weather, location }: Props = $props();
+  let { t, locale, weather }: Props = $props();
 
   /** Warnings closed on this device, by what tells one apart. */
   const dismissed = new SvelteSet<string>();
-  const here = $derived(location.fix ? warningsAt(weather.regions, location.fix.at) : null);
+  const here = $derived(
+    deviceLocation.fix ? warningsAt(weather.regions, deviceLocation.fix.at) : null,
+  );
   const keys = $derived(here?.warnings.map((w) => `${w.level}:${w.onset}:${w.expires}`) ?? []);
   const shown = $derived(keys.some((key) => !dismissed.has(key)));
 </script>

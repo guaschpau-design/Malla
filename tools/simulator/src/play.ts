@@ -1,8 +1,8 @@
 // Plays a scenario on a group: one simulated device per member, each event sent when its moment
 // comes, or everything at once for a short scenario that should already have happened.
 
-import { deriveGroupKeys, type EventRef } from '@tesel/protocol';
-import { eventDraft, plan, type Scenario } from '@tesel/scenario';
+import { deriveGroupKeys } from '@tesel/protocol';
+import { plan, ScenarioPerformer, type Scenario } from '@tesel/scenario';
 
 import { SimulatedDevice } from './device.ts';
 
@@ -29,8 +29,7 @@ export async function play(scenario: Scenario, options: PlayOptions): Promise<vo
   for (const member of scenario.members) {
     devices.set(member.alias, await SimulatedDevice.connect(options.server, keys));
   }
-  /** References of the objects and SOS calls the scenario names. */
-  const named = new Map<string, EventRef>();
+  const performer = new ScenarioPerformer();
   const instant = !Number.isFinite(options.speed);
   const startMs = Date.now();
   const startTime = Math.floor(startMs / 1000) - (instant ? scenario.duration : 0);
@@ -41,9 +40,7 @@ export async function play(scenario: Scenario, options: PlayOptions): Promise<vo
       if (device === undefined) throw new Error(`no device for ${event.by}`);
       const time = instant ? startTime + event.at : Math.floor(Date.now() / 1000);
       const actor = { alias: event.by, publicKey: device.identity.publicKey };
-      const draft = eventDraft(event.action, actor, named);
-      const ref = await device.publish(draft, time);
-      if ('id' in event.action) named.set(event.action.id, ref);
+      await performer.perform(event, actor, (draft) => device.publish(draft, time));
       if (event.action.type !== 'position') options.log?.(`${event.by}: ${event.action.type}`);
     }
   } finally {

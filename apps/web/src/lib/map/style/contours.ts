@@ -9,7 +9,7 @@ import { addProtocol } from 'maplibre-gl';
 import type { TileArchives } from '../tiles/protocol.ts';
 import { loadTile, tileUrlTemplate } from '../tiles/protocol.ts';
 import type { TileStore } from '../tiles/store.ts';
-import { TERRAIN_MAX_ZOOM } from '../tiles/sources.ts';
+import { BASEMAP_MAX_ZOOM, TERRAIN_MAX_ZOOM } from '../tiles/sources.ts';
 
 const PROTOCOL = 'tesel-contours';
 const URL_PATTERN = new RegExp(`^${PROTOCOL}://(\\d+)/(\\d+)/(\\d+)$`);
@@ -20,9 +20,9 @@ export const HEIGHT_KEY = 'ele';
 /** 1 for an index line, 0 for the others. */
 export const RANK_KEY = 'level';
 
-/** Contour tiles are made from this zoom to the last; MapLibre enlarges the last beyond it. */
+/** Contour tiles are made from this zoom to the street map's last; MapLibre enlarges it beyond. */
 export const CONTOURS_MIN_ZOOM = 11;
-export const CONTOURS_MAX_ZOOM = 15;
+export const CONTOURS_MAX_ZOOM = BASEMAP_MAX_ZOOM;
 
 /** Decoded elevation tiles kept at once: a tile and its eight neighbours, several times over. */
 const CACHE_TILES = 64;

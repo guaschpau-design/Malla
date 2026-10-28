@@ -1,6 +1,6 @@
 // The SOS calls still open, as GeoJSON for the map: each where its caller is (incidents.ts).
 
-import type { GroupState } from '@tesel/core';
+import { openSosCalls, type GroupState } from '@tesel/core';
 import type { Feature, FeatureCollection, Point } from 'geojson';
 
 import { toPosition } from '../map/geometry.ts';
@@ -22,8 +22,7 @@ export function sosFeatures(
   state: Pick<GroupState, 'sos' | 'sosCancels' | 'members' | 'positions'>,
 ): FeatureCollection<Point, SosProperties> {
   const features: Feature<Point, SosProperties>[] = [];
-  for (const [key, call] of state.sos) {
-    if (state.sosCancels.has(key)) continue;
+  for (const [key, call] of openSosCalls(state)) {
     const where = whereSos(state, call);
     if (where.kind === 'unknown') continue;
     features.push({

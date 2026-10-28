@@ -27,6 +27,11 @@ export function utf8ByteLength(text: string): number {
   return utf8Encoder.encode(text).length;
 }
 
+/** Whether two byte strings are the same: keys, group IDs, events. */
+export function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
+  return a.length === b.length && a.every((byte, index) => byte === b[index]);
+}
+
 function decodeUtf8(bytes: Uint8Array): string {
   try {
     return utf8Decoder.decode(bytes);

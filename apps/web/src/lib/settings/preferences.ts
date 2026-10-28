@@ -8,7 +8,7 @@ import { POSITION_MODES } from '../position/position-mode.ts';
 import type { AppDb } from '../storage/app-db.ts';
 import { choice, flag, Preference, subset, type PreferenceSpec } from './preference.svelte.ts';
 
-export const PREFERENCES = {
+const PREFERENCES = {
   /** How this device shares its position: hidden until the user chooses otherwise. */
   positionMode: choice('positionMode', POSITION_MODES, 'hidden'),
   /** How coordinates are written: decimal degrees, as phones and 112 apps share them. */

@@ -1,7 +1,7 @@
 // SOS calls, alerts and the roll call as the interface shows them: who, what, and who has
 // acknowledged or answered.
 
-import type { GroupState } from '@tesel/core';
+import { openSosCalls, type GroupState } from '@tesel/core';
 import {
   eventRefKey,
   sosPlace,
@@ -56,8 +56,7 @@ export interface AlertView extends Acknowledgement {
 /** SOS calls not cancelled yet, newest first. */
 export function activeSos(state: GroupState, self: NodeId): SosView[] {
   const views: SosView[] = [];
-  for (const [key, event] of state.sos) {
-    if (state.sosCancels.has(key)) continue;
+  for (const [key, event] of openSosCalls(state)) {
     views.push({
       key,
       event,

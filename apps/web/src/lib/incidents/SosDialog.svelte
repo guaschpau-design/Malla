@@ -5,14 +5,13 @@
   import { onMount } from 'svelte';
 
   import type { Translate } from '../i18n/index.ts';
-  import type { DeviceLocation } from '../position/device-location.svelte.ts';
+  import { deviceLocation } from '../position/device-location.svelte.ts';
   import Dialog from '../ui/Dialog.svelte';
   import { Submission } from '../ui/submission.svelte.ts';
   import { SOS_KINDS } from './sos-kinds.ts';
 
   interface Props {
     t: Translate;
-    location: DeviceLocation;
     /** Sends the call; `at` is null when this device has no position yet. */
     onsend: (
       kind: SosKind,
@@ -23,18 +22,18 @@
     oncancel: () => void;
   }
 
-  let { t, location, onsend, oncancel }: Props = $props();
+  let { t, onsend, oncancel }: Props = $props();
 
   let kind: SosKind = $state('general');
   let text = $state('');
-  const fix = $derived(location.fix);
+  const fix = $derived(deviceLocation.fix);
   /** Whole metres, as the SOS carries it. */
   const accuracy = $derived(fix?.accuracy == null ? null : Math.round(fix.accuracy));
   const submission = new Submission();
   const tooLong = $derived(utf8ByteLength(text.trim()) > SOS_TEXT_MAX_BYTES);
 
   // The GPS stays on while the dialog is open, so the call goes with the latest fix.
-  onMount(() => location.use());
+  onMount(() => deviceLocation.use());
 
   function send(): void {
     void submission.run(() => onsend(kind, fix?.at ?? null, accuracy, text.trim()));

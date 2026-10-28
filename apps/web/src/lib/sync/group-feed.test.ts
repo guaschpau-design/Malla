@@ -16,7 +16,8 @@ import { loadEvents, receiveEvents } from '../events/event-log.ts';
 import { createGroup } from '../groups/group.ts';
 import { createLocalIdentity } from '../identity/identity.ts';
 import { openAppDb } from '../storage/app-db.ts';
-import { GroupFeed, type LoraSink } from './group-feed.svelte.ts';
+import { GroupFeed } from './group-feed.svelte.ts';
+import type { LoraSink } from './lora-events.ts';
 import type { SocketLike } from './relay-client.ts';
 
 const MEMBERS = ['0a0a0a0a', '0b0b0b0b', '0c0c0c0c'] as NodeId[];

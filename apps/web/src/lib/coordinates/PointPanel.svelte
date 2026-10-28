@@ -7,7 +7,6 @@
 
   import type { Locale, Translate } from '../i18n/index.ts';
   import FromHere from '../navigation/FromHere.svelte';
-  import type { DeviceLocation } from '../position/device-location.svelte.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import ActionButton from '../ui/ActionButton.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -20,7 +19,6 @@
     /** "Map point", or the name of the service tapped. */
     title: string;
     at: LatLon;
-    location: DeviceLocation;
     format: Preference<CoordinateFormat>;
     onnavigate: () => void;
     onmeasure: () => void;
@@ -38,7 +36,6 @@
     locale,
     title,
     at,
-    location,
     format,
     onnavigate,
     onmeasure,
@@ -52,7 +49,7 @@
 <Panel {title} closeLabel={t('close')} {onclose}>
   <div class="stack section">
     <CoordinateBlock {t} {at} {format} />
-    <FromHere {t} {locale} {at} {location} />
+    <FromHere {t} {locale} {at} />
     {@render about?.()}
     <div class="row">
       <ActionButton icon="heading" label={t('guideMe')} onclick={onnavigate} />

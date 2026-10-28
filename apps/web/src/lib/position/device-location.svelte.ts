@@ -92,6 +92,9 @@ export class DeviceLocation {
   }
 }
 
+/** This device's location, which every part of the app reads (ADR-0048). */
+export const deviceLocation = new DeviceLocation();
+
 function finiteOrNull(value: number | null): number | null {
   return value !== null && Number.isFinite(value) ? value : null;
 }

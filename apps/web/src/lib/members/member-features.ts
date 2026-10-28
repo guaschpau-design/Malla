@@ -1,7 +1,7 @@
 // The other members' latest positions as GeoJSON for the map. This device is not among them: it
 // is drawn where it is now (position/SelfLayer.svelte), not where it last reported being.
 
-import type { GroupState } from '@tesel/core';
+import { openSosCalls, type GroupState } from '@tesel/core';
 import type { NodeId } from '@tesel/protocol';
 import type { Feature, FeatureCollection, Point } from 'geojson';
 
@@ -24,10 +24,7 @@ export function memberFeatures(
   self: NodeId,
   now: number,
 ): MemberCollection {
-  const calling = new Set<NodeId>();
-  for (const [key, call] of state.sos) {
-    if (!state.sosCancels.has(key)) calling.add(call.origin);
-  }
+  const calling = new Set([...openSosCalls(state)].map(([, call]) => call.origin));
   const features: Feature<Point, MemberProperties>[] = [];
   for (const [origin, report] of state.positions) {
     if (report.type !== 'position' || origin === self) continue;

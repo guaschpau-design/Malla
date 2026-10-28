@@ -2,7 +2,7 @@
 // of its own, send their events into the practice group when their moment comes, and answer
 // what the user does that calls for an answer: a roll call, an SOS. Nothing leaves the device.
 
-import type { GroupState } from '@tesel/core';
+import { openSosCalls, type GroupState } from '@tesel/core';
 import {
   encodeEvent,
   eventRefKey,
@@ -12,8 +12,8 @@ import {
   type NodeId,
 } from '@tesel/protocol';
 import {
-  eventDraft,
   plan,
+  ScenarioPerformer,
   type EventDraft,
   type PlannedEvent,
   type Scenario,
@@ -46,8 +46,7 @@ export class PracticeRun {
   readonly #members: ReadonlyMap<string, SimulatedMember>;
   readonly #sink: PracticeSink;
   readonly #replies: PracticeReplies;
-  /** References of the objects and SOS calls the scenario names, once sent. */
-  readonly #named = new Map<string, EventRef>();
+  readonly #performer = new ScenarioPerformer();
   /** Roll calls and SOS calls already answered, by event key. */
   readonly #answered = new Set<string>();
   readonly #timers = new Set<ReturnType<typeof setTimeout>>();
@@ -94,8 +93,8 @@ export class PracticeRun {
         });
       });
     }
-    for (const [key, sos] of state.sos) {
-      if (sos.origin !== self || state.sosCancels.has(key)) continue;
+    for (const [key, sos] of openSosCalls(state)) {
+      if (sos.origin !== self) continue;
       const [first] = this.#members.values();
       if (first === undefined) return;
       this.#once(key, () => {
@@ -130,12 +129,11 @@ export class PracticeRun {
   }
 
   async #sendInOrder(events: readonly PlannedEvent[]): Promise<void> {
-    for (const { by, action } of events) {
-      const member = this.#members.get(by);
-      if (member === undefined) continue;
+    for (const event of events) {
+      const member = this.#members.get(event.by);
+      if (member === undefined) throw new Error(`no member ${event.by} in the scenario`);
       const actor = { alias: member.alias, publicKey: member.identity.publicKey };
-      const ref = await this.#send(member, eventDraft(action, actor, this.#named));
-      if ('id' in action) this.#named.set(action.id, ref);
+      await this.#performer.perform(event, actor, (draft) => this.#send(member, draft));
     }
   }
 

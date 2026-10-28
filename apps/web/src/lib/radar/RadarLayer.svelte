@@ -10,7 +10,7 @@
 
   import type { Locale } from '../i18n/index.ts';
   import { useOverlay } from '../map/overlay.svelte.ts';
-  import type { DeviceLocation } from '../position/device-location.svelte.ts';
+  import { deviceLocation } from '../position/device-location.svelte.ts';
   import { themeColor } from '../ui/theme.ts';
   import { clockEvery } from '../ui/now.svelte.ts';
   import { nearestMembers, ringFeatures, ringStep, vectorFeatures } from './radar.ts';
@@ -18,12 +18,11 @@
   interface Props {
     map: MapLibreMap;
     locale: Locale;
-    location: DeviceLocation;
     /** The active group's positions and this device in it, for the lines to the nearest members. */
     group: { readonly positions: GroupState['positions']; readonly self: NodeId } | null;
   }
 
-  let { map, locale, location, group }: Props = $props();
+  let { map, locale, group }: Props = $props();
 
   const RINGS = 'tesel-radar-rings';
   const VECTORS = 'tesel-radar-vectors';
@@ -32,7 +31,7 @@
   /** The map's zoom, read when it mounts and after each zoom. */
   let zoom = $state(0);
   const now = clockEvery(30_000);
-  const here = $derived(location.fix?.at ?? null);
+  const here = $derived(deviceLocation.fix?.at ?? null);
   const rings = $derived(here ? ringFeatures(here, ringStep(zoom, here.lat), locale) : NOTHING);
   const vectors = $derived(
     here && group
@@ -40,7 +39,7 @@
       : NOTHING,
   );
 
-  $effect(() => location.use());
+  $effect(() => deviceLocation.use());
 
   onMount(() => {
     const zoomed = () => {

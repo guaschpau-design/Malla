@@ -23,6 +23,7 @@
     oncancel: (sos: EventRef) => void;
     /** Own events that have reached no one yet, by event reference key. */
     undelivered: ReadonlySet<string>;
+    /** Shows where an SOS is on the map. */
     onshow: (at: LatLon) => void;
     /** Answers a roll call with "I need help": opens the SOS dialog. */
     onneedhelp: () => void;
