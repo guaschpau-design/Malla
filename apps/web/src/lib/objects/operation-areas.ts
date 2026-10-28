@@ -2,10 +2,9 @@
 // whose map each member is offered to download for use without a connection.
 
 import { offsetMeters, type GroupState } from '@tesel/core';
-import type { LatLon, ShapeGeometry } from '@tesel/protocol';
+import { ShapeStyleCode, type LatLon, type ShapeGeometry } from '@tesel/protocol';
 
 import { boundsAround, type Bounds } from '../map/tiles/math.ts';
-import { OPERATION_AREA_STYLE } from './catalog.ts';
 
 export interface OperationArea {
   /** The object's reference key. */
@@ -17,7 +16,7 @@ export interface OperationArea {
 export function operationAreas(state: GroupState): OperationArea[] {
   const areas: OperationArea[] = [];
   for (const [key, record] of state.objects) {
-    if (record.type !== 'shape' || record.style !== OPERATION_AREA_STYLE) continue;
+    if (record.type !== 'shape' || record.style !== ShapeStyleCode.OPERATION_AREA) continue;
     areas.push({ key, label: record.label, bounds: boundsAround(extremes(record.geometry)) });
   }
   return areas;

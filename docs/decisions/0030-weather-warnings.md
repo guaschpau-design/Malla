@@ -2,6 +2,7 @@
 
 - Status: Accepted, amended by [0038](0038-official-warnings-look.md) (how warnings look)
 - Date: 2026-10-26
+- Note (2026-10-28): the server no longer serves the document exactly as gathered. It leaves out warnings that have expired since the gathering, and once its last successful gathering is older than `TESEL_WEATHER_MAX_AGE_MINUTES` (70 by default) it answers `503` rather than serve stale warnings, so a command post without internet stops serving them after about an hour; apps keep the last ones they had (`apps/server/src/weather/weather-warnings.ts`, `apps/server/src/app.ts`). It asks MeteoAlarm for one feed per country every 10 minutes, two with the default countries, and for its list of outline files once a day, not three requests every 10 minutes.
 
 ## Context
 

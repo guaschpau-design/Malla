@@ -1,5 +1,5 @@
-<!-- The bottom of the map: the SOS button and the dock — Me, Add, Chat and Tasks with a group,
-     More always. Everything else starts from what is tapped on the map. -->
+<!-- The bottom of the map: the SOS button and the dock — Me and More always; with a group, the SOS
+     button, Add, Chat and Tasks. Everything else starts from what is tapped on the map. -->
 <script lang="ts">
   import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
   import AddMenu from '../objects/AddMenu.svelte';
@@ -8,7 +8,7 @@
   import type { PositionSharing } from '../position/position-sharing.svelte.ts';
   import type { Preferences } from '../settings/preferences.ts';
   import DockButton from '../ui/DockButton.svelte';
-  import { TASK_LIST } from '../tasks/task-editor.svelte.ts';
+  import { TASK_LIST } from '../tasks/task-editor.ts';
   import { isOpen, togglePanel } from '../ui/panels.svelte.ts';
   import MoreMenu from './MoreMenu.svelte';
 
@@ -24,11 +24,23 @@
     /** Pending tasks assigned to this device. */
     tasksForMe: number;
     /** Drawing or measuring: only the SOS button stays, the rest makes room for the map. */
-    tapping: boolean;
+    drawingOrMeasuring: boolean;
   }
 
-  let { t, sharing, onsos, ondraw, onmeasure, preferences, locale, tasksForMe, tapping }: Props =
-    $props();
+  let {
+    t,
+    sharing,
+    onsos,
+    ondraw,
+    onmeasure,
+    preferences,
+    locale,
+    tasksForMe,
+    drawingOrMeasuring,
+  }: Props = $props();
+
+  /** With a group there is always a way of sharing the position in it. */
+  const inGroup = $derived(sharing !== null);
 
   const STATES: Readonly<Record<PositionMode, MessageKey>> = {
     sharing: 'positionStateSharing',
@@ -38,10 +50,10 @@
 </script>
 
 <div class="bottom">
-  {#if sharing}
+  {#if inGroup}
     <button class="sos" onclick={onsos}>{t('sos')}</button>
   {/if}
-  {#if !tapping}
+  {#if !drawingOrMeasuring}
     <nav class="dock chrome" aria-label={t('dock')}>
       <DockButton
         icon="person"
@@ -53,7 +65,7 @@
           togglePanel('me');
         }}
       />
-      {#if sharing}
+      {#if inGroup}
         <AddMenu {t} onstart={ondraw} />
         <DockButton
           icon="chat"
@@ -74,7 +86,7 @@
           }}
         />
       {/if}
-      <MoreMenu {t} {preferences} {locale} {onmeasure} withGroup={sharing !== null} />
+      <MoreMenu {t} {preferences} {locale} {onmeasure} withGroup={inGroup} />
     </nav>
   {/if}
 </div>

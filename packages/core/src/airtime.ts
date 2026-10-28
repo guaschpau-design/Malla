@@ -52,3 +52,25 @@ export function timeOnAirMs(payloadBytes: number, preset: LoraPreset = EU_NARROW
 export function eventAirtimeMs(eventBytes: number, preset: LoraPreset = EU_NARROW): number {
   return timeOnAirMs(meshcorePacketSize(eventBytes), preset);
 }
+
+/** The airtime a radio has used in a rolling window: what the duty cycle limits. */
+export class AirtimeWindow {
+  readonly #windowMs: number;
+  readonly #sent: { readonly at: number; readonly ms: number }[] = [];
+
+  constructor(windowMs: number) {
+    this.#windowMs = windowMs;
+  }
+
+  /** Notes `ms` of airtime used at `now`. */
+  add(now: number, ms: number): void {
+    this.#sent.push({ at: now, ms });
+  }
+
+  /** The airtime used in the window that ends at `now`, in milliseconds. */
+  usedMs(now: number): number {
+    const start = now - this.#windowMs;
+    while (this.#sent[0] !== undefined && this.#sent[0].at < start) this.#sent.shift();
+    return this.#sent.reduce((total, entry) => total + entry.ms, 0);
+  }
+}

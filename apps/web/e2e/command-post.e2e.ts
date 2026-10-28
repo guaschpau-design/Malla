@@ -2,6 +2,7 @@
 // replicates the server (ADR-0018).
 
 import { expect, test, twoMembers } from './helpers.ts';
+import { SERVER_URL } from './ports.ts';
 
 test('a member cut off from the server keeps talking to the group through the command post', async ({
   browser,
@@ -9,7 +10,7 @@ test('a member cut off from the server keeps talking to the group through the co
   const { ana, berta } = await twoMembers(browser);
 
   // Berta loses the server, as on the scene with no internet; only the post answers.
-  await berta.routeWebSocket('ws://localhost:8787/v1/ws', (socket) => {
+  await berta.routeWebSocket(`${SERVER_URL.replace('http', 'ws')}/v1/ws`, (socket) => {
     void socket.close();
   });
   await berta.reload();

@@ -1,8 +1,7 @@
 import { stateOf } from '@tesel/core';
-import type { NodeId, ShapeEvent, ShapeGeometry } from '@tesel/protocol';
+import { ShapeStyleCode, type NodeId, type ShapeEvent, type ShapeGeometry } from '@tesel/protocol';
 import { describe, expect, it } from 'vitest';
 
-import { DANGER_STYLE } from './catalog.ts';
 import { dangerZones, zonesAt } from './danger-zones.ts';
 
 const ANA = 'a1b2c3d4' as NodeId;
@@ -34,18 +33,22 @@ const around: ShapeGeometry = { kind: 'polygon', points: square };
 describe('danger zones', () => {
   it('are the areas and circles of the danger style, not lines nor other styles', () => {
     const state = stateOf([
-      shape(1, DANGER_STYLE, around),
+      shape(1, ShapeStyleCode.DANGER, around),
       shape(2, 0x0004, around),
-      shape(3, DANGER_STYLE, { kind: 'polyline', points: square }),
+      shape(3, ShapeStyleCode.DANGER, { kind: 'polyline', points: square }),
     ]);
     expect(dangerZones(state).map((zone) => zone.label)).toEqual(['Zona 1']);
   });
 
   it('tell which of them hold a point', () => {
     const state = stateOf([
-      shape(1, DANGER_STYLE, around),
-      shape(2, DANGER_STYLE, { kind: 'circle', center: VALENCIA, radius: 200 }),
-      shape(3, DANGER_STYLE, { kind: 'circle', center: { lat: 39.5, lon: -0.3 }, radius: 200 }),
+      shape(1, ShapeStyleCode.DANGER, around),
+      shape(2, ShapeStyleCode.DANGER, { kind: 'circle', center: VALENCIA, radius: 200 }),
+      shape(3, ShapeStyleCode.DANGER, {
+        kind: 'circle',
+        center: { lat: 39.5, lon: -0.3 },
+        radius: 200,
+      }),
     ]);
     const zones = dangerZones(state);
     expect(zonesAt(zones, VALENCIA).map((zone) => zone.label)).toEqual(['Zona 1', 'Zona 2']);

@@ -9,7 +9,7 @@
   import { aliasOf } from '../members/alias.ts';
   import type { MapTaps } from '../map/taps.ts';
   import { notices } from '../ui/notices.svelte.ts';
-  import { editTask } from './task-editor.svelte.ts';
+  import { editTask } from './task-editor.ts';
   import TaskLayer from './TaskLayer.svelte';
   import { assignedTo, newlyAssigned } from './tasks.ts';
 

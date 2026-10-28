@@ -128,18 +128,14 @@ test('a roll call is answered by each member and followed by its caller', async 
 
 test('an area is drawn point by point and described before it is shared', async ({ browser }) => {
   const { ana } = await twoMembers(browser, VIEW);
-  const box = await ana.locator('.maplibregl-canvas').boundingBox();
-  if (!box) throw new Error('no map');
-  const at = (dx: number, dy: number) =>
-    ana.mouse.click(box.x + box.width / 2 + dx, box.y + box.height / 2 + dy);
 
   await ana.getByRole('button', { name: 'Añadir' }).click();
   await ana.getByRole('menuitem', { name: 'Zona' }).click();
   await expect(ana.getByRole('button', { name: 'Terminar' })).toBeDisabled();
-  await at(-80, -80);
-  await at(80, -80);
-  await at(80, 80);
-  await at(-80, 80);
+  await tapMap(ana, -80, -80);
+  await tapMap(ana, 80, -80);
+  await tapMap(ana, 80, 80);
+  await tapMap(ana, -80, 80);
   await ana.getByRole('button', { name: 'Deshacer' }).click();
   await ana.getByRole('button', { name: 'Terminar' }).click();
   const form = ana.getByRole('dialog', { name: 'Nueva zona' });
@@ -154,18 +150,14 @@ test('an area is drawn point by point and described before it is shared', async 
 
 test('members inside a danger area are warned', async ({ browser }) => {
   const { ana, berta } = await twoMembers(browser, VIEW);
-  const box = await ana.locator('.maplibregl-canvas').boundingBox();
-  if (!box) throw new Error('no map');
-  const at = (dx: number, dy: number) =>
-    ana.mouse.click(box.x + box.width / 2 + dx, box.y + box.height / 2 + dy);
 
   // A square around the centre of the view, which is where both devices are.
   await ana.getByRole('button', { name: 'Añadir' }).click();
   await ana.getByRole('menuitem', { name: 'Zona' }).click();
-  await at(-80, -80);
-  await at(80, -80);
-  await at(80, 80);
-  await at(-80, 80);
+  await tapMap(ana, -80, -80);
+  await tapMap(ana, 80, -80);
+  await tapMap(ana, 80, 80);
+  await tapMap(ana, -80, 80);
   await ana.getByRole('button', { name: 'Terminar' }).click();
   await ana.getByRole('radio', { name: 'Zona de peligro' }).check();
   await ana.getByLabel('Etiqueta (opcional)').fill('Derrumbe');

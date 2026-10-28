@@ -2,13 +2,8 @@
 // first-aid post and a closed path, a medical SOS acknowledged by a teammate, and the team's chat.
 // It is the operation the site's screenshots show; Ana, the coordinator, is the browser.
 
+import { ShapeStyleCode, SymbolCode } from '@tesel/protocol';
 import type { Scenario } from '@tesel/scenario';
-
-// Symbol and style codes: protocol §4.
-const BLOCKED_ROAD = 6;
-const MEETING_POINT = 8;
-const MEDICAL_POST = 9;
-const SEARCH_ASSIGNED = 2;
 
 export const turia: Scenario = {
   name: 'turia',
@@ -35,7 +30,7 @@ export const turia: Scenario = {
       action: {
         type: 'shape',
         id: 'sector-2',
-        style: SEARCH_ASSIGNED,
+        style: ShapeStyleCode.SEARCH_ASSIGNED,
         label: 'Sector 2',
         geometry: {
           kind: 'polygon',
@@ -54,7 +49,7 @@ export const turia: Scenario = {
       action: {
         type: 'marker',
         id: 'meeting-point',
-        symbol: MEETING_POINT,
+        symbol: SymbolCode.MEETING_POINT,
         label: 'Punto de encuentro',
         where: { lat: 39.4794, lon: -0.3763 },
       },
@@ -65,7 +60,7 @@ export const turia: Scenario = {
       action: {
         type: 'marker',
         id: 'first-aid',
-        symbol: MEDICAL_POST,
+        symbol: SymbolCode.MEDICAL_POST,
         label: 'Puesto sanitario',
         where: { lat: 39.4787, lon: -0.3786 },
       },
@@ -76,7 +71,7 @@ export const turia: Scenario = {
       action: {
         type: 'marker',
         id: 'closed-path',
-        symbol: BLOCKED_ROAD,
+        symbol: SymbolCode.BLOCKED_ROAD,
         label: 'Paso cortado',
         where: { lat: 39.4779, lon: -0.3727 },
       },

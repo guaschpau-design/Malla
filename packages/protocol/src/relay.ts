@@ -52,7 +52,12 @@ export interface ServerInfo {
   readonly upstream: string | null;
   /** The base URL shared by this server's command posts (§8.3), or null. */
   readonly commandPost: string | null;
+  /** The server's clock when it answered, in seconds since the epoch; null from servers before it. */
+  readonly time: number | null;
 }
+
+/** §8.1 The body of `healthz` from a healthy server: its information, as it writes it. */
+export type ServerInfoBody = { readonly status: 'ok' } & ServerInfo;
 
 /** §8.1 A server base URL in its comparable form: parsed, with the path ending in `/`. */
 export function serverBaseUrl(url: string): string {
@@ -90,16 +95,9 @@ export function parseServerInfo(text: string): ServerInfo | null {
   if (typeof protocolVersion !== 'number' || upstream === undefined || commandPost === undefined) {
     return null;
   }
-  return { protocolVersion, upstream, commandPost };
-}
-
-/**
- * §8.1 The server's clock in a server information answer, in seconds since the epoch, or null
- * when it gives none (servers before it did).
- */
-export function parseServerTime(text: string): number | null {
-  const time = parseObject(text)?.['time'];
-  return typeof time === 'number' && Number.isFinite(time) && time > 0 ? time : null;
+  const time = object['time'];
+  const clock = typeof time === 'number' && Number.isFinite(time) && time > 0 ? time : null;
+  return { protocolVersion, upstream, commandPost, time: clock };
 }
 
 /** A secure server URL in comparable form, null for none, undefined if invalid. */

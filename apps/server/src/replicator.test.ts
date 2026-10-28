@@ -1,14 +1,15 @@
 // A command post replicating its upstream, both running on random local ports.
 
+import { encodeRelayMessage, parseClientMessage, toBase64url } from '@tesel/protocol';
 import type { FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WebSocketServer } from 'ws';
 
-import { buildApp } from './app.ts';
-import { EnvelopeStore } from './envelope-store.ts';
-import { Relay } from './relay.ts';
+import type { EnvelopeStore } from './envelope-store.ts';
+import type { Relay } from './relay.ts';
 import { Replicator } from './replicator.ts';
 import { TestClient } from './test-client.ts';
+import { listen, testServer } from './test-server.ts';
 
 const GROUP = new Uint8Array(16).fill(7);
 const OTHER_GROUP = new Uint8Array(16).fill(9);
@@ -25,12 +26,10 @@ interface Server {
 const cleanup: (() => Promise<void> | void)[] = [];
 
 async function server(port = 0, upstream = false): Promise<Server> {
-  const store = new EnvelopeStore(':memory:', { upstream });
-  const relay = new Relay(store);
-  const app = await buildApp(store, relay);
-  const url = await app.listen({ host: '127.0.0.1', port });
-  cleanup.push(() => app.close());
-  return { app, store, relay, url };
+  const started = await testServer({ upstream });
+  const url = await listen(started, port);
+  cleanup.push(() => started.app.close());
+  return { ...started, url };
 }
 
 function replicate(post: Server, upstream: string, maxLinks = 100): void {
@@ -174,6 +173,58 @@ describe('replicator', () => {
     await expect.poll(() => replaced.store.lastCursor(GROUP), { timeout: 10_000 }).toBe(3);
     expect(post.store.upstreamStore(GROUP)).toBe(replaced.store.id);
     expect(post.store.lastCursor(GROUP)).toBe(3);
+  });
+
+  it('counts an envelope its upstream refuses for good as delivered, so the rest still go', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const pushed: string[] = [];
+    const upstream = new WebSocketServer({ host: '127.0.0.1', port: 0 });
+    cleanup.push(
+      () =>
+        new Promise<void>((resolve) => {
+          upstream.close(() => {
+            resolve();
+          });
+        }),
+    );
+    // It refuses the first envelope as malformed and stores the second.
+    upstream.on('connection', (socket) => {
+      socket.on('message', (data: Buffer) => {
+        const message = parseClientMessage(data.toString());
+        if (!message.ok) return;
+        if (message.value.t === 'join') {
+          socket.send(
+            encodeRelayMessage({
+              t: 'synced',
+              cursor: 0,
+              store: toBase64url(new Uint8Array(16).fill(3)),
+            }),
+          );
+        } else if (message.value.t === 'push') {
+          const { key } = message.value;
+          pushed.push(toBase64url(key));
+          socket.send(
+            encodeRelayMessage(
+              pushed.length === 1 ? { t: 'error', code: 'bad-request', key } : { t: 'stored', key },
+            ),
+          );
+        }
+      });
+    });
+    await new Promise((resolve) => upstream.once('listening', resolve));
+    const { port } = upstream.address() as { port: number };
+
+    const post = await server(0, true);
+    const atPost = await member(post.url);
+    await atPost.next();
+    for (const n of [1, 2]) {
+      atPost.send({ t: 'push', key: key(n), env: env(n) });
+      await atPost.next();
+    }
+    replicate(post, `http://127.0.0.1:${String(port)}`);
+
+    await expect.poll(() => pushed).toEqual([toBase64url(key(1)), toBase64url(key(2))]);
+    await expect.poll(() => post.store.nextPendingUpstream(GROUP)).toBeNull();
   });
 
   it('drops an upstream that sends frames larger than the protocol allows', async () => {

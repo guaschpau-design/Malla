@@ -87,20 +87,20 @@ export async function openTileStore(
 }
 
 class IndexedDbTileStore implements TileStore {
-  private readonly db: IDBPDatabase<MapDb>;
+  readonly #db: IDBPDatabase<MapDb>;
   /** Tiles seen since the room they take was last checked. */
-  private viewedSinceCheck = 0;
+  #viewedSinceCheck = 0;
 
   constructor(db: IDBPDatabase<MapDb>) {
-    this.db = db;
+    this.#db = db;
   }
 
   async getTile(source: TileSourceId, tile: TileCoord): Promise<ArrayBuffer | undefined> {
-    return (await this.db.get('tiles', storageKey(source, tile)))?.data;
+    return (await this.#db.get('tiles', storageKey(source, tile)))?.data;
   }
 
   async putTiles(owner: string, source: TileSourceId, tiles: readonly StoredTile[]): Promise<void> {
-    const tx = this.db.transaction(['tiles', 'viewed'], 'readwrite');
+    const tx = this.#db.transaction(['tiles', 'viewed'], 'readwrite');
     const store = tx.objectStore('tiles');
     await Promise.all([
       ...tiles.map(async ({ tile, data }) => {
@@ -119,7 +119,7 @@ class IndexedDbTileStore implements TileStore {
     source: TileSourceId,
     tiles: readonly TileCoord[],
   ): Promise<KeptTiles> {
-    const tx = this.db.transaction(['tiles', 'viewed'], 'readwrite');
+    const tx = this.#db.transaction(['tiles', 'viewed'], 'readwrite');
     const store = tx.objectStore('tiles');
     const sizes = await Promise.all(
       tiles.map(async (tile) => {
@@ -142,7 +142,7 @@ class IndexedDbTileStore implements TileStore {
 
   async keepViewed(source: TileSourceId, tile: TileCoord, data: ArrayBuffer): Promise<void> {
     try {
-      const tx = this.db.transaction(['tiles', 'viewed'], 'readwrite');
+      const tx = this.#db.transaction(['tiles', 'viewed'], 'readwrite');
       const key = storageKey(source, tile);
       if ((await tx.objectStore('tiles').getKey(key)) === undefined) {
         await Promise.all([
@@ -151,28 +151,28 @@ class IndexedDbTileStore implements TileStore {
         ]);
       }
       await tx.done;
-      if (++this.viewedSinceCheck >= VIEWED_CHECK_EVERY) {
-        this.viewedSinceCheck = 0;
-        await this.forgetViewed(VIEWED_BYTES);
+      if (++this.#viewedSinceCheck >= VIEWED_CHECK_EVERY) {
+        this.#viewedSinceCheck = 0;
+        await this.#forgetViewed(VIEWED_BYTES);
       }
     } catch (error) {
       console.warn('Keeping a tile seen failed', error);
       // Tiles seen are the first to go when the storage is full: the group's log needs the room.
-      if (isStorageFull(error)) await this.forgetViewed(0).catch(() => undefined);
+      if (isStorageFull(error)) await this.#forgetViewed(0).catch(() => undefined);
     }
   }
 
   async saveArea(area: OfflineArea): Promise<void> {
-    await this.db.put('areas', area);
+    await this.#db.put('areas', area);
   }
 
   async listAreas(): Promise<OfflineArea[]> {
-    const areas = await this.db.getAll('areas');
+    const areas = await this.#db.getAll('areas');
     return areas.sort((a, b) => b.createdAt - a.createdAt);
   }
 
   async deleteArea(area: OfflineArea): Promise<void> {
-    const tx = this.db.transaction(['tiles', 'areas'], 'readwrite');
+    const tx = this.#db.transaction(['tiles', 'areas'], 'readwrite');
     const tiles = tx.objectStore('tiles');
     for (const { source, maxZoom } of area.layers) {
       for (const coord of tilesInBounds(area.bounds, area.minZoom, maxZoom)) {
@@ -189,8 +189,8 @@ class IndexedDbTileStore implements TileStore {
   }
 
   /** Forgets the tiles seen longest ago, until those left take at most `room` bytes. */
-  private async forgetViewed(room: number): Promise<void> {
-    const tx = this.db.transaction(['tiles', 'viewed'], 'readwrite');
+  async #forgetViewed(room: number): Promise<void> {
+    const tx = this.#db.transaction(['tiles', 'viewed'], 'readwrite');
     const viewed = tx.objectStore('viewed');
     const [keys, entries] = await Promise.all([viewed.getAllKeys(), viewed.getAll()]);
     const seen = entries

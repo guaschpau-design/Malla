@@ -38,7 +38,7 @@
     drawing: Drawing;
     tool: MapTool | null;
     /** Drawing or a tool takes taps on the map: incidents and offers wait. */
-    tapping: boolean;
+    drawingOrMeasuring: boolean;
     /** Weather warnings, while their layer is shown. */
     weather: WeatherFeed | null;
     offline: OfflineMaps;
@@ -57,7 +57,7 @@
     slices,
     drawing,
     tool,
-    tapping,
+    drawingOrMeasuring,
     weather,
     offline,
     onclosetool,
@@ -77,7 +77,7 @@
 </script>
 
 <div class="top">
-  {#if drawing.draft && drawing.tapping}
+  {#if drawing.draft && drawing.placingPoints}
     <DrawLayer
       {map}
       {taps}
@@ -105,7 +105,7 @@
   {/if}
   <!-- While a drawing or a measure takes the taps, the cards in "aside" step out of the way. They
        stay mounted, so what they hold lasts: the cards a member closed, a download under way. -->
-  <div class="aside" hidden={tapping}>
+  <div class="aside" hidden={drawingOrMeasuring}>
     {#if group}
       <IncidentBanners
         {t}
@@ -138,7 +138,7 @@
       />
     {/key}
   {/if}
-  <div class="aside" hidden={tapping}>
+  <div class="aside" hidden={drawingOrMeasuring}>
     {#if weather}
       <WeatherCard {t} {locale} {weather} />
     {/if}

@@ -112,6 +112,16 @@ export function boundsAround(points: readonly LatLon[]): Bounds {
   };
 }
 
+/** Whether a point is within the bounds, edges included. */
+export function containsPoint(bounds: Bounds, at: LatLon): boolean {
+  return (
+    at.lon >= bounds.west &&
+    at.lon <= bounds.east &&
+    at.lat >= bounds.south &&
+    at.lat <= bounds.north
+  );
+}
+
 /** Whether `outer` holds all of `inner`. */
 export function containsBounds(outer: Bounds, inner: Bounds): boolean {
   return (

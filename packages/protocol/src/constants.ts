@@ -50,6 +50,21 @@ export const SECRET_KEY_SIZE = 32;
 /** §1 A coordinate pair (lat, lon) on the wire. */
 export const POINT_SIZE = 8;
 
+/** §3.4, §3.8 Units per metre of `accuracy`: whole metres. */
+export const ACCURACY_SCALE = 1;
+/** §3.4 Units per metre per second of `speed`: centimetres per second. */
+export const SPEED_SCALE = 100;
+/** §3.4 `heading` in whole degrees, below this. */
+export const FULL_TURN_DEGREES = 360;
+
+/** Sizes of fields that limit how long the texts after them can be (§3.6, §3.8, §3.9, §3.11). */
+export const SYMBOL_SIZE = 2;
+export const KIND_SIZE = 1;
+export const ACCURACY_SIZE = 2;
+
+/** §3.11 TASK.place: none, or a point; reserved values read as none. */
+export const PlaceCode = { NONE: 0, POINT: 1 } as const;
+
 /** §3.3 Alias length in bytes. */
 export const ALIAS_MIN_BYTES = 1;
 export const ALIAS_MAX_BYTES = 32;
@@ -59,6 +74,34 @@ export const SHAPE_LABEL_MAX_BYTES = 32;
 
 /** §3.7 Shape kind codes. */
 export const ShapeKindCode = { POLYLINE: 1, POLYGON: 2, CIRCLE: 3 } as const;
+
+/** §4.1 MARKER.symbol: the civil symbol set. Receivers show an unknown code as a generic point. */
+export const SymbolCode = {
+  GENERIC: 0x0000,
+  INJURED: 0x0001,
+  MISSING: 0x0002,
+  FIRE: 0x0003,
+  FLOOD: 0x0004,
+  HAZARD: 0x0005,
+  BLOCKED_ROAD: 0x0006,
+  SHELTER: 0x0007,
+  MEETING_POINT: 0x0008,
+  MEDICAL_POST: 0x0009,
+  WATER: 0x000a,
+  HELICOPTER: 0x000b,
+  COMMAND_POST: 0x000c,
+} as const;
+
+/** §4.2 SHAPE.style. Receivers show an unknown code as neutral. */
+export const ShapeStyleCode = {
+  NEUTRAL: 0x0000,
+  DANGER: 0x0001,
+  SEARCH_ASSIGNED: 0x0002,
+  SEARCH_CLEARED: 0x0003,
+  SAFE: 0x0004,
+  ROUTE: 0x0005,
+  OPERATION_AREA: 0x0006,
+} as const;
 
 // The codes of the enumerated fields. §3.1: a reserved code decodes to the field's default (named
 // in each), so that newer senders never make older receivers drop information.

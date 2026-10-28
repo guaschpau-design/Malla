@@ -1,9 +1,7 @@
 import { parseServerInfo } from '@tesel/protocol';
 import { describe, expect, it, vi } from 'vitest';
 
-import { buildApp } from './app.ts';
-import { EnvelopeStore } from './envelope-store.ts';
-import { Relay } from './relay.ts';
+import { testServer } from './test-server.ts';
 
 const OPTIONS = {
   webRoot: null,
@@ -13,32 +11,26 @@ const OPTIONS = {
   trustedProxies: [],
 };
 
-async function app(options = OPTIONS) {
-  const store = new EnvelopeStore(':memory:');
-  return { store, app: await buildApp(store, new Relay(store), options) };
+function app(options = OPTIONS) {
+  return testServer({ app: options });
 }
 
 describe('server', () => {
   it('reports health, the protocol version it speaks and its clock', async () => {
-    const store = new EnvelopeStore(':memory:');
-    const server = await buildApp(store, new Relay(store));
+    const { app: server } = await testServer();
     const response = await server.inject({ method: 'GET', url: '/healthz' });
     expect(response.statusCode).toBe(200);
     expect(response.headers['access-control-allow-origin']).toBe('*');
-    expect(parseServerInfo(response.body)).toEqual({
-      protocolVersion: 1,
-      upstream: null,
-      commandPost: null,
-    });
-    const { time } = response.json<{ time: number }>();
-    expect(Math.abs(time - Date.now() / 1000)).toBeLessThan(5);
+    const info = parseServerInfo(response.body);
+    expect(info).toMatchObject({ protocolVersion: 1, upstream: null, commandPost: null });
+    expect(Math.abs((info?.time ?? 0) - Date.now() / 1000)).toBeLessThan(5);
     await server.close();
   });
 
   it('tells clients about its command posts and its upstream', async () => {
     const { app: server } = await app();
     const response = await server.inject({ method: 'GET', url: '/healthz' });
-    expect(parseServerInfo(response.body)).toEqual({
+    expect(parseServerInfo(response.body)).toMatchObject({
       protocolVersion: 1,
       upstream: 'https://tesel.example/',
       commandPost: 'https://post.tesel.example/',

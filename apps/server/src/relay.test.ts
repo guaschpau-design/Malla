@@ -3,11 +3,11 @@
 import type { FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { buildApp } from './app.ts';
-import { EnvelopeStore } from './envelope-store.ts';
+import type { EnvelopeStore } from './envelope-store.ts';
 import { DEFAULT_LIMITS } from './relay-limits.ts';
-import { Relay, type RelayOptions } from './relay.ts';
+import type { RelayOptions } from './relay.ts';
 import { TestClient as Client } from './test-client.ts';
+import { listen, testServer } from './test-server.ts';
 
 const GROUP = new Uint8Array(16).fill(7);
 const OTHER_GROUP = new Uint8Array(16).fill(8);
@@ -41,9 +41,10 @@ interface Server {
 }
 
 async function start(options: RelayOptions = {}): Promise<Server> {
-  const store = new EnvelopeStore(':memory:');
-  app = await buildApp(store, new Relay(store, options));
-  const address = await app.listen({ host: '127.0.0.1', port: 0 });
+  const server = await testServer({ relay: options });
+  app = server.app;
+  const { store } = server;
+  const address = await listen(server);
   const url = `${address.replace('http', 'ws')}/v1/ws`;
   const connect = async () => {
     const client = await Client.connect(url);
@@ -303,16 +304,10 @@ describe('relay limits', () => {
   });
 
   it('counts the address a trusted proxy names, not the proxy', async () => {
-    const store = new EnvelopeStore(':memory:');
     const limits = { ...DEFAULT_LIMITS, maxConnectionsPerAddress: 1 };
-    app = await buildApp(store, new Relay(store, { limits }), {
-      webRoot: null,
-      upstream: null,
-      commandPost: null,
-      weather: null,
-      trustedProxies: ['loopback'],
-    });
-    const url = `${(await app.listen({ host: '127.0.0.1', port: 0 })).replace('http', 'ws')}/v1/ws`;
+    const server = await testServer({ relay: { limits }, app: { trustedProxies: ['loopback'] } });
+    app = server.app;
+    const url = `${(await listen(server)).replace('http', 'ws')}/v1/ws`;
     const from = async (address: string) => {
       const client = await Client.connect(url, { 'X-Forwarded-For': address });
       clients.push(client);

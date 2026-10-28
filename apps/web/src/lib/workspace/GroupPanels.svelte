@@ -11,7 +11,7 @@
   import { radio } from '../radio/radio.svelte.ts';
   import type { Preferences } from '../settings/preferences.ts';
   import type { GroupFeed } from '../sync/group-feed.svelte.ts';
-  import { newTask } from '../tasks/task-editor.svelte.ts';
+  import { newTask } from '../tasks/task-editor.ts';
   import TasksPanel from '../tasks/TasksPanel.svelte';
   import type { TaskFields } from '../tasks/tasks.ts';
   import { closePanel, isOpen, panels } from '../ui/panels.svelte.ts';

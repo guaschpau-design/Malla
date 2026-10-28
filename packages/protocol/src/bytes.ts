@@ -41,38 +41,38 @@ function decodeUtf8(bytes: Uint8Array): string {
 }
 
 export class ByteWriter {
-  private readonly bytes: number[] = [];
+  readonly #bytes: number[] = [];
 
   u8(value: number): this {
-    this.checkInteger(value, 0, 0xff, 'u8');
-    this.bytes.push(value);
+    this.#checkInteger(value, 0, 0xff, 'u8');
+    this.#bytes.push(value);
     return this;
   }
 
   u16(value: number): this {
-    this.checkInteger(value, 0, 0xffff, 'u16');
-    this.bytes.push(value & 0xff, value >>> 8);
+    this.#checkInteger(value, 0, 0xffff, 'u16');
+    this.#bytes.push(value & 0xff, value >>> 8);
     return this;
   }
 
   u32(value: number): this {
-    this.checkInteger(value, 0, 0xffffffff, 'u32');
-    this.bytes.push(value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, value >>> 24);
+    this.#checkInteger(value, 0, 0xffffffff, 'u32');
+    this.#bytes.push(value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, value >>> 24);
     return this;
   }
 
   i16(value: number): this {
-    this.checkInteger(value, -0x8000, 0x7fff, 'i16');
+    this.#checkInteger(value, -0x8000, 0x7fff, 'i16');
     return this.u16(value & 0xffff);
   }
 
   i32(value: number): this {
-    this.checkInteger(value, -0x80000000, 0x7fffffff, 'i32');
+    this.#checkInteger(value, -0x80000000, 0x7fffffff, 'i32');
     return this.u32(value >>> 0);
   }
 
   raw(data: Uint8Array): this {
-    for (const byte of data) this.bytes.push(byte);
+    for (const byte of data) this.#bytes.push(byte);
     return this;
   }
 
@@ -89,14 +89,14 @@ export class ByteWriter {
   }
 
   get length(): number {
-    return this.bytes.length;
+    return this.#bytes.length;
   }
 
   toBytes(): Uint8Array {
-    return Uint8Array.from(this.bytes);
+    return Uint8Array.from(this.#bytes);
   }
 
-  private checkInteger(value: number, min: number, max: number, kind: string): void {
+  #checkInteger(value: number, min: number, max: number, kind: string): void {
     if (!Number.isInteger(value) || value < min || value > max) {
       throw new ProtocolFailure('invalid-value', `${String(value)} does not fit in ${kind}`);
     }
@@ -104,15 +104,15 @@ export class ByteWriter {
 }
 
 export class ByteReader {
-  private readonly data: Uint8Array;
-  private offset = 0;
+  readonly #data: Uint8Array;
+  #offset = 0;
 
   constructor(data: Uint8Array) {
-    this.data = data;
+    this.#data = data;
   }
 
   get remaining(): number {
-    return this.data.length - this.offset;
+    return this.#data.length - this.#offset;
   }
 
   u8(): number {
@@ -176,8 +176,8 @@ export class ByteReader {
     if (length > this.remaining) {
       throw new ProtocolFailure('truncated', `needed ${length} bytes, ${this.remaining} left`);
     }
-    const slice = this.data.subarray(this.offset, this.offset + length);
-    this.offset += length;
+    const slice = this.#data.subarray(this.#offset, this.#offset + length);
+    this.#offset += length;
     return slice;
   }
 }

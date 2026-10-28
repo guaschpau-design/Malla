@@ -5,14 +5,17 @@
 
 import { ByteReader, ByteWriter, ProtocolFailure } from './bytes.ts';
 import {
+  ACCURACY_SCALE,
   ALIAS_MAX_BYTES,
   ALIAS_MIN_BYTES,
   AlertLevelCode,
   EventTypeCode,
+  FULL_TURN_DEGREES,
   PUBLIC_KEY_SIZE,
   RoleCode,
   SHAPE_LABEL_MAX_BYTES,
   SosKindCode,
+  SPEED_SCALE,
   TaskStatusCode,
   UNKNOWN_U16,
 } from './constants.ts';
@@ -75,19 +78,21 @@ export const PAYLOADS: { readonly [K in EventType]: PayloadCodec<EventOfType<K>>
     code: EventTypeCode.POSITION,
     write(writer, event) {
       writePoint(writer, event);
-      writeMeasurement(writer, event.accuracy, 1);
-      writer.u16(event.heading === null ? UNKNOWN_U16 : Math.round(event.heading) % 360);
-      writeMeasurement(writer, event.speed, 100);
+      writeMeasurement(writer, event.accuracy, ACCURACY_SCALE);
+      writer.u16(
+        event.heading === null ? UNKNOWN_U16 : Math.round(event.heading) % FULL_TURN_DEGREES,
+      );
+      writeMeasurement(writer, event.speed, SPEED_SCALE);
     },
     read(reader, header) {
       const point = readPoint(reader);
-      const accuracy = readMeasurement(reader, 1);
+      const accuracy = readMeasurement(reader, ACCURACY_SCALE);
       const rawHeading = reader.u16();
-      if (rawHeading !== UNKNOWN_U16 && rawHeading > 359) {
+      if (rawHeading !== UNKNOWN_U16 && rawHeading >= FULL_TURN_DEGREES) {
         throw new ProtocolFailure('invalid-value', `heading ${rawHeading}`);
       }
       const heading = rawHeading === UNKNOWN_U16 ? null : rawHeading;
-      const speed = readMeasurement(reader, 100);
+      const speed = readMeasurement(reader, SPEED_SCALE);
       return { ...header, type: 'position', ...point, accuracy, heading, speed };
     },
   },
@@ -158,13 +163,13 @@ export const PAYLOADS: { readonly [K in EventType]: PayloadCodec<EventOfType<K>>
     write(writer, event) {
       writer.u8(enumCode(SosKindCode, event.kind, 'SOS kind'));
       writePoint(writer, event);
-      writeMeasurement(writer, event.accuracy, 1);
+      writeMeasurement(writer, event.accuracy, ACCURACY_SCALE);
       writeTextRest(writer, event.text, 0, SOS_TEXT_MAX_BYTES, 'SOS text');
     },
     read(reader, header) {
       const kind = enumValue(SosKindCode, reader.u8(), 'general');
       const point = readPoint(reader);
-      const accuracy = readMeasurement(reader, 1);
+      const accuracy = readMeasurement(reader, ACCURACY_SCALE);
       const text = reader.textRest(0, SOS_TEXT_MAX_BYTES, 'SOS text');
       return { ...header, type: 'sos', kind, ...point, accuracy, text };
     },

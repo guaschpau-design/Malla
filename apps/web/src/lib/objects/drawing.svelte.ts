@@ -9,8 +9,8 @@ export class Drawing {
   draft: Draft | null = $state.raw(null);
   describing = $state(false);
 
-  /** Tapping points, before describing. */
-  get tapping(): boolean {
+  /** Placing its points on the map, before describing. */
+  get placingPoints(): boolean {
     return this.draft !== null && !this.describing;
   }
 

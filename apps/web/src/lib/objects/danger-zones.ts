@@ -2,10 +2,9 @@
 // device warns its user on entering one, from its own position, with no network needed.
 
 import { distanceMeters, type GroupState } from '@tesel/core';
-import type { LatLon, ShapeGeometry } from '@tesel/protocol';
+import { ShapeStyleCode, type LatLon, type ShapeGeometry } from '@tesel/protocol';
 
 import { insideRing, toPosition } from '../map/geometry.ts';
-import { DANGER_STYLE } from './catalog.ts';
 
 export interface DangerZone {
   /** The object's reference key. */
@@ -18,7 +17,7 @@ export interface DangerZone {
 export function dangerZones(state: GroupState): DangerZone[] {
   const zones: DangerZone[] = [];
   for (const [key, record] of state.objects) {
-    if (record.type !== 'shape' || record.style !== DANGER_STYLE) continue;
+    if (record.type !== 'shape' || record.style !== ShapeStyleCode.DANGER) continue;
     const { geometry } = record;
     if (geometry.kind !== 'polyline') zones.push({ key, label: record.label, geometry });
   }

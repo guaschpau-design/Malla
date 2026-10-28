@@ -153,8 +153,7 @@ export class RelayClient {
     this.#round += 1;
     this.#pushes.clear();
     this.#clearTimers();
-    this.#socket?.close();
-    this.#socket = null;
+    if (this.#socket !== null) this.#drop(this.#socket);
     this.#setStatus('disconnected');
   }
 
@@ -202,9 +201,7 @@ export class RelayClient {
     this.#batch = null;
     this.#connectTimer = setTimeout(() => {
       this.#connectTimer = null;
-      this.#socket = null;
-      socket.close();
-      this.#lost(false);
+      if (this.#drop(socket)) this.#lost(false);
     }, CONNECT_TIMEOUT_MS);
     /** The store this link reads from, as far as this device knows. */
     let store: string | null = null;
@@ -234,10 +231,7 @@ export class RelayClient {
       this.#enqueue(socket, () => this.#handle(message, { socket, relay, store }));
     };
     socket.onclose = () => {
-      if (this.#socket !== socket) return;
-      this.#socket = null;
-      this.#clearConnectTimer();
-      this.#lost(this.#status === 'synced');
+      if (this.#drop(socket)) this.#lost(this.#status === 'synced');
     };
   }
 
@@ -248,10 +242,7 @@ export class RelayClient {
       socket.send(encodeRelayMessage({ t: 'ping' }));
       this.#heartbeat = setTimeout(() => {
         this.#heartbeat = null;
-        if (this.#socket !== socket) return;
-        this.#socket = null;
-        socket.close();
-        this.#lost(this.#status === 'synced');
+        if (this.#drop(socket)) this.#lost(this.#status === 'synced');
       }, PONG_TIMEOUT_MS);
     }, QUIET_MS);
   }
@@ -263,12 +254,22 @@ export class RelayClient {
 
   /** Joins the same relay again at once, from the position the handlers now give. */
   #rejoin(socket: SocketLike): void {
-    if (this.#socket !== socket) return;
-    this.#clearHeartbeat();
-    this.#socket = null;
-    socket.close();
+    if (!this.#drop(socket)) return;
     this.#pushes.clear();
     this.#connect();
+  }
+
+  /**
+   * Lets go of a link: it is closed and no longer the one in use, and its timers stop. Returns
+   * false if it already was let go, so whatever let go of it first decides what comes next.
+   */
+  #drop(socket: SocketLike): boolean {
+    if (this.#socket !== socket) return false;
+    this.#socket = null;
+    this.#clearConnectTimer();
+    this.#clearHeartbeat();
+    socket.close();
+    return true;
   }
 
   /** A link that had synced starts a new round; one that never did gives way to the next relay. */
@@ -338,10 +339,7 @@ export class RelayClient {
       .then(() => (this.#socket === socket ? task() : undefined))
       .catch((error: unknown) => {
         console.warn('Relay message handling failed', error);
-        if (this.#socket !== socket) return;
-        this.#socket = null;
-        socket.close();
-        this.#lost(true);
+        if (this.#drop(socket)) this.#lost(true);
       });
   }
 

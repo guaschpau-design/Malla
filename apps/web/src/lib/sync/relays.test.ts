@@ -12,6 +12,7 @@ const info = (fields: Partial<ServerInfo> = {}): ServerInfo => ({
   protocolVersion: 1,
   upstream: null,
   commandPost: null,
+  time: null,
   ...fields,
 });
 

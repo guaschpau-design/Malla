@@ -2,9 +2,9 @@
 
 Stores and relays encrypted envelopes for groups ([`docs/protocol.md`](../../docs/protocol.md) §8), and serves the landing page and the web app from the same origin ([ADR-0017](../../docs/decisions/0017-server-serves-site-and-app.md)). It never sees plaintext. The same program runs on the VPS and as a command post that replicates it ([ADR-0018](../../docs/decisions/0018-command-post.md)).
 
-Runs TypeScript directly with Node's built-in type stripping (Node 22.18 or later); there is no build step.
+Runs TypeScript directly with Node's built-in type stripping (Node 22.18 or later; the image runs Node 24); there is no build step.
 
-A setting set to nothing counts as left out and takes its default. On a VPS or a command post, the settings go in `/opt/tesel/.env`, which the server reads whole.
+A setting set to nothing counts as left out and takes its default. A list that should be empty says `none` (`off` for the weather). On a VPS or a command post, the settings go in `/opt/tesel/.env`, which the server reads whole.
 
 | Variable                           | Default                | Meaning                                                                                                                                 |
 | ---------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
@@ -13,8 +13,8 @@ A setting set to nothing counts as left out and takes its default. On a VPS or a
 | `TESEL_DB`                         | `data/tesel.db`        | SQLite database file, or `:memory:`                                                                                                     |
 | `TESEL_RETENTION_DAYS`             | `30`                   | Envelopes older than this are deleted, except those a command post has not uploaded yet                                                 |
 | `TESEL_WEB_ROOT`                   | none                   | Folder with the landing page and the built app under `app/`; the image sets it                                                          |
-| `TESEL_UPSTREAM`                   | none                   | On a command post: the server it replicates (§8.2)                                                                                      |
-| `TESEL_COMMAND_POST`               | none                   | On an internet server: the name of its command posts, announced to apps (§8.3)                                                          |
+| `TESEL_UPSTREAM`                   | none                   | On a command post: the server it replicates (§8.2), an `https` URL                                                                      |
+| `TESEL_COMMAND_POST`               | none                   | On an internet server: the `https` address shared by its command posts, announced to apps (§8.3)                                        |
 | `TESEL_WEATHER`                    | `ES,PT`                | Countries whose official weather warnings it gathers and serves (§8.4), or `off`                                                        |
 | `TESEL_WEATHER_MAX_AGE_MINUTES`    | `70`                   | Warnings gathered longer ago than this are no longer served: gathering failed for an hour past its 10-minute interval                   |
 | `TESEL_MAX_CONNECTIONS`            | `10000`                | Open WebSocket connections at most; more are refused with `503`                                                                         |

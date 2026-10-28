@@ -99,9 +99,9 @@
   const drawing = new Drawing();
   let tool: MapTool | null = $state.raw(null);
   /** Drawing or a tool: taps on the map add points instead of opening what they hit. */
-  const tapping = $derived(drawing.draft !== null || tool !== null);
+  const drawingOrMeasuring = $derived(drawing.draft !== null || tool !== null);
   /** Every tap on the map goes to one owner: the tool in use, or what is drawn on top. */
-  const taps = new MapTaps(() => !tapping);
+  const taps = new MapTaps(() => !drawingOrMeasuring);
   /** The group's state slice by slice: each layer redraws only when its own slices change. */
   const slices = stateSlices(() => group?.feed.state ?? EMPTY_STATE);
   /** Which map layers are shown, by layer. */
@@ -178,7 +178,7 @@
 
   onMount(() =>
     onLongPress(map, (at) => {
-      if (!tapping) inspect(at);
+      if (!drawingOrMeasuring) inspect(at);
     }),
   );
 
@@ -314,7 +314,7 @@
   {slices}
   {drawing}
   {tool}
-  {tapping}
+  {drawingOrMeasuring}
   weather={shown.weather ? weather : null}
   {offline}
   onclosetool={() => (tool = null)}
@@ -352,5 +352,5 @@
   {preferences}
   {locale}
   tasksForMe={group ? myPendingCount(group.feed.state, group.self) : 0}
-  {tapping}
+  {drawingOrMeasuring}
 />

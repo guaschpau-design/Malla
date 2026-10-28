@@ -43,7 +43,7 @@ These rules apply to every contributor — people and AI assistants alike. They 
 - One logical change per pull request. If the description needs the word "and" twice, split it.
 - The description says **what** changed and **why**. Link the issue or ADR.
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/): `feat(core): thin positions before LoRa send`.
-- CI must be green: format, lint, type check, tests, build. Nothing merges red.
+- CI must be green: format, lint, unused code (knip), type check, unit tests and build (`pnpm check`), the end-to-end tests in Chromium (`pnpm test:e2e`), and a start of the server image locked down as on a server. Nothing merges red.
 
 ## 7. Style
 
@@ -52,6 +52,7 @@ Automated, so there is nothing to argue about:
 - Formatting: Prettier. Run `pnpm format`.
 - Linting: ESLint with `typescript-eslint` strict rules. Run `pnpm lint`.
 - Types: TypeScript strict mode, including `noUncheckedIndexedAccess`. Run `pnpm typecheck`.
+- Unused code: [knip](https://knip.dev) fails on files, exports and dependencies that nothing uses, so dead code cannot pile up. Run `pnpm knip`. `knip.json` tells it the web app's entry points (tests, scripts, end-to-end tests). When it flags something nothing uses, delete it (§4).
 - Naming: `camelCase` for values and functions, `PascalCase` for types and components, `SCREAMING_SNAKE_CASE` for protocol constants. Files are `kebab-case.ts`.
 
 ## 8. Releases
@@ -70,9 +71,10 @@ pnpm dev            # run the web app and the server locally
 pnpm test           # run unit tests
 pnpm test:e2e       # run end-to-end tests in a real browser (needs Playwright's Chromium)
 pnpm lint           # lint
+pnpm knip           # find unused files, exports and dependencies
 pnpm typecheck      # type-check every package
 pnpm format         # format everything
-pnpm check          # everything CI runs
+pnpm check          # what CI checks, except the end-to-end tests and the server image
 ```
 
 ## 10. Licence

@@ -2,14 +2,15 @@
      with. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
-  import type { EventRef, LatLon, NodeId } from '@tesel/protocol';
+  import type { AlertLevel, EventRef, LatLon, NodeId } from '@tesel/protocol';
   import { SvelteSet } from 'svelte/reactivity';
 
   import { formatTime } from '../format.ts';
   import type { Locale, Translate } from '../i18n/index.ts';
   import { confirmations } from '../ui/confirmations.svelte.ts';
+  import MapCard from '../ui/MapCard.svelte';
   import { clockEvery } from '../ui/now.svelte.ts';
-  import { activeSos, openRollCall, recentAlerts } from './incidents.ts';
+  import { activeSos, alertsToShow, rollCallToShow } from './incidents.ts';
   import { ALERT_LEVELS, SOS_KINDS } from './sos-kinds.ts';
 
   interface Props {
@@ -42,23 +43,20 @@
     onneedhelp,
   }: Props = $props();
 
-  /** Alerts are shown for an hour, or until dismissed on this device. */
-  const ALERT_WINDOW_S = 60 * 60;
+  /** Alerts and roll calls closed on this device. */
   const dismissed = new SvelteSet<string>();
   const now = clockEvery(60_000);
 
   const calls = $derived(activeSos(groupState, self));
-  const alerts = $derived(
-    recentAlerts(groupState, self, now.seconds - ALERT_WINDOW_S).filter(
-      (alert) => !dismissed.has(alert.key) && !(alert.event.level === 'critical' && alert.bySelf),
-    ),
-  );
-  /** The open roll call, while this member has to answer it or its caller follows the answers. */
-  const rollCall = $derived.by(() => {
-    const open = openRollCall(groupState, self, now.seconds);
-    if (open === null || dismissed.has(open.key)) return null;
-    return open.mine || !open.answeredBySelf ? open : null;
-  });
+  const alerts = $derived(alertsToShow(groupState, self, now.seconds, dismissed));
+  const rollCall = $derived(rollCallToShow(groupState, self, now.seconds, dismissed));
+
+  /** The colour of each alert level's edge. */
+  const LEVEL_EDGES: Readonly<Record<AlertLevel, string>> = {
+    critical: 'var(--danger)',
+    warning: 'var(--warning)',
+    info: 'var(--info)',
+  };
 
   async function cancel(sos: EventRef): Promise<void> {
     const text = t('confirmCancelSos');
@@ -69,8 +67,8 @@
 <div class="banners">
   {#each calls as call (call.key)}
     {@const where = call.where}
-    <section class="map-card edged sos" aria-label="SOS">
-      <strong>SOS · {call.author} · {t(SOS_KINDS[call.event.kind])}</strong>
+    <MapCard label="SOS" edge="var(--danger)">
+      <strong class="caller">SOS · {call.author} · {t(SOS_KINDS[call.event.kind])}</strong>
       <span class="when">{formatTime(call.event.time * 1000, locale)}</span>
       {#if call.event.text}<p>{call.event.text}</p>{/if}
       {#if where.kind === 'shared'}
@@ -110,11 +108,11 @@
           >
         {/if}
       </div>
-    </section>
+    </MapCard>
   {/each}
   {#if rollCall}
     {@const call = rollCall}
-    <section class="map-card edged roll-call" aria-label={t('rollCall')}>
+    <MapCard label={t('rollCall')} edge="var(--info)">
       <strong>{t('rollCall')} · {call.caller}</strong>
       <span class="when">{formatTime(call.event.time * 1000, locale)}</span>
       <p class="question">{call.event.text || t('rollCallQuestion')}</p>
@@ -144,13 +142,10 @@
           <button class="danger" onclick={onneedhelp}>{t('needHelp')}</button>
         </div>
       {/if}
-    </section>
+    </MapCard>
   {/if}
   {#each alerts as alert (alert.key)}
-    <section
-      class="map-card edged level-{alert.event.level}"
-      aria-label={t(ALERT_LEVELS[alert.event.level])}
-    >
+    <MapCard label={t(ALERT_LEVELS[alert.event.level])} edge={LEVEL_EDGES[alert.event.level]}>
       <strong>{t(ALERT_LEVELS[alert.event.level])} · {alert.author}</strong>
       <span class="when">{formatTime(alert.event.time * 1000, locale)}</span>
       <p>{alert.event.text}</p>
@@ -173,7 +168,7 @@
           <button onclick={() => dismissed.add(alert.key)}>{t('close')}</button>
         {/if}
       </div>
-    </section>
+    </MapCard>
   {/each}
 </div>
 
@@ -184,24 +179,8 @@
     pointer-events: none;
   }
 
-  /* The shared card (.map-card in app.css), its edge in the colour of each kind. Level classes
-     are prefixed: a plain `.warning` is the app's error text. */
-  .sos,
-  .level-critical {
-    --edge: var(--danger);
-  }
-
-  .level-warning {
-    --edge: var(--warning);
-  }
-
-  .level-info,
-  .roll-call {
-    --edge: var(--info);
-  }
-
   /* Tighter than other cards: several may stack. */
-  .map-card {
+  .banners :global(.map-card) {
     gap: 0.3rem;
   }
 
@@ -209,7 +188,7 @@
     font-weight: 600;
   }
 
-  .sos strong {
+  .caller {
     color: var(--danger);
   }
 

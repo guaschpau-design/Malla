@@ -1,17 +1,21 @@
 # @tesel/core
 
-Application logic shared by every client, independent of the UI and of any transport: deriving the current picture from events, the LoRa airtime scheduler and the bridge rules described in [`ARCHITECTURE.md`](../../ARCHITECTURE.md) §3.4 and §4.
+Application logic shared by every client, independent of the UI and of any transport: deriving the current picture from events ([`ARCHITECTURE.md`](../../ARCHITECTURE.md) §3.4) and deciding what goes on the LoRa air, bridged events included (§4.2–4.3).
 
 Pure TypeScript. Time and randomness are passed in, never read globally, so every behaviour can be tested deterministically.
 
-| File                | Responsibility                                                                                              | Since   |
-| ------------------- | ----------------------------------------------------------------------------------------------------------- | ------- |
-| `ordering.ts`       | Last-writer-wins ordering of events (protocol §3.10)                                                        | Day 0   |
-| `reducer.ts`        | Current state from a set of events: members, positions, chat, map objects, SOS, alerts and acknowledgements | Day 3–4 |
-| `lora-scheduler.ts` | Priorities, airtime budget, position thinning, SOS repeats, ACK rule and bridging to LoRa                   | Day 5   |
-| `airtime.ts`        | LoRa time on air of an event                                                                                | Day 5   |
-| `geo.ts`            | Distances on the Earth                                                                                      | Day 5   |
+| File                | Responsibility                                                                                                                    |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `ordering.ts`       | Last-writer-wins ordering of events (protocol §3.10)                                                                              |
+| `reducer.ts`        | Current state from a set of events, routed to the slices that read them; which positions the state has outlived                   |
+| `state/`            | One slice per domain: members, positions, trails, chat and alerts, map objects, SOS, acknowledgements, tasks, roll call, journal  |
+| `collections.ts`    | Immutable, idempotent updates of the collections in the state                                                                     |
+| `lora-scheduler.ts` | What goes on the air and in what order: priorities, airtime budget, position thinning, SOS repeats, ACK rule and the bridge rules |
+| `urgency.ts`        | How urgent each event type is, for the scheduler and for the app's queue of pushes to the server                                  |
+| `airtime.ts`        | LoRa time on air of an event                                                                                                      |
+| `geo.ts`            | Distances, bearings and areas on the Earth                                                                                        |
+| `token-bucket.ts`   | Rate limiting, used by the server's relay limits and the app's pushes                                                             |
 
-The event log and the outbox are persistence, so they live with the storage of each app (`apps/web/src/lib/events/`).
+The event log and the outbox, the queue of events waiting for the server, are storage, so they live in the app: `apps/web/src/lib/events/event-log.ts` keeps both in IndexedDB.
 
-Which transport an event takes is decided where the transports meet: the group feed in `apps/web/src/lib/sync/` hands own events and events from the server to the scheduler, and events heard on LoRa to the server's outbox.
+The scheduler decides what goes on the air but sends nothing itself. The group feed (`apps/web/src/lib/sync/group-feed.svelte.ts`) is where the transports meet: it offers own events and events from the server to the scheduler, queues events heard on LoRa in the outbox for the server, and, when a radio connects, offers it what `catchUpPackets` (`apps/web/src/lib/sync/lora-events.ts`) says it missed. The radio session (`apps/web/src/lib/radio/radio.svelte.ts`) asks the scheduler for the next packet and sends it.

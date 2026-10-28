@@ -2,7 +2,7 @@
 // a family of colour (app.css). Unknown codes fall back to the generic symbol and the neutral
 // style, as the protocol requires.
 
-import type { MarkerEvent, ShapeEvent } from '@tesel/protocol';
+import { ShapeStyleCode, SymbolCode, type MarkerEvent, type ShapeEvent } from '@tesel/protocol';
 
 import type { MessageKey } from '../i18n/index.ts';
 import type { Tone } from '../ui/theme.ts';
@@ -19,7 +19,7 @@ export interface SymbolInfo {
 // logistics in green, command in ink.
 /** Also what a symbol this version does not know is drawn as (protocol §3.1, reserved values). */
 const GENERIC_SYMBOL: SymbolInfo = {
-  code: 0x0000,
+  code: SymbolCode.GENERIC,
   label: 'symbolGeneric',
   glyph: 'point',
   tone: 'slate',
@@ -27,24 +27,19 @@ const GENERIC_SYMBOL: SymbolInfo = {
 
 export const SYMBOLS: readonly SymbolInfo[] = [
   GENERIC_SYMBOL,
-  { code: 0x0001, label: 'symbolInjured', glyph: 'injured', tone: 'red' },
-  { code: 0x0002, label: 'symbolMissing', glyph: 'search', tone: 'red' },
-  { code: 0x0003, label: 'symbolFire', glyph: 'flame', tone: 'orange' },
-  { code: 0x0004, label: 'symbolFlood', glyph: 'waves', tone: 'blue' },
-  { code: 0x0005, label: 'symbolHazard', glyph: 'warning', tone: 'amber' },
-  { code: 0x0006, label: 'symbolBlockedRoad', glyph: 'barrier', tone: 'amber' },
-  { code: 0x0007, label: 'symbolShelter', glyph: 'house', tone: 'green' },
-  { code: 0x0008, label: 'symbolMeetingPoint', glyph: 'flag', tone: 'green' },
-  { code: 0x0009, label: 'symbolMedicalPost', glyph: 'cross', tone: 'red' },
-  { code: 0x000a, label: 'symbolWater', glyph: 'drop', tone: 'blue' },
-  { code: 0x000b, label: 'symbolHelicopter', glyph: 'helipad', tone: 'green' },
-  { code: 0x000c, label: 'symbolCommandPost', glyph: 'mast', tone: 'ink' },
+  { code: SymbolCode.INJURED, label: 'symbolInjured', glyph: 'injured', tone: 'red' },
+  { code: SymbolCode.MISSING, label: 'symbolMissing', glyph: 'search', tone: 'red' },
+  { code: SymbolCode.FIRE, label: 'symbolFire', glyph: 'flame', tone: 'orange' },
+  { code: SymbolCode.FLOOD, label: 'symbolFlood', glyph: 'waves', tone: 'blue' },
+  { code: SymbolCode.HAZARD, label: 'symbolHazard', glyph: 'warning', tone: 'amber' },
+  { code: SymbolCode.BLOCKED_ROAD, label: 'symbolBlockedRoad', glyph: 'barrier', tone: 'amber' },
+  { code: SymbolCode.SHELTER, label: 'symbolShelter', glyph: 'house', tone: 'green' },
+  { code: SymbolCode.MEETING_POINT, label: 'symbolMeetingPoint', glyph: 'flag', tone: 'green' },
+  { code: SymbolCode.MEDICAL_POST, label: 'symbolMedicalPost', glyph: 'cross', tone: 'red' },
+  { code: SymbolCode.WATER, label: 'symbolWater', glyph: 'drop', tone: 'blue' },
+  { code: SymbolCode.HELICOPTER, label: 'symbolHelicopter', glyph: 'helipad', tone: 'green' },
+  { code: SymbolCode.COMMAND_POST, label: 'symbolCommandPost', glyph: 'mast', tone: 'ink' },
 ];
-
-/** §4.2: an area to keep out of; each device warns its user on entering one. */
-export const DANGER_STYLE = 0x0001;
-/** §4.2: the area the group works in, whose map members are offered to download. */
-export const OPERATION_AREA_STYLE = 0x0006;
 
 export interface StyleInfo {
   readonly code: number;
@@ -53,16 +48,20 @@ export interface StyleInfo {
 }
 
 /** Also what a style this version does not know is drawn as. */
-const NEUTRAL_STYLE: StyleInfo = { code: 0x0000, label: 'styleNeutral', tone: 'slate' };
+const NEUTRAL_STYLE: StyleInfo = {
+  code: ShapeStyleCode.NEUTRAL,
+  label: 'styleNeutral',
+  tone: 'slate',
+};
 
 const SHAPE_STYLES: readonly StyleInfo[] = [
   NEUTRAL_STYLE,
-  { code: DANGER_STYLE, label: 'styleDanger', tone: 'red' },
-  { code: 0x0002, label: 'styleSearchAssigned', tone: 'amber' },
-  { code: 0x0003, label: 'styleSearchCleared', tone: 'green' },
-  { code: 0x0004, label: 'styleSafe', tone: 'teal' },
-  { code: 0x0005, label: 'styleRoute', tone: 'blue' },
-  { code: OPERATION_AREA_STYLE, label: 'styleOperationArea', tone: 'ink' },
+  { code: ShapeStyleCode.DANGER, label: 'styleDanger', tone: 'red' },
+  { code: ShapeStyleCode.SEARCH_ASSIGNED, label: 'styleSearchAssigned', tone: 'amber' },
+  { code: ShapeStyleCode.SEARCH_CLEARED, label: 'styleSearchCleared', tone: 'green' },
+  { code: ShapeStyleCode.SAFE, label: 'styleSafe', tone: 'teal' },
+  { code: ShapeStyleCode.ROUTE, label: 'styleRoute', tone: 'blue' },
+  { code: ShapeStyleCode.OPERATION_AREA, label: 'styleOperationArea', tone: 'ink' },
 ];
 
 /**
@@ -71,7 +70,9 @@ const SHAPE_STYLES: readonly StyleInfo[] = [
  */
 export function areaStyles(coordinator: boolean): StyleInfo[] {
   return SHAPE_STYLES.filter(
-    (style) => style.label !== 'styleRoute' && (coordinator || style.code !== OPERATION_AREA_STYLE),
+    (style) =>
+      style.code !== ShapeStyleCode.ROUTE &&
+      (coordinator || style.code !== ShapeStyleCode.OPERATION_AREA),
   );
 }
 

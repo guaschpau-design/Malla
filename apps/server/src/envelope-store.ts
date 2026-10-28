@@ -24,6 +24,13 @@ export interface AppendResult {
   readonly isNew: boolean;
 }
 
+// Statements used in more than one place.
+const STORE_INFO = 'SELECT id, pruned_cursor FROM store_info';
+const LAST_CURSOR = 'SELECT cursor FROM group_cursors WHERE group_id = ?';
+const UPSTREAM = 'SELECT cursor, store FROM upstream_cursors WHERE group_id = ?';
+const SET_UPSTREAM_POSITION =
+  'INSERT INTO upstream_cursors (group_id, cursor, store) VALUES (?, ?, ?) ON CONFLICT (group_id) DO UPDATE SET cursor = excluded.cursor, store = excluded.store';
+
 export class EnvelopeStore {
   /** The store identity (§8), base64url: created with the database and kept in it. */
   readonly id: string;
@@ -33,23 +40,8 @@ export class EnvelopeStore {
   /** The cursor a group without a cursor row counts on from (see store_info). */
   #prunedCursor: number;
 
-  readonly #findEnvelope: StatementSync;
-  readonly #lastCursor: StatementSync;
-  readonly #setLastCursor: StatementSync;
-  readonly #insert: StatementSync;
-  readonly #after: StatementSync;
-  readonly #storeInfo: StatementSync;
-  readonly #deleteBefore: StatementSync;
-  readonly #raisePrunedCursor: StatementSync;
-  readonly #pruneGroupCursors: StatementSync;
-  readonly #pruneUpstreamCursors: StatementSync;
-  readonly #groupsPendingUp: StatementSync;
-  readonly #pendingUp: StatementSync;
-  readonly #markUp: StatementSync;
-  readonly #markAllPendingUp: StatementSync;
-  readonly #upstream: StatementSync;
-  readonly #setUpstreamCursor: StatementSync;
-  readonly #setUpstreamPosition: StatementSync;
+  /** Statements prepared once, at first use, by their SQL. */
+  readonly #statements = new Map<string, StatementSync>();
 
   /**
    * `path` is a file, or `:memory:` for tests. A server with an upstream (a command post) keeps
@@ -63,59 +55,7 @@ export class EnvelopeStore {
     if (!this.#tracksUpstream)
       this.#db.exec('UPDATE envelopes SET pending_up = 0 WHERE pending_up = 1');
 
-    this.#findEnvelope = this.#db.prepare(
-      'SELECT cursor FROM envelopes WHERE group_id = ? AND event_key = ? AND digest = ?',
-    );
-    this.#lastCursor = this.#db.prepare('SELECT cursor FROM group_cursors WHERE group_id = ?');
-    this.#setLastCursor = this.#db.prepare(
-      'INSERT INTO group_cursors (group_id, cursor) VALUES (?, ?) ON CONFLICT (group_id) DO UPDATE SET cursor = excluded.cursor',
-    );
-    this.#insert = this.#db.prepare(
-      'INSERT INTO envelopes (group_id, cursor, event_key, digest, envelope, received_at, pending_up) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    );
-    this.#after = this.#db.prepare(
-      'SELECT cursor, event_key, envelope FROM envelopes WHERE group_id = ? AND cursor > ? ORDER BY cursor LIMIT ?',
-    );
-    this.#storeInfo = this.#db.prepare('SELECT id, pruned_cursor FROM store_info');
-    // What the upstream still lacks is kept however old: a command post may be offline for long.
-    this.#deleteBefore = this.#db.prepare(
-      'DELETE FROM envelopes WHERE received_at < ? AND pending_up = 0',
-    );
-    this.#raisePrunedCursor = this.#db.prepare(`
-      UPDATE store_info SET pruned_cursor = MAX(pruned_cursor, COALESCE(
-        (SELECT MAX(cursor) FROM group_cursors AS g
-          WHERE NOT EXISTS (SELECT 1 FROM envelopes AS e WHERE e.group_id = g.group_id)),
-        0))
-    `);
-    this.#pruneGroupCursors = this.#db.prepare(
-      'DELETE FROM group_cursors WHERE NOT EXISTS (SELECT 1 FROM envelopes AS e WHERE e.group_id = group_cursors.group_id)',
-    );
-    this.#pruneUpstreamCursors = this.#db.prepare(
-      'DELETE FROM upstream_cursors WHERE NOT EXISTS (SELECT 1 FROM envelopes AS e WHERE e.group_id = upstream_cursors.group_id)',
-    );
-    this.#groupsPendingUp = this.#db.prepare(
-      'SELECT group_id FROM envelopes WHERE pending_up = 1 GROUP BY group_id ORDER BY MAX(received_at) DESC',
-    );
-    this.#pendingUp = this.#db.prepare(
-      'SELECT cursor, event_key, envelope FROM envelopes WHERE group_id = ? AND pending_up = 1 ORDER BY cursor LIMIT 1',
-    );
-    this.#markUp = this.#db.prepare(
-      'UPDATE envelopes SET pending_up = 0 WHERE group_id = ? AND cursor = ?',
-    );
-    this.#markAllPendingUp = this.#db.prepare(
-      'UPDATE envelopes SET pending_up = 1 WHERE group_id = ?',
-    );
-    this.#upstream = this.#db.prepare(
-      'SELECT cursor, store FROM upstream_cursors WHERE group_id = ?',
-    );
-    this.#setUpstreamCursor = this.#db.prepare(
-      'INSERT INTO upstream_cursors (group_id, cursor) VALUES (?, ?) ON CONFLICT (group_id) DO UPDATE SET cursor = excluded.cursor',
-    );
-    this.#setUpstreamPosition = this.#db.prepare(
-      'INSERT INTO upstream_cursors (group_id, cursor, store) VALUES (?, ?, ?) ON CONFLICT (group_id) DO UPDATE SET cursor = excluded.cursor, store = excluded.store',
-    );
-
-    const info = this.#storeInfo.get();
+    const info = this.#sql(STORE_INFO).get();
     if (info === undefined) throw new Error('The database has no store identity');
     this.id = toBase64url(info['id'] as Uint8Array);
     this.#prunedCursor = Number(info['pruned_cursor']);
@@ -134,14 +74,20 @@ export class EnvelopeStore {
     source: EnvelopeSource = 'client',
   ): AppendResult {
     const digest = envelopeDigest(env);
-    const known = this.#findEnvelope.get(group, key, digest);
+    const known = this.#sql(
+      'SELECT cursor FROM envelopes WHERE group_id = ? AND event_key = ? AND digest = ?',
+    ).get(group, key, digest);
     if (known !== undefined) return { cursor: Number(known['cursor']), isNew: false };
-    const last = this.#lastCursor.get(group);
+    const last = this.#sql(LAST_CURSOR).get(group);
     const cursor = (last === undefined ? this.#prunedCursor : Number(last['cursor'])) + 1;
     const pendingUp = source === 'client' && this.#tracksUpstream ? 1 : 0;
     transaction(this.#db, () => {
-      this.#insert.run(group, cursor, key, digest, env, now, pendingUp);
-      this.#setLastCursor.run(group, cursor);
+      this.#sql(
+        'INSERT INTO envelopes (group_id, cursor, event_key, digest, envelope, received_at, pending_up) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      ).run(group, cursor, key, digest, env, now, pendingUp);
+      this.#sql(
+        'INSERT INTO group_cursors (group_id, cursor) VALUES (?, ?) ON CONFLICT (group_id) DO UPDATE SET cursor = excluded.cursor',
+      ).run(group, cursor);
     });
     return { cursor, isNew: true };
   }
@@ -152,18 +98,22 @@ export class EnvelopeStore {
    * again counts on from above any cursor it had.
    */
   lastCursor(group: Uint8Array): number {
-    return Number(this.#lastCursor.get(group)?.['cursor'] ?? 0);
+    return Number(this.#sql(LAST_CURSOR).get(group)?.['cursor'] ?? 0);
   }
 
   /** Up to `limit` envelopes with a cursor greater than `cursor`, oldest first. */
   after(group: Uint8Array, cursor: number, limit: number): StoredEnvelope[] {
-    return this.#after.all(group, cursor, limit).map(toStoredEnvelope);
+    return this.#sql(
+      'SELECT cursor, event_key, envelope FROM envelopes WHERE group_id = ? AND cursor > ? ORDER BY cursor LIMIT ?',
+    )
+      .all(group, cursor, limit)
+      .map(toStoredEnvelope);
   }
 
   /** Whether the database answers a query, for health reporting. */
   isAvailable(): boolean {
     try {
-      return this.#storeInfo.get() !== undefined;
+      return this.#sql(STORE_INFO).get() !== undefined;
     } catch {
       return false;
     }
@@ -171,37 +121,48 @@ export class EnvelopeStore {
 
   /** The groups with envelopes the upstream lacks, the most recently received first. */
   groupsPendingUpstream(): Uint8Array[] {
-    return this.#groupsPendingUp.all().map((row) => new Uint8Array(row['group_id'] as Uint8Array));
+    return this.#sql(
+      'SELECT group_id FROM envelopes WHERE pending_up = 1 GROUP BY group_id ORDER BY MAX(received_at) DESC',
+    )
+      .all()
+      .map((row) => new Uint8Array(row['group_id'] as Uint8Array));
   }
 
   /** The oldest envelope of a group that its upstream has not confirmed, if any. */
   nextPendingUpstream(group: Uint8Array): StoredEnvelope | null {
-    const row = this.#pendingUp.get(group);
+    const row = this.#sql(
+      'SELECT cursor, event_key, envelope FROM envelopes WHERE group_id = ? AND pending_up = 1 ORDER BY cursor LIMIT 1',
+    ).get(group);
     return row === undefined ? null : toStoredEnvelope(row);
   }
 
   markUpstreamStored(group: Uint8Array, cursor: number): void {
-    this.#markUp.run(group, cursor);
+    this.#sql('UPDATE envelopes SET pending_up = 0 WHERE group_id = ? AND cursor = ?').run(
+      group,
+      cursor,
+    );
   }
 
   /** How far this server has read the group from its upstream; 0 at first. */
   upstreamCursor(group: Uint8Array): number {
-    return Number(this.#upstream.get(group)?.['cursor'] ?? 0);
+    return Number(this.#sql(UPSTREAM).get(group)?.['cursor'] ?? 0);
   }
 
   /** The upstream's store identity when this server last synced the group, or null. */
   upstreamStore(group: Uint8Array): string | null {
-    const store = this.#upstream.get(group)?.['store'];
+    const store = this.#sql(UPSTREAM).get(group)?.['store'];
     return typeof store === 'string' ? store : null;
   }
 
   setUpstreamCursor(group: Uint8Array, cursor: number): void {
-    this.#setUpstreamCursor.run(group, cursor);
+    this.#sql(
+      'INSERT INTO upstream_cursors (group_id, cursor) VALUES (?, ?) ON CONFLICT (group_id) DO UPDATE SET cursor = excluded.cursor',
+    ).run(group, cursor);
   }
 
   /** Records where the upstream's backlog ended, and the identity of the store it came from. */
   setUpstreamPosition(group: Uint8Array, cursor: number, store: string): void {
-    this.#setUpstreamPosition.run(group, cursor, store);
+    this.#sql(SET_UPSTREAM_POSITION).run(group, cursor, store);
   }
 
   /**
@@ -210,8 +171,8 @@ export class EnvelopeStore {
    */
   restartUpstream(group: Uint8Array, store: string): void {
     transaction(this.#db, () => {
-      this.#setUpstreamPosition.run(group, 0, store);
-      this.#markAllPendingUp.run(group);
+      this.#sql(SET_UPSTREAM_POSITION).run(group, 0, store);
+      this.#sql('UPDATE envelopes SET pending_up = 1 WHERE group_id = ?').run(group);
     });
   }
 
@@ -222,19 +183,47 @@ export class EnvelopeStore {
    */
   deleteReceivedBefore(time: number): number {
     const deleted = transaction(this.#db, () => {
-      const changes = Number(this.#deleteBefore.run(time).changes);
-      this.#raisePrunedCursor.run();
-      this.#pruneGroupCursors.run();
-      this.#pruneUpstreamCursors.run();
+      // What the upstream still lacks is kept however old: a command post may be offline for long.
+      const changes = Number(
+        this.#sql('DELETE FROM envelopes WHERE received_at < ? AND pending_up = 0').run(time)
+          .changes,
+      );
+      // Groups left without envelopes are forgotten; the cursor they reached is kept as the one
+      // every forgotten group counts on from, so a cursor is never reused.
+      this.#sql(
+        `
+        UPDATE store_info SET pruned_cursor = MAX(pruned_cursor, COALESCE(
+          (SELECT MAX(cursor) FROM group_cursors AS g
+            WHERE NOT EXISTS (SELECT 1 FROM envelopes AS e WHERE e.group_id = g.group_id)),
+          0))
+      `,
+      ).run();
+      this.#sql(
+        'DELETE FROM group_cursors WHERE NOT EXISTS (SELECT 1 FROM envelopes AS e WHERE e.group_id = group_cursors.group_id)',
+      ).run();
+      this.#sql(
+        'DELETE FROM upstream_cursors WHERE NOT EXISTS (SELECT 1 FROM envelopes AS e WHERE e.group_id = upstream_cursors.group_id)',
+      ).run();
       return changes;
     });
-    this.#prunedCursor = Number(this.#storeInfo.get()?.['pruned_cursor'] ?? this.#prunedCursor);
+    this.#prunedCursor = Number(
+      this.#sql(STORE_INFO).get()?.['pruned_cursor'] ?? this.#prunedCursor,
+    );
     this.#db.exec('PRAGMA incremental_vacuum');
     return deleted;
   }
 
   close(): void {
     this.#db.close();
+  }
+
+  #sql(text: string): StatementSync {
+    let statement = this.#statements.get(text);
+    if (statement === undefined) {
+      statement = this.#db.prepare(text);
+      this.#statements.set(text, statement);
+    }
+    return statement;
   }
 }
 

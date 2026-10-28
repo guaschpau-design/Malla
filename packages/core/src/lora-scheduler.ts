@@ -15,7 +15,7 @@ import {
   type TeselEvent,
 } from '@tesel/protocol';
 
-import { eventAirtimeMs } from './airtime.ts';
+import { AirtimeWindow, eventAirtimeMs } from './airtime.ts';
 import { distanceMeters } from './geo.ts';
 import { URGENCY, urgencyOf } from './urgency.ts';
 
@@ -100,7 +100,7 @@ export class LoraScheduler {
   readonly #urgentTargets = new Set<string>();
   /** SOS calls seen cancelled: no longer worth bridging, however recent. */
   readonly #cancelledSos = new Set<string>();
-  readonly #spent: { readonly at: number; readonly ms: number }[] = [];
+  readonly #airtime = new AirtimeWindow(LIMITS.windowMs);
   #lastOwnPosition: { readonly at: LatLon; readonly time: number } | null = null;
   readonly #lastBridgedPosition = new Map<NodeId, number>();
   /** The packet handed out by `next`, until the caller reports how sending it went. */
@@ -199,7 +199,7 @@ export class LoraScheduler {
    */
   next(now: number): LoraPacket | null {
     if (this.#inFlight !== null) return null;
-    this.#forgetBefore(now - LIMITS.windowMs);
+    this.#forgetOnAirBefore(now - LIMITS.windowMs);
     // Bridged news that waited in the queue for the budget may have become history meanwhile.
     for (const [key, pending] of this.#pending) {
       if (pending.source === 'bridged' && this.#isHistory(pending.packet.event, now)) {
@@ -209,7 +209,7 @@ export class LoraScheduler {
     const due = [...this.#pending.values()]
       .filter((pending) => pending.dueAt <= now && this.#eligible(pending, now))
       .sort((a, b) => this.#urgency(a) - this.#urgency(b) || a.dueAt - b.dueAt);
-    const spent = this.#spent.reduce((total, entry) => total + entry.ms, 0);
+    const spent = this.#airtime.usedMs(now);
     for (const pending of due) {
       const cost = this.#airtimeMs(pending.packet.bytes.length);
       const budget =
@@ -243,8 +243,7 @@ export class LoraScheduler {
 
   /** Airtime used in the current window, in milliseconds. */
   spentMs(now: number): number {
-    this.#forgetBefore(now - LIMITS.windowMs);
-    return this.#spent.reduce((total, entry) => total + entry.ms, 0);
+    return this.#airtime.usedMs(now);
   }
 
   /**
@@ -308,7 +307,7 @@ export class LoraScheduler {
 
   #markSent(pending: Pending, cost: number, now: number): void {
     const { event } = pending.packet;
-    this.#spent.push({ at: now, ms: cost });
+    this.#airtime.add(now, cost);
     this.#onAir.set(pending.key, now);
     if (event.type === 'position') {
       if (pending.source === 'own') this.#lastOwnPosition = { at: event, time: now };
@@ -328,8 +327,7 @@ export class LoraScheduler {
     if (pending !== undefined && pending.sends > 0) this.#pending.delete(key);
   }
 
-  #forgetBefore(time: number): void {
-    while (this.#spent[0] !== undefined && this.#spent[0].at < time) this.#spent.shift();
+  #forgetOnAirBefore(time: number): void {
     for (const [key, at] of this.#onAir) if (at < time) this.#onAir.delete(key);
   }
 }

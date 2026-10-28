@@ -4,9 +4,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { buildApp } from './app.ts';
-import { EnvelopeStore } from './envelope-store.ts';
-import { Relay } from './relay.ts';
+import { testServer } from './test-server.ts';
 
 function site(): string {
   const root = mkdtempSync(join(tmpdir(), 'tesel-web-'));
@@ -17,16 +15,7 @@ function site(): string {
   return root;
 }
 
-const app = () => {
-  const store = new EnvelopeStore(':memory:');
-  return buildApp(store, new Relay(store), {
-    webRoot: site(),
-    upstream: null,
-    commandPost: null,
-    weather: null,
-    trustedProxies: [],
-  });
-};
+const app = async () => (await testServer({ app: { webRoot: site() } })).app;
 
 describe('web serving', () => {
   it('serves the landing page at the root and the app under /app/', async () => {

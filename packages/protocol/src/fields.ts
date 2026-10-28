@@ -3,12 +3,16 @@
 
 import { ByteReader, ByteWriter, encodeUtf8, ProtocolFailure } from './bytes.ts';
 import {
+  ACCURACY_SIZE,
   EVENT_REF_SIZE,
   HEADER_SIZE,
+  KIND_SIZE,
   MAX_EVENT_SIZE,
   NODE_ID_SIZE,
+  PlaceCode,
   POINT_SIZE,
   ShapeKindCode,
+  SYMBOL_SIZE,
   UNKNOWN_U16,
 } from './constants.ts';
 import type { EventRef, LatLon, NodeId, ShapeGeometry } from './events.ts';
@@ -18,9 +22,6 @@ import { nodeIdFromBytes, nodeIdToBytes } from './node-id.ts';
 // --- Text limits: each is the payload budget left after the type's fixed fields -----------
 
 const PAYLOAD_BUDGET = MAX_EVENT_SIZE - HEADER_SIZE;
-const SYMBOL_SIZE = 2;
-const KIND_SIZE = 1;
-const ACCURACY_SIZE = 2;
 
 export const CHAT_MAX_BYTES = PAYLOAD_BUDGET; // §3.5
 export const MARKER_LABEL_MAX_BYTES = PAYLOAD_BUDGET - EVENT_REF_SIZE - SYMBOL_SIZE - POINT_SIZE; // §3.6
@@ -78,7 +79,6 @@ export function readRef(reader: ByteReader): EventRef {
 
 const ANYONE = new Uint8Array(NODE_ID_SIZE);
 const ANYONE_ID = nodeIdFromBytes(ANYONE);
-const PlaceCode = { NONE: 0, POINT: 1 } as const;
 
 /** Writes a node ID, or all zeros for anyone. */
 export function writeAssignee(writer: ByteWriter, assignee: NodeId | null): void {

@@ -139,19 +139,27 @@ export async function openMore(page: Page, item: string): Promise<void> {
   await page.getByRole('menuitem', { name: item }).click();
 }
 
-/** A setting as stored on the device: a choice is stored a moment after the tap. */
-export function storedSetting(page: Page, key: string): Promise<unknown> {
+/**
+ * What the device keeps in one of its IndexedDB stores: the value under `key`, or every value in
+ * the store without one.
+ */
+export function stored(page: Page, store: string, key?: string): Promise<unknown> {
   return page.evaluate(
-    (setting) =>
-      new Promise((resolve) => {
+    ({ store, key }) =>
+      new Promise((resolve, reject) => {
         const open = indexedDB.open('tesel');
+        open.onerror = () => {
+          reject(open.error ?? new Error('cannot open the database'));
+        };
         open.onsuccess = () => {
-          const read = open.result.transaction('settings').objectStore('settings').get(setting);
+          const records = open.result.transaction(store).objectStore(store);
+          const read = key === undefined ? records.getAll() : records.get(key);
           read.onsuccess = () => {
+            open.result.close();
             resolve(read.result);
           };
         };
       }),
-    key,
+    { store, key },
   );
 }

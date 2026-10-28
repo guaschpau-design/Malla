@@ -3,15 +3,10 @@
 // the user to acknowledge and follow. Built around a point, in the user's language.
 
 import { offsetMeters } from '@tesel/core';
-import type { LatLon } from '@tesel/protocol';
+import { ShapeStyleCode, SymbolCode, type LatLon } from '@tesel/protocol';
 import type { Scenario } from '@tesel/scenario';
 
 import type { Translate } from '../i18n/index.ts';
-
-// Symbol and style codes: protocol §4.
-const BLOCKED_ROAD = 6;
-const MEETING_POINT = 8;
-const SEARCH_ASSIGNED = 2;
 
 export function practiceScenario(t: Translate, centre: LatLon): Scenario {
   const at = (north: number, east: number) => offsetMeters(centre, north, east);
@@ -34,7 +29,7 @@ export function practiceScenario(t: Translate, centre: LatLon): Scenario {
         action: {
           type: 'marker',
           id: 'meeting-point',
-          symbol: MEETING_POINT,
+          symbol: SymbolCode.MEETING_POINT,
           label: t('practiceMeetingPoint'),
           where: at(80, -150),
         },
@@ -45,7 +40,7 @@ export function practiceScenario(t: Translate, centre: LatLon): Scenario {
         action: {
           type: 'shape',
           id: 'sector',
-          style: SEARCH_ASSIGNED,
+          style: ShapeStyleCode.SEARCH_ASSIGNED,
           label: t('practiceSector'),
           geometry: {
             kind: 'polygon',
@@ -60,7 +55,7 @@ export function practiceScenario(t: Translate, centre: LatLon): Scenario {
         action: {
           type: 'marker',
           id: 'blocked',
-          symbol: BLOCKED_ROAD,
+          symbol: SymbolCode.BLOCKED_ROAD,
           label: t('practiceBlocked'),
           where: at(-120, 60),
         },

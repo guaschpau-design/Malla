@@ -10,7 +10,8 @@
   import ActionButton from '../ui/ActionButton.svelte';
   import Panel from '../ui/Panel.svelte';
   import Pictogram from '../ui/Pictogram.svelte';
-  import { editTask, newTask, stopEditingTask } from './task-editor.svelte.ts';
+  import { attempt } from '../ui/submission.svelte.ts';
+  import { editTask, newTask, stopEditingTask } from './task-editor.ts';
   import TaskForm from './TaskForm.svelte';
   import { advance, taskList, type TaskEditing, type TaskFields, type TaskRow } from './tasks.ts';
 
@@ -67,7 +68,12 @@
           <Pictogram name="pin" size={18} />
         </button>
       {/if}
-      <button class="next" onclick={() => void onsave(row.task, advance(row.fields, self))}>
+      <button
+        class="next"
+        onclick={() => {
+          attempt(() => onsave(row.task, advance(row.fields, self)), t('actionFailed'));
+        }}
+      >
         {t(NEXT[row.fields.status])}
       </button>
     </span>

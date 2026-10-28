@@ -16,6 +16,7 @@ import type { FeatureCollection } from 'geojson';
 
 import type { Locale, MessageKey } from '../i18n/index.ts';
 import { insideRing } from '../map/geometry.ts';
+import { containsPoint, type Bounds } from '../map/tiles/math.ts';
 import type { Tone } from '../ui/theme.ts';
 
 /** How each level is named and coloured: yellow, orange, red. */
@@ -53,8 +54,7 @@ export interface WarningsHere {
 /** A region still under warning, with its bounds to rule points out quickly. */
 export interface ActiveRegion {
   readonly region: WarningRegion;
-  /** [west, south, east, north]. */
-  readonly bounds: readonly [number, number, number, number];
+  readonly bounds: Bounds;
 }
 
 /**
@@ -74,7 +74,7 @@ export function activeRegions(document: WeatherWarnings, now: number): ActiveReg
 /** The warnings in force or announced at a point, highest level first, and who issued them. */
 export function warningsAt(regions: readonly ActiveRegion[], at: LatLon): WarningsHere {
   const holding = regions
-    .filter(({ region, bounds }) => withinBounds(bounds, at) && contains(region.geometry, at))
+    .filter(({ region, bounds }) => containsPoint(bounds, at) && contains(region.geometry, at))
     .map(({ region }) => region.properties);
   const issuers = holding.flatMap(({ code }) => ISSUERS[code.slice(0, 2)] ?? []);
   return {
@@ -102,23 +102,19 @@ export function warningText(warning: WeatherWarning, locale: Locale): WarningTex
   return warning.text[locale] ?? warning.text.es ?? warning.text.en ?? null;
 }
 
-function boundsOf(geometry: RegionGeometry): [number, number, number, number] {
+function boundsOf(geometry: RegionGeometry): Bounds {
   const polygons = geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates;
-  const bounds: [number, number, number, number] = [Infinity, Infinity, -Infinity, -Infinity];
+  let [west, south, east, north] = [Infinity, Infinity, -Infinity, -Infinity];
   for (const polygon of polygons) {
     // The outer ring holds the rest.
     for (const [lon, lat] of polygon[0] ?? []) {
-      bounds[0] = Math.min(bounds[0], lon);
-      bounds[1] = Math.min(bounds[1], lat);
-      bounds[2] = Math.max(bounds[2], lon);
-      bounds[3] = Math.max(bounds[3], lat);
+      west = Math.min(west, lon);
+      south = Math.min(south, lat);
+      east = Math.max(east, lon);
+      north = Math.max(north, lat);
     }
   }
-  return bounds;
-}
-
-function withinBounds([west, south, east, north]: ActiveRegion['bounds'], at: LatLon): boolean {
-  return at.lon >= west && at.lon <= east && at.lat >= south && at.lat <= north;
+  return { west, south, east, north };
 }
 
 /** Whether a point is inside a polygon or multipolygon, holes left out. */

@@ -15,7 +15,7 @@ import {
 import type { Page } from '@playwright/test';
 import { syntheticOperation } from '@tesel/simulator';
 
-import { device, expect, test } from './helpers.ts';
+import { createGroup, device, expect, stored, test } from './helpers.ts';
 
 const MEMBERS = 50;
 const EVENTS = 5000;
@@ -31,10 +31,7 @@ const SETUP_MS = 60_000;
 test('a device catches up with thousands of waiting events in seconds', async ({ browser }) => {
   test.setTimeout(SETUP_MS + CATCH_UP_LIMIT_MS);
   const ana = await device(browser, 'Ana');
-  await ana.getByRole('button', { name: 'Grupos: Sin grupo' }).click();
-  await ana.getByRole('button', { name: 'Crear grupo' }).click();
-  await ana.getByLabel('Nombre del grupo').fill('Operativo largo');
-  await ana.getByRole('button', { name: 'Crear', exact: true }).click();
+  await createGroup(ana, 'Operativo largo');
   await expect(ana.getByTitle('Conectado al servidor del grupo')).toBeVisible();
   const backlog = backlogFor(await groupSecret(ana));
   // The same server as before, as its store identity shows: the device reads on from its cursor.
@@ -91,60 +88,20 @@ function backlogFor(secret: Uint8Array): ServerMessage[] {
 
 /** The secret of the device's only group, as an invitation would carry it. */
 async function groupSecret(page: Page): Promise<Uint8Array> {
-  const secret = await page.evaluate(async () => {
-    const db = await new Promise<IDBDatabase>((resolve) => {
-      const open = indexedDB.open('tesel');
-      open.onsuccess = () => {
-        resolve(open.result);
-      };
-    });
-    const groups = await new Promise<{ secret: Uint8Array }[]>((resolve) => {
-      const req = db.transaction('groups').objectStore('groups').getAll();
-      req.onsuccess = () => {
-        resolve(req.result as { secret: Uint8Array }[]);
-      };
-    });
-    db.close();
-    return Array.from(groups[0]?.secret ?? []);
-  });
-  return Uint8Array.from(secret);
+  const [group] = (await stored(page, 'groups')) as { secret: Uint8Array }[];
+  if (group === undefined) throw new Error('the device has no group');
+  return group.secret;
 }
 
 /** How many events the device has stored for its group, its own included. */
-function storedEvents(page: Page): Promise<number> {
-  return page.evaluate(async () => {
-    const db = await new Promise<IDBDatabase>((resolve) => {
-      const open = indexedDB.open('tesel');
-      open.onsuccess = () => {
-        resolve(open.result);
-      };
-    });
-    const count = await new Promise<number>((resolve) => {
-      const req = db.transaction('events').objectStore('events').count();
-      req.onsuccess = () => {
-        resolve(req.result);
-      };
-    });
-    db.close();
-    return count;
-  });
+async function storedEvents(page: Page): Promise<number> {
+  return ((await stored(page, 'events')) as unknown[]).length;
 }
 
 /** The store identity of the group's server, as the device saved it with its cursor. */
 async function serverStore(page: Page): Promise<string> {
-  const store = await page.evaluate(
-    () =>
-      new Promise<unknown>((resolve) => {
-        const open = indexedDB.open('tesel');
-        open.onsuccess = () => {
-          const read = open.result.transaction('cursors').objectStore('cursors').getAll();
-          read.onsuccess = () => {
-            open.result.close();
-            resolve((read.result[0] as { store?: unknown } | undefined)?.store);
-          };
-        };
-      }),
-  );
-  if (typeof store !== 'string') throw new Error('the device has not synced with its server');
-  return store;
+  const [position] = (await stored(page, 'cursors')) as { store?: unknown }[];
+  if (typeof position?.store !== 'string')
+    throw new Error('the device has not synced with its server');
+  return position.store;
 }

@@ -7,7 +7,6 @@ import {
   parseClientMessage,
   parseServerInfo,
   parseServerMessage,
-  parseServerTime,
   relayUrl,
   sameServer,
   serverInfoUrl,
@@ -93,12 +92,10 @@ describe('relay messages', () => {
   });
 
   it('reads the server clock, when the server gives it', () => {
-    expect(parseServerTime('{"status":"ok","protocolVersion":1,"time":1793000000}')).toBe(
-      1793000000,
-    );
-    expect(parseServerTime('{"status":"ok","protocolVersion":1}')).toBeNull();
-    expect(parseServerTime('{"time":"soon"}')).toBeNull();
-    expect(parseServerTime('not json')).toBeNull();
+    const timeIn = (text: string) => parseServerInfo(text)?.time;
+    expect(timeIn('{"status":"ok","protocolVersion":1,"time":1793000000}')).toBe(1793000000);
+    expect(timeIn('{"status":"ok","protocolVersion":1}')).toBeNull();
+    expect(timeIn('{"status":"ok","protocolVersion":1,"time":"soon"}')).toBeNull();
   });
 
   it('derives the WebSocket URL from the server base URL', () => {
@@ -121,6 +118,7 @@ describe('server information', () => {
       protocolVersion: 1,
       upstream: 'https://tesel.example/',
       commandPost: null,
+      time: null,
     });
   });
 
@@ -129,6 +127,7 @@ describe('server information', () => {
       protocolVersion: 1,
       upstream: null,
       commandPost: null,
+      time: null,
     });
     expect(
       parseServerInfo('{"status":"ok","protocolVersion":1,"upstream":"http://evil.example/"}'),

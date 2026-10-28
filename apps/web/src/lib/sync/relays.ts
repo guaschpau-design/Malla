@@ -4,7 +4,6 @@
 
 import {
   parseServerInfo,
-  parseServerTime,
   sameServer,
   serverBaseUrl,
   serverInfoUrl,
@@ -48,10 +47,9 @@ async function fetchServerInfo(
       cache: 'no-store',
     });
     if (!response.ok) return null;
-    const text = await response.text();
-    const time = parseServerTime(text);
-    if (time !== null) deviceClock.observe(time, sentAt, Date.now());
-    return parseServerInfo(text);
+    const info = parseServerInfo(await response.text());
+    if (info?.time != null) deviceClock.observe(info.time, sentAt, Date.now());
+    return info;
   } catch {
     return null;
   }

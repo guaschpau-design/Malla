@@ -6,6 +6,7 @@ import {
   RELAY_PATH,
   SERVER_INFO_PATH,
   WEATHER_WARNINGS_PATH,
+  type ServerInfoBody,
 } from '@tesel/protocol';
 import Fastify, { type FastifyError, type FastifyInstance } from 'fastify';
 
@@ -31,7 +32,7 @@ export interface AppOptions {
   readonly trustedProxies: readonly string[];
 }
 
-const NO_OPTIONS: AppOptions = {
+export const NO_OPTIONS: AppOptions = {
   webRoot: null,
   upstream: null,
   commandPost: null,
@@ -71,7 +72,7 @@ export async function buildApp(
       upstream: options.upstream,
       commandPost: options.commandPost,
       time: Math.floor(Date.now() / 1000),
-    };
+    } satisfies ServerInfoBody;
   });
   const { weather } = options;
   if (weather !== null) {

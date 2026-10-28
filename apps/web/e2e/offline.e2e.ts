@@ -2,7 +2,7 @@
 
 import type { Page } from '@playwright/test';
 
-import { chooseAlias, expect, mapIdle, openMore, test, twoMembers } from './helpers.ts';
+import { chooseAlias, expect, mapIdle, openMore, tapMap, test, twoMembers } from './helpers.ts';
 
 test('a downloaded area keeps working after going offline and reloading', async ({
   page,
@@ -95,16 +95,12 @@ test('members are offered the map of the operation area their coordinator marks'
   browser,
 }) => {
   const { ana, berta } = await twoMembers(browser, '/#map=15/39.47/-0.37');
-  const box = await ana.locator('.maplibregl-canvas').boundingBox();
-  if (!box) throw new Error('no map');
-  const at = (dx: number, dy: number) =>
-    ana.mouse.click(box.x + box.width / 2 + dx, box.y + box.height / 2 + dy);
 
   await ana.getByRole('button', { name: 'Añadir' }).click();
   await ana.getByRole('menuitem', { name: 'Zona' }).click();
-  await at(-60, -60);
-  await at(60, -60);
-  await at(0, 60);
+  await tapMap(ana, -60, -60);
+  await tapMap(ana, 60, -60);
+  await tapMap(ana, 0, 60);
   await ana.getByRole('button', { name: 'Terminar' }).click();
   await ana.getByRole('radio', { name: 'Zona del operativo' }).check();
   await ana.getByLabel('Etiqueta (opcional)').fill('Sector norte');

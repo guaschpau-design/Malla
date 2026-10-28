@@ -30,12 +30,12 @@
 
 ## Desarrollo · Development
 
-Requires Node.js 22.18+ and pnpm 10.
+Requires Node.js 22.18 or later and pnpm 10; CI and the server image use Node 24.22.1.
 
 ```sh
 pnpm install
 pnpm dev     # web app and server
-pnpm check   # everything CI runs
+pnpm check   # what CI checks, except the end-to-end tests and the server image
 ```
 
 ## Licencia · Licence

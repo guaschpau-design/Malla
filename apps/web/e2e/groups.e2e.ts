@@ -2,7 +2,7 @@
 
 import type { Page } from '@playwright/test';
 
-import { chooseAlias, expect, test } from './helpers.ts';
+import { chooseAlias, createGroup, expect, test } from './helpers.ts';
 
 async function invitationLink(page: Page, role: 'miembro' | 'coordinador'): Promise<string> {
   await page.getByRole('button', { name: 'Invitar' }).click();
@@ -17,10 +17,7 @@ test('a second device joins a group through its invitation link', async ({ brows
   const coordinator = await (await browser.newContext()).newPage();
   await coordinator.goto('/');
   await chooseAlias(coordinator, 'Ana');
-  await coordinator.getByRole('button', { name: 'Grupos: Sin grupo' }).click();
-  await coordinator.getByRole('button', { name: 'Crear grupo' }).click();
-  await coordinator.getByLabel('Nombre del grupo').fill('Rescate Valencia');
-  await coordinator.getByRole('button', { name: 'Crear', exact: true }).click();
+  await createGroup(coordinator, 'Rescate Valencia');
   await expect(coordinator.getByRole('button', { name: 'Grupos: Rescate Valencia' })).toBeVisible();
   const memberLink = await invitationLink(coordinator, 'miembro');
   expect(new URL(memberLink).pathname).toBe('/join');

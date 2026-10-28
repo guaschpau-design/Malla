@@ -15,7 +15,10 @@ A group shares a map. Every change to that map — a position, a chat line, a ma
 │  UI (Svelte) ── map (MapLibre + PMTiles)                              │
 │        │                                                              │
 │        ▼                                                              │
-│  packages/core: state reducer · LoRa scheduler · bridge rules         │
+│  group feed: event log and outbox (IndexedDB), relay and radio wiring │
+│        │                                                              │
+│        ▼                                                              │
+│  packages/core: state reducer · LoRa scheduler, with bridge rules     │
 │        │                                                              │
 │        ▼                                                              │
 │  packages/protocol: event codec · crypto · invitations                │
@@ -28,18 +31,28 @@ A group shares a map. Every change to that map — a position, a chat line, a ma
    local command post)                  ⇄ LoRa mesh ⇄ other radios
 ```
 
-| Path                | Owns                                                                                           | Must not depend on                                   |
-| ------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `packages/protocol` | Binary event format, key derivation, envelope encryption, invitation links                     | Anything else in the repo; the DOM; Node APIs        |
-| `packages/core`     | State reducer, LoRa airtime scheduler, bridge rules                                            | The DOM, Svelte, BLE, network APIs                   |
-| `packages/meshcore` | Talking to a MeshCore companion radio: connect, configure channel, send and receive datagrams  | `packages/core`, the UI                              |
-| `packages/scenario` | Staged operations as data, planned into the events their members send                          | The DOM, Node APIs, any transport                    |
-| `apps/web`          | UI, map, persistence in IndexedDB (event log, outbox, cursors), wiring transports to `core`    | Server code                                          |
-| `apps/server`       | Storing and relaying encrypted envelopes; serving the landing page and the web app (ADR-0017)  | Plaintext event contents (it can never decrypt them) |
-| `apps/site`         | The landing page at tesel.eu: static HTML and CSS, Spanish and English                         | Any build step or third-party request                |
-| `tools/simulator`   | Scenarios played by simulated devices through the relay, for demos, load tests and screenshots | The apps: it reaches them only through the protocol  |
+| Path                | Owns                                                                                                                                 | Must not depend on                                   |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| `packages/protocol` | Binary event format, key derivation, envelope encryption, invitation links                                                           | Anything else in the repo; the DOM; Node APIs        |
+| `packages/core`     | State reducer; LoRa airtime scheduler, which decides what goes on the air and in what order, bridged events included                 | The DOM, Svelte, BLE, network APIs                   |
+| `packages/meshcore` | Talking to a MeshCore companion radio: connect, configure channel, send and receive datagrams                                        | `packages/core`, the UI                              |
+| `packages/scenario` | Staged operations as data, planned into the events their members send                                                                | The DOM, Node APIs, any transport                    |
+| `apps/web`          | UI, map; each group's event log, outbox and sync cursors in IndexedDB; the group feed, which ties the log to the relay and the radio | Server code                                          |
+| `apps/server`       | Storing and relaying encrypted envelopes; serving the landing page and the web app (ADR-0017)                                        | Plaintext event contents (it can never decrypt them) |
+| `apps/site`         | The landing page at tesel.eu: static HTML and CSS, Spanish and English                                                               | Any build step or third-party request                |
+| `tools/simulator`   | Scenarios played by simulated devices through the relay, for demos, load tests and screenshots                                       | The apps: it reaches them only through the protocol  |
 
 The dependency direction is strictly downwards in the diagram. `protocol` and `core` are pure TypeScript with no I/O, so they run unchanged in the browser, in Node and in tests. This is what keeps the hard parts testable.
+
+The event log and the outbox, the queue of events waiting for the server, are storage, so they live in the app and not in `core`. These files handle an event on its way:
+
+| File                                         | Job                                                                                                      |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `apps/web/src/lib/events/event-log.ts`       | Keeps each group's log and its outbox in IndexedDB                                                       |
+| `apps/web/src/lib/sync/group-feed.svelte.ts` | Ties the log to the relay and the radio: stores what arrives, pushes the outbox, offers events to LoRa   |
+| `apps/web/src/lib/sync/lora-events.ts`       | What a radio is given when it connects (`catchUpPackets`)                                                |
+| `packages/core/src/lora-scheduler.ts`        | Decides what goes on the air and in what order, bridge rules included, so it can be tested with no radio |
+| `apps/web/src/lib/sync/log-file.ts`          | Saves a group's log to a file and loads one back (§6)                                                    |
 
 ## 3. Data model
 
@@ -121,7 +134,7 @@ A new capability is a new event type (protocol §3.2 and §9: no version change)
 2. **Protocol:** the type in `packages/protocol/src/events.ts`, the code in `constants.ts`, and its layout (writer next to reader) in `payloads.ts`, whose record is keyed by every event type. A round-trip sample goes in `test-helpers.ts`; a test fails while a type has none.
 3. **State:** a slice in `packages/core/src/state/`, or an existing slice that also reads the type, listed in `reducer.ts`. A test fails while a known type has no slice.
 4. **Radio:** its urgency in `packages/core/src/urgency.ts`, a record keyed by every event type.
-5. **App:** the action that publishes it in `GroupFeed` and the UI that shows it, with texts in both languages.
+5. **App:** the action that publishes it in `GroupFeed` (`apps/web/src/lib/sync/group-feed.svelte.ts`) and the UI that shows it, with texts in both languages.
 
 ## 4. Transports
 
@@ -136,19 +149,22 @@ The web app connects to a MeshCore companion radio over Web Bluetooth (Chrome an
 LoRa is slow and legally limited to 10 % airtime in the EU 869.4–869.65 MHz sub-band, so outgoing LoRa traffic goes through a **scheduler** in `packages/core` ([ADR-0015](docs/decisions/0015-lora-airtime-policy.md)) that:
 
 1. Orders events by urgency, given for every event type in `packages/core/src/urgency.ts`: the SOS and its cancellation first, then alerts and roll calls, hiding a position, acknowledgements, chat and tasks, map objects, member information and, last, positions. `POSITION_HIDDEN` is never thinned or delayed, and it drops any position still queued: a user who stops sharing must disappear from the map promptly.
-2. Estimates each packet's airtime from the radio preset and keeps a rolling one-hour budget: 5 % of the hour for ordinary traffic, the legal 10 % for events as urgent as an alert or more (`SOS`, `SOS_CANCEL`, `ALERT`, `ROLL_CALL`).
+2. Estimates each packet's airtime from the radio preset and keeps a rolling one-hour budget: 5 % of the hour for ordinary traffic, the legal 10 % for events as urgent as an alert or more (`SOS`, `SOS_CANCEL`, `ALERT`, `ROLL_CALL`, and an `ACK` of an SOS, a critical alert or a roll call).
 3. Thins own positions: at most one every 2 minutes, and only after moving 50 m or 10 minutes passing.
 4. Repeats an own `SOS` with back-off (30 s, doubling to 5 minutes) until an `ACK` or a `SOS_CANCEL` arrives over any transport.
-5. Applies the protocol's ACK rule: an own `ACK` waits 2–30 s and is dropped if another member's `ACK` is heard first.
+5. Applies the protocol's ACK rule: an own `ACK` waits 2–30 s and is dropped if another member's `ACK` is heard first, except the answer to a roll call, which every member sends.
+6. Keeps at most 500 packets waiting; beyond that the least urgent go, bridged before own.
 
-When a radio is linked to a group, the device also queues its own latest `MEMBER_INFO`, so members who only hear the radio learn its alias. While connected, Tesel reads every message the radio holds. Text messages of other MeshCore apps are kept on the device and shown, read-only, in a MeshCore tab of the chat, so they are not lost.
+When a radio links to a group, the group feed gives it what it missed while there was none (`catchUpPackets` in `apps/web/src/lib/sync/lora-events.ts`, [ADR-0043](docs/decisions/0043-radio-delivery.md)): the device's own latest `MEMBER_INFO`, so members who only hear the radio learn its alias; its own SOS calls still open; and its own events still in the outbox that have not been on the air. An own event sent by radio is marked as aired and stays in the outbox until a server stores it; for a group with no server, the radio send is the delivery.
+
+While connected, Tesel reads every message the radio holds. A frame heard on the channel of another of this device's groups goes to that group's log, and to its outbox if the group has a server. Text messages of other MeshCore apps are kept on the device and shown, read-only, in a MeshCore tab of the chat, so they are not lost.
 
 ### 4.3 Bridging
 
-A device connected to both the server and a radio is a **bridge**, with no configuration:
+A device connected to both the server and a radio is a **bridge**, with no configuration. The group feed passes events between the two links; the scheduler decides which bridged events go on the air, and when:
 
-- Every event heard on LoRa is pushed to the server.
-- Events from the server are sent to LoRa through the scheduler, except positions, which are forwarded at most once every 5 minutes per origin, and events older than 10 minutes, which are history rather than news.
+- Every event heard on LoRa is stored in the log and queued in the outbox for the server.
+- Events from the server are offered to the scheduler as bridged. Positions are forwarded at most once every 5 minutes per origin. Events older than 10 minutes are history rather than news and are not forwarded, except those that still call for action: an SOS not cancelled, its cancellation, alerts and roll calls ([ADR-0043](docs/decisions/0043-radio-delivery.md)).
 - To avoid several bridges repeating the same event over the air, a bridge waits a random 0–10 seconds before forwarding to LoRa and skips the event if it has meanwhile heard it on LoRa.
 - An event already seen on a transport is never sent back to that transport.
 
@@ -170,13 +186,13 @@ A command post is found by name and replicates by protocol ([ADR-0018](docs/deci
 
 ## 6. Persistence
 
-| Where   | What                                                                                     | Technology                                                               |
-| ------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Browser | Identity keys, groups, settings, each group's event log, the outbox and sync cursors     | IndexedDB database `tesel`                                               |
-| Browser | Offline map tiles by source, with who needs them, and the latest tiles seen online       | IndexedDB database `tesel-map`, separate so it can be cleared on its own |
-| File    | A group's log, saved and loaded by hand: its events sealed as for a relay (protocol §10) | JSON                                                                     |
-| Server  | Encrypted envelopes per group, with retention limit                                      | SQLite through `node:sqlite`                                             |
-| Server  | Base map                                                                                 | One PMTiles file, served as a static file with range requests            |
+| Where   | What                                                                                                                          | Technology                                                               |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Browser | Identity keys, groups, settings, each group's event log, the outbox and sync cursors                                          | IndexedDB database `tesel`                                               |
+| Browser | Offline map tiles by source, with who needs them, and the latest tiles seen online                                            | IndexedDB database `tesel-map`, separate so it can be cleared on its own |
+| File    | A group's log, saved and loaded by hand: its events sealed as for a relay (protocol §10, `apps/web/src/lib/sync/log-file.ts`) | JSON                                                                     |
+| Server  | Encrypted envelopes per group, with retention limit                                                                           | SQLite through `node:sqlite`                                             |
+| Server  | Base map                                                                                                                      | One PMTiles file, served as a static file with range requests            |
 
 The browser is asked to keep the app's storage from the moment the device has an identity. The group's log comes first: maps are stored only with room left for it, tiles seen online are the first thing dropped when the storage is full, and a write refused for lack of room is told to the user without losing the outbox ([ADR-0056](docs/decisions/0056-storage-and-offline-maps.md)).
 
@@ -203,12 +219,12 @@ Two more base maps cover Spain, Portugal and southern France, from open national
 ## 9. Repository layout
 
 ```
-apps/web/            PWA: UI, map, storage, transport wiring
+apps/web/            PWA: UI, map, event log and outbox, transport wiring
 apps/server/         Relay and storage server, serves site and app; replication for command posts
 apps/site/           Landing page (static)
 brand/               Mark, wordmark and lockup (SVG) and the script that builds them
 packages/protocol/   Wire format, crypto, invitations (pure TS)
-packages/core/       Reducer, scheduler, bridge rules (pure TS)
+packages/core/       Reducer, LoRa scheduler with its bridge rules (pure TS)
 packages/meshcore/   MeshCore radio adapter
 packages/scenario/   Staged operations as data and their plan (pure TS): simulator and practice mode
 tools/simulator/     Scenarios played by simulated devices: demos, load tests, screenshots

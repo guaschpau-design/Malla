@@ -1,8 +1,7 @@
 import { stateOf } from '@tesel/core';
-import type { NodeId, ShapeEvent } from '@tesel/protocol';
+import { ShapeStyleCode, type NodeId, type ShapeEvent } from '@tesel/protocol';
 import { describe, expect, it } from 'vitest';
 
-import { OPERATION_AREA_STYLE } from './catalog.ts';
 import { operationAreas } from './operation-areas.ts';
 
 const ANA = 'a1b2c3d4' as NodeId;
@@ -30,7 +29,7 @@ function area(seq: number, style: number): ShapeEvent {
 
 describe('operation areas', () => {
   it('finds the areas drawn as operation areas, with their bounds', () => {
-    const state = stateOf([area(1, OPERATION_AREA_STYLE), area(2, 0x0001)]);
+    const state = stateOf([area(1, ShapeStyleCode.OPERATION_AREA), area(2, ShapeStyleCode.DANGER)]);
     expect(operationAreas(state)).toEqual([
       {
         key: `${ANA}:1`,
@@ -48,6 +47,6 @@ describe('operation areas', () => {
       time: T0 + 3,
       object: { origin: ANA, seq: 1 },
     } as const;
-    expect(operationAreas(stateOf([area(1, OPERATION_AREA_STYLE), deleted]))).toEqual([]);
+    expect(operationAreas(stateOf([area(1, ShapeStyleCode.OPERATION_AREA), deleted]))).toEqual([]);
   });
 });

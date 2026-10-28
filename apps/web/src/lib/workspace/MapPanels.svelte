@@ -12,7 +12,7 @@
   import { navigateTo } from '../navigation/navigation.svelte.ts';
   import MePanel from '../position/MePanel.svelte';
   import type { Preferences } from '../settings/preferences.ts';
-  import { newTask } from '../tasks/task-editor.svelte.ts';
+  import { newTask } from '../tasks/task-editor.ts';
   import { closePanel, isOpen, panels } from '../ui/panels.svelte.ts';
   import WarningList from '../weather/WarningList.svelte';
   import type { WeatherFeed } from '../weather/weather-feed.svelte.ts';

@@ -125,6 +125,39 @@ export function openRollCall(state: GroupState, self: NodeId, now: number): Roll
   };
 }
 
+/** Alerts are shown for an hour, or until dismissed on this device. */
+export const ALERT_SHOWN_S = 60 * 60;
+
+/**
+ * The alerts to show at `now` (seconds): those of the last hour not dismissed on this device. A
+ * critical alert this member has acknowledged needs nothing more of it and goes too.
+ */
+export function alertsToShow(
+  state: GroupState,
+  self: NodeId,
+  now: number,
+  dismissed: ReadonlySet<string>,
+): AlertView[] {
+  return recentAlerts(state, self, now - ALERT_SHOWN_S).filter(
+    (alert) => !dismissed.has(alert.key) && !(alert.event.level === 'critical' && alert.bySelf),
+  );
+}
+
+/**
+ * The roll call to show at `now` (seconds): the open one, while this member has to answer it or,
+ * as its caller, follows the answers, until closed on this device.
+ */
+export function rollCallToShow(
+  state: GroupState,
+  self: NodeId,
+  now: number,
+  dismissed: ReadonlySet<string>,
+): RollCallView | null {
+  const open = openRollCall(state, self, now);
+  if (open === null || dismissed.has(open.key)) return null;
+  return open.mine || !open.answeredBySelf ? open : null;
+}
+
 function acknowledgement(state: GroupState, key: string, self: NodeId): Acknowledgement {
   const acks = state.acks.get(key);
   if (acks === undefined) return { by: [], bySelf: false };
