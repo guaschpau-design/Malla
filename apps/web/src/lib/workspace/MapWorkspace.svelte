@@ -232,7 +232,7 @@
 {#if preferences.cadastre.value}
   <CadastreLayer {map} />
 {/if}
-{#if preferences.mgrsGrid.value}
+{#if preferences.grid.value}
   <MgrsGridLayer {map} />
 {/if}
 {#if preferences.radar.value}
@@ -371,7 +371,7 @@
     flags={{
       relief: preferences.relief,
       cadastre: preferences.cadastre,
-      grid: preferences.mgrsGrid,
+      grid: preferences.grid,
       radar: preferences.radar,
     }}
     hidden={preferences.hiddenLayers}

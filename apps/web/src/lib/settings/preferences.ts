@@ -18,7 +18,7 @@ export const PREFERENCES = {
   /** Shading of the terrain: off at first, as it downloads elevation data. */
   relief: flag('relief', false),
   /** The MGRS grid over the map: off, for those who coordinate in it. */
-  mgrsGrid: flag('mgrsGrid', false),
+  grid: flag('grid', false),
   /** The radar around this device: off, as it keeps the GPS on. */
   radar: flag('radar', false),
   /** The cadastre's parcels: off, as it asks a public service for a picture of every view. */
@@ -43,7 +43,7 @@ export interface Preferences {
   readonly coordinateFormat: Preference<CoordinateFormat>;
   readonly baseMap: Preference<BaseMap>;
   readonly relief: Preference<boolean>;
-  readonly mgrsGrid: Preference<boolean>;
+  readonly grid: Preference<boolean>;
   readonly radar: Preference<boolean>;
   readonly cadastre: Preference<boolean>;
   readonly hiddenLayers: Preference<readonly MapLayer[]>;
@@ -55,12 +55,13 @@ export interface Preferences {
 }
 
 export async function loadPreferences(db: AppDb): Promise<Preferences> {
+  await moveRenamed(db);
   return {
     positionMode: await Preference.load(db, PREFERENCES.positionMode),
     coordinateFormat: await Preference.load(db, PREFERENCES.coordinateFormat),
     baseMap: await Preference.load(db, PREFERENCES.baseMap),
     relief: await Preference.load(db, PREFERENCES.relief),
-    mgrsGrid: await Preference.load(db, PREFERENCES.mgrsGrid),
+    grid: await Preference.load(db, PREFERENCES.grid),
     radar: await Preference.load(db, PREFERENCES.radar),
     cadastre: await Preference.load(db, PREFERENCES.cadastre),
     hiddenLayers: await Preference.load(db, PREFERENCES.hiddenLayers),
@@ -70,4 +71,17 @@ export async function loadPreferences(db: AppDb): Promise<Preferences> {
     notifications: await Preference.load(db, PREFERENCES.notifications),
     language: await Preference.load(db, PREFERENCES.language),
   };
+}
+
+/**
+ * Moves settings stored under an older name to their present one, so each user keeps the choice
+ * made before the rename: the MGRS grid's switch was `mgrsGrid` until it took the layer's name.
+ */
+async function moveRenamed(db: AppDb): Promise<void> {
+  const settings = db.transaction('settings', 'readwrite').store;
+  const grid = await settings.get('mgrsGrid');
+  if (grid !== undefined) {
+    await settings.put(grid, 'grid');
+    await settings.delete('mgrsGrid');
+  }
 }
