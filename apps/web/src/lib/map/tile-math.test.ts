@@ -4,8 +4,8 @@ import {
   boundsAround,
   containsBounds,
   countTiles,
-  latToTileY,
-  lonToTileX,
+  positionInTile,
+  tileAt,
   tileKey,
   tilesInBounds,
 } from './tile-math.ts';
@@ -14,14 +14,19 @@ const valencia = { west: -0.42, south: 39.44, east: -0.33, north: 39.5 };
 
 describe('tile arithmetic', () => {
   it('places Madrid in the right zoom-10 tile', () => {
-    expect(lonToTileX(-3.7038, 10)).toBe(501);
-    expect(latToTileY(40.4168, 10)).toBe(386);
+    expect(tileAt({ lat: 40.4168, lon: -3.7038 }, 10).tile).toEqual({ z: 10, x: 501, y: 386 });
+  });
+
+  it('places a point within its tile, from 0 to 1 across and down', () => {
+    const { tile, u, v } = tileAt({ lat: 0, lon: 0 }, 1);
+    expect(tile).toEqual({ z: 1, x: 1, y: 1 });
+    expect([u, v]).toEqual([0, 0]);
+    expect(positionInTile([0, 0], { z: 1, x: 0, y: 0 })).toEqual([1, 1]);
   });
 
   it('clamps coordinates at the edges of the world', () => {
-    expect(lonToTileX(180, 3)).toBe(7);
-    expect(latToTileY(90, 3)).toBe(0);
-    expect(latToTileY(-90, 3)).toBe(7);
+    expect(tileAt({ lat: 90, lon: 180 }, 3).tile).toEqual({ z: 3, x: 7, y: 0 });
+    expect(tileAt({ lat: -90, lon: -180 }, 3).tile).toEqual({ z: 3, x: 0, y: 7 });
   });
 
   it('counts exactly the tiles it lists', () => {

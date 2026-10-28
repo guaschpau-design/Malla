@@ -1,11 +1,13 @@
-// Each group's event log on this device (ARCHITECTURE.md §3): every event received or created,
-// kept as the bytes that travel on the wire so they can be forwarded unchanged.
+// Each group's event log on this device (ARCHITECTURE.md §3): the events received or created that
+// its state still uses, which is all of them but old positions (ADR-0055), kept as the bytes that
+// travel on the wire so they can be forwarded unchanged.
 
 import {
   encodeEvent,
   isKeepable,
   peekHeader,
   type EventHeader,
+  type EventRef,
   type NodeId,
   type TeselEvent,
 } from '@tesel/protocol';
@@ -167,6 +169,48 @@ export async function markAired(db: AppDb, entry: OutboxEntry): Promise<void> {
   const current = await tx.store.get(key);
   if (current !== undefined) await tx.store.put({ ...current, aired: true });
   await tx.done;
+}
+
+/**
+ * Forgets events the group's state no longer uses (ADR-0055): from the log and, if they still wait
+ * for the server, from the outbox, where the newer events that outlived them wait too.
+ */
+export async function forgetEvents(
+  db: AppDb,
+  groupId: string,
+  events: readonly EventRef[],
+): Promise<void> {
+  const tx = db.transaction(['events', 'outbox'], 'readwrite');
+  const ranges = seqRuns(events).map(({ origin, first, last }) =>
+    IDBKeyRange.bound([groupId, origin, first], [groupId, origin, last]),
+  );
+  await Promise.all([
+    ...ranges.flatMap((range) => [
+      tx.objectStore('events').delete(range),
+      tx.objectStore('outbox').delete(range),
+    ]),
+    tx.done,
+  ]);
+}
+
+/**
+ * Events grouped in runs of consecutive sequence numbers of one author. Nothing else is stored
+ * between the first and last of a run, so each run is deleted as one key range: a log of hours
+ * of positions is forgotten in a few requests instead of one per position.
+ */
+function seqRuns(
+  events: readonly EventRef[],
+): { readonly origin: NodeId; readonly first: number; last: number }[] {
+  const sorted = [...events].sort((a, b) =>
+    a.origin === b.origin ? a.seq - b.seq : a.origin < b.origin ? -1 : 1,
+  );
+  const runs: { readonly origin: NodeId; readonly first: number; last: number }[] = [];
+  for (const { origin, seq } of sorted) {
+    const run = runs.at(-1);
+    if (run?.origin === origin && seq <= run.last + 1) run.last = seq;
+    else runs.push({ origin, first: seq, last: seq });
+  }
+  return runs;
 }
 
 /** Forgets everything a group left on this device. */

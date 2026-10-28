@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { storageRefusals } from '../storage/storage-space.svelte.ts';
 import { notices } from './notices.svelte.ts';
 import { attempt, Submission } from './submission.svelte.ts';
+
+const storageFull = () => new DOMException('Quota exceeded', 'QuotaExceededError');
 
 beforeEach(() => {
   vi.spyOn(console, 'warn').mockImplementation(() => undefined);
@@ -45,6 +48,18 @@ describe('submission', () => {
     await Promise.resolve();
     await Promise.resolve();
     expect(notices.list.map((notice) => notice.text)).toEqual(['No se ha podido hacer.']);
+  });
+
+  it('counts a failure for lack of room, which the storage notice tells instead', async () => {
+    const before = storageRefusals.count;
+    attempt(() => Promise.reject(storageFull()), 'No se ha podido hacer.');
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(notices.list).toEqual([]);
+    const submission = new Submission();
+    expect(await submission.run(() => Promise.reject(storageFull()))).toBe(false);
+    expect(submission.failed).toBe(true);
+    expect(storageRefusals.count).toBe(before + 2);
   });
 
   it('says nothing when it works', async () => {

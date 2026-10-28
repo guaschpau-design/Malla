@@ -13,6 +13,7 @@ import {
   type LocalIdentity,
 } from './identity/identity.ts';
 import type { AppDb } from './storage/app-db.ts';
+import { keepStorage } from './storage/storage-space.svelte.ts';
 
 export class Session {
   // Raw state: these values are stored in IndexedDB, which cannot clone Svelte's proxies.
@@ -43,15 +44,22 @@ export class Session {
     return session;
   }
 
+  /**
+   * Creates this device's identity. From then on the device holds what cannot be had again, so
+   * the browser is asked to keep its storage; and again on joining a group, as the browser may
+   * have said no the first time and say yes once the app is used more.
+   */
   async createIdentity(alias: string): Promise<void> {
     const identity = createLocalIdentity(alias, Date.now());
     await saveIdentity(this.#db, identity);
     this.identity = identity;
+    await keepStorage();
   }
 
   async createGroup(name: string, server: string | null): Promise<StoredGroup> {
     const group = await startGroup(this.#db, name, server, Date.now());
     await this.#refreshGroups();
+    await keepStorage();
     return group;
   }
 
@@ -76,6 +84,7 @@ export class Session {
   async join(invitation: Invitation): Promise<JoinOutcome> {
     const { outcome } = await joinGroup(this.#db, invitation, Date.now());
     await this.#refreshGroups();
+    await keepStorage();
     return outcome;
   }
 

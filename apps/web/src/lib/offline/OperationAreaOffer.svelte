@@ -17,6 +17,7 @@
     detailThatFits,
     downloadLayers,
     estimatedBytes,
+    failureText,
     isDownloaded,
     type OfflineMaps,
   } from './offline-maps.ts';
@@ -100,7 +101,7 @@
       </div>
     {:else}
       <p class="hint">{t('operationAreaOffer', { size: formatBytes(bytes, locale) })}</p>
-      {#if job.failed}<p class="warning">{t('downloadFailed')}</p>{/if}
+      {#if job.failure}<p class="warning">{failureText(job.failure, t, locale)}</p>{/if}
       <div class="row">
         <button class="primary" onclick={download}>{t('download')}</button>
         <button onclick={() => later.add(area.key)}>{t('notNow')}</button>

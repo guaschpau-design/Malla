@@ -16,10 +16,12 @@
   import { DownloadJob } from './download-job.svelte.ts';
   import {
     areaContents,
+    areaLayers,
     downloadLayers,
     estimatedBytes,
     EXTRA_NAMES,
     EXTRAS,
+    failureText,
     type Extra,
     type OfflineMaps,
   } from './offline-maps.ts';
@@ -71,6 +73,20 @@
       name.trim() || t('defaultAreaName', { date: formatDateTime(Date.now(), locale) });
     attempt(async () => {
       if (await job.run(offline.store, { name: areaName, bounds, layers })) name = '';
+      await refresh();
+    }, t('actionFailed'));
+  }
+
+  /** Downloads what an incomplete area is missing, skipping the tiles it has (ADR-0056). */
+  function resume(area: OfflineArea): void {
+    const plan = {
+      name: area.name,
+      bounds: area.bounds,
+      layers: areaLayers(offline.archives, area),
+      resumes: area,
+    };
+    attempt(async () => {
+      await job.run(offline.store, plan);
       await refresh();
     }, t('actionFailed'));
   }
@@ -157,7 +173,7 @@
       </p>
       <button type="submit" class="primary">{t('download')}</button>
     {/if}
-    {#if job.failed}<p class="warning">{t('downloadFailed')}</p>{/if}
+    {#if job.failure}<p class="warning">{failureText(job.failure, t, locale)}</p>{/if}
   </form>
 
   {#if areas.length === 0}
@@ -177,12 +193,21 @@
             </span>
           </div>
           <div class="row">
+            {#if !area.complete}
+              <button
+                disabled={job.running}
+                onclick={() => {
+                  resume(area);
+                }}>{t('resume')}</button
+              >
+            {/if}
             <button
               onclick={() => {
                 show(area);
               }}>{t('showOnMap')}</button
             >
             <button
+              disabled={job.running}
               onclick={() => {
                 void remove(area);
               }}>{t('delete')}</button

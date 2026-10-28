@@ -1,5 +1,7 @@
 // The core promise of v0.1: prepare while online, keep working when the network is gone.
 
+import type { Page } from '@playwright/test';
+
 import { chooseAlias, expect, mapIdle, openMore, test, twoMembers } from './helpers.ts';
 
 test('a downloaded area keeps working after going offline and reloading', async ({
@@ -36,6 +38,58 @@ test('a downloaded area keeps working after going offline and reloading', async 
     mask: [page.locator('.maplibregl-ctrl'), page.locator('.dock'), page.locator('button.sos')],
   });
 });
+
+test('with no area downloaded, the map keeps an overview and the places seen', async ({
+  page,
+  context,
+}) => {
+  await page.goto('/#map=13/39.47/-0.36');
+  await chooseAlias(page, 'Ana');
+  await expect
+    .poll(() =>
+      page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration())?.active),
+    )
+    .toBe(true);
+  await mapIdle(page);
+  // The test map covers a part of Valencia: at least one tile at each zoom from 0 to 6.
+  await expect.poll(async () => (await keptTiles(page)).overview).toBeGreaterThanOrEqual(7);
+  const online = await keptTiles(page);
+  expect(online.seen).toBeGreaterThan(0);
+
+  await context.setOffline(true);
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Conexiones: Sin conexión' })).toBeVisible();
+  await mapIdle(page);
+  const offline = await keptTiles(page);
+  expect(offline.overview).toBe(online.overview);
+  expect(offline.seen).toBeGreaterThanOrEqual(online.seen);
+});
+
+/** Tiles the device keeps without any area: the overview's, and those seen online. */
+function keptTiles(page: Page): Promise<{ overview: number; seen: number }> {
+  return page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve) => {
+      const open = indexedDB.open('tesel-map');
+      open.onsuccess = () => {
+        resolve(open.result);
+      };
+    });
+    const read = <T>(store: string) =>
+      new Promise<T[]>((resolve) => {
+        const request = db.transaction(store).objectStore(store).getAll();
+        request.onsuccess = () => {
+          resolve(request.result as T[]);
+        };
+      });
+    const tiles = await read<{ areas: string[] }>('tiles');
+    const seen = await read<unknown>('viewed');
+    db.close();
+    return {
+      overview: tiles.filter(({ areas }) => areas.includes('overview')).length,
+      seen: seen.length,
+    };
+  });
+}
 
 test('members are offered the map of the operation area their coordinator marks', async ({
   browser,

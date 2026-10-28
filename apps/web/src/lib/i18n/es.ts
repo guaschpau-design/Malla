@@ -28,7 +28,7 @@ export const es: Messages = {
   offlineAreas: 'Mapas sin conexión',
   close: 'Cerrar',
   areasIntro:
-    'Descarga el mapa de la zona donde puedas necesitarlo. Sin conexión, la app solo muestra las zonas descargadas.',
+    'Descarga el mapa de la zona donde puedas necesitarlo. Sin conexión, la app muestra con detalle las zonas descargadas y los sitios que ya has visto; del resto, solo una vista general.',
   downloadVisible: 'Descargar la zona visible',
   areaName: 'Nombre',
   defaultAreaName: 'Zona {date}',
@@ -45,7 +45,18 @@ export const es: Messages = {
   download: 'Descargar',
   cancel: 'Cancelar',
   downloading: 'Descargando… {done} de {total}',
-  downloadFailed: 'La descarga se ha detenido. Borra la zona e inténtalo de nuevo.',
+  downloadFailed: 'La descarga se ha detenido. Puedes reanudarla desde la lista de zonas.',
+  downloadUnreachable:
+    'La descarga se ha detenido: no se llega al servicio de mapas. Reanúdala cuando haya conexión.',
+  downloadIncomplete:
+    'Faltan teselas que no se han podido descargar. Reanuda la descarga más tarde para completarla.',
+  downloadStorageFull:
+    'El almacenamiento del dispositivo se ha llenado. Borra otras zonas y reanuda la descarga.',
+  downloadNoRoom:
+    'No hay sitio para esta zona: necesita unos {needed} y quedan {free}, después de guardar espacio para el registro del grupo. Borra otras zonas o elige menos detalle.',
+  resume: 'Reanudar',
+  storageFull:
+    'El almacenamiento del dispositivo está lleno: Tesel no puede guardar lo que llega ni lo que envías. Borra mapas sin conexión para hacer sitio.',
   noAreas: 'Aún no hay mapas sin conexión.',
   incomplete: 'Incompleta',
   showOnMap: 'Ver en el mapa',

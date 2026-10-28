@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { climbOf, samplesAlong } from './climb.ts';
+import { tileAt } from '../map/tile-math.ts';
 import { TERRAIN_MAX_ZOOM } from '../map/tile-sources.ts';
-import { ElevationReader, terrariumMetres, tileAt, type Pixels } from './elevation.ts';
+import { ElevationReader, terrariumMetres, type Pixels } from './elevation.ts';
 
 const A = { lat: 39.47, lon: -0.37 };
 const B = { lat: 39.48, lon: -0.37 }; // about 1112 m north
@@ -12,13 +13,6 @@ describe('elevation tiles', () => {
     expect(terrariumMetres(128, 0, 0)).toBe(0);
     expect(terrariumMetres(128, 100, 128)).toBe(100.5);
     expect(terrariumMetres(127, 255, 0)).toBe(-1);
-  });
-
-  it('finds the tile and the place in it of a point', () => {
-    const { tile, u, v } = tileAt({ lat: 0, lon: 0 }, 1);
-    expect(tile).toEqual({ z: 1, x: 1, y: 1 });
-    expect(u).toBeCloseTo(0);
-    expect(v).toBeCloseTo(0);
   });
 
   it('reads elevations, and says null where the tiles cannot be had', async () => {

@@ -2,6 +2,7 @@
 // (position-mode.ts). The choice is remembered, so sharing resumes after the app restarts.
 
 import type { Preference } from '../settings/preference.svelte.ts';
+import { storageRefusals } from '../storage/storage-space.svelte.ts';
 import type { GroupFeed } from '../sync/group-feed.svelte.ts';
 import type { DeviceFix, DeviceLocation } from './device-location.svelte.ts';
 import type { PositionMode } from './position-mode.ts';
@@ -51,7 +52,10 @@ export class PositionSharing {
     if (this.#release !== null) return;
     this.#last = null;
     this.#release = this.#location.use((fix) => {
-      void this.#report(fix);
+      this.#report(fix).catch((error: unknown) => {
+        console.warn('Sharing a position failed', error);
+        storageRefusals.note(error);
+      });
     });
   }
 

@@ -5,7 +5,7 @@
 // state. Events arrive late, twice or out of order through several transports, and this property
 // is what makes that harmless.
 
-import type { EventType, TeselEvent } from '@tesel/protocol';
+import type { EventType, PositionEvent, TeselEvent } from '@tesel/protocol';
 
 import { acks } from './state/acks.ts';
 import { journal } from './state/journal.ts';
@@ -17,7 +17,7 @@ import { rollCall } from './state/roll-call.ts';
 import type { Slice } from './state/slice.ts';
 import { sos, sosCancels } from './state/sos.ts';
 import { tasks } from './state/tasks.ts';
-import { trails } from './state/trails.ts';
+import { hasOutlived, outlivedPositions, trails } from './state/trails.ts';
 
 export type { ObjectRecord } from './state/objects.ts';
 export type { JournalEvent } from './state/journal.ts';
@@ -83,6 +83,29 @@ export function reduceAll(state: GroupState, events: Iterable<TeselEvent>): Grou
 /** The state of a set of events, in any order. */
 export function stateOf(events: Iterable<TeselEvent>): GroupState {
   return reduceAll(EMPTY_STATE, events);
+}
+
+/**
+ * Whether the state can no longer use `event`: a position its member's trail has outlived
+ * (state/trails.ts). Applying it changes nothing, now or after any later event, so a device may
+ * drop it as if it already had it (ADR-0055).
+ */
+export function isOutlived(state: GroupState, event: TeselEvent): boolean {
+  return event.type === 'position' && hasOutlived(state.trails, event);
+}
+
+/**
+ * The events a device can forget once `added` has taken the state from `before` to `after`: those
+ * the new state has outlived, among the ones `before` still used and the ones `added`. The state of
+ * the events kept is the state of all of them, whatever arrives later (ADR-0055).
+ */
+export function outlivedEvents(
+  before: GroupState,
+  after: GroupState,
+  added: readonly TeselEvent[],
+): PositionEvent[] {
+  const positions = added.filter((event): event is PositionEvent => event.type === 'position');
+  return outlivedPositions(before.trails, after.trails, positions);
 }
 
 // The one place where a slice is widened to any event and any state. It is safe: READERS only

@@ -3,7 +3,7 @@ import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { TileArchive } from '../map/area-download.ts';
-import { openTileStore } from '../map/tile-store.ts';
+import { openTileStore, type TileStore } from '../map/tile-store.ts';
 import { DownloadJob, type DownloadPlan } from './download-job.svelte.ts';
 
 let databases = 0;
@@ -15,6 +15,28 @@ const tile = new Uint8Array([1, 2, 3]).buffer;
 const everyTile: TileArchive = { getTile: () => Promise.resolve(tile) };
 const brokenService: TileArchive = { getTile: () => Promise.reject(new Error('503')) };
 
+/** A service whose tiles wait until it is opened, or until the request is cancelled. */
+function heldService(): { archive: TileArchive; open: () => void } {
+  const { promise: opened, resolve: open } = Promise.withResolvers<undefined>();
+  const archive: TileArchive = {
+    getTile: (_z, _x, _y, signal) =>
+      new Promise((resolve, reject) => {
+        signal.addEventListener('abort', () => {
+          reject(signal.reason as Error);
+        });
+        void opened.then(() => {
+          resolve(tile);
+        });
+      }),
+  };
+  return {
+    archive,
+    open: () => {
+      open(undefined);
+    },
+  };
+}
+
 function plan(archive: TileArchive): DownloadPlan {
   return {
     name: 'Valencia',
@@ -23,46 +45,99 @@ function plan(archive: TileArchive): DownloadPlan {
   };
 }
 
+/** The browser's storage manager: the job asks it for room, and to keep the tiles. */
+function storageWith(free: number) {
+  return {
+    storage: {
+      persist: () => Promise.resolve(true),
+      estimate: () => Promise.resolve({ usage: 1024, quota: 1024 + free }),
+    },
+  };
+}
+
 describe('a download of an area', () => {
   beforeEach(() => {
-    // The browser's storage manager, which the job asks to keep the tiles.
-    vi.stubGlobal('navigator', { storage: { persist: () => Promise.resolve(true) } });
+    vi.stubGlobal('navigator', storageWith(1024 ** 3));
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
   it('follows its progress to the end and keeps the whole area', async () => {
     const store = await freshStore();
     const job = new DownloadJob();
-    const running = job.run(store, plan(everyTile));
-    expect(job.running).toBe(true);
+    const service = heldService();
+    const running = job.run(store, plan(service.archive));
+    await vi.waitFor(() => {
+      expect(job.running).toBe(true);
+    });
     expect(job.progress?.done).toBe(0);
     const total = job.progress?.total ?? 0;
     expect(total).toBeGreaterThan(0);
+    service.open();
 
     await expect(running).resolves.toBe(true);
     expect(job.running).toBe(false);
-    expect(job.failed).toBe(false);
+    expect(job.failure).toBeNull();
     const [area] = await store.listAreas();
     expect(area).toMatchObject({ name: 'Valencia', complete: true, storedTiles: total });
   });
 
-  it('says it failed when a service does not answer, and never rejects', async () => {
+  it('does not start without room for the area and for the group’s log', async () => {
+    vi.stubGlobal('navigator', storageWith(10 * 1024 ** 2));
+    const store = await freshStore();
     const job = new DownloadJob();
-    await expect(job.run(await freshStore(), plan(brokenService))).resolves.toBe(false);
-    expect(job.failed).toBe(true);
+    await expect(job.run(store, plan(everyTile))).resolves.toBe(false);
+    expect(job.failure).toMatchObject({ kind: 'no-room', free: 0 });
+    expect(await store.listAreas()).toEqual([]);
+  });
+
+  it('says the service is out of reach when tile after tile fails, and never rejects', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const job = new DownloadJob();
+    const running = job.run(await freshStore(), plan(brokenService));
+    let result: boolean | undefined;
+    void running.then((value) => (result = value));
+    while (result === undefined) await vi.advanceTimersByTimeAsync(1000);
+    expect(result).toBe(false);
+    expect(job.failure).toEqual({ kind: 'unreachable' });
     expect(job.running).toBe(false);
+  });
+
+  it('says the storage filled up, and resumes into the same area once there is room', async () => {
+    const store = await freshStore();
+    const full: TileStore = {
+      getTile: (source, at) => store.getTile(source, at),
+      putTiles: () => Promise.reject(new DOMException('full', 'QuotaExceededError')),
+      keepStored: (owner, source, tiles) => store.keepStored(owner, source, tiles),
+      keepViewed: (source, at, data) => store.keepViewed(source, at, data),
+      saveArea: (area) => store.saveArea(area),
+      listAreas: () => store.listAreas(),
+      deleteArea: (area) => store.deleteArea(area),
+    };
+    const job = new DownloadJob();
+    await expect(job.run(full, plan(everyTile))).resolves.toBe(false);
+    expect(job.failure).toEqual({ kind: 'storage-full' });
+
+    const [stopped] = await store.listAreas();
+    if (stopped === undefined) throw new Error('no area');
+    await expect(job.run(store, { ...plan(everyTile), resumes: stopped })).resolves.toBe(true);
+    const areas = await store.listAreas();
+    expect(areas).toMatchObject([{ id: stopped.id, createdAt: stopped.createdAt, complete: true }]);
   });
 
   it('stops when cancelled, without calling it a failure', async () => {
     const store = await freshStore();
     const job = new DownloadJob();
-    const running = job.run(store, plan(everyTile));
+    const running = job.run(store, plan(heldService().archive));
+    await vi.waitFor(() => {
+      expect(job.running).toBe(true);
+    });
     job.cancel();
     await expect(running).resolves.toBe(false);
-    expect(job.failed).toBe(false);
+    expect(job.failure).toBeNull();
     const [area] = await store.listAreas();
     expect(area?.complete).toBe(false);
   });

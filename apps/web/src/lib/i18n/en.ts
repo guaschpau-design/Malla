@@ -28,7 +28,7 @@ export const en = {
   offlineAreas: 'Offline maps',
   close: 'Close',
   areasIntro:
-    'Download the map of the area where you may need it. Without a connection, the app shows downloaded areas only.',
+    'Download the map of the area where you may need it. Without a connection, the app shows in detail the downloaded areas and the places you have already looked at; elsewhere, only an overview.',
   downloadVisible: 'Download visible area',
   areaName: 'Name',
   defaultAreaName: 'Area {date}',
@@ -45,7 +45,17 @@ export const en = {
   download: 'Download',
   cancel: 'Cancel',
   downloading: 'Downloading… {done} of {total}',
-  downloadFailed: 'The download stopped. Delete the area and try again.',
+  downloadFailed: 'The download stopped. You can resume it from the list of areas.',
+  downloadUnreachable:
+    'The download stopped: the map service cannot be reached. Resume it when there is a connection.',
+  downloadIncomplete:
+    'Some tiles could not be downloaded. Resume the download later to complete it.',
+  downloadStorageFull: 'The device storage is full. Delete other areas and resume the download.',
+  downloadNoRoom:
+    'There is no room for this area: it needs about {needed} and {free} are left, after keeping room for the group’s log. Delete other areas or choose less detail.',
+  resume: 'Resume',
+  storageFull:
+    'The device storage is full: Tesel cannot save what arrives or what you send. Delete offline maps to make room.',
   noAreas: 'No offline maps yet.',
   incomplete: 'Incomplete',
   showOnMap: 'Show on map',

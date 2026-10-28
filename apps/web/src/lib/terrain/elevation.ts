@@ -4,7 +4,7 @@
 
 import type { LatLon } from '@tesel/protocol';
 
-import type { TileCoord } from '../map/tile-math.ts';
+import { tileAt, tileKey, type TileCoord } from '../map/tile-math.ts';
 import { TERRAIN_MAX_ZOOM } from '../map/tile-sources.ts';
 
 /** The pixels of a decoded tile: RGBA, row by row. */
@@ -23,16 +23,6 @@ const CACHE_TILES = 24;
 /** Metres above sea level of a Terrarium pixel. */
 export function terrariumMetres(red: number, green: number, blue: number): number {
   return red * 256 + green + blue / 256 - 32_768;
-}
-
-/** The tile of a point at a zoom, and where in it the point is, from 0 to 1. */
-export function tileAt(at: LatLon, z: number): { tile: TileCoord; u: number; v: number } {
-  const n = 2 ** z;
-  const x = ((at.lon + 180) / 360) * n;
-  const rad = (at.lat * Math.PI) / 180;
-  const y = ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * n;
-  const tile = { z, x: Math.floor(x), y: Math.floor(y) };
-  return { tile, u: x - tile.x, v: y - tile.y };
 }
 
 export class ElevationReader {
@@ -66,7 +56,7 @@ export class ElevationReader {
   }
 
   #pixels(tile: TileCoord): Promise<Pixels | null> {
-    const key = `${String(tile.z)}/${String(tile.x)}/${String(tile.y)}`;
+    const key = tileKey(tile);
     let pixels = this.#cache.get(key);
     if (pixels === undefined) {
       pixels = this.#load(tile);

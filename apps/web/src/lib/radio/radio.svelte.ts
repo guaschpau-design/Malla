@@ -17,6 +17,7 @@ import { receiveEvents } from '../events/event-log.ts';
 import { groupId } from '../groups/group.ts';
 import { getGroup } from '../groups/group-store.ts';
 import type { AppDb } from '../storage/app-db.ts';
+import { storageRefusals } from '../storage/storage-space.svelte.ts';
 import type { GroupFeed, LoraSink } from '../sync/group-feed.svelte.ts';
 import {
   loadRadioTexts,
@@ -213,6 +214,7 @@ export class RadioSession {
       await receiveEvents(db, group.id, [frame.bytes], { forward: group.server !== null });
     } catch (error) {
       console.warn('Storing a radio frame failed', error);
+      storageRefusals.note(error);
       if (attempts + 1 < STORE_ATTEMPTS) {
         this.#unstored = [...this.#unstored, { frame, attempts: attempts + 1 }].slice(
           -MAX_UNSTORED,
