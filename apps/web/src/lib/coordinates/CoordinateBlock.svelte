@@ -32,7 +32,11 @@
     <select
       aria-label={t('coordinateFormat')}
       value={format.value}
-      onchange={(event) => format.set(event.currentTarget.value as CoordinateFormat)}
+      onchange={(event) => {
+        const { value } = event.currentTarget;
+        const chosen = COORDINATE_FORMATS.find((option) => option === value);
+        if (chosen) void format.set(chosen);
+      }}
     >
       {#each COORDINATE_FORMATS as option (option)}
         <option value={option}>{t(NAMES[option])}</option>

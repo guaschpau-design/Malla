@@ -7,7 +7,7 @@
   import type { Locale, Translate } from '../i18n/index.ts';
   import type { DeviceLocation } from '../position/device-location.svelte.ts';
   import ClimbLine from '../terrain/ClimbLine.svelte';
-  import { terrainContext } from '../terrain/terrain-context.ts';
+  import { terrain } from '../terrain/terrain.svelte.ts';
   import { legBetween } from './leg.ts';
 
   interface Props {
@@ -18,8 +18,6 @@
   }
 
   let { t, locale, at, location }: Props = $props();
-
-  const terrain = terrainContext();
 
   const leg = $derived(location.fix && legBetween(location.fix.at, at));
 </script>

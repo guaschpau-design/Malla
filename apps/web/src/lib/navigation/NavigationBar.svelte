@@ -10,7 +10,7 @@
   import MapCard from '../ui/MapCard.svelte';
   import Pictogram from '../ui/Pictogram.svelte';
   import ClimbLine from '../terrain/ClimbLine.svelte';
-  import { terrainContext } from '../terrain/terrain-context.ts';
+  import { terrain } from '../terrain/terrain.svelte.ts';
   import { legBetween } from './leg.ts';
 
   interface Props {
@@ -25,8 +25,6 @@
   }
 
   let { t, locale, map, name, target, fix, onstop }: Props = $props();
-
-  const terrain = terrainContext();
 
   /** The map may be turned; the arrow points the way on the map as it is shown. */
   let mapBearing = $state(0);

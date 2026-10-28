@@ -34,7 +34,7 @@
   import { loadPreferences, type Preferences } from './lib/settings/preferences.ts';
   import { Session } from './lib/session.svelte.ts';
   import { ElevationReader } from './lib/terrain/elevation.ts';
-  import { provideTerrain } from './lib/terrain/terrain-context.ts';
+  import { terrain } from './lib/terrain/terrain.svelte.ts';
   import { openAppDb, type AppDb } from './lib/storage/app-db.ts';
   import { GroupFeed } from './lib/sync/group-feed.svelte.ts';
   import { fullscreenAtFirstTap, fullscreenSupported } from './lib/ui/fullscreen.svelte.ts';
@@ -55,10 +55,8 @@
 
   const archives = tileArchives(basemapUrl());
   let elevations: ElevationReader | null = $state.raw(null);
-  provideTerrain({
-    get reader() {
-      return preferences?.relief.value ? elevations : null;
-    },
+  $effect(() => {
+    terrain.reader = preferences?.relief.value ? elevations : null;
   });
   /** Downloaded maps, once their database is open. */
   let offline: OfflineMaps | undefined = $state.raw();

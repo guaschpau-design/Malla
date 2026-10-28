@@ -17,8 +17,16 @@ export interface SymbolInfo {
 
 // Families: people and health in red, hazards in orange and amber, water in blue, safety and
 // logistics in green, command in ink.
+/** Also what a symbol this version does not know is drawn as (protocol §3.1, reserved values). */
+const GENERIC_SYMBOL: SymbolInfo = {
+  code: 0x0000,
+  label: 'symbolGeneric',
+  glyph: 'point',
+  tone: 'slate',
+};
+
 export const SYMBOLS: readonly SymbolInfo[] = [
-  { code: 0x0000, label: 'symbolGeneric', glyph: 'point', tone: 'slate' },
+  GENERIC_SYMBOL,
   { code: 0x0001, label: 'symbolInjured', glyph: 'injured', tone: 'red' },
   { code: 0x0002, label: 'symbolMissing', glyph: 'search', tone: 'red' },
   { code: 0x0003, label: 'symbolFire', glyph: 'flame', tone: 'orange' },
@@ -44,8 +52,11 @@ export interface StyleInfo {
   readonly tone: Tone;
 }
 
+/** Also what a style this version does not know is drawn as. */
+const NEUTRAL_STYLE: StyleInfo = { code: 0x0000, label: 'styleNeutral', tone: 'slate' };
+
 export const SHAPE_STYLES: readonly StyleInfo[] = [
-  { code: 0x0000, label: 'styleNeutral', tone: 'slate' },
+  NEUTRAL_STYLE,
   { code: DANGER_STYLE, label: 'styleDanger', tone: 'red' },
   { code: 0x0002, label: 'styleSearchAssigned', tone: 'amber' },
   { code: 0x0003, label: 'styleSearchCleared', tone: 'green' },
@@ -65,11 +76,11 @@ export function areaStyles(coordinator: boolean): StyleInfo[] {
 }
 
 export function symbolInfo(code: number): SymbolInfo {
-  return SYMBOLS.find((symbol) => symbol.code === code) ?? (SYMBOLS[0] as SymbolInfo);
+  return SYMBOLS.find((symbol) => symbol.code === code) ?? GENERIC_SYMBOL;
 }
 
 export function styleInfo(code: number): StyleInfo {
-  return SHAPE_STYLES.find((style) => style.code === code) ?? (SHAPE_STYLES[0] as StyleInfo);
+  return SHAPE_STYLES.find((style) => style.code === code) ?? NEUTRAL_STYLE;
 }
 
 /** Name of the map image drawn for a symbol (see symbol-images.ts). */

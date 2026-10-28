@@ -1,0 +1,10 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignore": [".claude/**", "deploy/pages/sw.js"],
+  "workspaces": {
+    "apps/web": {
+      "entry": ["scripts/*.{ts,js}", "public/*.js", "e2e/**/*.ts"],
+      "project": ["src/**/*.{ts,svelte}", "scripts/**/*.{ts,js}", "e2e/**/*.ts"]
+    }
+  }
+}
