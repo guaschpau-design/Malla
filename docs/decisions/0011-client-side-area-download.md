@@ -1,6 +1,6 @@
 # 0011. Download offline areas tile by tile in the browser
 
-- Status: Accepted
+- Status: Accepted, amended by [0056](0056-storage-and-offline-maps.md) (downloads resume, an overview and the tiles seen are kept)
 - Date: 2026-10-25
 - Supersedes: the offline-download mechanism of [ADR-0007](0007-self-hosted-vector-maps.md) (self-hosting the base map still stands)
 

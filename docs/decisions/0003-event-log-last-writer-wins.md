@@ -1,6 +1,6 @@
 # 0003. Event log with last-writer-wins instead of a CRDT library
 
-- Status: Accepted, amended by [0044](0044-clocks-and-damaged-events.md) (each author's events stay in order)
+- Status: Accepted, amended by [0044](0044-clocks-and-damaged-events.md) (each author's events stay in order) and [0055](0055-forget-outlived-positions.md) (positions the trails have outlived are forgotten)
 - Date: 2026-10-25
 
 ## Context

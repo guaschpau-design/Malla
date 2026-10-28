@@ -8,7 +8,7 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | ---------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------ |
 | [0001](0001-record-decisions-and-language.md)        | Record decisions as ADRs; English for code and technical docs                   | Accepted                                   |
 | [0002](0002-pwa-only-client.md)                      | A progressive web app is the only client in v0.1                                | Superseded after v0.1 by 0016              |
-| [0003](0003-event-log-last-writer-wins.md)           | Event log with last-writer-wins instead of a CRDT library                       | Accepted, amended by 0044                  |
+| [0003](0003-event-log-last-writer-wins.md)           | Event log with last-writer-wins instead of a CRDT library                       | Accepted, amended by 0044, 0055            |
 | [0004](0004-one-binary-format-every-transport.md)    | One binary event format for every transport                                     | Accepted                                   |
 | [0005](0005-group-secret-trust-boundary.md)          | The group secret is the trust boundary; the server is zero-knowledge            | Accepted, amended by 0052                  |
 | [0006](0006-meshcore-first-channel-datagrams.md)     | MeshCore first, through channel data datagrams                                  | Accepted                                   |
@@ -16,7 +16,7 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0008](0008-one-server-vps-and-command-post.md)      | One server program for the VPS and the local command post                       | Accepted, settled by 0018                  |
 | [0009](0009-toolchain.md)                            | Toolchain: TypeScript, pnpm workspace, Svelte, Vitest                           | Accepted                                   |
 | [0010](0010-lora-link-security.md)                   | Rely on MeshCore channel encryption for LoRa in v0.1, knowing its limits        | Accepted                                   |
-| [0011](0011-client-side-area-download.md)            | Download offline areas tile by tile in the browser                              | Accepted                                   |
+| [0011](0011-client-side-area-download.md)            | Download offline areas tile by tile in the browser                              | Accepted, amended by 0056                  |
 | [0012](0012-invitation-links-under-a-base-path.md)   | Invitation links work under a base path                                         | Accepted, amended by 0017                  |
 | [0013](0013-self-updating-vps.md)                    | A self-updating VPS behind Caddy, installed by one script                       | Accepted, partly superseded by 0049        |
 | [0014](0014-name-teselia.md)                         | The project is called Teselia                                                   | Superseded by 0019                         |
@@ -27,7 +27,7 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0019](0019-name-tesel.md)                           | The project is called Tesel                                                     | Accepted                                   |
 | [0020](0020-colour-and-symbols.md)                   | Signal lime, colours defined once, and symbols of our own                       | Accepted                                   |
 | [0021](0021-coordinate-formats.md)                   | Write coordinates in four formats, converted by our own code                    | Accepted                                   |
-| [0022](0022-log-files.md)                            | Carry a group's log in files of sealed envelopes                                | Accepted                                   |
+| [0022](0022-log-files.md)                            | Carry a group's log in files of sealed envelopes                                | Accepted, amended by 0055                  |
 | [0023](0023-ign-base-maps.md)                        | Topographic and aerial base maps from Spain's IGN, read by the browser          | Accepted, amended by 0034, 0037, 0041      |
 | [0024](0024-terrain-tiles-for-relief.md)             | Relief from the open Terrain Tiles, read by the browser                         | Superseded by 0037                         |
 | [0025](0025-tasks.md)                                | Tasks as one event type, changed by anyone, last writer wins                    | Accepted                                   |
