@@ -28,7 +28,7 @@ export const DEFAULT_LIMITS: RelayLimits = {
   groupPerSecond: 30,
   serverPerSecond: 500,
   maxConnections: 10_000,
-  // Phones behind a carrier's NAT, and a command post's links, share one address.
+  // Phones behind a carrier's NAT share one address.
   maxConnectionsPerAddress: 256,
   newGroupsPerAddressPerHour: 120,
   joinTimeoutMs: 10_000,

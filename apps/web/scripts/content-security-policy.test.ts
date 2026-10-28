@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { CONTENT_SECURITY_POLICY } from './content-security-policy.ts';
 
-const HEADERS = new URL('../../../deploy/common/headers.caddy', import.meta.url);
+const HEADERS = new URL('../../../deploy/vps/headers.caddy', import.meta.url);
 
 describe("the app's Content-Security-Policy", () => {
   it('is the same in its page and in the header its servers send, which adds frame-ancestors', async () => {

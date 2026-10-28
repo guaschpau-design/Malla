@@ -47,8 +47,6 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./headers.caddy:/etc/caddy/headers.caddy:ro
       - ./redirects.caddy:/etc/caddy/redirects.caddy:ro
-      - ./post-certificate.caddy:/etc/caddy/post-certificate.caddy:ro
-      - ./post-certificate:/srv/post-certificate:ro
       - ./maps:/srv/maps:ro
       - caddy-data:/data
       - caddy-config:/config

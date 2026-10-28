@@ -77,8 +77,7 @@ export async function twoMembers(
   const berta = await device(browser, 'Berta', path);
   await berta.goto(link);
   await berta.getByRole('dialog').getByRole('button', { name: 'Unirme' }).click();
-  // A new member first chooses a relay (protocol §8.3), which can take a few seconds when the
-  // machine running the whole suite is busy.
+  // Joining and syncing can take a few seconds when the machine running the whole suite is busy.
   await expect(berta.getByTitle('Conectado al servidor del grupo')).toBeVisible({
     timeout: 15_000,
   });

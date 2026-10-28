@@ -12,7 +12,6 @@ import {
 
 const BASE: LinkInput = {
   server: 'synced',
-  viaCommandPost: false,
   radio: 'off',
   browserOnline: true,
 };
@@ -20,7 +19,6 @@ const BASE: LinkInput = {
 describe('link', () => {
   it('works through the network when the group is synced with its server', () => {
     expect(linkOf(BASE)).toEqual({ channels: ['internet'], level: 'ok' });
-    expect(linkOf({ ...BASE, viaCommandPost: true }).channels).toEqual(['command-post']);
   });
 
   it('lists both channels when the radio is linked too, and the radio alone without a server', () => {
@@ -61,9 +59,9 @@ describe('channel names', () => {
     expect(name(undefined)).toBe('WiFi/5G');
   });
 
-  it('calls a command post WiFi and the radio LoRa', () => {
+  it('calls the internet by its network and the radio LoRa', () => {
     const network = { type: 'cellular', effectiveType: '4g' };
-    expect(t(channelName('command-post', network))).toBe('WiFi');
+    expect(t(channelName('internet', network))).toBe('4G/5G');
     expect(t(channelName('radio', network))).toBe('LoRa');
   });
 });
@@ -80,7 +78,6 @@ describe('radio link', () => {
 describe('network status', () => {
   it('says in a few words how the network channel is doing', () => {
     expect(networkStatus(BASE)).toEqual({ level: 'ok', label: 'netServer' });
-    expect(networkStatus({ ...BASE, viaCommandPost: true }).label).toBe('netCommandPost');
     expect(networkStatus({ ...BASE, server: 'syncing' }).level).toBe('connecting');
     expect(networkStatus({ ...BASE, server: 'local-only' }).label).toBe('netNoServer');
     expect(networkStatus({ ...BASE, server: null }).label).toBe('netNoGroup');

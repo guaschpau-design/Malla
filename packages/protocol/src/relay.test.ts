@@ -8,7 +8,6 @@ import {
   parseServerInfo,
   parseServerMessage,
   relayUrl,
-  sameServer,
   serverInfoUrl,
   type ServerMessage,
 } from './relay.ts';
@@ -106,44 +105,23 @@ describe('relay messages', () => {
 });
 
 describe('server information', () => {
-  it('reads what a command post says about itself', () => {
+  it('reads what a server says about itself, and ignores what it does not know', () => {
     const text = JSON.stringify({
       status: 'ok',
       protocolVersion: 1,
-      upstream: 'https://tesel.example',
-      commandPost: null,
+      time: 1793000000,
       extra: true,
     });
-    expect(parseServerInfo(text)).toEqual({
-      protocolVersion: 1,
-      upstream: 'https://tesel.example/',
-      commandPost: null,
-      time: null,
-    });
+    expect(parseServerInfo(text)).toEqual({ protocolVersion: 1, time: 1793000000 });
   });
 
-  it('treats missing fields as none and refuses insecure or broken ones', () => {
-    expect(parseServerInfo('{"status":"ok","protocolVersion":1}')).toEqual({
-      protocolVersion: 1,
-      upstream: null,
-      commandPost: null,
-      time: null,
-    });
-    expect(
-      parseServerInfo('{"status":"ok","protocolVersion":1,"upstream":"http://evil.example/"}'),
-    ).toBeNull();
-    expect(parseServerInfo('{"status":"down","protocolVersion":1}')).toBeNull();
-    expect(parseServerInfo('<html>')).toBeNull();
-  });
-
-  it('compares server URLs regardless of the trailing slash', () => {
-    expect(sameServer('https://tesel.example', 'https://tesel.example/')).toBe(true);
-    expect(sameServer('https://Tesel.example/', 'https://tesel.example')).toBe(true);
-    expect(sameServer('https://tesel.example', 'https://post.tesel.example')).toBe(false);
-    expect(sameServer('not a url', 'not a url')).toBe(false);
-  });
-
-  it('finds the information next to the relay', () => {
+  it('finds the information next to the server', () => {
     expect(serverInfoUrl('https://example.org/relay')).toBe('https://example.org/relay/healthz');
+  });
+
+  it('refuses a server that is not well, or an answer that is not one', () => {
+    expect(parseServerInfo('{"status":"down","protocolVersion":1}')).toBeNull();
+    expect(parseServerInfo('{"status":"ok"}')).toBeNull();
+    expect(parseServerInfo('<html>')).toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Keeps a Tesel server, on a VPS or a command post, on the newest published image, and only on
+# Keeps a Tesel server on the newest published image, and only on
 # images this repository's CI built and signed (docs/decisions/0049-signed-images-and-checked-updates.md):
 #
 #   1. cosign checks the signature of the image TESEL_IMAGE_TAG (default "latest") names and

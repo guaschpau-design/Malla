@@ -1,6 +1,6 @@
 # 0050. Command posts get their certificate from the server
 
-- Status: Accepted
+- Status: Superseded by [0058](0058-no-command-posts.md)
 - Date: 2026-10-27
 - Amends: [ADR-0018](0018-command-post.md), where each post obtained the certificate itself with the domain's DNS credentials
 

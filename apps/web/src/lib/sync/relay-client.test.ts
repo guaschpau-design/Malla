@@ -42,16 +42,10 @@ const STORE = 'AAAAAAAAAAAAAAAAAAAAAA';
 const flush = () => vi.advanceTimersByTimeAsync(0);
 
 const SERVER = 'https://relay.example/';
-const POST = 'https://post.example/';
 
-function setup(
-  cursor = 0,
-  relays: readonly string[] = [SERVER],
-  failingBatches = 0,
-  store: string | null = null,
-) {
+function setup(cursor = 0, failingBatches = 0, store: string | null = null) {
   let failures = failingBatches;
-  /** What the device has stored for the relay. */
+  /** What the device has stored for the group. */
   let position: RelayPosition = { cursor, store };
   const storeChanges: string[] = [];
   const sockets: FakeSocket[] = [];
@@ -60,10 +54,9 @@ function setup(
   const envelopes: number[][] = [];
   /** Batches and syncs in the order they were handled. */
   const handled: string[] = [];
-  const synced: string[] = [];
-  const cursorsAsked: string[] = [];
+  const synced: number[] = [];
   const client = new RelayClient({
-    relays: () => Promise.resolve(relays),
+    server: SERVER,
     group: GROUP,
     random: () => 0.5,
     createSocket: (url) => {
@@ -72,19 +65,16 @@ function setup(
       return socket;
     },
     handlers: {
-      position: (relay) => {
-        cursorsAsked.push(relay);
-        return Promise.resolve(position);
-      },
+      position: () => Promise.resolve(position),
       onEnvelopes: (batch) => {
         if (failures-- > 0) return Promise.reject(new Error('disk full'));
         envelopes.push(batch.map((envelope) => envelope.cursor));
         handled.push(`batch of ${String(batch.length)}`);
         return Promise.resolve();
       },
-      onSynced: (at, relay) => {
+      onSynced: (at) => {
         position = at;
-        synced.push(`${String(at.cursor)}@${relay}`);
+        synced.push(at.cursor);
         handled.push(`synced at ${String(at.cursor)}`);
         return Promise.resolve();
       },
@@ -97,7 +87,7 @@ function setup(
       onStatus: (status) => statuses.push(status),
     },
   });
-  return { client, sockets, statuses, envelopes, handled, synced, cursorsAsked, storeChanges };
+  return { client, sockets, statuses, envelopes, handled, synced, storeChanges };
 }
 
 beforeEach(() => {
@@ -128,8 +118,8 @@ describe('relay client', () => {
     socket.receive({ t: 'synced', cursor: 43, store: STORE });
     await flush();
     expect(envelopes).toEqual([[42, 43]]);
-    expect(synced).toEqual([`43@${SERVER}`]);
-    expect(client.relay).toBe(SERVER);
+    expect(synced).toEqual([43]);
+    expect(socket.url).toBe('wss://relay.example/v1/ws');
     expect(statuses).toEqual(['connecting', 'syncing', 'synced']);
   });
 
@@ -157,7 +147,7 @@ describe('relay client', () => {
   });
 
   it('joins again from the stored cursor when a batch cannot be taken', async () => {
-    const { client, sockets, envelopes, synced, statuses } = setup(7, [SERVER], 1);
+    const { client, sockets, envelopes, synced, statuses } = setup(7, 1);
     client.start();
     await flush();
     const first = sockets[0];
@@ -183,12 +173,12 @@ describe('relay client', () => {
     second.receive({ t: 'synced', cursor: 8, store: STORE });
     await flush();
     expect(envelopes).toEqual([[8]]);
-    expect(synced).toEqual([`8@${SERVER}`]);
+    expect(synced).toEqual([8]);
   });
 
   it('starts over when the relay has another store than the one it read from', async () => {
     const OLD = 'BBBBBBBBBBBBBBBBBBBBBA';
-    const { client, sockets, synced, storeChanges } = setup(500, [SERVER], 0, OLD);
+    const { client, sockets, synced, storeChanges } = setup(500, 0, OLD);
     client.start();
     await flush();
     const first = sockets[0];
@@ -199,7 +189,7 @@ describe('relay client', () => {
     await flush();
     expect(storeChanges).toEqual([STORE]);
     expect(synced).toEqual([]);
-    // It joins the same relay again at once, from the start of the new store.
+    // It joins again at once, from the start of the new store.
     const second = sockets[1];
     if (!second) throw new Error('no second socket');
     expect(second.url).toBe(first.url);
@@ -211,7 +201,7 @@ describe('relay client', () => {
     });
     second.receive({ t: 'synced', cursor: 20, store: STORE });
     await flush();
-    expect(synced).toEqual([`20@${SERVER}`]);
+    expect(synced).toEqual([20]);
     expect(client.status).toBe('synced');
   });
 
@@ -285,48 +275,15 @@ describe('relay client', () => {
     expect(sockets).toHaveLength(2);
   });
 
-  it('moves on to the next relay when one cannot be reached, and starts each round from the first', async () => {
-    const { client, sockets, cursorsAsked } = setup(0, [SERVER, POST]);
-    client.start();
-    await flush();
-    sockets[0]?.close();
-    expect(sockets.map((socket) => socket.url)).toEqual([
-      'wss://relay.example/v1/ws',
-      'wss://post.example/v1/ws',
-    ]);
-    const post = sockets[1];
-    if (!post) throw new Error('no socket');
-    post.open();
-    await flush();
-    post.receive({ t: 'synced', cursor: 3, store: STORE });
-    await flush();
-    expect(cursorsAsked).toEqual([POST]);
-    expect(client.relay).toBe(POST);
-
-    post.close();
-    await vi.advanceTimersByTimeAsync(1000);
-    expect(sockets[2]?.url).toBe('wss://relay.example/v1/ws');
-  });
-
-  it('gives up a relay that does not open in time', async () => {
-    const { client, sockets } = setup(0, [SERVER, POST]);
+  it('gives up a connection that does not open in time, and tries again later', async () => {
+    const { client, sockets, statuses } = setup();
     client.start();
     await flush();
     await vi.advanceTimersByTimeAsync(4999);
-    expect(sockets).toHaveLength(1);
+    expect(statuses.at(-1)).toBe('connecting');
     await vi.advanceTimersByTimeAsync(1);
-    expect(sockets[1]?.url).toBe('wss://post.example/v1/ws');
-  });
-
-  it('waits before a new round once every relay has failed', async () => {
-    const { client, sockets, statuses } = setup(0, [SERVER, POST]);
-    client.start();
-    await flush();
-    sockets[0]?.close();
-    sockets[1]?.close();
     expect(statuses.at(-1)).toBe('disconnected');
-    expect(client.relay).toBeNull();
     await vi.advanceTimersByTimeAsync(1000);
-    expect(sockets).toHaveLength(3);
+    expect(sockets).toHaveLength(2);
   });
 });

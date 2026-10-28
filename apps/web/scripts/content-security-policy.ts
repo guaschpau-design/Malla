@@ -1,7 +1,7 @@
 // A Vite plugin that puts the app's Content-Security-Policy and referrer policy in the built
 // index.html, so they hold wherever the app is served from, a static host included. Servers of
 // Tesel send the same policy as a header, with frame-ancestors, which a meta tag cannot carry
-// (deploy/common/headers.caddy); content-security-policy.test.ts keeps the two the same.
+// (deploy/vps/headers.caddy); content-security-policy.test.ts keeps the two the same.
 //
 // Only the build gets it: the development server injects inline scripts of its own.
 //

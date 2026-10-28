@@ -15,10 +15,6 @@ import /etc/caddy/redirects.caddy
 		file_server
 	}
 
-	# The command posts' certificate, for posts holding a token (ADR-0050). Written by
-	# post-certificate.sh; empty while no post has a token.
-	import /etc/caddy/post-certificate.caddy
-
 	# The server keeps no access logs: who connects when is nobody's business.
 	handle {
 		encode zstd gzip

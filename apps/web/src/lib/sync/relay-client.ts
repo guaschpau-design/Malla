@@ -1,7 +1,5 @@
-// Keeps one group's WebSocket to a relay open (protocol §8): joins with the last cursor, passes
-// envelopes on in order, in batches, and reconnects with back-off when the link drops. Each round of attempts
-// tries the group's relays in order, the group's server and its command posts (§8.3), and keeps
-// the first that answers.
+// Keeps one group's WebSocket to its server open (protocol §8): joins with the last cursor, passes
+// envelopes on in order, in batches, and reconnects with back-off when the link drops.
 
 import {
   encodeRelayMessage,
@@ -41,45 +39,40 @@ export interface RelayPosition {
   readonly store: string | null;
 }
 
-/** Handlers that receive `relay`, the server base URL of the connection, get its own cursors. */
 interface RelayHandlers {
-  /** Where to join from: what this device last stored for the group and relay. */
-  readonly position: (relay: string) => Promise<RelayPosition>;
+  /** Where to join from: what this device last stored for the group. */
+  readonly position: () => Promise<RelayPosition>;
   /**
    * Envelopes that arrived together, in order, read from `store`. A device that has been away
    * gets thousands at once, and taking them in one go means one storage write and one redraw
    * instead of one each.
    */
-  readonly onEnvelopes: (
-    batch: readonly ReceivedEnvelope[],
-    relay: string,
-    store: string | null,
-  ) => Promise<void>;
+  readonly onEnvelopes: (batch: readonly ReceivedEnvelope[], store: string | null) => Promise<void>;
   /** The backlog is in; from now on pushes are possible. */
-  readonly onSynced: (position: RelayPosition, relay: string) => Promise<void>;
+  readonly onSynced: (position: RelayPosition) => Promise<void>;
   /**
    * The relay's store is not the one this device read from: it lost its data or was restored
    * from a backup. What this device knew of it is void; the handler starts over from the start of
    * the new store and offers its own events again. The client then joins again.
    */
-  readonly onStoreChanged: (store: string, relay: string) => Promise<void>;
+  readonly onStoreChanged: (store: string) => Promise<void>;
   readonly onStored: (key: Uint8Array) => Promise<void>;
+  /** Each try to connect starts with `connecting`. */
   readonly onStatus: (status: RelayStatus) => void;
 }
 
 export interface RelayClientOptions {
-  /** Server base URLs to try, in order; asked again before every round of attempts. */
-  readonly relays: () => Promise<readonly string[]>;
+  /** The group's server, by its base URL. */
+  readonly server: string;
   readonly group: Uint8Array;
   readonly handlers: RelayHandlers;
   readonly createSocket?: (url: string) => SocketLike;
   readonly random?: () => number;
 }
 
-/** One connection to a relay, as its messages are handled. */
+/** One connection to the server, as its messages are handled. */
 interface Link {
   readonly socket: SocketLike;
-  readonly relay: string;
   /** The store it reads from as far as this device knew when it joined. */
   readonly store: string | null;
 }
@@ -89,7 +82,7 @@ const TRY_LATER: ReadonlySet<RelayErrorCode> = new Set(['rate-limited', 'unavail
 
 const FIRST_RETRY_MS = 1000;
 const MAX_RETRY_MS = 30_000;
-/** A relay that has not opened by then is given up for the next one. */
+/** A connection that has not opened by then is given up, and tried again later. */
 const CONNECT_TIMEOUT_MS = 5000;
 /**
  * A link silent this long is asked whether it is still there with a ping, and given up if nothing
@@ -106,9 +99,6 @@ export class RelayClient {
   readonly #createSocket: (url: string) => SocketLike;
   readonly #random: () => number;
   #socket: SocketLike | null = null;
-  #relays: readonly string[] = [];
-  #index = 0;
-  #round = 0;
   #status: RelayStatus = 'disconnected';
   #retryMs = FIRST_RETRY_MS;
   #retryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -138,19 +128,13 @@ export class RelayClient {
     return this.#status;
   }
 
-  /** The relay connected to or being tried, or null between rounds. */
-  get relay(): string | null {
-    return this.#socket === null ? null : (this.#relays[this.#index] ?? null);
-  }
-
   start(): void {
     this.#stopped = false;
-    void this.#newRound();
+    this.#connect();
   }
 
   stop(): void {
     this.#stopped = true;
-    this.#round += 1;
     this.#pushes.clear();
     this.#clearTimers();
     if (this.#socket !== null) this.#drop(this.#socket);
@@ -161,7 +145,7 @@ export class RelayClient {
   retryNow(): void {
     if (this.#stopped || this.#socket !== null || this.#retryTimer === null) return;
     this.#clearTimers();
-    void this.#newRound();
+    this.#connect();
   }
 
   /**
@@ -174,34 +158,14 @@ export class RelayClient {
     return true;
   }
 
-  async #newRound(): Promise<void> {
-    const round = ++this.#round;
-    this.#setStatus('connecting');
-    let relays: readonly string[] = [];
-    try {
-      relays = await this.#options.relays();
-    } catch (error) {
-      console.warn('No relays to try', error);
-    }
-    if (this.#stopped || round !== this.#round) return;
-    this.#relays = relays;
-    this.#index = 0;
-    this.#connect();
-  }
-
   #connect(): void {
-    const relay = this.#relays[this.#index];
-    if (relay === undefined) {
-      this.#setStatus('disconnected');
-      this.#scheduleRetry();
-      return;
-    }
-    const socket = this.#createSocket(relayUrl(relay));
+    this.#setStatus('connecting');
+    const socket = this.#createSocket(relayUrl(this.#options.server));
     this.#socket = socket;
     this.#batch = null;
     this.#connectTimer = setTimeout(() => {
       this.#connectTimer = null;
-      if (this.#drop(socket)) this.#lost(false);
+      if (this.#drop(socket)) this.#lost();
     }, CONNECT_TIMEOUT_MS);
     /** The store this link reads from, as far as this device knows. */
     let store: string | null = null;
@@ -209,7 +173,7 @@ export class RelayClient {
       this.#clearConnectTimer();
       this.#heard(socket);
       this.#enqueue(socket, async () => {
-        const position = await this.#options.handlers.position(relay);
+        const position = await this.#options.handlers.position();
         if (this.#socket !== socket) return;
         store = position.store;
         const join = { t: 'join', group: this.#options.group, after: position.cursor } as const;
@@ -223,15 +187,15 @@ export class RelayClient {
       if (message === null || message.t === 'pong') return;
       if (message.t === 'env') {
         const { key, env, cursor } = message;
-        this.#collect(socket, { key, env, cursor }, relay, store);
+        this.#collect(socket, { key, env, cursor }, store);
         return;
       }
       // Envelopes after this message go in a new batch, handled after it.
       this.#batch = null;
-      this.#enqueue(socket, () => this.#handle(message, { socket, relay, store }));
+      this.#enqueue(socket, () => this.#handle(message, { socket, store }));
     };
     socket.onclose = () => {
-      if (this.#drop(socket)) this.#lost(this.#status === 'synced');
+      if (this.#drop(socket)) this.#lost();
     };
   }
 
@@ -242,7 +206,7 @@ export class RelayClient {
       socket.send(encodeRelayMessage({ t: 'ping' }));
       this.#heartbeat = setTimeout(() => {
         this.#heartbeat = null;
-        if (this.#drop(socket)) this.#lost(this.#status === 'synced');
+        if (this.#drop(socket)) this.#lost();
       }, PONG_TIMEOUT_MS);
     }, QUIET_MS);
   }
@@ -252,7 +216,7 @@ export class RelayClient {
     this.#heartbeat = null;
   }
 
-  /** Joins the same relay again at once, from the position the handlers now give. */
+  /** Joins again at once, from the position the handlers now give. */
   #rejoin(socket: SocketLike): void {
     if (!this.#drop(socket)) return;
     this.#pushes.clear();
@@ -272,33 +236,22 @@ export class RelayClient {
     return true;
   }
 
-  /** A link that had synced starts a new round; one that never did gives way to the next relay. */
-  #lost(hadSynced: boolean): void {
-    this.#clearHeartbeat();
+  /** The link is gone: it is tried again after a wait that grows while it keeps failing. */
+  #lost(): void {
     this.#pushes.clear();
     if (this.#stopped) return;
-    if (hadSynced) {
-      this.#setStatus('disconnected');
-      this.#scheduleRetry();
-      return;
-    }
-    this.#index += 1;
-    this.#connect();
+    this.#setStatus('disconnected');
+    this.#scheduleRetry();
   }
 
   /** Adds an envelope to the waiting batch, or queues a new batch if none is waiting or it is full. */
-  #collect(
-    socket: SocketLike,
-    envelope: ReceivedEnvelope,
-    relay: string,
-    store: string | null,
-  ): void {
+  #collect(socket: SocketLike, envelope: ReceivedEnvelope, store: string | null): void {
     if (this.#batch === null || this.#batch.length >= MAX_BATCH) {
       const batch: ReceivedEnvelope[] = [];
       this.#batch = batch;
       this.#enqueue(socket, async () => {
         if (this.#batch === batch) this.#batch = null;
-        await this.#options.handlers.onEnvelopes(batch, relay, store);
+        await this.#options.handlers.onEnvelopes(batch, store);
       });
     }
     this.#batch.push(envelope);
@@ -306,17 +259,16 @@ export class RelayClient {
 
   async #handle(message: Exclude<ServerMessage, { t: 'env' | 'pong' }>, link: Link): Promise<void> {
     const { handlers } = this.#options;
-    const { relay } = link;
     switch (message.t) {
       case 'synced':
         if (link.store !== null && link.store !== message.store) {
-          await handlers.onStoreChanged(message.store, relay);
+          await handlers.onStoreChanged(message.store);
           this.#rejoin(link.socket);
           return;
         }
         this.#retryMs = FIRST_RETRY_MS;
         this.#setStatus('synced');
-        await handlers.onSynced({ cursor: message.cursor, store: message.store }, relay);
+        await handlers.onSynced({ cursor: message.cursor, store: message.store });
         return;
       case 'stored':
         this.#pushes.stored(message.key);
@@ -339,7 +291,7 @@ export class RelayClient {
       .then(() => (this.#socket === socket ? task() : undefined))
       .catch((error: unknown) => {
         console.warn('Relay message handling failed', error);
-        if (this.#drop(socket)) this.#lost(true);
+        if (this.#drop(socket)) this.#lost();
       });
   }
 
@@ -350,7 +302,7 @@ export class RelayClient {
     this.#retryMs = Math.min(this.#retryMs * 2, MAX_RETRY_MS);
     this.#retryTimer = setTimeout(() => {
       this.#retryTimer = null;
-      void this.#newRound();
+      this.#connect();
     }, delay);
   }
 

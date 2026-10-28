@@ -11,7 +11,6 @@ import {
   SERVER_INFO_PATH,
   STORE_ID_SIZE,
 } from './constants.ts';
-import { isSecureUrl } from './invitation.ts';
 import { err, ok, type Result } from './result.ts';
 
 export type ClientMessage =
@@ -48,10 +47,6 @@ export interface RelayRefusal {
 /** §8.1 What a server says about itself at `healthz`. */
 export interface ServerInfo {
   readonly protocolVersion: number;
-  /** The server a command post replicates (§8.2), or null. */
-  readonly upstream: string | null;
-  /** The base URL shared by this server's command posts (§8.3), or null. */
-  readonly commandPost: string | null;
   /** The server's clock when it answered, in seconds since the epoch; null from servers before it. */
   readonly time: number | null;
 }
@@ -62,15 +57,6 @@ export type ServerInfoBody = { readonly status: 'ok' } & ServerInfo;
 /** §8.1 A server base URL in its comparable form: parsed, with the path ending in `/`. */
 export function serverBaseUrl(url: string): string {
   return new URL(url.endsWith('/') ? url : `${url}/`).href;
-}
-
-/** §8.1 Whether two server URLs name the same server. Unparseable URLs name none. */
-export function sameServer(a: string, b: string): boolean {
-  try {
-    return serverBaseUrl(a) === serverBaseUrl(b);
-  } catch {
-    return false;
-  }
 }
 
 /** §8 The WebSocket URL of a server: `https://host/` becomes `wss://host/v1/ws`. */
@@ -90,20 +76,10 @@ export function parseServerInfo(text: string): ServerInfo | null {
   const object = parseObject(text);
   if (object?.['status'] !== 'ok') return null;
   const protocolVersion = object['protocolVersion'];
-  const upstream = optionalServerUrl(object['upstream']);
-  const commandPost = optionalServerUrl(object['commandPost']);
-  if (typeof protocolVersion !== 'number' || upstream === undefined || commandPost === undefined) {
-    return null;
-  }
+  if (typeof protocolVersion !== 'number') return null;
   const time = object['time'];
   const clock = typeof time === 'number' && Number.isFinite(time) && time > 0 ? time : null;
-  return { protocolVersion, upstream, commandPost, time: clock };
-}
-
-/** A secure server URL in comparable form, null for none, undefined if invalid. */
-function optionalServerUrl(value: unknown): string | null | undefined {
-  if (value === null || value === undefined) return null;
-  return typeof value === 'string' && isSecureUrl(value) ? serverBaseUrl(value) : undefined;
+  return { protocolVersion, time: clock };
 }
 
 export function encodeRelayMessage(message: ClientMessage | ServerMessage): string {

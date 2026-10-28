@@ -2,8 +2,8 @@
 // Map tiles live in a separate database (map/tiles/store.ts) so they can be cleared without
 // touching anything else.
 
-import type { NodeId, ServerInfo, WeatherWarnings } from '@tesel/protocol';
-import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import type { NodeId, WeatherWarnings } from '@tesel/protocol';
+import { openDB, unwrap, type DBSchema, type IDBPDatabase } from 'idb';
 
 import type { StoredGroup } from '../groups/group.ts';
 import type { LocalIdentity } from '../identity/identity.ts';
@@ -53,8 +53,8 @@ export type SettingKey =
 
 export type EventKey = [groupId: string, origin: NodeId, seq: number];
 
-/** A group and a relay it syncs through: the group's server or a command post (protocol §8.3). */
-type CursorKey = [groupId: string, relay: string];
+/** A group and the server it syncs with. */
+type CursorKey = [groupId: string, server: string];
 
 interface AppSchema extends DBSchema {
   /** A single record under the key `self`. */
@@ -69,20 +69,18 @@ interface AppSchema extends DBSchema {
   sequence: { key: 'next' | 'lastTime'; value: number };
   events: { key: EventKey; value: StoredEvent; indexes: { byGroup: string } };
   outbox: { key: EventKey; value: OutboxEntry; indexes: { byGroup: string } };
-  /** How far this device has read each group's envelopes on each relay, and in which store. */
+  /** How far this device has read each group's envelopes on its server, and in which store. */
   cursors: { key: CursorKey; value: RelayPosition };
-  /** What each server last said about itself, by server base URL (protocol §8.1). */
-  servers: { key: string; value: ServerInfo };
   /** Text messages of other MeshCore apps heard by the radio, oldest first. */
   radioTexts: { key: number; value: StoredRadioText };
-  /** The weather warnings last read from the server, under the key `latest` (protocol §8.4). */
+  /** The weather warnings last read from the server, under the key `latest` (protocol §8.2). */
   weather: { key: 'latest'; value: WeatherWarnings };
 }
 
 export type AppDb = IDBPDatabase<AppSchema>;
 
 const DB_NAME = 'tesel';
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 export async function openAppDb(
   name: string = DB_NAME,
@@ -117,19 +115,25 @@ export async function openAppDb(
         database.createObjectStore('radioTexts', { autoIncrement: true });
       }
       if (oldVersion < 4) {
-        // Cursors are now kept per relay; old ones are dropped and the backlog fetched again.
+        // Cursors are now kept per server; old ones are dropped and the backlog fetched again.
+        // Version 4 also added a store, gone since version 7, of what servers said about themselves.
         database.deleteObjectStore('cursors');
         database.createObjectStore('cursors');
-        database.createObjectStore('servers');
       }
       if (oldVersion < 5) {
         database.createObjectStore('weather');
       }
       if (oldVersion < 6) {
-        // Cursors now name the relay's store (protocol §8); old ones, of an unknown store, are
+        // Cursors now name the server's store (protocol §8); old ones, of an unknown store, are
         // dropped and the backlog fetched again.
         database.deleteObjectStore('cursors');
         database.createObjectStore('cursors');
+      }
+      if (oldVersion < 7) {
+        // What servers said about themselves served to choose between a server and its command
+        // posts, which are no more (ADR-0058). The store is not in the schema any longer.
+        const stores = unwrap(database);
+        if (stores.objectStoreNames.contains('servers')) stores.deleteObjectStore('servers');
       }
     },
   });

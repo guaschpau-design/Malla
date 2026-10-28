@@ -6,7 +6,6 @@ import { readConfig } from './config.ts';
 import { DiskSpace } from './disk-space.ts';
 import { EnvelopeStore } from './envelope-store.ts';
 import { Relay } from './relay.ts';
-import { Replicator } from './replicator.ts';
 import { WeatherWarningsService } from './weather/weather-warnings.ts';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -18,7 +17,7 @@ const MEGABYTE = 1024 * 1024;
 const config = readConfig();
 const inMemory = config.databasePath === ':memory:';
 if (!inMemory) mkdirSync(dirname(config.databasePath), { recursive: true });
-const store = new EnvelopeStore(config.databasePath, { upstream: config.upstream !== null });
+const store = new EnvelopeStore(config.databasePath);
 const disk = inMemory
   ? null
   : new DiskSpace(dirname(config.databasePath), config.minFreeDiskMegabytes * MEGABYTE);
@@ -34,9 +33,6 @@ const weather =
       });
 weather?.start();
 const app = await buildApp(store, relay, { ...config, weather });
-const replicator =
-  config.upstream === null ? null : new Replicator({ store, relay, upstream: config.upstream });
-replicator?.start();
 
 function sweep(): void {
   try {
@@ -60,7 +56,6 @@ function shutdown(exitCode: number): void {
     process.exit(exitCode === 0 ? 1 : exitCode);
   }, SHUTDOWN_TIMEOUT_MS).unref();
   clearInterval(sweeper);
-  replicator?.stop();
   weather?.stop();
   app
     .close()

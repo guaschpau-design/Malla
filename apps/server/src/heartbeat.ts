@@ -1,6 +1,5 @@
-// Liveness of WebSocket connections, the relay's clients and a command post's upstream links
-// alike: a connection whose peer vanished without closing it (a phone out of coverage, a broken
-// route) would otherwise stay open for many minutes.
+// Liveness of the relay's WebSocket connections: a connection whose peer vanished without closing
+// it (a phone out of coverage, a broken route) would otherwise stay open for many minutes.
 
 import type WebSocket from 'ws';
 

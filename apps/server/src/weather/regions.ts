@@ -1,6 +1,6 @@
 // The outlines of MeteoAlarm's warning regions (EMMA_ID codes), which its feeds name but do not
 // draw. MeteoAlarm publishes them as a dated GeoJSON file in its documents repository; we keep
-// the regions of our countries, with coordinates rounded to about 100 m (docs/protocol.md §8.4).
+// the regions of our countries, with coordinates rounded to about 100 m (docs/protocol.md §8.2).
 
 import type { RegionGeometry } from '@tesel/protocol';
 

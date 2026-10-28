@@ -11,8 +11,6 @@ describe('configuration', () => {
       databasePath: 'data/tesel.db',
       retentionDays: 30,
       webRoot: null,
-      upstream: null,
-      commandPost: null,
       weatherCountries: ['ES', 'PT'],
       weatherMaxAgeMinutes: 70,
       limits: DEFAULT_LIMITS,
@@ -29,8 +27,6 @@ describe('configuration', () => {
         'TESEL_DB',
         'TESEL_RETENTION_DAYS',
         'TESEL_WEB_ROOT',
-        'TESEL_UPSTREAM',
-        'TESEL_COMMAND_POST',
         'TESEL_WEATHER',
         'TESEL_WEATHER_MAX_AGE_MINUTES',
         'TESEL_MAX_CONNECTIONS',
@@ -49,16 +45,6 @@ describe('configuration', () => {
     expect(readConfig({ TESEL_WEATHER: 'es' }).weatherCountries).toEqual(['ES']);
     expect(readConfig({ TESEL_WEATHER: 'off' }).weatherCountries).toEqual([]);
     expect(() => readConfig({ TESEL_WEATHER: 'ES,XX' })).toThrow(/TESEL_WEATHER/);
-  });
-
-  it('reads the command post settings as server base URLs', () => {
-    const config = readConfig({
-      TESEL_UPSTREAM: 'https://tesel.example',
-      TESEL_COMMAND_POST: 'https://post.tesel.example/',
-    });
-    expect(config.upstream).toBe('https://tesel.example/');
-    expect(config.commandPost).toBe('https://post.tesel.example/');
-    expect(() => readConfig({ TESEL_UPSTREAM: 'http://tesel.example' })).toThrow(/TESEL_UPSTREAM/);
   });
 
   it('reads the relay limits', () => {

@@ -1,5 +1,7 @@
 # Briefing del proyecto
 
+**Nota (28 oct 2026):** el puesto de mando se descartó; ver [`docs/decisions/0058-no-command-posts.md`](decisions/0058-no-command-posts.md).
+
 > Nombre: **Tesel** (antes Teselia y, provisionalmente, Malla). Viene de las teselas: las piezas de un mosaico y de un mapa digital. Decisión en `docs/decisions/0019-name-tesel.md`.
 >
 > Estado: aprobado para desarrollo · Fecha: 25 de octubre de 2026 · Versión objetivo: v0.1
@@ -155,8 +157,7 @@ El día 5 es el de más riesgo: la integración con la radio solo se valida con 
 - [ ] Hacer pública la imagen del servidor con el nombre nuevo, si GitHub la crea privada: github.com/guaschpau-design → Packages → `tesel-server` → Package settings → Change visibility → Public.
 - [ ] Búsqueda de la marca TESEL en EUIPO (TMview), clases 9 y 42.
 
-- [ ] Cuando CI haya publicado la primera imagen firmada, ejecutar otra vez en el VPS el comando de instalación de arriba (sin `--redirect-from`, que se conserva): solo arranca imágenes firmadas por CI, vuelve sola a la versión anterior si la nueva no arranca, hace copias de seguridad cada noche y envía las cabeceras de seguridad ([ADR-0049](decisions/0049-signed-images-and-checked-updates.md)).
-- [ ] Opcional, para el puesto de mando: un portátil con Linux o una Raspberry Pi 4 o 5 con sistema de 64 bits, y seguir [`deploy/command-post/README.md`](../deploy/command-post/README.md). La clave de la API de DNS de IONOS se da al VPS, no al puesto ([ADR-0050](decisions/0050-post-certificates-from-the-server.md)).
+- [x] Cuando CI haya publicado la primera imagen firmada, ejecutar otra vez en el VPS el comando de instalación de arriba (sin `--redirect-from`, que se conserva): solo arranca imágenes firmadas por CI, vuelve sola a la versión anterior si la nueva no arranca, hace copias de seguridad cada noche y envía las cabeceras de seguridad ([ADR-0049](decisions/0049-signed-images-and-checked-updates.md)).
 - [ ] Día 7: dos o tres personas con radio para la [prueba de campo](prueba-de-campo.md).
 
 ## 12. Cuestiones abiertas

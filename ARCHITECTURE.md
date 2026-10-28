@@ -27,8 +27,8 @@ A group shares a map. Every change to that map — a position, a chat line, a ma
 └────────┼───────────────────────────────────┼──────────────────────────┘
          │                                   │ BLE
          ▼                                   ▼
-   apps/server (VPS or                 MeshCore companion radio
-   local command post)                  ⇄ LoRa mesh ⇄ other radios
+   apps/server (VPS)                   MeshCore companion radio
+                                        ⇄ LoRa mesh ⇄ other radios
 ```
 
 | Path                | Owns                                                                                                                                 | Must not depend on                                   |
@@ -172,17 +172,13 @@ A device connected to both the server and a radio is a **bridge**, with no confi
 
 The code is the same in every mode; what differs is what is reachable.
 
-| Mode         | Reachable            | Behaviour                                                                                                                                                                                                                                    |
-| ------------ | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Connected    | Server               | Sync through the VPS; LoRa as fallback if paired                                                                                                                                                                                             |
-| Mesh         | Radio only           | Events flow radio to radio; each device keeps its own log                                                                                                                                                                                    |
-| Command post | Post's Wi-Fi + radio | A laptop or Raspberry Pi runs `apps/server` with `TESEL_UPSTREAM` and its own Wi-Fi; phones without a radio (including iPhones) sync through it; a browser on the post bridges to LoRa; the post replicates the VPS whenever it has internet |
+| Mode      | Reachable  | Behaviour                                                                                   |
+| --------- | ---------- | ------------------------------------------------------------------------------------------- |
+| Connected | Server     | Sync through the group's server; LoRa as fallback if paired                                 |
+| Mesh      | Radio only | Events flow radio to radio; each device keeps its own log                                   |
+| Bridged   | Both       | A device with a radio and the internet passes events between the mesh and the server (§4.3) |
 
-A command post is found by name and replicates by protocol ([ADR-0018](docs/decisions/0018-command-post.md), protocol §8.2–8.3):
-
-- All posts of a server share one name, which each post resolves to itself on its own Wi-Fi, with a certificate the server obtains for that name and each post downloads with a token of its own ([ADR-0050](docs/decisions/0050-post-certificates-from-the-server.md)).
-- The server announces that name in `healthz`. Apps try the group's server first and the post next, keeping one cursor per relay, so moving between them loses nothing.
-- The post keeps one upstream connection per group: it stores what the upstream has and pushes what its clients pushed. It moves envelopes only, like any server.
+A group has one server. Where there is no internet, the radios carry what matters: positions, SOS calls, alerts and chat. Any phone with a radio and some internet, from a hotspot, a 4G router or a satellite terminal, bridges the mesh to the server with no setup. [ADR-0058](docs/decisions/0058-no-command-posts.md) explains why there is no local server for a base without internet.
 
 ## 6. Persistence
 
@@ -220,7 +216,7 @@ Two more base maps cover Spain, Portugal and southern France, from open national
 
 ```
 apps/web/            PWA: UI, map, event log and outbox, transport wiring
-apps/server/         Relay and storage server, serves site and app; replication for command posts
+apps/server/         Relay and storage server, serves site and app
 apps/site/           Landing page (static)
 brand/               Mark, wordmark and lockup (SVG) and the script that builds them
 packages/protocol/   Wire format, crypto, invitations (pure TS)
@@ -229,5 +225,5 @@ packages/meshcore/   MeshCore radio adapter
 packages/scenario/   Staged operations as data and their plan (pure TS): simulator and practice mode
 tools/simulator/     Scenarios played by simulated devices: demos, load tests, screenshots
 docs/                Briefing, protocol spec, decisions
-deploy/              VPS, command post kit and what they share (common/), GitHub Pages redirect
+deploy/              VPS installer and configuration, GitHub Pages redirect
 ```

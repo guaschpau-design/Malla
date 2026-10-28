@@ -18,7 +18,6 @@ import {
   NO_SOS_PLACE,
   openEnvelope,
   peekHeader,
-  sameServer,
   sealEnvelope,
   toBase64url,
   type EventHeader,
@@ -48,7 +47,6 @@ import { hear, NOTHING_HEARD, type Channel, type Heard } from '../links/heard.ts
 import type { DeviceFix } from '../position/device-location.svelte.ts';
 import type { AppDb, GroupEventRef } from '../storage/app-db.ts';
 import { storageRefusals } from '../storage/storage-space.svelte.ts';
-import { defaultServerUrl } from '../config.ts';
 import type { TaskFields } from '../tasks/tasks.ts';
 import { loadPosition, savePosition } from './cursor-store.ts';
 import {
@@ -59,7 +57,7 @@ import {
 } from './relay-client.ts';
 import { openLogFile, sealLogFile, type LogImport } from './log-file.ts';
 import { catchUpPackets, loraEventOf, peekType, type LoraSink } from './lora-events.ts';
-import { relaysFor } from './relays.ts';
+import { checkServerClock } from './server-clock.ts';
 
 /** `local-only` when the group has no server: events stay on this device (and LoRa, later). */
 export type FeedStatus = RelayStatus | 'local-only';
@@ -67,8 +65,6 @@ export type FeedStatus = RelayStatus | 'local-only';
 export class GroupFeed {
   state: GroupState = $state.raw(EMPTY_STATE);
   status: FeedStatus = $state('local-only');
-  /** True while synced through a command post instead of the group's server (protocol §8.3). */
-  viaCommandPost = $state(false);
   /** What this device has heard from each member, by channel, since the feed opened. */
   heard: Heard = $state.raw(NOTHING_HEARD);
   /**
@@ -106,26 +102,25 @@ export class GroupFeed {
       server === null
         ? null
         : new RelayClient({
-            relays: () => relaysFor(db, server, defaultServerUrl()),
+            server,
             group: this.#keys.groupId,
             ...(createSocket ? { createSocket } : {}),
             handlers: {
-              position: (relay) => loadPosition(db, group.id, relay),
-              onEnvelopes: (batch, relay, store) => this.#receive(batch, relay, store),
-              onSynced: async (position, relay) => {
-                await savePosition(db, group.id, relay, position);
+              position: () => loadPosition(db, group.id, server),
+              onEnvelopes: (batch, store) => this.#receive(batch, server, store),
+              onSynced: async (position) => {
+                await savePosition(db, group.id, server, position);
                 await this.#flushOutbox();
               },
-              onStoreChanged: async (store, relay) => {
-                await savePosition(db, group.id, relay, { cursor: 0, store });
+              onStoreChanged: async (store) => {
+                await savePosition(db, group.id, server, { cursor: 0, store });
                 await requeueOwnEvents(db, group.id, identity.nodeId);
               },
               onStored: (key) => this.#confirm(key),
               onStatus: (status) => {
                 this.status = status;
-                const relay = this.#client?.relay ?? null;
-                this.viaCommandPost =
-                  status === 'synced' && relay !== null && !sameServer(relay, server);
+                // Each try to connect checks this device's clock against the server's.
+                if (status === 'connecting') void checkServerClock(server);
               },
             },
           });
@@ -366,21 +361,20 @@ export class GroupFeed {
   }
 
   /**
-   * A batch from the relay: stored with its cursor, then applied to the picture at once. If it
-   * cannot be stored, the cursor stays behind it and the relay sends it again on reconnecting; a
-   * full storage is told to the user meanwhile.
+   * A batch from the group's server: stored with its cursor, then applied to the picture at once.
+   * If it cannot be stored, the cursor stays behind it and the server sends it again on
+   * reconnecting; a full storage is told to the user meanwhile.
    */
   async #receive(
     batch: readonly ReceivedEnvelope[],
-    relay: string,
+    server: string,
     store: string | null,
   ): Promise<void> {
     const last = batch.at(-1);
     if (last === undefined) return;
     const opened = batch.flatMap(({ key, env }) => this.#open(key, env) ?? []);
-    const server = this.#group.server;
-    this.#hear(server !== null && sameServer(relay, server) ? 'internet' : 'command-post', opened);
-    const readTo = { relay, position: { cursor: last.cursor, store } };
+    this.#hear('internet', opened);
+    const readTo = { server, position: { cursor: last.cursor, store } };
     const received = await receiveEvents(this.#db, this.#group.id, this.#current(opened), {
       readTo,
     }).catch((error: unknown) => {

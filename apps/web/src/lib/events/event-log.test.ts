@@ -121,12 +121,12 @@ describe('event log', () => {
     expect(await loadEvents(db, 'group')).toHaveLength(2);
   });
 
-  it('saves how far a relay was read together with the events read', async () => {
+  it('saves how far the server was read together with the events read', async () => {
     const db = await freshDb();
-    const relay = 'https://tesel.example/';
+    const server = 'https://tesel.example/';
     const position = { cursor: 42, store: 'store' };
-    await receiveEvents(db, 'group', [chatBytes(OTHER, 1, 'a')], { readTo: { relay, position } });
-    expect(await loadPosition(db, 'group', relay)).toEqual(position);
+    await receiveEvents(db, 'group', [chatBytes(OTHER, 1, 'a')], { readTo: { server, position } });
+    expect(await loadPosition(db, 'group', server)).toEqual(position);
   });
 
   it('queues an event heard over the radio for the server when bridging', async () => {

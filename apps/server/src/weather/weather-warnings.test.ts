@@ -31,7 +31,7 @@ const now = () => NOW_S * 1000;
 const MAX_AGE_MINUTES = 70;
 
 describe('weather warnings service', () => {
-  it('serves the warning regions as a §8.4 document', async () => {
+  it('serves the warning regions as a §8.2 document', async () => {
     const service = new WeatherWarningsService({
       countries: ['ES', 'PT'],
       regionsFile: null,
@@ -191,8 +191,6 @@ describe('weather warnings service', () => {
     });
     const app = await buildApp(store, relay, {
       webRoot: null,
-      upstream: null,
-      commandPost: null,
       weather: service,
       trustedProxies: [],
     });

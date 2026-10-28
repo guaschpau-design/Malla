@@ -13,7 +13,7 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0005](0005-group-secret-trust-boundary.md)          | The group secret is the trust boundary; the server is zero-knowledge            | Accepted, amended by 0052                  |
 | [0006](0006-meshcore-first-channel-datagrams.md)     | MeshCore first, through channel data datagrams                                  | Accepted                                   |
 | [0007](0007-self-hosted-vector-maps.md)              | Self-hosted vector maps for offline use                                         | Accepted, partly superseded by 0011        |
-| [0008](0008-one-server-vps-and-command-post.md)      | One server program for the VPS and the local command post                       | Accepted, settled by 0018                  |
+| [0008](0008-one-server-vps-and-command-post.md)      | One server program for the VPS and the local command post                       | Superseded by 0058                         |
 | [0009](0009-toolchain.md)                            | Toolchain: TypeScript, pnpm workspace, Svelte, Vitest                           | Accepted                                   |
 | [0010](0010-lora-link-security.md)                   | Rely on MeshCore channel encryption for LoRa in v0.1, knowing its limits        | Accepted                                   |
 | [0011](0011-client-side-area-download.md)            | Download offline areas tile by tile in the browser                              | Accepted, amended by 0056                  |
@@ -23,7 +23,7 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0015](0015-lora-airtime-policy.md)                  | LoRa airtime policy                                                             | Accepted, amended by 0043                  |
 | [0016](0016-web-app-and-native-shells.md)            | The web app first, and Android and iOS apps built from the same code            | Accepted                                   |
 | [0017](0017-server-serves-site-and-app.md)           | The server serves the landing page and the web app                              | Accepted                                   |
-| [0018](0018-command-post.md)                         | A command post is a replicating server on its own Wi-Fi, found by name          | Accepted, amended by 0050                  |
+| [0018](0018-command-post.md)                         | A command post is a replicating server on its own Wi-Fi, found by name          | Superseded by 0058                         |
 | [0019](0019-name-tesel.md)                           | The project is called Tesel                                                     | Accepted                                   |
 | [0020](0020-colour-and-symbols.md)                   | Signal lime, colours defined once, and symbols of our own                       | Accepted                                   |
 | [0021](0021-coordinate-formats.md)                   | Write coordinates in four formats, converted by our own code                    | Accepted                                   |
@@ -55,7 +55,7 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0047](0047-alarms-and-notices.md)                   | Raise the alarm, and say what happened                                          | Accepted                                   |
 | [0048](0048-how-the-app-shares-state.md)             | One rule for sharing state in the web app, and panels that carry what they show | Accepted                                   |
 | [0049](0049-signed-images-and-checked-updates.md)    | Run only signed server images, and check every update                           | Accepted                                   |
-| [0050](0050-post-certificates-from-the-server.md)    | Command posts get their certificate from the server                             | Accepted                                   |
+| [0050](0050-post-certificates-from-the-server.md)    | Command posts get their certificate from the server                             | Superseded by 0058                         |
 | [0051](0051-satellite-mosaic-licence.md)             | Name the satellite mosaic's licence, and let a build change the mosaic          | Accepted                                   |
 | [0052](0052-authorship-is-not-proven.md)             | Members are trusted: protocol version 1 does not prove who wrote an event       | Accepted                                   |
 | [0053](0053-load-heavy-parts-on-demand.md)           | Load the heavy parts of the app on demand, MapLibre in a file of its own        | Accepted                                   |
@@ -63,3 +63,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0055](0055-forget-outlived-positions.md)            | Forget the positions the trails have outlived                                   | Accepted                                   |
 | [0056](0056-storage-and-offline-maps.md)             | Keep room for the log, resume downloads, and never show a blank map             | Accepted                                   |
 | [0057](0057-accessible-interface.md)                 | Meet WCAG 2.1 AA in the app's colours, keyboard use and texts                   | Accepted                                   |
+| [0058](0058-no-command-posts.md)                     | Drop command posts: one server per group, radios when there is no internet      | Accepted                                   |

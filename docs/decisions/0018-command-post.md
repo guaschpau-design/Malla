@@ -1,6 +1,6 @@
 # 0018. A command post is a replicating server on its own Wi-Fi, found by name
 
-- Status: Accepted, amended by [0050](0050-post-certificates-from-the-server.md) (the server obtains the posts' certificate)
+- Status: Superseded by [0058](0058-no-command-posts.md)
 - Date: 2026-10-25
 - Note (2026-10-28): two parts of this record no longer describe the code. Replication no longer links every group the post stores: it links the groups its clients are in or that hold envelopes the upstream lacks, drops a link once its group has neither, and keeps at most 100 links, for the groups active most recently (protocol §8.2, `apps/server/src/replicator.ts`). Since ADR-0050 a post holds no DNS credentials and runs no lego: every 6 hours, when it has internet, `deploy/command-post/refresh.sh` downloads the certificate from the server, updates the image and copies the server's base map.
 - Settles: the open question of [ADR-0008](0008-one-server-vps-and-command-post.md) about HTTPS on a local network

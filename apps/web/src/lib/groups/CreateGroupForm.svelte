@@ -6,7 +6,6 @@
   import { defaultServerUrl } from '../config.ts';
   import type { Translate } from '../i18n/index.ts';
   import type { Session } from '../session.svelte.ts';
-  import { proposedServer } from '../sync/relays.ts';
   import { Submission } from '../ui/submission.svelte.ts';
   import { normalizeGroupName, normalizeServerUrl } from './group.ts';
 
@@ -22,14 +21,8 @@
   let newName = $state('');
   const groupName = $derived(normalizeGroupName(newName));
   const nameTooLong = $derived(newName.trim() !== '' && groupName === null);
-  const homeServer = defaultServerUrl();
-  let serverText = $state(homeServer ?? '');
+  let serverText = $state(defaultServerUrl() ?? '');
   const server = $derived(normalizeServerUrl(serverText));
-
-  // Opened from a command post, new groups belong to the server the post replicates.
-  void proposedServer(homeServer).then((proposed) => {
-    if (proposed !== null && serverText === (homeServer ?? '')) serverText = proposed;
-  });
 
   const submission = new Submission();
 

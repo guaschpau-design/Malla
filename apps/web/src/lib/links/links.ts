@@ -19,17 +19,15 @@ export interface Network {
 }
 
 export interface LinkInput {
-  /** The active group's sync with its relay, or null without a group or in a practice. */
+  /** The active group's sync with its server, or null without a group or in a practice. */
   readonly server: FeedStatus | null;
-  /** True when that relay is a command post rather than the group's server (protocol §8.3). */
-  readonly viaCommandPost: boolean;
   readonly radio: 'off' | 'connecting' | 'linked';
   /** Whether the browser believes it is online; it only matters when `server` is null. */
   readonly browserOnline: boolean;
 }
 
 export interface Link {
-  /** The channels that work now, in this order: internet or command post, then radio. */
+  /** The channels that work now, in this order: internet, then radio. */
   readonly channels: readonly Channel[];
   readonly level: 'ok' | 'connecting' | 'none';
 }
@@ -43,8 +41,8 @@ export const LEVEL_TONES: Readonly<Record<Link['level'], StatusTone>> = {
 
 export function linkOf(input: LinkInput): Link {
   const channels: Channel[] = [];
-  const relayUp = input.server === null ? input.browserOnline : input.server === 'synced';
-  if (relayUp) channels.push(input.viaCommandPost ? 'command-post' : 'internet');
+  const serverUp = input.server === null ? input.browserOnline : input.server === 'synced';
+  if (serverUp) channels.push('internet');
   if (input.radio === 'linked') channels.push('radio');
   if (channels.length > 0) return { channels, level: 'ok' };
   const connecting =
@@ -66,13 +64,11 @@ export function networkName(network: Network): MessageKey {
   return 'mediumMobile';
 }
 
-/** The medium of each channel, as the header names it. A command post is a WiFi network. */
+/** The medium of each channel, as the header names it. */
 export function channelName(channel: Channel, network: Network): MessageKey {
   switch (channel) {
     case 'internet':
       return networkName(network);
-    case 'command-post':
-      return 'mediumWifi';
     case 'radio':
       return 'mediumLora';
   }
@@ -101,9 +97,7 @@ export function networkStatus(input: LinkInput): { level: Link['level']; label: 
   }
   switch (input.server) {
     case 'synced':
-      return input.viaCommandPost
-        ? { level: 'ok', label: 'netCommandPost' }
-        : { level: 'ok', label: 'netServer' };
+      return { level: 'ok', label: 'netServer' };
     case 'connecting':
     case 'syncing':
       return { level: 'connecting', label: 'linkConnecting' };

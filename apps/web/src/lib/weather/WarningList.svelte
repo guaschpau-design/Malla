@@ -14,7 +14,7 @@
     t: Translate;
     locale: Locale;
     here: WarningsHere;
-    /** Who the server gathered them from (protocol §8.4). */
+    /** Who the server gathered them from (protocol §8.2). */
     source: string | null;
   }
 

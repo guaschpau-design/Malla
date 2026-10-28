@@ -625,10 +625,6 @@ section.paper + section.paper > .wrap {
   border-top: 3px dotted var(--signal);
 }
 
-.path .line.later {
-  border-top: 2px dashed var(--contour-strong);
-}
-
 /* The same diagram, on paper (in the guide). */
 .prose .path .node {
   color: var(--paper-text);
@@ -648,10 +644,6 @@ section.paper + section.paper > .wrap {
 
 .prose .path .line.air {
   border-top-color: var(--signal-deep);
-}
-
-.prose .path .line.later {
-  border-top-color: var(--rule);
 }
 
 @media (max-width: 50rem) {

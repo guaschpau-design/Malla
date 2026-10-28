@@ -20,10 +20,7 @@ import { MAX_FRAME_BYTES } from './ws-text.ts';
 export interface AppOptions {
   /** Directory to serve the landing page and the web app from, or null. */
   readonly webRoot: string | null;
-  /** What `healthz` tells clients (protocol §8.1). */
-  readonly upstream: string | null;
-  readonly commandPost: string | null;
-  /** The weather warnings it serves (protocol §8.4), or null if it gathers none. */
+  /** The weather warnings it serves (protocol §8.2), or null if it gathers none. */
   readonly weather: Pick<WeatherWarningsService, 'body'> | null;
   /**
    * Addresses of the reverse proxies in front of the server (Caddy in the deployments), whose
@@ -34,8 +31,6 @@ export interface AppOptions {
 
 export const NO_OPTIONS: AppOptions = {
   webRoot: null,
-  upstream: null,
-  commandPost: null,
   weather: null,
   trustedProxies: [],
 };
@@ -62,15 +57,13 @@ export async function buildApp(
   });
   await app.register(fastifyWebsocket, { options: { maxPayload: MAX_FRAME_BYTES } });
 
-  // Apps served from another origin read this too (protocol §8.3).
+  // Apps served from another origin read this too (protocol §8.1).
   app.get(`/${SERVER_INFO_PATH}`, (_request, reply) => {
     void reply.header('Access-Control-Allow-Origin', '*');
     if (!store.isAvailable()) return reply.code(503).send({ status: 'unavailable' });
     return {
       status: 'ok',
       protocolVersion: PROTOCOL_VERSION,
-      upstream: options.upstream,
-      commandPost: options.commandPost,
       time: Math.floor(Date.now() / 1000),
     } satisfies ServerInfoBody;
   });

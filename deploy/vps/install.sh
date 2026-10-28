@@ -16,10 +16,6 @@ REPO_RAW="https://raw.githubusercontent.com/guaschpau-design/Tesel"
 REF="main"
 DOMAIN=""
 REDIRECT_FROM=""
-COMMAND_POST=""
-DNS_PROVIDER=""
-DNS_VARS=()
-EMAIL=""
 SKIP_DNS_CHECK=false
 INSTALL_DIR="/opt/tesel"
 # Where servers installed before the project was renamed live (ADR-0019).
@@ -28,19 +24,11 @@ LEGACY_DIR="/opt/teselia"
 usage() {
   cat >&2 <<'TEXT'
 Usage: install.sh --domain DOMAIN [--redirect-from DOMAIN[,DOMAIN...]]
-                  [--command-post URL --dns PROVIDER --dns-var VARIABLE... --email EMAIL]
                   [--ref GIT_REF] [--skip-dns-check]
 
   --domain         The server's name, e.g. tesel.example.eu
-  --redirect-from  Old names of the server, which redirect to the new one
-  --command-post   Name shared by the server's command posts, e.g. https://puesto.example.eu
-  --dns            lego DNS provider of the posts' domain, e.g. ionos (go-acme.github.io/lego/dns):
-                   the server obtains the posts' certificate by DNS challenge
-  --dns-var        Name of an environment variable holding a DNS API credential; repeat as needed
-  --email          Contact address for the certificate authority
+  --redirect-from  Old names of the server, which redirect to the new one; kept on later runs
   --ref            Branch or tag whose deployment files are installed (default: main)
-
-The command post and DNS settings are kept on later runs; pass them again to change them.
 TEXT
   exit 2
 }
@@ -49,10 +37,6 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --domain) DOMAIN="${2:-}"; shift 2 ;;
     --redirect-from) REDIRECT_FROM="${2:-}"; shift 2 ;;
-    --command-post) COMMAND_POST="${2:-}"; shift 2 ;;
-    --dns) DNS_PROVIDER="${2:-}"; shift 2 ;;
-    --dns-var) DNS_VARS+=("${2:-}"); shift 2 ;;
-    --email) EMAIL="${2:-}"; shift 2 ;;
     --ref) REF="${2:-}"; shift 2 ;;
     --skip-dns-check) SKIP_DNS_CHECK=true; shift ;;
     *) usage ;;
@@ -80,21 +64,6 @@ IFS=',' read -r -a REDIRECT_DOMAINS <<< "$REDIRECT_FROM"
 for old in "${REDIRECT_DOMAINS[@]}"; do
   is_domain "$old" || fail "--redirect-from: \"$old\" is not a domain name."
 done
-[[ -z "$COMMAND_POST" || "$COMMAND_POST" =~ ^https://[A-Za-z0-9.-]+/?$ ]] ||
-  fail "--command-post must be https://host"
-if [[ -n "$DNS_PROVIDER" || ${#DNS_VARS[@]} -gt 0 || -n "$EMAIL" ]]; then
-  [[ -n "$DNS_PROVIDER" && ${#DNS_VARS[@]} -gt 0 && -n "$EMAIL" ]] ||
-    fail "--dns, --dns-var and --email go together."
-  for variable in "${DNS_VARS[@]}"; do
-    [[ -n "${!variable:-}" ]] ||
-      fail "the environment variable $variable is empty. Pass it with sudo env $variable=..."
-  done
-fi
-# Posts get their certificate from this server, which needs the DNS settings to obtain it (ADR-0050).
-if [[ -n "${COMMAND_POST:-$(setting TESEL_COMMAND_POST)}" && -z "${DNS_PROVIDER:-$(setting TESEL_POST_DNS)}" ]]; then
-  fail "this server obtains its command posts' certificate: pass --dns, --dns-var and --email
-(the DNS provider and API key of the posts' domain, as posts used to take)."
-fi
 [[ $EUID -eq 0 ]] || fail "run as root (with sudo)."
 # shellcheck source=/dev/null
 . /etc/os-release
@@ -212,11 +181,10 @@ fi
 step "Installing Tesel in $INSTALL_DIR from $REF"
 install -m 0755 -d "$INSTALL_DIR"
 fetch() { curl -fsSL "$REPO_RAW/$REF/deploy/$1" -o "$INSTALL_DIR/$(basename "$1")"; }
-for file in vps/compose.yaml vps/Caddyfile common/headers.caddy; do
+for file in vps/compose.yaml vps/Caddyfile vps/headers.caddy; do
   fetch "$file"
 done
-for script in vps/maps.sh vps/backup.sh vps/notify.sh vps/post-certificate.sh \
-  common/update.sh common/install-cosign.sh; do
+for script in vps/maps.sh vps/backup.sh vps/notify.sh vps/update.sh vps/install-cosign.sh; do
   fetch "$script"
   chmod 0755 "$INSTALL_DIR/$(basename "$script")"
 done
@@ -236,21 +204,17 @@ REDIRECT_FROM="$(setting TESEL_REDIRECT_FROM)"
     printf '%s {\n\tredir https://%s{uri} permanent\n}\n' "${REDIRECT_FROM//,/, }" "$DOMAIN"
   fi
 } > "$INSTALL_DIR/redirects.caddy"
-if [[ -n "$COMMAND_POST" ]] || ! grep -q '^TESEL_COMMAND_POST=' "$INSTALL_DIR/.env"; then
-  set_setting TESEL_COMMAND_POST "$COMMAND_POST"
+# Command posts are no more (ADR-0058): what a server kept for them goes, its DNS credentials
+# first. Once every server has been installed again since 2026-10-28, this step can go.
+if [[ -e /etc/systemd/system/tesel-post-certificate.timer || -e "$INSTALL_DIR/dns.env" ]]; then
+  step "Removing what command posts used"
+  systemctl disable --now tesel-post-certificate.timer >/dev/null 2>&1 || true
+  rm -f /etc/systemd/system/tesel-post-certificate.{service,timer}
+  rm -rf "$INSTALL_DIR/dns.env" "$INSTALL_DIR/lego" "$INSTALL_DIR/post-tokens" \
+    "$INSTALL_DIR/post-certificate" "$INSTALL_DIR/post-certificate.caddy" \
+    "$INSTALL_DIR/post-certificate.sh"
 fi
-if [[ -n "$DNS_PROVIDER" ]]; then
-  set_setting TESEL_POST_DNS "$DNS_PROVIDER"
-  set_setting TESEL_POST_EMAIL "$EMAIL"
-  # DNS credentials can change the domain's records: readable by root only, and only here.
-  install -m 0600 /dev/null "$INSTALL_DIR/dns.env"
-  for variable in "${DNS_VARS[@]}"; do
-    printf '%s=%s\n' "$variable" "${!variable}" >> "$INSTALL_DIR/dns.env"
-  done
-fi
-# The posts' certificate is served from here; Caddy's part for it exists even without posts.
-install -m 0700 -d "$INSTALL_DIR/post-certificate"
-"$INSTALL_DIR/post-certificate.sh" configure
+sed -i '/^TESEL_COMMAND_POST=/d; /^TESEL_POST_DNS=/d; /^TESEL_POST_EMAIL=/d' "$INSTALL_DIR/.env"
 
 # Each scheduled job is a oneshot service run by its timer, which reports how it ended
 # (notify.sh): failures to the journal, and every result to TESEL_ALERT_URL when it is set.
@@ -305,10 +269,6 @@ write_job tesel-backup "Back up the Tesel server" \
   "$INSTALL_DIR/backup.sh $INSTALL_DIR" \
   $'OnCalendar=*-*-* 03:00\nRandomizedDelaySec=30min\nPersistent=true' \
   "Back up the Tesel server every night"
-write_job tesel-post-certificate "Obtain or renew the certificate of Tesel's command posts" \
-  "$INSTALL_DIR/post-certificate.sh renew" \
-  $'OnCalendar=daily\nRandomizedDelaySec=2h\nPersistent=true' \
-  "Renew the command posts' certificate when it is due"
 systemctl daemon-reload
 
 if [[ ! -f "$INSTALL_DIR/maps/basemap.pmtiles" ]]; then
@@ -332,15 +292,6 @@ docker compose exec --no-TTY caddy caddy reload --config /etc/caddy/Caddyfile --
 # Enabled only now: a timer whose boot delay has passed fires at once, and its own update would
 # wait for the one above for nothing.
 systemctl enable --now tesel-update.timer tesel-backup.timer >/dev/null
-
-if [[ -n "$(setting TESEL_COMMAND_POST)" ]]; then
-  step "Obtaining the command posts' certificate"
-  "$INSTALL_DIR/post-certificate.sh" renew
-  systemctl enable --now tesel-post-certificate.timer >/dev/null
-  echo "Give each post a token with: sudo $INSTALL_DIR/post-certificate.sh grant post-1"
-else
-  systemctl disable --now tesel-post-certificate.timer 2>/dev/null
-fi
 
 step "Waiting for https://$DOMAIN"
 for _ in $(seq 1 60); do

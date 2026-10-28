@@ -1,5 +1,5 @@
 // The official weather warnings, read from the server that serves the app (docs/protocol.md
-// §8.4) every 10 minutes while the app is in view and online, and kept on the device so they are
+// §8.2) every 10 minutes while the app is in view and online, and kept on the device so they are
 // still there without coverage. Expired warnings drop out by themselves, minute by minute.
 
 import { parseWeatherWarnings, weatherWarningsUrl, type WeatherWarnings } from '@tesel/protocol';

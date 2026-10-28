@@ -1,11 +1,11 @@
-// Weather warnings as a server publishes them (docs/protocol.md §8.4): a GeoJSON collection of
+// Weather warnings as a server publishes them (docs/protocol.md §8.2): a GeoJSON collection of
 // warning regions. The server builds it with these types; clients read it with
 // `parseWeatherWarnings`, which keeps only what is well formed.
 
 import { WEATHER_WARNINGS_PATH } from './constants.ts';
 import { serverBaseUrl } from './relay.ts';
 
-/** §8.4 levels: yellow, orange and red (MeteoAlarm awareness levels). */
+/** §8.2 levels: yellow, orange and red (MeteoAlarm awareness levels). */
 export type WarningLevel = 2 | 3 | 4;
 export const WARNING_LEVELS: readonly WarningLevel[] = [2, 3, 4];
 
@@ -56,7 +56,7 @@ export interface WeatherWarnings {
 export const WEATHER_WARNINGS_KIND = 'weather-warnings';
 export const WEATHER_WARNINGS_VERSION = 1;
 
-/** §8.4 The URL of a server's weather warnings. */
+/** §8.2 The URL of a server's weather warnings. */
 export function weatherWarningsUrl(server: string): string {
   return new URL(WEATHER_WARNINGS_PATH, serverBaseUrl(server)).href;
 }

@@ -6,7 +6,7 @@
     <title>Tesel guide · Preparation, operation and deployment</title>
     <meta
       name="description"
-      content="How to prepare a team with Tesel, what to do during an operation, how to stay coordinated without coverage using LoRa radios or a command post, and how information is protected."
+      content="How to prepare a team with Tesel, what to do during an operation, how to stay coordinated without coverage using LoRa radios, and how information is protected."
     />
     <meta name="theme-color" content="#10202c" />
     <link rel="icon" href="../../app/icons/favicon.svg?v=5f378b66" type="image/svg+xml" />
@@ -73,7 +73,6 @@
           <li><a href="#field">Finding your way</a></li>
           <li><a href="#after">Afterwards: the diary</a></li>
           <li><a href="#no-internet">When there is no internet</a></li>
-          <li><a href="#post">The command post</a></li>
           <li><a href="#radios">Radios</a></li>
           <li><a href="#iphone">If you have an iPhone</a></li>
           <li><a href="#security">Privacy and security</a></li>
@@ -89,9 +88,8 @@
         knows at once, with their position.
       </p>
       <p>
-        With internet it works like any messaging app. Without internet it keeps working in two
-        ways: with <strong>pocket radios</strong> that pass messages to each other, or through a
-        <strong>command post</strong>, a computer with its own Wi-Fi in the area of operations.
+        With internet it works like any messaging app. Without internet it keeps working with
+        <strong>pocket radios</strong> that pass messages to each other.
       </p>
       <div class="box">
         <p><strong>Tesel does not replace 112.</strong></p>
@@ -199,9 +197,9 @@
         </li>
         <li>
           <strong>Share out the work</strong> with “Tasks”: “Check the warehouse”, “Bring water to
-          the post”. Only the text is needed, typed or picked from the common ones (search the area,
-          check a home, treat an injured person…); if you like, say who it is for and give it a
-          place by pressing and holding the map → “Task here”. Anyone can add, start and finish
+          the meeting point”. Only the text is needed, typed or picked from the common ones (search
+          the area, check a home, treat an injured person…); if you like, say who it is for and give
+          it a place by pressing and holding the map → “Task here”. Anyone can add, start and finish
           tasks, and a number on the button tells you how many are yours. Use them the way that
           suits your team: for everything, for what matters, or not at all.
         </li>
@@ -306,9 +304,9 @@
         </li>
         <li>
           <strong>Who you reach by radio.</strong> Tap a member on the map for their details: when
-          something of theirs last reached you by radio, through the server or through the command
-          post. In the group’s list of members, a mast marks those who reach you by radio: from
-          their own radio or passed on by another member.
+          something of theirs last reached you by radio or through the server. In the group’s list
+          of members, a mast marks those who reach you by radio: from their own radio or passed on
+          by another member.
         </li>
         <li>
           <strong>Screen on.</strong> In “More” → “Screen always on”: with the switch green, the
@@ -342,8 +340,8 @@
       <p>
         In the same panel you can <strong>save a copy of the group’s log</strong>: all its events,
         encrypted, readable only by members. Loaded on another device of the group, it brings that
-        device whatever it is missing. Use it as a backup, or to carry to the command post, on a
-        memory stick, what a phone lived through by radio only.
+        device whatever it is missing. Use it as a backup, or to hand the coordinator, on a memory
+        stick, what a phone lived through by radio only.
       </p>
 
       <h2 id="no-internet">When there is no internet</h2>
@@ -378,18 +376,18 @@
               </div>
             </div>
             <div class="route">
-              <h3>With a post</h3>
+              <h3>With a bridge</h3>
               <div class="path" aria-hidden="true">
-                <span class="node">Your phone</span><span class="line"></span>
-                <span class="node hub">Post</span><span class="line later"></span>
+                <span class="node">Your phone</span><span class="line air"></span>
+                <span class="node hub">Bridge</span><span class="line"></span>
                 <span class="node">Server</span>
               </div>
             </div>
           </div>
         </div>
         <figcaption>
-          The three paths. The dotted line is radio; the dashed one, a link that arrives when
-          internet returns.
+          The three paths. The dotted line is radio. The bridge is a teammate's phone with both a
+          radio and coverage.
         </figcaption>
       </figure>
       <h3>If you have a radio</h3>
@@ -400,158 +398,16 @@
         What you wrote without the radio goes out as soon as you connect it, and if the connection
         drops, Tesel brings it back by itself.
       </p>
-      <h3>If there is a command post nearby</h3>
+      <h3>If someone has a radio and coverage</h3>
       <p>
-        Join its Wi-Fi (whoever set it up has the name and password) and open Tesel as usual. At the
-        top you will see “WiFi” and, if you tap it, “Connected to a command post”: you are in touch
-        with the group. The next section explains it.
+        Their phone acts as a bridge without them doing anything: what arrives by radio goes up to
+        the server, and what the server has goes out by radio. Whoever has a radio but no coverage
+        keeps up with what the others write, and the other way round.
       </p>
       <h3>If you have neither</h3>
       <p>
         The downloaded map keeps working and you can write: messages go out by themselves when the
-        connection returns or when you get near a command post. If someone in your group has a
-        radio, stay close to them.
-      </p>
-
-      <h2 id="post">The command post</h2>
-      <p>
-        A command post is a computer that someone in the team brings to the area of operations. It
-        does three things:
-      </p>
-      <figure class="figure">
-        <div class="diagram">
-          <svg
-            viewBox="0 0 680 250"
-            role="img"
-            aria-label="The team's phones join the command post computer over Wi-Fi. The post links to the LoRa mesh by radio and, when internet returns, to Tesel's server."
-          >
-            <g fill="none" stroke="#15232d" stroke-width="2">
-              <path d="M66 54 C150 54 170 112 232 112" />
-              <path d="M66 125 L232 118" />
-              <path d="M66 196 C150 196 170 124 232 124" />
-            </g>
-            <path
-              d="M348 98 C400 98 420 52 478 52"
-              fill="none"
-              stroke="#4d6e00"
-              stroke-width="3"
-              stroke-dasharray="0.1 7"
-              stroke-linecap="round"
-            />
-            <path
-              d="M348 132 C400 132 420 166 470 166"
-              fill="none"
-              stroke="#9aa8a2"
-              stroke-width="2"
-              stroke-dasharray="7 6"
-            />
-            <g fill="#fff" stroke="#15232d" stroke-width="2">
-              <rect x="38" y="30" width="28" height="48" rx="6" />
-              <rect x="38" y="101" width="28" height="48" rx="6" />
-              <rect x="38" y="172" width="28" height="48" rx="6" />
-            </g>
-            <g fill="#15232d">
-              <rect x="47" y="70" width="10" height="2" rx="1" />
-              <rect x="47" y="141" width="10" height="2" rx="1" />
-              <rect x="47" y="212" width="10" height="2" rx="1" />
-            </g>
-            <rect
-              x="236"
-              y="74"
-              width="108"
-              height="74"
-              rx="7"
-              fill="#c8f04a"
-              stroke="#10202c"
-              stroke-width="2.5"
-            />
-            <path d="M224 152 H356 L349 162 H231 Z" fill="#10202c" />
-            <g fill="none" stroke="#10202c" stroke-width="2.5" stroke-linecap="round">
-              <path d="M272 108 A26 26 0 0 1 308 108" />
-              <path d="M279 116 A16 16 0 0 1 301 116" />
-            </g>
-            <circle cx="290" cy="124" r="3.5" fill="#10202c" />
-            <rect
-              x="480"
-              y="34"
-              width="24"
-              height="40"
-              rx="5"
-              fill="#fff"
-              stroke="#15232d"
-              stroke-width="2"
-            />
-            <path d="M492 34 V16" stroke="#15232d" stroke-width="2" stroke-linecap="round" />
-            <circle cx="492" cy="62" r="3" fill="#4d6e00" />
-            <g fill="#fff" stroke="#15232d" stroke-width="2">
-              <rect x="472" y="146" width="40" height="17" rx="3" />
-              <rect x="472" y="167" width="40" height="17" rx="3" />
-            </g>
-            <g fill="#15232d">
-              <circle cx="502" cy="154.5" r="2" />
-              <circle cx="502" cy="175.5" r="2" />
-            </g>
-            <g font-size="14" font-weight="600" fill="#15232d">
-              <text x="52" y="244" text-anchor="middle">Phones</text>
-              <text x="290" y="188" text-anchor="middle">Command post</text>
-              <text x="522" y="50">LoRa radio</text>
-              <text x="526" y="162">Tesel's server</text>
-            </g>
-            <g font-size="12.5" fill="#4f6069">
-              <text x="290" y="206" text-anchor="middle">a computer with its own Wi-Fi</text>
-              <text x="522" y="68">link to the mesh</text>
-              <text x="526" y="180">when internet returns</text>
-            </g>
-          </svg>
-        </div>
-      </figure>
-      <ol>
-        <li>
-          <strong>It creates its own Wi-Fi.</strong> It works without internet or phone masts, like
-          a home Wi-Fi with no connection to the outside.
-        </li>
-        <li>
-          <strong>It is the team's server.</strong> Phones on its Wi-Fi pass messages through it,
-          even without a radio. This is how people with only an iPhone, or no radio, stay included.
-        </li>
-        <li>
-          <strong>It is a bridge.</strong> With a radio connected at the post, what arrives by radio
-          reaches the Wi-Fi and the other way round. And when the post gets internet back (by cable,
-          satellite or a phone with data), it sends everything to the Tesel server and collects what
-          the rest of the organisation wrote.
-        </li>
-      </ol>
-      <div class="box">
-        <p><strong>Think of it as the neighbourhood post box.</strong></p>
-        <p>
-          Everyone drops off their letters and picks up theirs. When the postman (internet) comes
-          by, the box hands everything over and takes in what comes from outside. The letters are
-          sealed: the post cannot read the messages, it only keeps and delivers them.
-        </p>
-      </div>
-      <h3>How to join a command post</h3>
-      <ul>
-        <li>
-          <strong>If you already have Tesel and are in the group:</strong> join the post's Wi-Fi and
-          open the app. That is all. You will see “WiFi” at the top; tap it for “Connected to a
-          command post”.
-        </li>
-        <li>
-          <strong>If you do not have Tesel:</strong> join the post's Wi-Fi, open the address you are
-          given in the browser (for example puesto.tesel.eu/app), choose your name and in “Groups” →
-          “Join a group” tap “Scan QR code” to read the coordinator's invitation.
-        </li>
-        <li>
-          If your phone says the Wi-Fi “has no internet”, that is expected: choose to stay
-          connected. If you still have mobile data and the app does not reach the post, turn mobile
-          data off while you are there.
-        </li>
-      </ul>
-      <h3>Who sets up the post</h3>
-      <p>
-        Someone comfortable with computers prepares it in advance. Once prepared, in the area of
-        operations it only needs switching on. It needs internet at least once every two months to
-        renew its security certificate.
+        connection returns. If someone in your group has a radio, stay close to them.
       </p>
 
       <h2 id="radios">Radios</h2>
@@ -589,20 +445,15 @@
       <h2 id="iphone">If you have an iPhone</h2>
       <p>
         Over the internet Tesel works the same on iPhone. What Safari does not allow is connecting a
-        radio by Bluetooth. Until the native app arrives, in an emergency you have two options:
+        radio by Bluetooth. Until the native app arrives, use the Bluefy browser, which does allow
+        it. It is a stopgap we are still checking.
       </p>
-      <ul>
-        <li>Join a <a href="#post">command post</a>.</li>
-        <li>
-          Try the Bluefy browser, which does allow Bluetooth. It is a stopgap we are still checking.
-        </li>
-      </ul>
 
       <h2 id="security">Privacy and security</h2>
       <ul>
         <li>
-          Everything in the group is encrypted with a key only its members have. Neither the server
-          nor a command post can read the messages.
+          Everything in the group is encrypted with a key only its members have. The server cannot
+          read the messages.
         </li>
         <li>
           <strong>The invitation is the key to the group.</strong> Whoever has it gets in. If it was
@@ -627,7 +478,7 @@
         <summary>The top bar says “Offline”</summary>
         <p>
           Your phone has no internet. What you write is kept and goes out later. If you have a
-          radio, connect it; if there is a command post, join its Wi-Fi.
+          radio, connect it.
         </p>
       </details>
       <details>
@@ -649,13 +500,6 @@
         <p>
           Open the MeshCore app, delete a channel you do not use and connect again from Tesel. Tesel
           never deletes channels by itself.
-        </p>
-      </details>
-      <details>
-        <summary>I am on the post's Wi-Fi but it does not connect</summary>
-        <p>
-          Turn mobile data off and open the app again. The first time, the browser may ask for
-          permission to access devices on the local network: allow it.
         </p>
       </details>
     </main>

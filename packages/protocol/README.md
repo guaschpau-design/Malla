@@ -20,7 +20,7 @@ Pure TypeScript. No DOM, no Node APIs, no network. Runs unchanged in the browser
 | `crypto.ts`     | §1, §5 identity, key derivation, envelopes                                       |
 | `invitation.ts` | §6 invitation links                                                              |
 | `relay.ts`      | §8 messages of the internet transport and server information                     |
-| `weather.ts`    | §8.4 weather warnings                                                            |
+| `weather.ts`    | §8.2 weather warnings                                                            |
 | `log-file.ts`   | §10 log files                                                                    |
 
 Bad input is answered in one of three ways, by who is at fault and what the caller can do with it:

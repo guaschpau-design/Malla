@@ -336,7 +336,7 @@ Clients connect to `v1/ws` relative to the server base URL, with the scheme chan
 | `{"t": "error", "code": CODE, "key": EVENT_KEY}`               | `bad-request`, `too-large`, `rate-limited`, `not-joined` or `unavailable`; `key` is present when the error concerns a push |
 
 - If `after` is greater than the group's last cursor, for instance because the server lost data or deleted a quiet group's envelopes, the server sends every envelope it has, then `synced` with its last cursor. Clients always adopt the cursor of `synced`.
-- The **store identity** is 16 random bytes, base64url, created with the server's database and kept in it; cursors are only comparable within one identity. A client keeps the identity with its cursor for each relay. When `synced` carries another identity than the one it saved, the relay lost its data or was restored from a backup ([ADR-0046](decisions/0046-store-identity.md)): the client saves the new identity, sets its cursor for that relay to `0`, joins again, and pushes its own events again.
+- The **store identity** is 16 random bytes, base64url, created with the server's database and kept in it; cursors are only comparable within one identity. A client keeps the identity with its cursor. When `synced` carries another identity than the one it saved, the server lost its data or was restored from a backup ([ADR-0046](decisions/0046-store-identity.md)): the client saves the new identity, sets its cursor to `0`, joins again, and pushes its own events again.
 - The server MUST store at most one envelope per `(group, key, SHA-256 of the envelope)`. A push identical to a stored envelope is answered with `stored` and not relayed again; a different envelope under a known key is stored and relayed like any other, since the server cannot tell which one is genuine ([ADR-0045](decisions/0045-server-keeps-every-distinct-envelope.md)). Receivers MUST discard an envelope whose event, once opened, has another event key (§5) than the message's `key`. Clients keep an envelope in their outbox until they receive `stored` for its key.
 - The server MUST reject envelopes larger than 193 bytes with `too-large`, and envelopes smaller than 42 bytes (nonce, event header and tag) with `bad-request`. It answers `unavailable` when it cannot store a push now, for instance with its disk nearly full; the client keeps the envelope and pushes it again later.
 - The server SHOULD rate-limit pushes per connection, per group and in all, and MAY delete envelopes older than a configured retention period.
@@ -349,45 +349,17 @@ Clients connect to `v1/ws` relative to the server base URL, with the scheme chan
 `GET healthz`, relative to the server base URL, answers a JSON object:
 
 ```json
-{
-  "status": "ok",
-  "protocolVersion": 1,
-  "upstream": null,
-  "commandPost": "https://post.example/",
-  "time": 1793000000
-}
+{ "status": "ok", "protocolVersion": 1, "time": 1793000000 }
 ```
 
-| Field         | Meaning                                                                                                               |
-| ------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `upstream`    | Base URL of the server this one replicates (§8.2), or `null`. Set on command posts                                    |
-| `commandPost` | Base URL shared by the command posts of this server (§8.3), or `null`. Set on internet servers                        |
-| `time`        | The server's clock, in seconds since the epoch; clients compare it with theirs to notice a device clock that is wrong |
+| Field             | Meaning                                                                                                               |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `protocolVersion` | The version of this protocol the server speaks (§9)                                                                   |
+| `time`            | The server's clock, in seconds since the epoch; clients compare it with theirs to notice a device clock that is wrong |
 
-Both URLs are secure URLs ending in `/` when present. Clients ignore unknown fields. A server whose storage does not answer responds `503` with `{"status": "unavailable"}`. The response allows any origin (`Access-Control-Allow-Origin: *`), since apps served elsewhere read it. Two server URLs are the same server when they are equal after adding a missing trailing `/` to the path.
+Clients ignore unknown fields. A server whose storage does not answer responds `503` with `{"status": "unavailable"}`. The response allows any origin (`Access-Control-Allow-Origin: *`), since apps served elsewhere read it. Two server URLs are the same server when they are equal after adding a missing trailing `/` to the path.
 
-### 8.2 Replication
-
-A server with an `upstream` (a command post) keeps, for every group its clients are in or that has envelopes the upstream lacks, a connection to the upstream as a client of that group, and closes it once the group has neither. It MAY cap the number of these connections, since anyone on its network can join any group ID; it then SHOULD give them to the groups active most recently.
-
-- It joins with its own cursor for the upstream, stores every `env` it receives under the message's `key` and relays it to its own clients.
-- It pushes every envelope its own clients pushed, oldest first, until the upstream answers `stored`, and SHOULD stay under the upstream's rate limits.
-- It keeps the upstream's store identity with its cursor. When `synced` carries another identity, it sets its cursor to `0`, joins again, and pushes again every envelope it holds for the group.
-- Storage by `(group, key, SHA-256 of the envelope)` makes replication idempotent: an envelope that comes back is not stored or relayed twice.
-
-The command post never needs the group secret: it moves envelopes, as any server does.
-
-### 8.3 Choosing a relay
-
-All command posts of a server share one base URL, whose name each post resolves to itself on its own Wi-Fi. A client tries these relays for a group, in order, and moves to the next one when a connection fails before `synced`:
-
-1. The app's own server (the one that served it), if its `upstream` is the group's server.
-2. The group's server.
-3. The `commandPost` of the group's server, as last learnt from its `healthz`.
-
-Cursors belong to one relay: a client keeps one cursor per group and relay URL. Its outbox is satisfied by `stored` from any of them, since a command post replicates what it stores.
-
-### 8.4 Weather warnings
+### 8.2 Weather warnings
 
 A server MAY publish the official weather warnings of its region, which it gathers itself. They are public information, not group data, and clients read them without joining anything. `GET v1/weather-warnings`, relative to the server base URL, answers a GeoJSON `FeatureCollection` with one feature per warning region, and these members besides:
 
@@ -411,11 +383,11 @@ Only warnings that have not expired are listed, at the time of the request. The 
 
 ## 9. Versioning
 
-This document describes protocol version 1. Adding event types, symbol codes or style codes does not change the version. Version 1 is frozen with the first release, v0.1.0; until then it still changed in place: the `env` message gained `key`, and §8.1–8.3 were added, for command posts; §3.1 gained the rules on an author's times and on damaged events, and §3.8 the SOS without a place; envelope nonces became derived from the event (§5.1); `synced` gained the store identity, servers keep every distinct envelope, the error `unavailable` was added, and `healthz` gained `time`, and `ping` and `pong` were added (§8). Changing any existing layout, derivation or transport rule requires version 2, a new ADR and a migration plan.
+This document describes protocol version 1. Adding event types, symbol codes or style codes does not change the version. Version 1 is frozen with the first release, v0.1.0; until then it still changed in place: the `env` message gained `key`, and §8.1 was added; command posts, servers that replicated another (§8.2 and §8.3 then), were added and later removed ([ADR-0058](decisions/0058-no-command-posts.md)); §3.1 gained the rules on an author's times and on damaged events, and §3.8 the SOS without a place; envelope nonces became derived from the event (§5.1); `synced` gained the store identity, servers keep every distinct envelope, the error `unavailable` was added, and `healthz` gained `time`, and `ping` and `pong` were added (§8). Changing any existing layout, derivation or transport rule requires version 2, a new ADR and a migration plan.
 
 ## 10. Log files
 
-A device can save a group's log to a file and another device of the group can read it back: a backup, or a way to carry events between devices that never shared a link (a phone that worked by radio only, handing its log to the command post on a memory stick). The file is UTF-8 JSON:
+A device can save a group's log to a file and another device of the group can read it back: a backup, or a way to carry events between devices that never shared a link (a phone that worked by radio only, handing its log to the coordinator's on a memory stick). The file is UTF-8 JSON:
 
 ```json
 {

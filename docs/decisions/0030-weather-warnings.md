@@ -12,7 +12,7 @@ EUMETNET's MeteoAlarm republishes the warnings of every European service in one 
 
 ## Decision
 
-- The server gathers the warnings and publishes them at `GET v1/weather-warnings` (protocol §8.4): one GeoJSON document with the regions under some warning, each with its warnings in Spanish and English, coordinates rounded to about 100 m. It is public, not group data, and any origin may read it.
+- The server gathers the warnings and publishes them at `GET v1/weather-warnings` (protocol §8.2): one GeoJSON document with the regions under some warning, each with its warnings in Spanish and English, coordinates rounded to about 100 m. It is public, not group data, and any origin may read it.
 - Warnings are read every 10 minutes. The outlines are looked for once a day and downloaded only when a new file appears; the server keeps the outlines of its countries next to its database. The document is built once per gathering and served as it is.
 - `TESEL_WEATHER` chooses the countries (`ES,PT` by default) or turns it `off`.
 - The app reads the warnings from the server that serves it, every 10 minutes while it is in view and online, and keeps the last ones on the device for use without coverage. Expired warnings drop out by themselves.

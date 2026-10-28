@@ -1,8 +1,7 @@
 // The internet transport (docs/protocol.md §8): stores pushed envelopes and fans them out to the
-// other connections of the same group. One connection carries one group. On a command post the
-// replicator (replicator.ts) hands in what the upstream has and learns what clients do. Limits on
-// connections, new groups and pushes are kept by relay-limits.ts; pushes are also refused while
-// the disk is nearly full.
+// other connections of the same group. One connection carries one group. Limits on connections,
+// new groups and pushes are kept by relay-limits.ts; pushes are also refused while the disk is
+// nearly full.
 
 import type { TokenBucket } from '@tesel/core';
 import {
@@ -13,7 +12,7 @@ import {
 } from '@tesel/protocol';
 import WebSocket from 'ws';
 
-import type { EnvelopeSource, EnvelopeStore, StoredEnvelope } from './envelope-store.ts';
+import type { AppendResult, EnvelopeStore, StoredEnvelope } from './envelope-store.ts';
 import { DEFAULT_LIMITS, Limiter, type RelayLimits } from './relay-limits.ts';
 import { frameText } from './ws-text.ts';
 
@@ -54,16 +53,12 @@ interface Connection {
   group: Uint8Array | null;
 }
 
-/** Called when a client joins or leaves a group, or pushes a new envelope to it. */
-export type GroupChangeListener = (group: Uint8Array) => void;
-
 export class Relay {
   readonly #store: EnvelopeStore;
   readonly #now: () => number;
   readonly #hasRoom: () => boolean;
   readonly #limiter: Limiter;
   readonly #rooms = new Map<string, GroupRoom>();
-  readonly #listeners: GroupChangeListener[] = [];
 
   constructor(store: EnvelopeStore, options: RelayOptions = {}) {
     this.#store = store;
@@ -75,24 +70,6 @@ export class Relay {
   /** Whether one more connection from `address` is within the limits. */
   admits(address: string): boolean {
     return this.#limiter.admits(address);
-  }
-
-  /** How many of this server's clients are in the group. */
-  clientsIn(group: Uint8Array): number {
-    const room = this.#rooms.get(toBase64url(group));
-    return room === undefined ? 0 : room.live.size + room.catchingUp.size;
-  }
-
-  onGroupChange(listener: GroupChangeListener): void {
-    this.#listeners.push(listener);
-  }
-
-  /**
-   * Stores an envelope received from the upstream and relays it to every client of the group.
-   * Throws if the store cannot take it.
-   */
-  ingest(group: Uint8Array, key: Uint8Array, env: Uint8Array): void {
-    this.#append(group, key, env, 'upstream', null);
   }
 
   /** Serves a client connection from `address`, which `admits` has let in. */
@@ -180,36 +157,20 @@ export class Relay {
       send(socket, { t: 'error', code: 'unavailable', key });
       return;
     }
-    let isNew: boolean;
+    let stored: AppendResult;
     try {
-      isNew = this.#append(group, key, env, 'client', socket);
+      stored = this.#store.append(group, key, env, this.#now());
     } catch (error) {
       console.error('An envelope could not be stored:', error);
       send(socket, { t: 'error', code: 'unavailable', key });
       return;
     }
     send(socket, { t: 'stored', key });
-    if (isNew) this.#notify(group);
-  }
-
-  /** Stores an envelope and relays it to the group's live clients but its sender; false if known. */
-  #append(
-    group: Uint8Array,
-    key: Uint8Array,
-    env: Uint8Array,
-    source: EnvelopeSource,
-    sender: WebSocket | null,
-  ): boolean {
-    const { cursor, isNew } = this.#store.append(group, key, env, this.#now(), source);
-    if (!isNew) return false;
+    if (!stored.isNew) return;
+    // Relayed to the group's live clients but its sender.
     for (const other of this.#rooms.get(toBase64url(group))?.live ?? []) {
-      if (other !== sender) send(other, { t: 'env', cursor, key, env });
+      if (other !== socket) send(other, { t: 'env', cursor: stored.cursor, key, env });
     }
-    return true;
-  }
-
-  #notify(group: Uint8Array): void {
-    for (const listener of this.#listeners) listener(group);
   }
 
   #join(socket: WebSocket, group: Uint8Array, after: number): void {
@@ -221,7 +182,6 @@ export class Relay {
     }
     room.catchingUp.add(socket);
     void this.#catchUp(socket, group, after, room);
-    this.#notify(group);
   }
 
   /**
@@ -266,7 +226,6 @@ export class Relay {
     room?.live.delete(socket);
     room?.catchingUp.delete(socket);
     if (room?.live.size === 0 && room.catchingUp.size === 0) this.#rooms.delete(id);
-    this.#notify(group);
   }
 }
 

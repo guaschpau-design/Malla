@@ -4,7 +4,7 @@ All notable changes to Tesel. The format follows [Keep a Changelog](https://keep
 
 ## [0.1.0] - Unreleased
 
-The first version: a shared map for a group, over the internet, over MeshCore LoRa radios and through a command post, with the web app as the only client ([ADR-0016](docs/decisions/0016-web-app-and-native-shells.md)).
+The first version: a shared map for a group, over the internet and over MeshCore LoRa radios, with the web app as the only client ([ADR-0016](docs/decisions/0016-web-app-and-native-shells.md)).
 
 ### Map
 
@@ -16,7 +16,7 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 - Members on the map can be tapped for who they are, their last position and the way there.
 - Trails: where each member has been in the last hours, drawn from the positions they share. Hiding one's position hides the trail up to that moment too.
 - Map layers: members, trails, markers and zones, tasks, services and weather warnings can each be hidden; the choice is remembered. The panel groups its switches by what they are about: the team, the surroundings, and finding one's way (radar, MGRS grid). This device and SOS calls are always shown.
-- What reaches this device from each member, and how: a member's details say when something of theirs last arrived by radio, through the server or through a command post, and the members list marks those whose news arrives by radio.
+- What reaches this device from each member, and how: a member's details say when something of theirs last arrived by radio or through the server, and the members list marks those whose news arrives by radio.
 - Keep the screen on, as an option, and always while guiding to a target.
 - Full screen in a browser tab, without the browser's bars, where the browser allows it (Android and computers): on by default from the first tap of each visit, and switched off in the "More" menu.
 - The language, Spanish or English, is the browser's until chosen in the "More" menu, and is remembered; the top bar no longer holds it.
@@ -32,7 +32,7 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 - Relief, as an option: hills and valleys shaded on any base map, and the climb, descent and steepest stretch of the way to a point, shown with its distance and while guiding, from Mapterhorn's elevation, built from each country's best open model ([ADR-0024](docs/decisions/0024-terrain-tiles-for-relief.md), [ADR-0037](docs/decisions/0037-maps-across-borders.md)).
 - Tasks: a short text, typed or picked from nine common ones (search the area, check a home, treat an injured person…), and, if wanted, who should do it and a place on the map; to do, in progress or done. Anyone can add one from the Tasks button or with "Task here" on a point or an object, take it, finish it or hand it on. The dock counts this device's tasks and a notice says when someone hands one over; tasks with a place show on the map, and the diary tells how each moved along. A new event type, `TASK`, carries each change in one radio message (protocol §3.11, [ADR-0025](docs/decisions/0025-tasks.md)).
 - Public services on the map: health centres and hospitals, pharmacies, fire stations, police, helipads, town halls and fuel stations from the base map, with round icons from zoom 12, a «Servicios» layer switch, and their point with guidance when tapped. They work offline in downloaded areas ([ADR-0027](docs/decisions/0027-public-services-from-the-base-map.md)).
-- Official weather warnings: the yellow, orange and red warnings of AEMET and IPMA, gathered by the server from MeteoAlarm, hatch their regions on the map, unlike the group's own areas, with a cloud on a rounded square ([ADR-0038](docs/decisions/0038-official-warnings-look.md)); a card says what is in force where this device is, and a long press shows those at any point. They are kept for use without coverage, and have their own layer switch. The server publishes them for any app at `v1/weather-warnings` (protocol §8.4, [ADR-0030](docs/decisions/0030-weather-warnings.md)).
+- Official weather warnings: the yellow, orange and red warnings of AEMET and IPMA, gathered by the server from MeteoAlarm, hatch their regions on the map, unlike the group's own areas, with a cloud on a rounded square ([ADR-0038](docs/decisions/0038-official-warnings-look.md)); a card says what is in force where this device is, and a long press shows those at any point. They are kept for use without coverage, and have their own layer switch. The server publishes them for any app at `v1/weather-warnings` (protocol §8.2, [ADR-0030](docs/decisions/0030-weather-warnings.md)).
 - Practice mode: a group of four simulated teammates around this device, who walk, mark what they find, talk in the chat and call an SOS, and who answer a roll call or an SOS. Nothing leaves the device, and the practice ends with the app ([ADR-0031](docs/decisions/0031-practice-mode.md)).
 - The MGRS grid over the map, as a switch in the map layers: lines every 100 km down to 100 m as the zoom allows, with their digits, the 100 km squares named and the edges of UTM zones ([ADR-0021](docs/decisions/0021-coordinate-formats.md)).
 - A warning on entering a danger area: each device compares its own position with the group's danger areas and vibrates and shows which one, offline too; the GPS stays on while there is one ([ADR-0033](docs/decisions/0033-danger-area-warning.md)).
@@ -41,7 +41,7 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 - A faster map: each layer redraws only when its own part of the group changes, a tap goes to what is drawn on top, members' names no longer pile up (an SOS always shows), and the map frames this device and the group when it opens on its wide view. The app comes in parts: MapLibre in one of its own, which a new version of the app does not download again, and the satellite map, the QR reader and the radio when first needed, so an update is about a third of what it was ([ADR-0053](docs/decisions/0053-load-heavy-parts-on-demand.md), [ADR-0054](docs/decisions/0054-frame-the-group-at-start.md)).
 - Opening a group with a long operation behind it is quicker: positions no trail can show any more are forgotten, and the log stays bounded ([ADR-0055](docs/decisions/0055-forget-outlived-positions.md)).
 - The operation area: a coordinator draws an area with the operation area style, and every member is offered its map to download, with its size, in one tap ([ADR-0029](docs/decisions/0029-operation-area.md), protocol §4.2).
-- The base map (Spain, Portugal and the islands) is built from OpenStreetMap by our own server and served by it and by command posts.
+- The base map (Spain, Portugal and the islands) is built from OpenStreetMap by our own server and served by it.
 
 ### Groups
 
@@ -71,14 +71,12 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 - MeshCore LoRa through a companion radio over Web Bluetooth (protocol §7), with priorities, a legal airtime budget, position thinning, SOS repeats and bridging between radio and internet by any member who has both ([ADR-0015](docs/decisions/0015-lora-airtime-policy.md)). What was written without a radio goes on the air once one is linked; an SOS repeats until it is acknowledged or cancelled; open SOS calls, alerts and roll calls are bridged however old; answers to them go first; a lost Bluetooth link comes back by itself; frames of the device's other groups are kept for them; and leaving a group frees its channel in the radio ([ADR-0043](docs/decisions/0043-radio-delivery.md)).
 - Text messages of other MeshCore apps are kept, read-only, in a chat tab.
 - The top bar names what the device reaches its group through — WiFi, 4G/5G, LoRa, several at once — with a green, orange or red dot, and opens a panel with one card per connection. Browsers that do not say whether they use Wi-Fi or mobile data show "WiFi/5G".
-- Command post: a laptop or Raspberry Pi with its own Wi-Fi that replicates the group's server; apps find it by name and sync through it when the server cannot be reached ([ADR-0018](docs/decisions/0018-command-post.md)).
 
 ### Deployment
 
 - Server image with the relay, the landing page and the web app, for amd64 and arm64 ([ADR-0017](docs/decisions/0017-server-serves-site-and-app.md)).
-- One-command, hardened, self-updating VPS install ([ADR-0013](docs/decisions/0013-self-updating-vps.md)) and command post kit. The server runs only images signed by the project's CI, checks each update and goes back to the previous image if it does not start; CI actions and base images are pinned; the database and certificates are backed up every night, off the host if configured; failures of updates, backups and map builds can raise an alert ([ADR-0049](docs/decisions/0049-signed-images-and-checked-updates.md)).
-- Every server setting written in the install's `.env` reaches the server, on a VPS and on a command post; a setting left empty takes its default.
-- Command posts no longer hold the domain's DNS key: the server obtains their certificate and each post downloads it with a token of its own, which the server can revoke ([ADR-0050](docs/decisions/0050-post-certificates-from-the-server.md)).
+- One-command, hardened, self-updating VPS install ([ADR-0013](docs/decisions/0013-self-updating-vps.md)). The server runs only images signed by the project's CI, checks each update and goes back to the previous image if it does not start; CI actions and base images are pinned; the database and certificates are backed up every night, off the host if configured; failures of updates, backups and map builds can raise an alert ([ADR-0049](docs/decisions/0049-signed-images-and-checked-updates.md)).
+- Every server setting written in the install's `.env` reaches the server; a setting left empty takes its default.
 - Security headers: a Content-Security-Policy for the app and the site, also built into the app's page, and a Permissions-Policy.
 - The server holds up under load and failure: the backlog goes to a joining device page by page, connections, new groups and pushes are limited per address and in all, a full disk refuses pushes instead of crashing, storage errors are answered rather than fatal, and `healthz` checks the database. Each server's store has an identity, so devices notice a server restored from a backup and send it their events again ([ADR-0045](docs/decisions/0045-server-keeps-every-distinct-envelope.md), [ADR-0046](docs/decisions/0046-store-identity.md)).
 - Third-party licences of everything the app ships, linked from the map's credits; the satellite mosaic's licence is named in its credit and a build can choose the CC BY mosaic ([ADR-0051](docs/decisions/0051-satellite-mosaic-licence.md)).
@@ -90,8 +88,8 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 ### Known limits
 
 - Phones must keep the app open to share their position: no background position until the Android and iOS apps (ADR-0016). Alarm notifications reach a phone with the app in the background where the browser allows it.
-- iPhones cannot pair a radio from Safari; they use the internet or a command post.
+- iPhones cannot pair a radio from Safari; they use the internet, and reach the radios through any member who bridges both.
 - Members are trusted: the app does not prove who wrote an event, so a member could write as another ([ADR-0052](docs/decisions/0052-authorship-is-not-proven.md)).
 - Over LoRa, members can impersonate each other and channel encryption is weak ([ADR-0010](docs/decisions/0010-lora-link-security.md)).
 - MeshCore `data_type` 0xFF4D is in the development range until registered.
-- Radios and command posts have been tested in software only; field tests are pending ([`docs/prueba-de-campo.md`](docs/prueba-de-campo.md)).
+- Radios have been tested in software only; field tests are pending ([`docs/prueba-de-campo.md`](docs/prueba-de-campo.md)).

@@ -1,4 +1,4 @@
-// Official weather warnings (protocol §8.4): the server's answer is stood in for by an orange
+// Official weather warnings (protocol §8.2): the server's answer is stood in for by an orange
 // warning over Valencia, which shows where this device is and at any point picked in it, and goes
 // away with its layer.
 

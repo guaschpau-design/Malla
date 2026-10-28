@@ -76,61 +76,6 @@ describe('envelope store', () => {
     reopened.close();
   });
 
-  it('keeps what clients pushed pending for the upstream until it confirms, oldest first', () => {
-    const store = new EnvelopeStore(':memory:', { upstream: true });
-    store.append(GROUP_A, key(1), env(1), 0);
-    store.append(GROUP_A, key(2), env(2), 0, 'upstream');
-    store.append(GROUP_A, key(3), env(3), 0);
-    store.append(GROUP_B, key(4), env(4), 1);
-    expect(store.groupsPendingUpstream()).toEqual([GROUP_B, GROUP_A]);
-    expect(store.nextPendingUpstream(GROUP_A)?.key).toEqual(key(1));
-    store.markUpstreamStored(GROUP_A, 1);
-    expect(store.nextPendingUpstream(GROUP_A)?.key).toEqual(key(3));
-    store.markUpstreamStored(GROUP_A, 3);
-    expect(store.nextPendingUpstream(GROUP_A)).toBeNull();
-    expect(store.groupsPendingUpstream()).toEqual([GROUP_B]);
-  });
-
-  it('keeps nothing pending on a server without an upstream', () => {
-    const store = new EnvelopeStore(':memory:');
-    store.append(GROUP_A, key(1), env(1), 0);
-    expect(store.nextPendingUpstream(GROUP_A)).toBeNull();
-  });
-
-  it('keeps what the upstream lacks past the retention period', () => {
-    const store = new EnvelopeStore(':memory:', { upstream: true });
-    store.append(GROUP_A, key(1), env(1), 1000);
-    store.append(GROUP_A, key(2), env(2), 1000, 'upstream');
-    expect(store.deleteReceivedBefore(2000)).toBe(1);
-    expect(store.nextPendingUpstream(GROUP_A)?.key).toEqual(key(1));
-  });
-
-  it('remembers how far each group was read from the upstream, and from which store', () => {
-    const store = new EnvelopeStore(':memory:');
-    expect(store.upstreamCursor(GROUP_A)).toBe(0);
-    expect(store.upstreamStore(GROUP_A)).toBeNull();
-    store.setUpstreamCursor(GROUP_A, 4);
-    store.setUpstreamPosition(GROUP_A, 9, 'store-1');
-    store.setUpstreamCursor(GROUP_A, 10);
-    expect(store.upstreamCursor(GROUP_A)).toBe(10);
-    expect(store.upstreamStore(GROUP_A)).toBe('store-1');
-    expect(store.upstreamCursor(GROUP_B)).toBe(0);
-  });
-
-  it('reads a group again from the start, and gives everything back, when the upstream changes', () => {
-    const store = new EnvelopeStore(':memory:', { upstream: true });
-    store.append(GROUP_A, key(1), env(1), 0, 'upstream');
-    store.append(GROUP_A, key(2), env(2), 0);
-    store.markUpstreamStored(GROUP_A, 2);
-    store.setUpstreamPosition(GROUP_A, 7, 'store-1');
-    store.restartUpstream(GROUP_A, 'store-2');
-    expect(store.upstreamCursor(GROUP_A)).toBe(0);
-    expect(store.upstreamStore(GROUP_A)).toBe('store-2');
-    expect(store.nextPendingUpstream(GROUP_A)?.cursor).toBe(1);
-    store.markUpstreamStored(GROUP_A, 1);
-    expect(store.nextPendingUpstream(GROUP_A)?.cursor).toBe(2);
-  });
-
   it('keeps its identity across restarts, and a new database gets a new one', () => {
     const path = tempPath();
     const store = new EnvelopeStore(path);
@@ -164,7 +109,6 @@ describe('envelope store', () => {
     old.close();
     const store = new EnvelopeStore(path);
     expect(store.after(GROUP_A, 0, 10)).toHaveLength(1);
-    expect(store.nextPendingUpstream(GROUP_A)).toBeNull();
     expect(store.append(GROUP_A, key(2), env(2), 0).cursor).toBe(2);
     store.close();
   });
@@ -189,17 +133,19 @@ describe('envelope store', () => {
     old.prepare('INSERT INTO upstream_cursors VALUES (?, 5)').run(GROUP_A);
     old.close();
 
-    const store = new EnvelopeStore(path, { upstream: true });
+    const store = new EnvelopeStore(path);
     expect(store.append(GROUP_A, key(1), env(1), 0)).toEqual({ cursor: 1, isNew: false });
     expect(store.append(GROUP_A, key(1), env(2), 0)).toEqual({ cursor: 2, isNew: true });
-    expect(store.nextPendingUpstream(GROUP_A)?.cursor).toBe(1);
-    expect(store.upstreamCursor(GROUP_A)).toBe(5);
-    expect(store.upstreamStore(GROUP_A)).toBeNull();
     store.close();
 
+    // Nothing is left of what a command post kept for its upstream.
     const db = new DatabaseSync(path);
-    expect(db.prepare('PRAGMA user_version').get()).toEqual({ user_version: 2 });
+    expect(db.prepare('PRAGMA user_version').get()).toEqual({ user_version: 3 });
     expect(db.prepare('PRAGMA auto_vacuum').get()).toEqual({ auto_vacuum: 2 });
+    const columns = db.prepare('PRAGMA table_info(envelopes)').all();
+    expect(columns.map((column) => column['name'])).not.toContain('pending_up');
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all();
+    expect(tables.map((table) => table['name'])).not.toContain('upstream_cursors');
     db.close();
   });
 

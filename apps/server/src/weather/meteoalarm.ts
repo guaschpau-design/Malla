@@ -1,6 +1,6 @@
 // MeteoAlarm's warnings feed (EUMETNET), as JSON: the CAP alerts of a country's weather service,
 // each with its regions by EMMA_ID code. Reads the warnings still in force, by region, in the
-// languages the app speaks (docs/protocol.md §8.4).
+// languages the app speaks (docs/protocol.md §8.2).
 
 import {
   WARNING_LEVELS,

@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-import { APP_PORT, POST_PORT, SERVER_PORT, SERVER_URL } from './e2e/ports.ts';
+import { APP_PORT, SERVER_PORT, SERVER_URL } from './e2e/ports.ts';
 
 export default defineConfig({
   testDir: 'e2e',
@@ -28,18 +28,8 @@ export default defineConfig({
     {
       // The relay server, with its database in memory so every run starts empty. It gathers no
       // weather warnings: tests stand in for them (e2e/weather.e2e.ts).
-      command:
-        `TESEL_PORT=${SERVER_PORT} TESEL_DB=:memory: TESEL_WEATHER=off ` +
-        `TESEL_COMMAND_POST=http://localhost:${POST_PORT} node ../server/src/main.ts`,
+      command: `TESEL_PORT=${SERVER_PORT} TESEL_DB=:memory: TESEL_WEATHER=off node ../server/src/main.ts`,
       url: `${SERVER_URL}/healthz`,
-      reuseExistingServer: false,
-      timeout: 30_000,
-    },
-    {
-      command:
-        `TESEL_PORT=${POST_PORT} TESEL_DB=:memory: TESEL_WEATHER=off ` +
-        `TESEL_UPSTREAM=${SERVER_URL} node ../server/src/main.ts`,
-      url: `http://localhost:${POST_PORT}/healthz`,
       reuseExistingServer: false,
       timeout: 30_000,
     },

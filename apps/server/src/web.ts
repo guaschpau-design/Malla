@@ -1,5 +1,5 @@
-// Serving the landing page (/) and the web app (/app/) from the same origin as the relay, so a
-// command post with no internet serves everything a phone needs.
+// Serving the landing page (/) and the web app (/app/) from the same origin as the relay: one
+// server serves everything a phone needs.
 
 import { existsSync } from 'node:fs';
 import { extname, join, resolve, sep } from 'node:path';

@@ -87,7 +87,6 @@
   // group.
   const linkInput = $derived({
     server: session?.activeGroup?.practice ? null : (feed?.status ?? null),
-    viaCommandPost: feed?.viaCommandPost ?? false,
     radio: radioLinkOf(radio),
     browserOnline: connection.online,
   });

@@ -1,7 +1,5 @@
 // Server configuration, read once from the environment.
 
-import { isSecureUrl, serverBaseUrl } from '@tesel/protocol';
-
 import { DEFAULT_LIMITS, type RelayLimits } from './relay-limits.ts';
 import { FEED_URLS } from './weather/meteoalarm.ts';
 
@@ -14,11 +12,7 @@ export interface ServerConfig {
   readonly retentionDays: number;
   /** Directory with the landing page and the built web app under app/, or null to serve none. */
   readonly webRoot: string | null;
-  /** On a command post, the server it replicates (protocol §8.2). */
-  readonly upstream: string | null;
-  /** On an internet server, the base URL shared by its command posts (protocol §8.3). */
-  readonly commandPost: string | null;
-  /** Countries whose weather warnings it gathers (protocol §8.4); none turns them off. */
+  /** Countries whose weather warnings it gathers (protocol §8.2); none turns them off. */
   readonly weatherCountries: readonly string[];
   /** Weather warnings gathered longer ago than this are no longer served. */
   readonly weatherMaxAgeMinutes: number;
@@ -45,8 +39,6 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     databasePath: setting(env, 'TESEL_DB') ?? 'data/tesel.db',
     retentionDays: integer(env, 'TESEL_RETENTION_DAYS', 30, 1, 3650),
     webRoot: setting(env, 'TESEL_WEB_ROOT') ?? null,
-    upstream: serverUrl(env, 'TESEL_UPSTREAM'),
-    commandPost: serverUrl(env, 'TESEL_COMMAND_POST'),
     weatherCountries: countries(env, 'TESEL_WEATHER', 'ES,PT'),
     // Warnings are gathered every 10 minutes: an hour more of failures is tolerated.
     weatherMaxAgeMinutes: integer(env, 'TESEL_WEATHER_MAX_AGE_MINUTES', 70, 10, 7 * 24 * 60),
@@ -109,13 +101,6 @@ function countries(env: NodeJS.ProcessEnv, name: string, fallback: string): stri
     throw new Error(`${name} takes country codes among ${known}, or off; got "${text}"`);
   }
   return codes;
-}
-
-function serverUrl(env: NodeJS.ProcessEnv, name: string): string | null {
-  const text = setting(env, name);
-  if (text === undefined) return null;
-  if (!isSecureUrl(text)) throw new Error(`${name} must be an https URL, got "${text}"`);
-  return serverBaseUrl(text);
 }
 
 function integer(

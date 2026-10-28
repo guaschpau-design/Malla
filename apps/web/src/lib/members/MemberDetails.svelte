@@ -69,8 +69,5 @@
     {#if channels.internet !== undefined}
       <p>{t('heardInternet', { ago: ago(channels.internet) })}</p>
     {/if}
-    {#if channels['command-post'] !== undefined}
-      <p>{t('heardCommandPost', { ago: ago(channels['command-post']) })}</p>
-    {/if}
   </section>
 </Panel>

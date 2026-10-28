@@ -8,13 +8,11 @@ import { groupCursors, loadPosition, savePosition, START } from './cursor-store.
 const at = (cursor: number, store: string | null = 'store-a') => ({ cursor, store });
 
 describe('sync cursors', () => {
-  it('keeps one position per relay, so moving to a command post and back loses nothing', async () => {
+  it('keeps a group’s position on its server, whatever form the address is written in', async () => {
     const db = await openAppDb('cursor-test');
     expect(await loadPosition(db, 'group', 'https://one.example/')).toEqual(START);
     await savePosition(db, 'group', 'https://one.example', at(12));
-    await savePosition(db, 'group', 'https://post.example/', at(3, 'store-b'));
     expect(await loadPosition(db, 'group', 'https://one.example/')).toEqual(at(12));
-    expect(await loadPosition(db, 'group', 'https://post.example')).toEqual(at(3, 'store-b'));
     expect(await loadPosition(db, 'other', 'https://one.example/')).toEqual(START);
   });
 

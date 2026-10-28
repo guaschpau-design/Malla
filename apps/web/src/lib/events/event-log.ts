@@ -32,8 +32,8 @@ export interface Received {
 export interface ReceiveOptions {
   /** The events were heard over the radio and this device bridges them: queue them for the server. */
   readonly forward?: boolean;
-  /** How far a relay has been read with these events; saved with them, never ahead of them. */
-  readonly readTo?: { readonly relay: string; readonly position: RelayPosition };
+  /** How far the group's server has been read with these events; saved with them, never ahead. */
+  readonly readTo?: { readonly server: string; readonly position: RelayPosition };
 }
 
 /**
@@ -71,8 +71,8 @@ export async function receiveEvents(
     writes.push(...received.map(({ entry }) => tx.objectStore('outbox').put(entry)));
   }
   if (options.readTo !== undefined) {
-    const { relay, position } = options.readTo;
-    writes.push(tx.objectStore('cursors').put(position, cursorKey(groupId, relay)));
+    const { server, position } = options.readTo;
+    writes.push(tx.objectStore('cursors').put(position, cursorKey(groupId, server)));
   }
   await Promise.all([...writes, tx.done]);
   return received;

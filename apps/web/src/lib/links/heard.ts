@@ -1,5 +1,5 @@
 // What this device has heard from each member, and through which channel: the time of the newest
-// event of theirs that arrived by radio, through the group's server or through a command post.
+// event of theirs that arrived by radio or through the group's server.
 // It tells what reaches this device and how. By radio does not mean from the member's own radio:
 // a bridge may have put their event on the air (ARCHITECTURE.md §4.3), and the radio cannot tell
 // who transmitted. Duplicates count: an event already in the log that arrives again by radio
@@ -8,7 +8,7 @@
 import type { NodeId } from '@tesel/protocol';
 
 /** How an event reaches this device. */
-export type Channel = 'internet' | 'command-post' | 'radio';
+export type Channel = 'internet' | 'radio';
 
 /** Per member and channel, the event time (seconds) of the newest event heard through it. */
 export type Heard = ReadonlyMap<NodeId, Readonly<Partial<Record<Channel, number>>>>;

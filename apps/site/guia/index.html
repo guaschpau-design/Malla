@@ -6,7 +6,7 @@
     <title>Guía de Tesel · Preparación, operación y despliegue</title>
     <meta
       name="description"
-      content="Cómo preparar al equipo con Tesel, qué hacer durante un operativo, cómo seguir coordinados sin cobertura con radios LoRa o un puesto de mando, y cómo se protege la información."
+      content="Cómo preparar al equipo con Tesel, qué hacer durante un operativo, cómo seguir coordinados sin cobertura con radios LoRa, y cómo se protege la información."
     />
     <meta name="theme-color" content="#10202c" />
     <link rel="icon" href="../app/icons/favicon.svg?v=5f378b66" type="image/svg+xml" />
@@ -66,7 +66,6 @@
           <li><a href="#terreno">Orientarse en el terreno</a></li>
           <li><a href="#despues">Después: el diario</a></li>
           <li><a href="#sin-internet">Cuando no hay internet</a></li>
-          <li><a href="#puesto">El puesto de mando</a></li>
           <li><a href="#radios">Las radios</a></li>
           <li><a href="#iphone">Si tienes iPhone</a></li>
           <li><a href="#seguridad">Privacidad y seguridad</a></li>
@@ -82,10 +81,8 @@
         todo el equipo lo sabe al momento, con su posición.
       </p>
       <p>
-        Con internet funciona como cualquier app de mensajería. Sin internet, sigue funcionando de
-        dos maneras: con <strong>radios de bolsillo</strong> que se pasan los mensajes entre ellas,
-        o a través de un <strong>puesto de mando</strong>, un ordenador con su propia wifi en la
-        zona de operaciones.
+        Con internet funciona como cualquier app de mensajería. Sin internet, sigue funcionando con
+        <strong>radios de bolsillo</strong> que se pasan los mensajes entre ellas.
       </p>
       <div class="box">
         <p><strong>Tesel no sustituye al 112.</strong></p>
@@ -197,11 +194,11 @@
         </li>
         <li>
           <strong>Reparte el trabajo</strong> con «Tareas»: «Revisar el almacén», «Llevar agua al
-          puesto». Solo hace falta el texto, que puedes escribir o elegir entre las habituales
-          (buscar en la zona, revisar una vivienda, atender a un herido…); si quieres, di para quién
-          es y dale un sitio manteniendo pulsado el mapa → «Tarea aquí». Cualquiera puede crearlas,
-          empezarlas y darlas por hechas, y un número en el botón te dice cuántas tienes tú. Úsalas
-          como le vaya bien a tu equipo: para todo, para lo importante o para nada.
+          punto de encuentro». Solo hace falta el texto, que puedes escribir o elegir entre las
+          habituales (buscar en la zona, revisar una vivienda, atender a un herido…); si quieres, di
+          para quién es y dale un sitio manteniendo pulsado el mapa → «Tarea aquí». Cualquiera puede
+          crearlas, empezarlas y darlas por hechas, y un número en el botón te dice cuántas tienes
+          tú. Úsalas como le vaya bien a tu equipo: para todo, para lo importante o para nada.
         </li>
         <li>
           <strong>Si necesitas ayuda, pulsa SOS</strong>, elige qué pasa y envíalo. Lleva tu
@@ -306,9 +303,9 @@
         </li>
         <li>
           <strong>A quién llegas por radio.</strong> Toca a un miembro en el mapa para ver su ficha:
-          cuándo te llegó algo suyo por radio, por el servidor o por el puesto de mando. En la lista
-          de miembros del grupo, una antena marca a quien te llega por radio: de su propia radio o
-          reenviado por otro miembro.
+          cuándo te llegó algo suyo por radio o por el servidor. En la lista de miembros del grupo,
+          una antena marca a quien te llega por radio: de su propia radio o reenviado por otro
+          miembro.
         </li>
         <li>
           <strong>Pantalla encendida.</strong> En «Más» → «Pantalla siempre encendida»: con el
@@ -343,8 +340,8 @@
       <p>
         En el mismo panel puedes <strong>guardar una copia del registro</strong> del grupo: todos
         sus eventos, cifrados, que solo pueden leer los miembros. Cargado en otro dispositivo del
-        grupo, le pasa lo que le falte. Sirve de copia de seguridad o para llevar al puesto de
-        mando, en una memoria USB, lo que un móvil vivió solo por radio.
+        grupo, le pasa lo que le falte. Sirve de copia de seguridad o para pasar a quien coordina,
+        en una memoria USB, lo que un móvil vivió solo por radio.
       </p>
 
       <h2 id="sin-internet">Cuando no hay internet</h2>
@@ -378,18 +375,18 @@
               </div>
             </div>
             <div class="route">
-              <h3>Con un puesto</h3>
+              <h3>Con un puente</h3>
               <div class="path" aria-hidden="true">
-                <span class="node">Tu móvil</span><span class="line"></span>
-                <span class="node hub">Puesto</span><span class="line later"></span>
+                <span class="node">Tu móvil</span><span class="line air"></span>
+                <span class="node hub">Puente</span><span class="line"></span>
                 <span class="node">Servidor</span>
               </div>
             </div>
           </div>
         </div>
         <figcaption>
-          Los tres caminos. La línea de puntos es radio; la discontinua, un enlace que llega cuando
-          vuelve internet.
+          Los tres caminos. La línea de puntos es radio. El puente es el móvil de un compañero que
+          tiene radio y cobertura a la vez.
         </figcaption>
       </figure>
       <h3>Si tienes una radio</h3>
@@ -400,159 +397,16 @@
         que escribiste sin radio sale en cuanto la conectas, y si la conexión se pierde, Tesel la
         recupera sola.
       </p>
-      <h3>Si hay un puesto de mando cerca</h3>
+      <h3>Si alguien tiene radio y cobertura</h3>
       <p>
-        Conéctate a su wifi (el nombre y la contraseña los tiene quien lo monta) y abre Tesel como
-        siempre. Arriba verás «WiFi» y, al pulsarlo, «Conectado a un puesto de mando»: ya estás en
-        contacto con el equipo. Lo explicamos en el apartado siguiente.
+        Su móvil hace de puente sin que tenga que hacer nada: lo que llega por radio sube al
+        servidor y lo del servidor sale por radio. Así, quien está sin cobertura y con radio sigue
+        al tanto de lo que escribe el resto, y al revés.
       </p>
       <h3>Si no tienes ninguna de las dos cosas</h3>
       <p>
         El mapa descargado sigue funcionando y puedes escribir: los mensajes se envían solos cuando
-        vuelva la conexión o cuando te acerques a un puesto de mando. Si alguien del equipo tiene
-        radio, mantente cerca de esa persona.
-      </p>
-
-      <h2 id="puesto">El puesto de mando</h2>
-      <p>
-        Un puesto de mando es un ordenador que alguien del equipo lleva a la zona de operaciones.
-        Hace tres cosas:
-      </p>
-      <figure class="figure">
-        <div class="diagram">
-          <svg
-            viewBox="0 0 680 250"
-            role="img"
-            aria-label="Los móviles del equipo se conectan por wifi al ordenador del puesto de mando. El puesto enlaza por radio con la malla LoRa y, cuando vuelve internet, con el servidor de Tesel."
-          >
-            <g fill="none" stroke="#15232d" stroke-width="2">
-              <path d="M66 54 C150 54 170 112 232 112" />
-              <path d="M66 125 L232 118" />
-              <path d="M66 196 C150 196 170 124 232 124" />
-            </g>
-            <path
-              d="M348 98 C400 98 420 52 478 52"
-              fill="none"
-              stroke="#4d6e00"
-              stroke-width="3"
-              stroke-dasharray="0.1 7"
-              stroke-linecap="round"
-            />
-            <path
-              d="M348 132 C400 132 420 166 470 166"
-              fill="none"
-              stroke="#9aa8a2"
-              stroke-width="2"
-              stroke-dasharray="7 6"
-            />
-            <g fill="#fff" stroke="#15232d" stroke-width="2">
-              <rect x="38" y="30" width="28" height="48" rx="6" />
-              <rect x="38" y="101" width="28" height="48" rx="6" />
-              <rect x="38" y="172" width="28" height="48" rx="6" />
-            </g>
-            <g fill="#15232d">
-              <rect x="47" y="70" width="10" height="2" rx="1" />
-              <rect x="47" y="141" width="10" height="2" rx="1" />
-              <rect x="47" y="212" width="10" height="2" rx="1" />
-            </g>
-            <rect
-              x="236"
-              y="74"
-              width="108"
-              height="74"
-              rx="7"
-              fill="#c8f04a"
-              stroke="#10202c"
-              stroke-width="2.5"
-            />
-            <path d="M224 152 H356 L349 162 H231 Z" fill="#10202c" />
-            <g fill="none" stroke="#10202c" stroke-width="2.5" stroke-linecap="round">
-              <path d="M272 108 A26 26 0 0 1 308 108" />
-              <path d="M279 116 A16 16 0 0 1 301 116" />
-            </g>
-            <circle cx="290" cy="124" r="3.5" fill="#10202c" />
-            <rect
-              x="480"
-              y="34"
-              width="24"
-              height="40"
-              rx="5"
-              fill="#fff"
-              stroke="#15232d"
-              stroke-width="2"
-            />
-            <path d="M492 34 V16" stroke="#15232d" stroke-width="2" stroke-linecap="round" />
-            <circle cx="492" cy="62" r="3" fill="#4d6e00" />
-            <g fill="#fff" stroke="#15232d" stroke-width="2">
-              <rect x="472" y="146" width="40" height="17" rx="3" />
-              <rect x="472" y="167" width="40" height="17" rx="3" />
-            </g>
-            <g fill="#15232d">
-              <circle cx="502" cy="154.5" r="2" />
-              <circle cx="502" cy="175.5" r="2" />
-            </g>
-            <g font-size="14" font-weight="600" fill="#15232d">
-              <text x="52" y="244" text-anchor="middle">Móviles</text>
-              <text x="290" y="188" text-anchor="middle">Puesto de mando</text>
-              <text x="522" y="50">Radio LoRa</text>
-              <text x="526" y="162">Servidor de Tesel</text>
-            </g>
-            <g font-size="12.5" fill="#4f6069">
-              <text x="290" y="206" text-anchor="middle">ordenador con wifi propia</text>
-              <text x="522" y="68">enlace con la malla</text>
-              <text x="526" y="180">cuando vuelve internet</text>
-            </g>
-          </svg>
-        </div>
-      </figure>
-      <ol>
-        <li>
-          <strong>Crea su propia wifi.</strong> Funciona sin internet y sin antenas de telefonía,
-          como la wifi de una casa sin conexión al exterior.
-        </li>
-        <li>
-          <strong>Hace de servidor del equipo.</strong> Los móviles conectados a su wifi se pasan
-          los mensajes a través de él, aunque no tengan radio. Es la forma de incluir a quien solo
-          tiene un iPhone o no tiene radio.
-        </li>
-        <li>
-          <strong>Hace de puente.</strong> Si en el puesto hay una radio conectada, lo que llega por
-          radio pasa a la wifi y al revés. Y cuando el puesto recupera internet (por cable, por
-          satélite o con un móvil que tenga datos), envía todo al servidor de Tesel y recoge lo que
-          el resto de la organización haya escrito.
-        </li>
-      </ol>
-      <div class="box">
-        <p><strong>Piensa en él como el buzón del barrio.</strong></p>
-        <p>
-          Cada cual deja ahí sus cartas y recoge las suyas. Cuando pasa el cartero (internet), el
-          buzón le entrega todo y recibe lo que viene de fuera. Las cartas van cerradas: el puesto
-          no puede leer los mensajes, solo los guarda y los reparte.
-        </p>
-      </div>
-      <h3>Cómo conectarte a un puesto</h3>
-      <ul>
-        <li>
-          <strong>Si ya tienes Tesel y estás en el grupo:</strong> conéctate a la wifi del puesto y
-          abre la app. Ya está. Arriba verás «WiFi»; al pulsarlo, «Conectado a un puesto de mando».
-        </li>
-        <li>
-          <strong>Si no tienes Tesel:</strong> conéctate a la wifi del puesto, abre en el navegador
-          la dirección que te den (por ejemplo, puesto.tesel.eu/app), elige tu nombre y en «Grupos»
-          → «Unirme a un grupo» pulsa «Escanear código QR» para leer el código de invitación de
-          quien coordina.
-        </li>
-        <li>
-          Si tu móvil dice que la wifi «no tiene internet», es normal: elige mantenerte conectado.
-          Si aún tienes datos móviles y la app no conecta con el puesto, desactívalos mientras estés
-          en él.
-        </li>
-      </ul>
-      <h3>Quién monta el puesto</h3>
-      <p>
-        Lo prepara con antelación una persona con algo de soltura con ordenadores. Una vez
-        preparado, en la zona de operaciones solo hay que encenderlo. Necesita conectarse a internet
-        al menos una vez cada dos meses para renovar su certificado de seguridad.
+        vuelva la conexión. Si alguien del equipo tiene radio, mantente cerca de esa persona.
       </p>
 
       <h2 id="radios">Las radios</h2>
@@ -590,21 +444,15 @@
       <h2 id="iphone">Si tienes iPhone</h2>
       <p>
         Por internet, Tesel funciona igual en iPhone. Lo que Safari no permite es conectar una radio
-        por Bluetooth. Mientras llega la app nativa, en una emergencia tienes dos opciones:
+        por Bluetooth. Mientras llega la app nativa, usa el navegador Bluefy, que sí lo permite. Es
+        una solución provisional que todavía estamos comprobando.
       </p>
-      <ul>
-        <li>Conectarte a un <a href="#puesto">puesto de mando</a>.</li>
-        <li>
-          Probar el navegador Bluefy, que sí permite Bluetooth. Es una solución provisional que
-          todavía estamos comprobando.
-        </li>
-      </ul>
 
       <h2 id="seguridad">Privacidad y seguridad</h2>
       <ul>
         <li>
-          Todo lo del grupo va cifrado con una clave que solo tienen sus miembros. Ni el servidor ni
-          un puesto de mando pueden leer los mensajes.
+          Todo lo del grupo va cifrado con una clave que solo tienen sus miembros. El servidor no
+          puede leer los mensajes.
         </li>
         <li>
           <strong>La invitación es la llave del grupo.</strong> Quien la tiene, entra. Si se ha
@@ -628,7 +476,7 @@
         <summary>Arriba pone «Sin conexión»</summary>
         <p>
           Tu móvil no tiene internet. Lo que escribas se guarda y saldrá después. Si tienes radio,
-          conéctala; si hay un puesto de mando, conéctate a su wifi.
+          conéctala.
         </p>
       </details>
       <details>
@@ -651,13 +499,6 @@
         <p>
           Abre la app de MeshCore, borra un canal que no uses y vuelve a conectar desde Tesel. Tesel
           nunca borra canales por su cuenta.
-        </p>
-      </details>
-      <details>
-        <summary>Estoy en la wifi del puesto pero no conecta</summary>
-        <p>
-          Desactiva los datos móviles y vuelve a abrir la app. Si es la primera vez, el navegador
-          puede pedirte permiso para acceder a dispositivos de la red local: acéptalo.
         </p>
       </details>
     </main>

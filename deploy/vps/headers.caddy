@@ -1,5 +1,4 @@
-# Security headers of a Tesel server, on the VPS and on a command post alike. Imported inside
-# the site block of both Caddyfiles.
+# Security headers of a Tesel server, imported inside the site block of the Caddyfile.
 #
 # The app's Content-Security-Policy is the one its build puts in index.html as a meta tag
 # (apps/web/scripts/content-security-policy.ts), plus frame-ancestors, which only a header can

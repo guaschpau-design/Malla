@@ -40,17 +40,6 @@ Todos con datos móviles y wifi desactivados, Bluetooth encendido, radio conecta
 
 - [ ] En el navegador Bluefy, abrir `https://tesel.eu/app/` y conectar una radio. Apunta si conecta y si envía y recibe.
 
-## 4. Puesto de mando (si está montado, 30 minutos)
-
-Requiere haber seguido [`deploy/command-post/README.md`](../deploy/command-post/README.md).
-
-- [ ] Un móvil sin datos se conecta a la wifi del puesto, abre Tesel y arriba aparece «WiFi»; al pulsarlo, «Conectado a un puesto de mando». Apunta si el navegador pidió algún permiso.
-- [ ] Un iPhone sin datos hace lo mismo y se comunica con el grupo.
-- [ ] Un móvil que nunca tuvo Tesel abre `https://puesto.tesel.eu/app/`, se une al grupo escaneando el QR y ve el mapa completo.
-- [ ] Con una radio conectada en el puesto (Chrome en el portátil), los mensajes de quien está en la wifi del puesto llegan a quien solo tiene radio, y al revés.
-- [ ] Al dar internet al puesto (cable o móvil compartiendo datos por USB), lo escrito en el puesto aparece en un móvil que está fuera, por internet, y al revés.
-- [ ] Desde un móvil conectado a la wifi del puesto no se puede abrir ninguna otra página ni ningún aparato de la red a la que está enchufado el puesto.
-
 ## Qué apuntar
 
 - Qué no se entendió a la primera, con las palabras de quien lo probó.

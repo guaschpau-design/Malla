@@ -78,8 +78,8 @@ jobs:
 
   # The server image, with the landing page and the web app (ADR-0049). Every run builds it for
   # amd64 and starts it locked down as on the VPS: it must report healthy and serve the page and
-  # the app. After a green push to main it is then published for amd64 and arm64 (arm64 for
-  # command posts on a Raspberry Pi), signed with cosign by this workflow's identity, and only
+  # the app. After a green push to main it is then published for amd64 and arm64 (for servers on
+  # ARM machines), signed with cosign by this workflow's identity, and only
   # then tagged "latest", the tag servers follow. Servers run only images signed so.
   image:
     needs: [check, e2e]
@@ -151,7 +151,7 @@ jobs:
       - if: env.PUBLISH == 'true'
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
         with:
-          # The version servers verify with (deploy/common/install-cosign.sh).
+          # The version servers verify with (deploy/vps/install-cosign.sh).
           cosign-release: v3.1.4
       - name: Sign, then tag as latest
         if: env.PUBLISH == 'true'

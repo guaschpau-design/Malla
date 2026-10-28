@@ -5,7 +5,7 @@
 #
 #   install-cosign.sh
 #
-# Run by the installers of the VPS and of the command post; does nothing when it is installed.
+# Run by the VPS installer; does nothing when it is installed.
 
 set -euo pipefail
 

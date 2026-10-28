@@ -185,16 +185,16 @@
             </div>
             <div class="route">
               <div>
-                <h3>Command post</h3>
+                <h3>Automatic bridge</h3>
                 <p>
-                  A computer sets up a local wifi network in the area of operations and acts as the
-                  team's server. It can bridge to the radio mesh and, once it is back online, syncs
-                  with the rest of the organisation.
+                  A phone with a radio and coverage joins both networks with nothing to set up: what
+                  arrives by radio goes up to the server, and what the server has goes out by radio.
+                  Whoever has no coverage stays up to date.
                 </p>
               </div>
               <div class="path" aria-hidden="true">
-                <span class="node">Device</span><span class="line"></span>
-                <span class="node hub">Post</span><span class="line later"></span>
+                <span class="node">Mesh</span><span class="line air"></span>
+                <span class="node hub">Bridge</span><span class="line"></span>
                 <span class="node">Server</span>
               </div>
             </div>
@@ -308,7 +308,7 @@
             </li>
             <li>
               <h3>End-to-end encryption</h3>
-              <p>Only the team holds the key. Neither the server nor the post can read anything.</p>
+              <p>Only the team holds the key. The server cannot read anything.</p>
             </li>
             <li>
               <h3>No tracking</h3>
@@ -336,10 +336,7 @@
             </details>
             <details>
               <summary>Do we need radios?</summary>
-              <p>
-                No. With coverage, Tesel needs nothing else. Radios and the command post are for
-                when there is none.
-              </p>
+              <p>No. With coverage, Tesel needs nothing else. Radios are for when there is none.</p>
             </details>
             <details>
               <summary>Which radios are supported?</summary>
@@ -351,16 +348,12 @@
             <details>
               <summary>Does it work on iPhone?</summary>
               <p>
-                Yes, over the internet or through a command post. Safari does not allow Bluetooth
-                radios; the native app will.
+                Yes, over the internet. Safari does not allow Bluetooth radios; the native app will.
               </p>
             </details>
             <details>
               <summary>Can we run our own server?</summary>
-              <p>
-                Yes. The server is free software and runs on a modest computer, in the cloud, or as
-                an offline command post.
-              </p>
+              <p>Yes. The server is free software and runs on a modest computer or in the cloud.</p>
             </details>
             <details>
               <summary>Who is behind it?</summary>

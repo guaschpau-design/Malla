@@ -1,5 +1,5 @@
 // Gathers the official weather warnings of some countries and keeps them ready to serve, as the
-// JSON text of docs/protocol.md §8.4. Warnings are read every 10 minutes; region outlines are
+// JSON text of docs/protocol.md §8.2. Warnings are read every 10 minutes; region outlines are
 // looked for once a day and downloaded only when MeteoAlarm publishes a new file, which is kept
 // on disk so a restart does not download it again. Warnings that expire after a gathering are
 // left out when serving, and a document gathered too long ago is not served at all.
@@ -78,7 +78,7 @@ export class WeatherWarningsService {
   }
 
   /**
-   * The §8.4 document as JSON text, with the warnings still in force; null until the first
+   * The §8.2 document as JSON text, with the warnings still in force; null until the first
    * gathering succeeds, and once the last success is older than the maximum age.
    */
   body(): string | null {

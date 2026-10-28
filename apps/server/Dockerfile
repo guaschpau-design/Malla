@@ -49,7 +49,7 @@ USER node
 VOLUME /data
 EXPOSE 8080
 # /healthz answers once the server can use its database. Checked every 2 seconds while it starts,
-# so an update (deploy/common/update.sh) learns soon whether the new version works.
+# so an update (deploy/vps/update.sh) learns soon whether the new version works.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --start-interval=2s \
   CMD node -e "fetch('http://127.0.0.1:8080/healthz').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
 CMD ["node", "apps/server/src/main.ts"]

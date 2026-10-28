@@ -1,5 +1,5 @@
 // A Tesel server for tests: its database in memory, and the options of a server with no web root,
-// upstream, command post, weather or proxies, but for those a test sets.
+// weather or proxies, but for those a test sets.
 
 import type { FastifyInstance } from 'fastify';
 
@@ -16,14 +16,11 @@ export interface TestServer {
 export async function testServer({
   app = {},
   relay = {},
-  upstream = false,
 }: {
   readonly app?: Partial<AppOptions>;
   readonly relay?: RelayOptions;
-  /** Whether it is a command post, which keeps what its upstream still lacks. */
-  readonly upstream?: boolean;
 } = {}): Promise<TestServer> {
-  const store = new EnvelopeStore(':memory:', { upstream });
+  const store = new EnvelopeStore(':memory:');
   const relayOfStore = new Relay(store, relay);
   return {
     store,

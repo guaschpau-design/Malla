@@ -10,7 +10,11 @@ import { STORE_ID_SIZE } from '@tesel/protocol';
 type Migration = (db: DatabaseSync) => void;
 
 /** Migration `n` (from 0) brings a database from schema version `n` to `n + 1`. */
-const MIGRATIONS: readonly Migration[] = [schemaBeforeVersions, distinctEnvelopesAndIdentity];
+const MIGRATIONS: readonly Migration[] = [
+  schemaBeforeVersions,
+  distinctEnvelopesAndIdentity,
+  withoutCommandPosts,
+];
 
 /** The value `PRAGMA auto_vacuum` reads when incremental vacuum is on. */
 const AUTO_VACUUM_INCREMENTAL = 2;
@@ -112,7 +116,7 @@ function distinctEnvelopesAndIdentity(db: DatabaseSync): void {
       digest      BLOB    NOT NULL,
       envelope    BLOB    NOT NULL,
       received_at INTEGER NOT NULL,
-      -- 1 while the upstream of a command post lacks it (protocol §8.2).
+      -- 1 while the upstream of a command post lacked it (until version 3).
       pending_up  INTEGER NOT NULL DEFAULT 0,
       PRIMARY KEY (group_id, cursor),
       UNIQUE (group_id, event_key, digest)
@@ -138,4 +142,16 @@ function distinctEnvelopesAndIdentity(db: DatabaseSync): void {
   db.prepare('INSERT INTO store_info (id, pruned_cursor) VALUES (?, 0)').run(
     randomBytes(STORE_ID_SIZE),
   );
+}
+
+/**
+ * Version 3: servers no longer replicate one another (ADR-0058), so nothing is kept for an
+ * upstream: what it lacked, and how far it had been read.
+ */
+function withoutCommandPosts(db: DatabaseSync): void {
+  db.exec(`
+    DROP INDEX envelopes_pending_up;
+    ALTER TABLE envelopes DROP COLUMN pending_up;
+    DROP TABLE upstream_cursors;
+  `);
 }

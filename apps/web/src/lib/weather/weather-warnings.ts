@@ -1,4 +1,4 @@
-// The official weather warnings a server publishes (docs/protocol.md §8.4), as the app uses them:
+// The official weather warnings a server publishes (docs/protocol.md §8.2), as the app uses them:
 // the regions still under some warning, which of them hold a point, who issued them, and how each
 // level looks.
 

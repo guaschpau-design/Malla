@@ -27,7 +27,6 @@ describe('app database', () => {
       'outbox',
       'radioTexts',
       'sequence',
-      'servers',
       'settings',
       'weather',
     ]);
@@ -68,5 +67,6 @@ describe('app database', () => {
     expect(await db.getAll('events')).toHaveLength(1);
     expect(await db.get('sequence', 'next')).toBe(8);
     expect(await db.getAll('cursors')).toEqual([]);
+    expect([...db.objectStoreNames]).not.toContain('servers');
   });
 });
