@@ -6,7 +6,7 @@
 
   import { formatArea, formatDistance } from '../format.ts';
   import type { Locale, Translate } from '../i18n/index.ts';
-  import MapCard from '../ui/MapCard.svelte';
+  import ToolCard from '../ui/ToolCard.svelte';
 
   interface Props {
     t: Translate;
@@ -19,7 +19,14 @@
   let { t, locale, points, onundo, onclose }: Props = $props();
 </script>
 
-<MapCard label={t('measure')}>
+<ToolCard
+  label={t('measure')}
+  undoLabel={t('undo')}
+  canUndo={points.length > 0}
+  {onundo}
+  closeLabel={t('close')}
+  {onclose}
+>
   {#if points.length < 2}
     <p>{t('measureHint')}</p>
   {:else}
@@ -30,11 +37,7 @@
       {/if}
     </p>
   {/if}
-  <div class="row">
-    <button onclick={onundo} disabled={points.length === 0}>{t('undo')}</button>
-    <button onclick={onclose}>{t('close')}</button>
-  </div>
-</MapCard>
+</ToolCard>
 
 <style>
   .measures {

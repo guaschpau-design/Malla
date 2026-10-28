@@ -92,8 +92,8 @@ test('a route read from a file is thinned, followed to its end and its task done
     buffer: Buffer.from(gpx),
   });
   const bar = page.getByRole('region', { name: 'Nueva ruta' });
-  await expect(bar).toContainText('«Ronda importada»: 3 puntos');
-  await expect(bar).toContainText('El archivo tenía 401 puntos');
+  await expect(bar).toContainText('«Ronda importada», 3 puntos');
+  await expect(bar).toContainText('De sus 401 puntos');
   await bar.getByRole('button', { name: 'Terminar' }).click();
   const form = page.getByRole('dialog', { name: 'Nueva ruta' });
   await expect(form.getByLabel('Etiqueta (opcional)')).toHaveValue('Ronda importada');

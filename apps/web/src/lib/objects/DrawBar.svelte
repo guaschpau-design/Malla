@@ -1,10 +1,18 @@
-<!-- Instructions and controls shown at the top while drawing; a route can also be read from a file,
-     which is then shown as drawn, to look over before finishing. -->
+<!-- The card at the top while drawing: what is drawn, one line of what to do and, once points are
+     tapped, how many of the most there may be. A route can also be read from a file, which is then
+     shown as drawn, to look over before finishing. -->
 <script lang="ts">
   import { formatDistance } from '../format.ts';
   import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
-  import MapCard from '../ui/MapCard.svelte';
-  import { DRAFT_TITLES, isComplete, type Draft, type DraftKind } from './draft.ts';
+  import Pictogram from '../ui/Pictogram.svelte';
+  import ToolCard from '../ui/ToolCard.svelte';
+  import {
+    DRAFT_TITLES,
+    isComplete,
+    MAX_SHAPE_POINTS,
+    type Draft,
+    type DraftKind,
+  } from './draft.ts';
   import { importRoute, type ImportedRoute, type RouteImportError } from './route-import.ts';
 
   interface Props {
@@ -42,31 +50,37 @@
     failure = result.ok ? null : IMPORT_FAILURES[result.error];
     if (result.ok) onimport(result.value);
   }
+
+  const title = $derived(t(DRAFT_TITLES[draft.kind]));
+  /** A marker is one tap: it needs no count. */
+  const progress = $derived(
+    draft.kind === 'marker' || draft.points.length === 0
+      ? t(HINTS[draft.kind])
+      : t('drawPoints', { count: draft.points.length, max: MAX_SHAPE_POINTS }),
+  );
 </script>
 
-<MapCard label={t(DRAFT_TITLES[draft.kind])}>
-  {#if imported}
-    <p>{t('routeImported', { name: imported.name, points: imported.points.length })}</p>
-    {#if imported.read > imported.points.length}
-      <p class="hint">
-        {t('routeSimplified', {
-          read: imported.read,
-          deviation: formatDistance(imported.deviation, locale),
-        })}
-      </p>
-    {/if}
-  {:else}
-    <p>{t(HINTS[draft.kind])}</p>
-  {/if}
-  {#if failure}<p class="warning">{t(failure)}</p>{/if}
-  <div class="row">
-    <button onclick={onundo} disabled={draft.points.length === 0}>{t('undo')}</button>
-    {#if draft.kind !== 'marker'}
-      <button class="primary" onclick={onfinish} disabled={!isComplete(draft)}>{t('finish')}</button
-      >
-    {/if}
+<ToolCard
+  label={title}
+  undoLabel={t('undo')}
+  canUndo={draft.points.length > 0}
+  {onundo}
+  closeLabel={t('cancel')}
+  onclose={oncancel}
+  finish={draft.kind === 'marker'
+    ? undefined
+    : { label: t('finish'), disabled: !isComplete(draft), run: onfinish }}
+>
+  {#snippet tools()}
     {#if draft.kind === 'route'}
-      <button onclick={() => picker?.click()}>{t('routeImport')}</button>
+      <button
+        class="icon"
+        aria-label={t('routeImport')}
+        title={t('routeImport')}
+        onclick={() => picker?.click()}
+      >
+        <Pictogram name="file" size={22} />
+      </button>
       <input
         bind:this={picker}
         type="file"
@@ -79,6 +93,24 @@
         }}
       />
     {/if}
-    <button onclick={oncancel}>{t('cancel')}</button>
-  </div>
-</MapCard>
+  {/snippet}
+  {#if imported}
+    <p>
+      <strong>{title}</strong> · {t('routeImported', {
+        name: imported.name,
+        points: imported.points.length,
+      })}
+    </p>
+    {#if imported.read > imported.points.length}
+      <p class="hint">
+        {t('routeSimplified', {
+          read: imported.read,
+          deviation: formatDistance(imported.deviation, locale),
+        })}
+      </p>
+    {/if}
+  {:else}
+    <p><strong>{title}</strong> · {progress}</p>
+  {/if}
+  {#if failure}<p class="warning">{t(failure)}</p>{/if}
+</ToolCard>

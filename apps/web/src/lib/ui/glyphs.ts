@@ -146,6 +146,8 @@ export const GLYPHS = {
   grid: glyph(['M9 4v16', 'M15 4v16', 'M4 9h16', 'M4 15h16']),
   trash: glyph(['M4.5 7h15', 'M9.5 7V4.5h5V7', 'M6.5 7l1 12.5h9l1-12.5', 'M10 11v5M14 11v5']),
   settings: glyph(['M4 7h9M17 7h3M4 17h3M11 17h9', 'M15 4.5v5M9 14.5v5']),
+  undo: glyph(['M9 5L4.5 9.5 9 14', 'M4.5 9.5H14a5 5 0 0 1 0 10h-3']),
+  file: glyph(['M6 3.5h8l4 4v13H6z', 'M14 3.5v4h4', 'M12 17.5v-6M9.5 14l2.5-2.5 2.5 2.5']),
   send: glyph(['M4 4.5l16.5 7.5L4 19.5l2.8-7.5z', 'M6.8 12h6']),
   mic: glyph([
     'M12 3.5a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0v-5a3 3 0 0 1 3-3z',

@@ -22,7 +22,9 @@
 </details>
 
 <style>
+  /* As narrow as its panel, however long the gist: the gist is cut short instead. */
   .fold {
+    min-width: 0;
     border-top: 1px solid var(--border);
   }
 
@@ -41,6 +43,7 @@
 
   /* A chevron that turns when the section opens. */
   summary::after {
+    flex: none;
     margin-left: auto;
     content: '›';
     transition: rotate 0.15s;
@@ -55,6 +58,8 @@
   }
 
   .summary {
+    flex: 1 1 0;
+    min-width: 0;
     overflow: hidden;
     color: var(--muted);
     font-size: var(--text-secondary);

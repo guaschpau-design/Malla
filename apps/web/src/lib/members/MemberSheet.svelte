@@ -173,8 +173,10 @@
 </div>
 
 <style>
+  /* One column as wide as the panel: a long line (the gist of a fold) is cut short, never widens it. */
   .sheet {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.75rem;
   }
 

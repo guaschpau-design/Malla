@@ -1,6 +1,6 @@
 // "Me": what a member tells the team about themselves, and how the others see it.
 
-import { expect, shareAs, tapMapUntil, test, twoMembers } from './helpers.ts';
+import { createGroup, device, expect, shareAs, tapMapUntil, test, twoMembers } from './helpers.ts';
 
 const VIEW = '/#map=15/39.4699/-0.3763';
 
@@ -28,4 +28,18 @@ test('a member’s profile, status and equipment reach the others', async ({ bro
   });
   await expect(card).toContainText('Botiquín, Agua');
   await expect(card.getByText('Tareas', { exact: true })).toBeVisible();
+});
+
+test('much equipment keeps the panel as narrow as a phone', async ({ browser }) => {
+  const page = await device(browser, 'Ana', '/', { viewport: { width: 390, height: 780 } });
+  await createGroup(page, 'Rescate Valencia');
+  await page.getByRole('button', { name: 'Cerrar' }).click();
+  await page.getByRole('button', { name: /^Yo/ }).click();
+  const me = page.getByRole('region', { name: 'Yo' });
+  await me.getByText('Equipamiento', { exact: true }).click();
+  const chips = me.locator('button[aria-pressed="false"]');
+  for (let left = await chips.count(); left > 0; left -= 1) await chips.first().click();
+  await me.getByText('Equipamiento', { exact: true }).click();
+  const sideways = await me.evaluate((panel) => panel.scrollWidth - panel.clientWidth);
+  expect(sideways).toBe(0);
 });
