@@ -16,7 +16,8 @@ import { err, ok, type Result } from './result.ts';
 
 export type ClientMessage =
   | { readonly t: 'join'; readonly group: Uint8Array; readonly after: number }
-  | { readonly t: 'push'; readonly key: Uint8Array; readonly env: Uint8Array };
+  | { readonly t: 'push'; readonly key: Uint8Array; readonly env: Uint8Array }
+  | { readonly t: 'ping' };
 
 export type RelayErrorCode =
   'bad-request' | 'too-large' | 'rate-limited' | 'not-joined' | 'unavailable';
@@ -35,6 +36,7 @@ export type ServerMessage =
       readonly store: string;
     }
   | { readonly t: 'stored'; readonly key: Uint8Array }
+  | { readonly t: 'pong' }
   | { readonly t: 'error'; readonly code: RelayErrorCode; readonly key: Uint8Array | null };
 
 /** Why a client message was refused; `key` is set when the message was a push. */
@@ -91,6 +93,15 @@ export function parseServerInfo(text: string): ServerInfo | null {
   return { protocolVersion, upstream, commandPost };
 }
 
+/**
+ * §8.1 The server's clock in a server information answer, in seconds since the epoch, or null
+ * when it gives none (servers before it did).
+ */
+export function parseServerTime(text: string): number | null {
+  const time = parseObject(text)?.['time'];
+  return typeof time === 'number' && Number.isFinite(time) && time > 0 ? time : null;
+}
+
 /** A secure server URL in comparable form, null for none, undefined if invalid. */
 function optionalServerUrl(value: unknown): string | null | undefined {
   if (value === null || value === undefined) return null;
@@ -118,6 +129,9 @@ export function encodeRelayMessage(message: ClientMessage | ServerMessage): stri
       return JSON.stringify({ t: 'synced', cursor: message.cursor, store: message.store });
     case 'stored':
       return JSON.stringify({ t: 'stored', key: toBase64url(message.key) });
+    case 'ping':
+    case 'pong':
+      return JSON.stringify({ t: message.t });
     case 'error':
       return JSON.stringify(
         message.key === null
@@ -148,6 +162,8 @@ export function parseClientMessage(text: string): Result<ClientMessage, RelayRef
       if (env.length < MIN_ENVELOPE_SIZE) return err({ code: 'bad-request', key });
       return ok({ t: 'push', key, env });
     }
+    case 'ping':
+      return ok({ t: 'ping' });
     default:
       return badRequest;
   }
@@ -171,6 +187,8 @@ export function parseServerMessage(text: string): ServerMessage | null {
       const store = object['store'];
       return isCursor(cursor) && isStoreId(store) ? { t: 'synced', cursor, store } : null;
     }
+    case 'pong':
+      return { t: 'pong' };
     case 'stored': {
       const key = bytesField(object, 'key');
       return key?.length === EVENT_KEY_SIZE ? { t: 'stored', key } : null;

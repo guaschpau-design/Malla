@@ -6,11 +6,13 @@ import {
   isKeepable,
   peekHeader,
   type EventHeader,
+  type NodeId,
   type TeselEvent,
 } from '@tesel/protocol';
 
 import type { AppDb, EventKey, OutboxEntry } from '../storage/app-db.ts';
 import { cursorKey, groupCursors } from '../sync/cursor-store.ts';
+import type { RelayPosition } from '../sync/relay-client.ts';
 
 /** Largest sequence number: the field is an unsigned 32-bit integer (protocol §2). */
 const MAX_SEQ = 0xffff_ffff;
@@ -28,7 +30,7 @@ export interface ReceiveOptions {
   /** The events were heard over the radio and this device bridges them: queue them for the server. */
   readonly forward?: boolean;
   /** How far a relay has been read with these events; saved with them, never ahead of them. */
-  readonly readTo?: { readonly relay: string; readonly cursor: number };
+  readonly readTo?: { readonly relay: string; readonly position: RelayPosition };
 }
 
 /**
@@ -66,8 +68,8 @@ export async function receiveEvents(
     writes.push(...received.map(({ entry }) => tx.objectStore('outbox').put(entry)));
   }
   if (options.readTo !== undefined) {
-    const { relay, cursor } = options.readTo;
-    writes.push(tx.objectStore('cursors').put(cursor, cursorKey(groupId, relay)));
+    const { relay, position } = options.readTo;
+    writes.push(tx.objectStore('cursors').put(position, cursorKey(groupId, relay)));
   }
   await Promise.all([...writes, tx.done]);
   return received;
@@ -137,6 +139,25 @@ export async function pendingEvents(
 
 export async function confirmStored(db: AppDb, entry: OutboxEntry): Promise<void> {
   await db.delete('outbox', [entry.groupId, entry.origin, entry.seq]);
+}
+
+/**
+ * Puts every own event of a group back in the outbox, for a server that lost them (protocol §8):
+ * they go to it again on the next sync. They reached the group before, so they count as aired and
+ * do not go on the radio again.
+ */
+export async function requeueOwnEvents(db: AppDb, groupId: string, origin: NodeId): Promise<void> {
+  const tx = db.transaction(['events', 'outbox'], 'readwrite');
+  const keys = await tx.objectStore('events').index('byGroup').getAllKeys(groupId);
+  const outbox = tx.objectStore('outbox');
+  const own = keys.filter(([, author]) => author === origin);
+  const queued = await Promise.all(own.map((key) => outbox.getKey(key)));
+  await Promise.all(
+    own.flatMap(([, , seq], index) =>
+      queued[index] === undefined ? [outbox.put({ groupId, origin, seq, aired: true })] : [],
+    ),
+  );
+  await tx.done;
 }
 
 /** Notes that an own event went out over LoRa while it still waits for the server. */

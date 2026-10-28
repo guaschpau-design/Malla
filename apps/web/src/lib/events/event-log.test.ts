@@ -4,7 +4,7 @@ import { decodeEvent, encodeEvent, type NodeId } from '@tesel/protocol';
 import { describe, expect, it } from 'vitest';
 
 import { openAppDb } from '../storage/app-db.ts';
-import { loadCursor } from '../sync/cursor-store.ts';
+import { loadPosition } from '../sync/cursor-store.ts';
 import {
   confirmStored,
   deleteGroupEvents,
@@ -12,6 +12,7 @@ import {
   pendingEvents,
   publishEvent,
   receiveEvents,
+  requeueOwnEvents,
 } from './event-log.ts';
 
 const ME = 'a1b2c3d4' as NodeId;
@@ -47,6 +48,22 @@ describe('event log', () => {
     const { bytes } = await publishEvent(db, 'group', build, { origin: ME, time: 4000 });
     const decoded = decodeEvent(bytes);
     expect(decoded.ok && decoded.value.time).toBe(5000);
+  });
+
+  it('puts own events back in the outbox for a server that lost them', async () => {
+    const db = await freshDb();
+    const build = (header: { origin: NodeId; seq: number; time: number }) =>
+      ({ ...header, type: 'chat', text: 'hola' }) as const;
+    const stored = await publishEvent(db, 'group', build, { origin: ME, time: 1000 });
+    await confirmStored(db, stored.entry);
+    const waiting = await publishEvent(db, 'group', build, { origin: ME, time: 1001 });
+    await receiveEvents(db, 'group', [chatBytes(OTHER, 1, 'de otro')]);
+    await requeueOwnEvents(db, 'group', ME);
+    const pending = await pendingEvents(db, 'group');
+    expect(pending.map(({ entry }) => entry)).toEqual([
+      { ...stored.entry, aired: true },
+      waiting.entry,
+    ]);
   });
 
   it('drops a damaged event, so that the real one is still taken later', async () => {
@@ -107,8 +124,9 @@ describe('event log', () => {
   it('saves how far a relay was read together with the events read', async () => {
     const db = await freshDb();
     const relay = 'https://tesel.example/';
-    await receiveEvents(db, 'group', [chatBytes(OTHER, 1, 'a')], { readTo: { relay, cursor: 42 } });
-    expect(await loadCursor(db, 'group', relay)).toBe(42);
+    const position = { cursor: 42, store: 'store' };
+    await receiveEvents(db, 'group', [chatBytes(OTHER, 1, 'a')], { readTo: { relay, position } });
+    expect(await loadPosition(db, 'group', relay)).toEqual(position);
   });
 
   it('queues an event heard over the radio for the server when bridging', async () => {

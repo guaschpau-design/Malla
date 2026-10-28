@@ -49,6 +49,7 @@
   import { newTask } from '../tasks/task-editor.svelte.ts';
   import { myPendingCount } from '../tasks/tasks.ts';
   import Pictogram from '../ui/Pictogram.svelte';
+  import { deviceClock } from '../sync/device-clock.svelte.ts';
   import { notices, useStandingNotice } from '../ui/notices.svelte.ts';
   import { attempt } from '../ui/submission.svelte.ts';
   import { closePanel, panels, togglePanel } from '../ui/panels.svelte.ts';
@@ -120,6 +121,12 @@
   let sosOpen = $state(false);
 
   useStandingNotice(() => (radio.reconnecting ? { text: t('radioReconnecting') } : null));
+
+  useStandingNotice(() => {
+    const minutes = deviceClock.wrongByMinutes;
+    if (minutes === null) return null;
+    return { text: t(minutes > 0 ? 'clockAhead' : 'clockBehind', { minutes: Math.abs(minutes) }) };
+  });
 
   useStandingNotice(() => {
     if (location.problem === null) return null;

@@ -41,6 +41,7 @@ import {
   pendingEvents,
   publishEvent,
   receiveEvents,
+  requeueOwnEvents,
 } from '../events/event-log.ts';
 import type { StoredGroup } from '../groups/group.ts';
 import type { LocalIdentity } from '../identity/identity.ts';
@@ -50,7 +51,7 @@ import type { DeviceFix } from '../position/device-location.svelte.ts';
 import type { AppDb, OutboxEntry } from '../storage/app-db.ts';
 import { defaultServerUrl } from '../config.ts';
 import type { TaskFields } from '../tasks/tasks.ts';
-import { loadCursor, saveCursor } from './cursor-store.ts';
+import { loadPosition, savePosition } from './cursor-store.ts';
 import { RelayClient, type ReceivedEnvelope, type RelayStatus } from './relay-client.ts';
 import { loraEventOf, peekType } from './lora-events.ts';
 import { relaysFor } from './relays.ts';
@@ -116,11 +117,15 @@ export class GroupFeed {
             relays: () => relaysFor(db, server, defaultServerUrl()),
             group: this.#keys.groupId,
             handlers: {
-              cursor: (relay) => loadCursor(db, group.id, relay),
-              onEnvelopes: (batch, relay) => this.#receive(batch, relay),
-              onSynced: async (cursor, relay) => {
-                await saveCursor(db, group.id, relay, cursor);
+              position: (relay) => loadPosition(db, group.id, relay),
+              onEnvelopes: (batch, relay, store) => this.#receive(batch, relay, store),
+              onSynced: async (position, relay) => {
+                await savePosition(db, group.id, relay, position);
                 await this.#flushOutbox();
+              },
+              onStoreChanged: async (store, relay) => {
+                await savePosition(db, group.id, relay, { cursor: 0, store });
+                await requeueOwnEvents(db, group.id, identity.nodeId);
               },
               onStored: (key) => this.#confirm(key),
               onStatus: (status) => {
@@ -374,14 +379,17 @@ export class GroupFeed {
   }
 
   /** A batch from the relay: stored with its cursor, then applied to the picture at once. */
-  async #receive(batch: readonly ReceivedEnvelope[], relay: string): Promise<void> {
+  async #receive(
+    batch: readonly ReceivedEnvelope[],
+    relay: string,
+    store: string | null,
+  ): Promise<void> {
     const last = batch.at(-1);
     if (last === undefined) return;
-    // An envelope that does not open was not sealed with this group's key: skip it.
-    const opened = batch.flatMap(({ env }) => openEnvelope(this.#keys, env) ?? []);
+    const opened = batch.flatMap(({ key, env }) => this.#open(key, env) ?? []);
     const server = this.#group.server;
     this.#hear(server !== null && sameServer(relay, server) ? 'internet' : 'command-post', opened);
-    const readTo = { relay, cursor: last.cursor };
+    const readTo = { relay, position: { cursor: last.cursor, store } };
     const received = await receiveEvents(this.#db, this.#group.id, opened, { readTo });
     this.#apply(received.map(({ bytes }) => bytes));
     for (const { bytes } of received) {
@@ -389,6 +397,18 @@ export class GroupFeed {
       const event = loraEventOf(bytes);
       if (event) this.#lora?.offer({ event, bytes }, 'bridged');
     }
+  }
+
+  /**
+   * The event in an envelope from a relay, or null for one not sealed with this group's key, or
+   * stored under another event's key: the server cannot tell, so the reader checks (protocol §8).
+   */
+  #open(key: Uint8Array, env: Uint8Array): Uint8Array | null {
+    const bytes = openEnvelope(this.#keys, env);
+    if (bytes === null) return null;
+    const header = peekHeader(bytes);
+    if (!header.ok) return null;
+    return toBase64url(eventKey(this.#keys, header.value)) === toBase64url(key) ? bytes : null;
   }
 
   /** Notes the members heard through a channel; own events are not news about anyone. */

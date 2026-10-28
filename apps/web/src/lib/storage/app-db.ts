@@ -8,6 +8,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { StoredGroup } from '../groups/group.ts';
 import type { LocalIdentity } from '../identity/identity.ts';
 import type { StoredRadioText } from '../radio/radio-texts.ts';
+import type { RelayPosition } from '../sync/relay-client.ts';
 import { IGNORE_VERSION_CHANGE, type VersionChange } from './version-change.ts';
 
 /** An event of a group as received or created: its encoded bytes, keyed by group and ref. */
@@ -59,8 +60,8 @@ export interface AppSchema extends DBSchema {
   sequence: { key: 'next' | 'lastTime'; value: number };
   events: { key: EventKey; value: StoredEvent; indexes: { byGroup: string } };
   outbox: { key: EventKey; value: OutboxEntry; indexes: { byGroup: string } };
-  /** How far this device has read each group's envelopes on each relay. */
-  cursors: { key: CursorKey; value: number };
+  /** How far this device has read each group's envelopes on each relay, and in which store. */
+  cursors: { key: CursorKey; value: RelayPosition };
   /** What each server last said about itself, by server base URL (protocol §8.1). */
   servers: { key: string; value: ServerInfo };
   /** Text messages of other MeshCore apps heard by the radio, oldest first. */
@@ -72,7 +73,7 @@ export interface AppSchema extends DBSchema {
 export type AppDb = IDBPDatabase<AppSchema>;
 
 const DB_NAME = 'tesel';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 export async function openAppDb(
   name: string = DB_NAME,
@@ -114,6 +115,12 @@ export async function openAppDb(
       }
       if (oldVersion < 5) {
         database.createObjectStore('weather');
+      }
+      if (oldVersion < 6) {
+        // Cursors now name the relay's store (protocol §8); old ones, of an unknown store, are
+        // dropped and the backlog fetched again.
+        database.deleteObjectStore('cursors');
+        database.createObjectStore('cursors');
       }
     },
   });

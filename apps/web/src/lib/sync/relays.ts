@@ -4,6 +4,7 @@
 
 import {
   parseServerInfo,
+  parseServerTime,
   sameServer,
   serverBaseUrl,
   serverInfoUrl,
@@ -11,6 +12,7 @@ import {
 } from '@tesel/protocol';
 
 import type { AppDb } from '../storage/app-db.ts';
+import { deviceClock } from './device-clock.svelte.ts';
 
 /** How long to wait for a server to describe itself before using what it said last time. */
 const INFO_TIMEOUT_MS = 4000;
@@ -31,17 +33,25 @@ export function relayOrder(
   return relays;
 }
 
-/** What a server says about itself now, or null if it cannot be reached. */
+/**
+ * What a server says about itself now, or null if it cannot be reached. Its clock, when it gives
+ * it, is checked against this device's on the way.
+ */
 export async function fetchServerInfo(
   server: string,
   fetchFn: typeof fetch = fetch,
 ): Promise<ServerInfo | null> {
   try {
+    const sentAt = Date.now();
     const response = await fetchFn(serverInfoUrl(server), {
       signal: AbortSignal.timeout(INFO_TIMEOUT_MS),
       cache: 'no-store',
     });
-    return response.ok ? parseServerInfo(await response.text()) : null;
+    if (!response.ok) return null;
+    const text = await response.text();
+    const time = parseServerTime(text);
+    if (time !== null) deviceClock.observe(time, sentAt, Date.now());
+    return parseServerInfo(text);
   } catch {
     return null;
   }

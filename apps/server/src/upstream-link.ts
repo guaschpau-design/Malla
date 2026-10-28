@@ -163,6 +163,9 @@ export class UpstreamLink {
           this.#confirm(message.key);
         }
         return;
+      case 'pong':
+        // This link checks its upstream with WebSocket pings (heartbeat.ts) and never asks.
+        return;
     }
   }
 

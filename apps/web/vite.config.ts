@@ -2,6 +2,7 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+import { contentSecurityPolicy } from './scripts/content-security-policy.ts';
 import { thirdPartyNotices } from './scripts/third-party-notices.ts';
 
 // TESEL_BASE lets the app be served from a sub-path, e.g. "/app/" in the server image.
@@ -11,6 +12,7 @@ export default defineConfig({
   base,
   plugins: [
     svelte(),
+    contentSecurityPolicy(),
     thirdPartyNotices([
       {
         // The service worker's runtime, which vite-plugin-pwa bundles apart from the app.

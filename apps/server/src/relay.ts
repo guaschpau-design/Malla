@@ -158,6 +158,9 @@ export class Relay {
         }
         this.#push(connection, connection.group, message.key, message.env);
         return;
+      case 'ping':
+        send(socket, { t: 'pong' });
+        return;
     }
   }
 

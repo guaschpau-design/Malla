@@ -8,6 +8,7 @@ import {
   parseServerMessage,
   relayUrl,
   type EventType,
+  type RelayErrorCode,
   type ServerMessage,
 } from '@tesel/protocol';
 
@@ -24,23 +25,44 @@ export interface SocketLike {
 
 export type RelayStatus = 'connecting' | 'syncing' | 'synced' | 'disconnected';
 
-/** An envelope as the relay sent it, with its cursor (protocol §8). */
+/** An envelope as the relay sent it, with its event key and cursor (protocol §8). */
 export interface ReceivedEnvelope {
+  readonly key: Uint8Array;
   readonly env: Uint8Array;
   readonly cursor: number;
 }
 
+/**
+ * How far this device has read a group on a relay: a cursor of the relay's store, whose identity
+ * is null until the relay has told it (protocol §8).
+ */
+export interface RelayPosition {
+  readonly cursor: number;
+  readonly store: string | null;
+}
+
 /** Handlers that receive `relay`, the server base URL of the connection, get its own cursors. */
 export interface RelayHandlers {
-  /** The cursor to join with: the last one this device stored for the group and relay. */
-  readonly cursor: (relay: string) => Promise<number>;
+  /** Where to join from: what this device last stored for the group and relay. */
+  readonly position: (relay: string) => Promise<RelayPosition>;
   /**
-   * Envelopes that arrived together, in order. A device that has been away gets thousands at
-   * once, and taking them in one go means one storage write and one redraw instead of one each.
+   * Envelopes that arrived together, in order, read from `store`. A device that has been away
+   * gets thousands at once, and taking them in one go means one storage write and one redraw
+   * instead of one each.
    */
-  readonly onEnvelopes: (batch: readonly ReceivedEnvelope[], relay: string) => Promise<void>;
+  readonly onEnvelopes: (
+    batch: readonly ReceivedEnvelope[],
+    relay: string,
+    store: string | null,
+  ) => Promise<void>;
   /** The backlog is in; from now on pushes are possible. */
-  readonly onSynced: (cursor: number, relay: string) => Promise<void>;
+  readonly onSynced: (position: RelayPosition, relay: string) => Promise<void>;
+  /**
+   * The relay's store is not the one this device read from: it lost its data or was restored
+   * from a backup. What this device knew of it is void; the handler starts over from the start of
+   * the new store and offers its own events again. The client then joins again.
+   */
+  readonly onStoreChanged: (store: string, relay: string) => Promise<void>;
   readonly onStored: (key: Uint8Array) => Promise<void>;
   readonly onStatus: (status: RelayStatus) => void;
 }
@@ -54,10 +76,28 @@ export interface RelayClientOptions {
   readonly random?: () => number;
 }
 
+/** One connection to a relay, as its messages are handled. */
+interface Link {
+  readonly socket: SocketLike;
+  readonly relay: string;
+  /** The store it reads from as far as this device knew when it joined. */
+  readonly store: string | null;
+}
+
+/** Refusals of a push that will do for another try a little later. */
+const TRY_LATER: ReadonlySet<RelayErrorCode> = new Set(['rate-limited', 'unavailable']);
+
 const FIRST_RETRY_MS = 1000;
 const MAX_RETRY_MS = 30_000;
 /** A relay that has not opened by then is given up for the next one. */
 const CONNECT_TIMEOUT_MS = 5000;
+/**
+ * A link silent this long is asked whether it is still there with a ping, and given up if nothing
+ * comes back within the second span: a connection that died without closing, as on a phone that
+ * changed networks, is noticed within 45 seconds instead of looking synced for ever.
+ */
+const QUIET_MS = 25_000;
+const PONG_TIMEOUT_MS = 20_000;
 /** Largest batch of envelopes handed on at once, so that no single step blocks the app for long. */
 const MAX_BATCH = 1000;
 
@@ -73,6 +113,8 @@ export class RelayClient {
   #retryMs = FIRST_RETRY_MS;
   #retryTimer: ReturnType<typeof setTimeout> | null = null;
   #connectTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Until the open link is asked for a sign of life, or, once asked, given up. */
+  #heartbeat: ReturnType<typeof setTimeout> | null = null;
   #stopped = true;
   /**
    * Messages are handled one at a time, in arrival order, so cursors only move forward. If one
@@ -164,25 +206,32 @@ export class RelayClient {
       socket.close();
       this.#lost(false);
     }, CONNECT_TIMEOUT_MS);
+    /** The store this link reads from, as far as this device knows. */
+    let store: string | null = null;
     socket.onopen = () => {
       this.#clearConnectTimer();
+      this.#heard(socket);
       this.#enqueue(socket, async () => {
-        const after = await this.#options.handlers.cursor(relay);
+        const position = await this.#options.handlers.position(relay);
         if (this.#socket !== socket) return;
-        socket.send(encodeRelayMessage({ t: 'join', group: this.#options.group, after }));
+        store = position.store;
+        const join = { t: 'join', group: this.#options.group, after: position.cursor } as const;
+        socket.send(encodeRelayMessage(join));
         this.#setStatus('syncing');
       });
     };
     socket.onmessage = (event) => {
+      this.#heard(socket);
       const message = typeof event.data === 'string' ? parseServerMessage(event.data) : null;
-      if (message === null) return;
+      if (message === null || message.t === 'pong') return;
       if (message.t === 'env') {
-        this.#collect(socket, { env: message.env, cursor: message.cursor }, relay);
+        const { key, env, cursor } = message;
+        this.#collect(socket, { key, env, cursor }, relay, store);
         return;
       }
       // Envelopes after this message go in a new batch, handled after it.
       this.#batch = null;
-      this.#enqueue(socket, () => this.#handle(message, relay));
+      this.#enqueue(socket, () => this.#handle(message, { socket, relay, store }));
     };
     socket.onclose = () => {
       if (this.#socket !== socket) return;
@@ -192,8 +241,39 @@ export class RelayClient {
     };
   }
 
+  /** The link said something: it is alive, and is asked again only after a quiet spell. */
+  #heard(socket: SocketLike): void {
+    this.#clearHeartbeat();
+    this.#heartbeat = setTimeout(() => {
+      socket.send(encodeRelayMessage({ t: 'ping' }));
+      this.#heartbeat = setTimeout(() => {
+        this.#heartbeat = null;
+        if (this.#socket !== socket) return;
+        this.#socket = null;
+        socket.close();
+        this.#lost(this.#status === 'synced');
+      }, PONG_TIMEOUT_MS);
+    }, QUIET_MS);
+  }
+
+  #clearHeartbeat(): void {
+    if (this.#heartbeat !== null) clearTimeout(this.#heartbeat);
+    this.#heartbeat = null;
+  }
+
+  /** Joins the same relay again at once, from the position the handlers now give. */
+  #rejoin(socket: SocketLike): void {
+    if (this.#socket !== socket) return;
+    this.#clearHeartbeat();
+    this.#socket = null;
+    socket.close();
+    this.#pushes.clear();
+    this.#connect();
+  }
+
   /** A link that had synced starts a new round; one that never did gives way to the next relay. */
   #lost(hadSynced: boolean): void {
+    this.#clearHeartbeat();
     this.#pushes.clear();
     if (this.#stopped) return;
     if (hadSynced) {
@@ -206,33 +286,44 @@ export class RelayClient {
   }
 
   /** Adds an envelope to the waiting batch, or queues a new batch if none is waiting or it is full. */
-  #collect(socket: SocketLike, envelope: ReceivedEnvelope, relay: string): void {
+  #collect(
+    socket: SocketLike,
+    envelope: ReceivedEnvelope,
+    relay: string,
+    store: string | null,
+  ): void {
     if (this.#batch === null || this.#batch.length >= MAX_BATCH) {
       const batch: ReceivedEnvelope[] = [];
       this.#batch = batch;
       this.#enqueue(socket, async () => {
         if (this.#batch === batch) this.#batch = null;
-        await this.#options.handlers.onEnvelopes(batch, relay);
+        await this.#options.handlers.onEnvelopes(batch, relay, store);
       });
     }
     this.#batch.push(envelope);
   }
 
-  async #handle(message: Exclude<ServerMessage, { t: 'env' }>, relay: string): Promise<void> {
+  async #handle(message: Exclude<ServerMessage, { t: 'env' | 'pong' }>, link: Link): Promise<void> {
     const { handlers } = this.#options;
+    const { relay } = link;
     switch (message.t) {
       case 'synced':
+        if (link.store !== null && link.store !== message.store) {
+          await handlers.onStoreChanged(message.store, relay);
+          this.#rejoin(link.socket);
+          return;
+        }
         this.#retryMs = FIRST_RETRY_MS;
         this.#setStatus('synced');
-        await handlers.onSynced(message.cursor, relay);
+        await handlers.onSynced({ cursor: message.cursor, store: message.store }, relay);
         return;
       case 'stored':
         this.#pushes.stored(message.key);
         await handlers.onStored(message.key);
         return;
       case 'error':
-        if (message.code === 'rate-limited' && message.key !== null) {
-          this.#pushes.rateLimited(message.key);
+        if (TRY_LATER.has(message.code) && message.key !== null) {
+          this.#pushes.tryLater(message.key);
           return;
         }
         // Anything else refused stays in the outbox and goes again after the next sync.
@@ -269,6 +360,7 @@ export class RelayClient {
     if (this.#retryTimer !== null) clearTimeout(this.#retryTimer);
     this.#retryTimer = null;
     this.#clearConnectTimer();
+    this.#clearHeartbeat();
   }
 
   #clearConnectTimer(): void {

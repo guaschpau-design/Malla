@@ -50,6 +50,34 @@ test('an SOS is acknowledged by the group and cancelled by its sender', async ({
   await expect(call).toBeHidden();
 });
 
+test('an SOS sent with no link is kept, says it waits, and reaches the group once a link is back', async ({
+  browser,
+}) => {
+  const { ana, berta } = await twoMembers(browser, VIEW);
+  // Berta loses every server; the app is reopened, as after a while in a valley.
+  let cut = true;
+  await berta.routeWebSocket(/\/v1\/ws$/, (socket) => {
+    if (cut) void socket.close();
+    else socket.connectToServer();
+  });
+  await berta.reload();
+  await expect(berta.getByTitle('Conectado al servidor del grupo')).toBeHidden();
+
+  await berta.getByRole('button', { name: 'SOS', exact: true }).click();
+  const dialog = berta.getByRole('dialog', { name: 'Enviar un SOS' });
+  await dialog.getByRole('button', { name: 'Enviar SOS' }).click();
+  await expect(berta.getByText(/el SOS está guardado y saldrá/)).toBeVisible();
+  const own = berta.getByRole('region', { name: 'SOS' });
+  await expect(own).toContainText('Aún no ha salido de este dispositivo');
+
+  cut = false;
+  await berta.evaluate(() => window.dispatchEvent(new Event('online')));
+  await expect(ana.getByRole('region', { name: 'SOS' })).toContainText('SOS · Berta', {
+    timeout: 15_000,
+  });
+  await expect(own).not.toContainText('Aún no ha salido de este dispositivo');
+});
+
 test('a critical alert stays on screen until each member acknowledges it', async ({ browser }) => {
   const { ana, berta } = await twoMembers(browser, VIEW);
 

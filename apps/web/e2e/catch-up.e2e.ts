@@ -37,6 +37,8 @@ test('a device catches up with thousands of waiting events in seconds', async ({
   await ana.getByRole('button', { name: 'Crear', exact: true }).click();
   await expect(ana.getByTitle('Conectado al servidor del grupo')).toBeVisible();
   const backlog = backlogFor(await groupSecret(ana));
+  // The same server as before, as its store identity shows: the device reads on from its cursor.
+  const store = await serverStore(ana);
 
   // From now on the relay is the test: it answers a join with the whole backlog.
   await ana.context().routeWebSocket(/\/v1\/ws$/, (relay) => {
@@ -48,7 +50,7 @@ test('a device catches up with thousands of waiting events in seconds', async ({
         encodeRelayMessage({
           t: 'synced',
           cursor: backlog.length,
-          store: 'AAAAAAAAAAAAAAAAAAAAAA',
+          store,
         }),
       );
     });
@@ -126,4 +128,23 @@ function storedEvents(page: Page): Promise<number> {
     db.close();
     return count;
   });
+}
+
+/** The store identity of the group's server, as the device saved it with its cursor. */
+async function serverStore(page: Page): Promise<string> {
+  const store = await page.evaluate(
+    () =>
+      new Promise<unknown>((resolve) => {
+        const open = indexedDB.open('tesel');
+        open.onsuccess = () => {
+          const read = open.result.transaction('cursors').objectStore('cursors').getAll();
+          read.onsuccess = () => {
+            open.result.close();
+            resolve((read.result[0] as { store?: unknown } | undefined)?.store);
+          };
+        };
+      }),
+  );
+  if (typeof store !== 'string') throw new Error('the device has not synced with its server');
+  return store;
 }

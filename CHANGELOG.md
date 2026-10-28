@@ -62,7 +62,8 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 
 ### Transports
 
-- Internet: a zero-knowledge relay that stores and forwards encrypted envelopes (protocol §8).
+- Internet: a zero-knowledge relay that stores and forwards encrypted envelopes (protocol §8). A connection that dies without closing is noticed within 45 seconds; a batch that cannot be stored is fetched again; envelopes whose event does not match their key are dropped; the same event always seals into the same envelope, so repeats cost the server nothing.
+- Each device keeps its own events in order even if its clock goes back, and says when its clock differs from the server's by more than two minutes ([ADR-0044](docs/decisions/0044-clocks-and-damaged-events.md)).
 - MeshCore LoRa through a companion radio over Web Bluetooth (protocol §7), with priorities, a legal airtime budget, position thinning, SOS repeats and bridging between radio and internet by any member who has both ([ADR-0015](docs/decisions/0015-lora-airtime-policy.md)). What was written without a radio goes on the air once one is linked; an SOS repeats until it is acknowledged or cancelled; open SOS calls, alerts and roll calls are bridged however old; answers to them go first; a lost Bluetooth link comes back by itself; frames of the device's other groups are kept for them; and leaving a group frees its channel in the radio ([ADR-0043](docs/decisions/0043-radio-delivery.md)).
 - Text messages of other MeshCore apps are kept, read-only, in a chat tab.
 - The top bar names what the device reaches its group through — WiFi, 4G/5G, LoRa, several at once — with a green, orange or red dot, and opens a panel with one card per connection. Browsers that do not say whether they use Wi-Fi or mobile data show "WiFi/5G".
@@ -71,7 +72,11 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 ### Deployment
 
 - Server image with the relay, the landing page and the web app, for amd64 and arm64 ([ADR-0017](docs/decisions/0017-server-serves-site-and-app.md)).
-- One-command, hardened, self-updating VPS install ([ADR-0013](docs/decisions/0013-self-updating-vps.md)) and command post kit.
+- One-command, hardened, self-updating VPS install ([ADR-0013](docs/decisions/0013-self-updating-vps.md)) and command post kit. The server runs only images signed by the project's CI, checks each update and goes back to the previous image if it does not start; CI actions and base images are pinned; the database and certificates are backed up every night, off the host if configured; failures of updates, backups and map builds can raise an alert ([ADR-0049](docs/decisions/0049-signed-images-and-checked-updates.md)).
+- Command posts no longer hold the domain's DNS key: the server obtains their certificate and each post downloads it with a token of its own, which the server can revoke ([ADR-0050](docs/decisions/0050-post-certificates-from-the-server.md)).
+- Security headers: a Content-Security-Policy for the app and the site, also built into the app's page, and a Permissions-Policy.
+- The server holds up under load and failure: the backlog goes to a joining device page by page, connections, new groups and pushes are limited per address and in all, a full disk refuses pushes instead of crashing, storage errors are answered rather than fatal, and `healthz` checks the database. Each server's store has an identity, so devices notice a server restored from a backup and send it their events again ([ADR-0045](docs/decisions/0045-server-keeps-every-distinct-envelope.md), [ADR-0046](docs/decisions/0046-store-identity.md)).
+- Third-party licences of everything the app ships, linked from the map's credits; the satellite mosaic's licence is named in its credit and a build can choose the CC BY mosaic ([ADR-0051](docs/decisions/0051-satellite-mosaic-licence.md)).
 - Landing page and user guide at tesel.eu, in Spanish and English, with annotated screenshots of the app and diagrams of how it connects.
 - Brand: a mark of three hexagonal tiles, one in signal lime, and an Archivo wordmark, used on the site, the app and its icons ([ADR-0020](docs/decisions/0020-colour-and-symbols.md)).
 - Map symbols of our own: pictograms on hexagonal tiles, coloured by family, chosen from a grid of symbols.
@@ -81,6 +86,7 @@ The first version: a shared map for a group, over the internet, over MeshCore Lo
 
 - Phones must keep the app open to share their position: no background position until the Android and iOS apps (ADR-0016). Alarm notifications reach a phone with the app in the background where the browser allows it.
 - iPhones cannot pair a radio from Safari; they use the internet or a command post.
+- Members are trusted: the app does not prove who wrote an event, so a member could write as another ([ADR-0052](docs/decisions/0052-authorship-is-not-proven.md)).
 - Over LoRa, members can impersonate each other and channel encryption is weak ([ADR-0010](docs/decisions/0010-lora-link-security.md)).
 - MeshCore `data_type` 0xFF4D is in the development range until registered.
 - Radios and command posts have been tested in software only; field tests are pending ([`docs/prueba-de-campo.md`](docs/prueba-de-campo.md)).

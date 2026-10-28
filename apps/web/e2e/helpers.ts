@@ -1,4 +1,10 @@
-import { test as base, expect, type Browser, type Page } from '@playwright/test';
+import {
+  test as base,
+  expect,
+  type Browser,
+  type BrowserContextOptions,
+  type Page,
+} from '@playwright/test';
 
 export { expect };
 
@@ -28,12 +34,29 @@ export async function chooseAlias(page: Page, alias: string): Promise<void> {
 }
 
 /** A new browser profile, located in Valencia, that has chosen its alias. */
-export async function device(browser: Browser, alias: string, path = '/'): Promise<Page> {
-  const context = await browser.newContext({ permissions: ['geolocation'], geolocation: VALENCIA });
+export async function device(
+  browser: Browser,
+  alias: string,
+  path = '/',
+  options: BrowserContextOptions = {},
+): Promise<Page> {
+  const context = await browser.newContext({
+    permissions: ['geolocation'],
+    geolocation: VALENCIA,
+    ...options,
+  });
   const page = await context.newPage();
   await page.goto(path);
   await chooseAlias(page, alias);
   return page;
+}
+
+/** Creates a group on the test server, from the groups panel, which stays open. */
+export async function createGroup(page: Page, name: string): Promise<void> {
+  await page.getByRole('button', { name: 'Grupos: Sin grupo' }).click();
+  await page.getByRole('button', { name: 'Crear grupo' }).click();
+  await page.getByLabel('Nombre del grupo').fill(name);
+  await page.getByRole('button', { name: 'Crear', exact: true }).click();
 }
 
 /**
@@ -45,10 +68,7 @@ export async function twoMembers(
   path = '/',
 ): Promise<{ ana: Page; berta: Page }> {
   const ana = await device(browser, 'Ana', path);
-  await ana.getByRole('button', { name: 'Grupos: Sin grupo' }).click();
-  await ana.getByRole('button', { name: 'Crear grupo' }).click();
-  await ana.getByLabel('Nombre del grupo').fill('Rescate Valencia');
-  await ana.getByRole('button', { name: 'Crear', exact: true }).click();
+  await createGroup(ana, 'Rescate Valencia');
   await ana.getByRole('button', { name: 'Invitar' }).click();
   const link = await ana.getByLabel('Enlace de invitación').inputValue();
   await ana.getByRole('button', { name: 'Cerrar' }).click();

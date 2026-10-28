@@ -62,6 +62,10 @@ export const en = {
     'This browser does not let Tesel keep its data: it may be a private window, or the device may be full. Try a normal window or free some space.',
   reload: 'Reload',
   radioReconnecting: 'The radio connection was lost. Connecting again…',
+  clockAhead:
+    "This device's clock is {minutes} min ahead. Set it right: the order of the group's changes depends on it.",
+  clockBehind:
+    "This device's clock is {minutes} min behind. Set it right: the order of the group's changes depends on it.",
   update: 'Update',
   readyOffline: 'The app is ready to work offline.',
 

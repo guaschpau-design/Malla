@@ -11,8 +11,8 @@ const PUSH_BURST = 20;
 const PUSHES_PER_SECOND = 2;
 /** When nothing may go now, look again this much later. */
 const PACE_MS = 500;
-/** Wait after the server refuses a push for going too fast. */
-const RATE_LIMITED_WAIT_MS = 5000;
+/** Wait after the server refuses a push for now: for going too fast, or having no room. */
+const REFUSED_WAIT_MS = 5000;
 
 interface Push {
   readonly id: string;
@@ -50,8 +50,8 @@ export class PushQueue {
     this.#sent.delete(toBase64url(key));
   }
 
-  /** The server refused a push for going too fast: it goes again a little later. */
-  rateLimited(key: Uint8Array): void {
+  /** The server could not take a push now (too fast, or no room): it goes again a little later. */
+  tryLater(key: Uint8Array): void {
     const id = toBase64url(key);
     const push = this.#sent.get(id);
     if (push === undefined) return;
@@ -60,7 +60,7 @@ export class PushQueue {
       this.#retries.delete(timer);
       this.#insert(push);
       this.#drain();
-    }, RATE_LIMITED_WAIT_MS);
+    }, REFUSED_WAIT_MS);
     this.#retries.add(timer);
   }
 

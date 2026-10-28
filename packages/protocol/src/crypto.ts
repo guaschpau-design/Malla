@@ -18,8 +18,10 @@ import {
   GROUP_SECRET_SIZE,
   KDF_INFO_CONTENT_KEY,
   KDF_INFO_EVENT_KEY,
+  KDF_INFO_NONCE_KEY,
   KDF_INFO_GROUP_ID,
   KDF_SALT,
+  NONCE_KEY_SIZE,
   MAX_ENVELOPE_SIZE,
   MAX_EVENT_SIZE,
   NODE_ID_SIZE,
@@ -66,6 +68,8 @@ export interface GroupKeys {
   readonly groupId: Uint8Array;
   readonly contentKey: Uint8Array;
   readonly eventKeyMacKey: Uint8Array;
+  /** Derives each envelope's nonce from its event (§5.1). */
+  readonly nonceKey: Uint8Array;
 }
 
 export function generateGroupSecret(random: RandomSource = secureRandom): Uint8Array {
@@ -85,6 +89,7 @@ export function deriveGroupKeys(secret: Uint8Array): GroupKeys {
     groupId: derive(KDF_INFO_GROUP_ID, GROUP_ID_SIZE),
     contentKey: derive(KDF_INFO_CONTENT_KEY, CONTENT_KEY_SIZE),
     eventKeyMacKey: derive(KDF_INFO_EVENT_KEY, EVENT_KEY_MAC_KEY_SIZE),
+    nonceKey: derive(KDF_INFO_NONCE_KEY, NONCE_KEY_SIZE),
   };
 }
 
@@ -97,18 +102,14 @@ export function eventKey(keys: GroupKeys, ref: EventRef): Uint8Array {
 // --- Envelopes ---------------------------------------------------------------------------
 
 /**
- * §5.1 Encrypts an encoded event for the internet transport. Nonces are random, so a group
- * should stay well below 2^32 envelopes under one secret; key rotation is future work.
+ * §5.1 Encrypts an encoded event for the internet transport. The nonce is derived from the event,
+ * so sealing the same event again gives the same envelope, which a server stores once.
  */
-export function sealEnvelope(
-  keys: GroupKeys,
-  event: Uint8Array,
-  random: RandomSource = secureRandom,
-): Uint8Array {
+export function sealEnvelope(keys: GroupKeys, event: Uint8Array): Uint8Array {
   if (event.length > MAX_EVENT_SIZE) {
     throw new RangeError(`events are at most ${MAX_EVENT_SIZE} bytes; encode with encodeEvent`);
   }
-  const nonce = random(ENVELOPE_NONCE_SIZE);
+  const nonce = hmac(sha256, keys.nonceKey, event).slice(0, ENVELOPE_NONCE_SIZE);
   const ciphertext = gcm(keys.contentKey, nonce, keys.groupId).encrypt(event);
   const envelope = new Uint8Array(nonce.length + ciphertext.length);
   envelope.set(nonce, 0);

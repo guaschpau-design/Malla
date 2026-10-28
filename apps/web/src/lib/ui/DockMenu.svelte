@@ -98,8 +98,8 @@
     display: grid;
     gap: 0.25rem;
     width: min(18rem, calc(100vw - 2rem));
-    /* A phone held sideways has little height: the menu scrolls rather than leave the screen. */
-    max-height: calc(100dvh - var(--dock-clearance) - env(safe-area-inset-top) - 1.5rem);
+    /* A phone held sideways has little height: the menu scrolls rather than leave the map. */
+    max-height: calc(100cqh - var(--dock-clearance) - 1.5rem);
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 0.4rem;

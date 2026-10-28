@@ -82,6 +82,17 @@ describe('relay', () => {
     expect(await stranger.isQuiet()).toBe(true);
   });
 
+  it('answers a ping, before and after joining, so clients can tell a dead link', async () => {
+    const { connect } = await start();
+    const client = await connect();
+    client.send({ t: 'ping' });
+    expect(await client.next()).toEqual({ t: 'pong' });
+    client.send({ t: 'join', group: GROUP, after: 0 });
+    await client.next();
+    client.send({ t: 'ping' });
+    expect(await client.next()).toEqual({ t: 'pong' });
+  });
+
   it('acknowledges a repeated push without relaying it again', async () => {
     const { join } = await start();
     const alice = await join();

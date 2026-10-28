@@ -381,9 +381,11 @@
     display: none;
   }
 
+  /* A size container: menus and panels on the map measure themselves against it (cqh). */
   main {
     position: relative;
     overflow: hidden;
+    container-type: size;
   }
 
   /* On narrow screens the mark stands for the name. */

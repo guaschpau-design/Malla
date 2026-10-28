@@ -262,6 +262,7 @@ A group is a 16-byte random **group secret** `S`, generated with a cryptographic
 | Group ID              | `HKDF-SHA256(ikm = S, salt = "tesel/v1", info = "group-id")`    | 16 bytes |
 | Content key           | `HKDF-SHA256(ikm = S, salt = "tesel/v1", info = "content-key")` | 32 bytes |
 | Event-key MAC key     | `HKDF-SHA256(ikm = S, salt = "tesel/v1", info = "event-key")`   | 32 bytes |
+| Nonce key             | `HKDF-SHA256(ikm = S, salt = "tesel/v1", info = "nonce-key")`   | 32 bytes |
 | Event key of an event | `HMAC-SHA256(eventKeyMacKey, origin ‖ seq as u32)`, truncated   | 16 bytes |
 
 Strings are ASCII. The group ID is public; the others are secret.
@@ -271,12 +272,13 @@ Strings are ASCII. The group ID is public; the others are secret.
 Events sent over the internet are sealed in an envelope:
 
 ```
-envelope = nonce (12 bytes, random) ‖ AES-256-GCM(contentKey, nonce, event, aad = groupId)
+envelope = nonce (12 bytes) ‖ AES-256-GCM(contentKey, nonce, event, aad = groupId)
+nonce    = HMAC-SHA256(nonceKey, event), truncated to 12 bytes
 ```
 
 The ciphertext includes the 16-byte GCM tag, so an envelope is at most 12 + 165 + 16 = 193 bytes. A receiver that fails to open an envelope MUST discard it silently.
 
-Nonces are random, so a group SHOULD stay well below 2³² envelopes under one secret (the AES-GCM bound for random nonces). Key rotation is future work.
+The nonce is derived from the event, so the same event always gives the same envelope: a retry, a re-push or a bridge forwarding an event the server already has adds nothing to the server's store (§8). Different events get unrelated nonces, as random ones would be, so a group SHOULD stay well below 2³² distinct events under one secret (the AES-GCM bound for random nonces). An envelope reveals only that it carries the same event as another, which its event key (§5) already does. Receivers do not check how the nonce was made: envelopes sealed by earlier versions, with random nonces, open the same way. Key rotation is future work.
 
 ## 6. Invitations
 
@@ -321,6 +323,7 @@ Clients connect to `v1/ws` relative to the server base URL, with the scheme chan
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `{"t": "join", "group": GROUP_ID, "after": CURSOR}` | Subscribe to a group and receive every envelope with a cursor greater than `after` (`0` for everything) |
 | `{"t": "push", "key": EVENT_KEY, "env": ENVELOPE}`  | Store and relay an envelope                                                                             |
+| `{"t": "ping"}`                                     | Ask whether the connection is alive, joined or not; the server answers `pong`                           |
 
 **Server to client**
 
@@ -329,6 +332,7 @@ Clients connect to `v1/ws` relative to the server base URL, with the scheme chan
 | `{"t": "env", "cursor": N, "key": EVENT_KEY, "env": ENVELOPE}` | A stored envelope; `cursor` increases per group                                                                            |
 | `{"t": "synced", "cursor": N, "store": STORE_ID}`              | The backlog after `after` has been sent; live envelopes follow. `store` is the server's store identity                     |
 | `{"t": "stored", "key": EVENT_KEY}`                            | The pushed envelope is stored, now or already before                                                                       |
+| `{"t": "pong"}`                                                | The answer to `ping`                                                                                                       |
 | `{"t": "error", "code": CODE, "key": EVENT_KEY}`               | `bad-request`, `too-large`, `rate-limited`, `not-joined` or `unavailable`; `key` is present when the error concerns a push |
 
 - If `after` is greater than the group's last cursor, for instance because the server lost data or deleted a quiet group's envelopes, the server sends every envelope it has, then `synced` with its last cursor. Clients always adopt the cursor of `synced`.
@@ -337,6 +341,7 @@ Clients connect to `v1/ws` relative to the server base URL, with the scheme chan
 - The server MUST reject envelopes larger than 193 bytes with `too-large`, and envelopes smaller than 42 bytes (nonce, event header and tag) with `bad-request`. It answers `unavailable` when it cannot store a push now, for instance with its disk nearly full; the client keeps the envelope and pushes it again later.
 - The server SHOULD rate-limit pushes per connection, per group and in all, and MAY delete envelopes older than a configured retention period.
 - The server MAY limit connections in all and per client address, refusing the WebSocket upgrade with HTTP `503`; it MAY limit the groups it does not know that one address joins, answering such a `join` with `rate-limited` and closing the connection. It closes connections that have not joined a group within a few seconds.
+- A client SHOULD send `ping` after some 25 seconds without a message from the server and SHOULD give the connection up if nothing comes back within some 20 seconds more: connections can die without closing.
 - The server never receives the group secret, the content key or plaintext events.
 
 ### 8.1 Server information
@@ -406,7 +411,7 @@ Only warnings that have not expired are listed, at the time of the request. The 
 
 ## 9. Versioning
 
-This document describes protocol version 1. Adding event types, symbol codes or style codes does not change the version. Version 1 is frozen with the first release, v0.1.0; until then it still changed in place (the `env` message gained `key`, and §8.1–8.3 were added, for command posts). Changing any existing layout, derivation or transport rule requires version 2, a new ADR and a migration plan.
+This document describes protocol version 1. Adding event types, symbol codes or style codes does not change the version. Version 1 is frozen with the first release, v0.1.0; until then it still changed in place: the `env` message gained `key`, and §8.1–8.3 were added, for command posts; §3.1 gained the rules on an author's times and on damaged events, and §3.8 the SOS without a place; envelope nonces became derived from the event (§5.1); `synced` gained the store identity, servers keep every distinct envelope, the error `unavailable` was added, and `healthz` gained `time`, and `ping` and `pong` were added (§8). Changing any existing layout, derivation or transport rule requires version 2, a new ADR and a migration plan.
 
 ## 10. Log files
 

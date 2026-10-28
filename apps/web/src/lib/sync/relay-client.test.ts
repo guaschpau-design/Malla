@@ -1,7 +1,12 @@
 import { encodeRelayMessage, parseClientMessage, type ServerMessage } from '@tesel/protocol';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { RelayClient, type RelayStatus, type SocketLike } from './relay-client.ts';
+import {
+  RelayClient,
+  type RelayPosition,
+  type RelayStatus,
+  type SocketLike,
+} from './relay-client.ts';
 
 class FakeSocket implements SocketLike {
   readonly url: string;
@@ -39,8 +44,16 @@ const flush = () => vi.advanceTimersByTimeAsync(0);
 const SERVER = 'https://relay.example/';
 const POST = 'https://post.example/';
 
-function setup(cursor = 0, relays: readonly string[] = [SERVER], failingBatches = 0) {
+function setup(
+  cursor = 0,
+  relays: readonly string[] = [SERVER],
+  failingBatches = 0,
+  store: string | null = null,
+) {
   let failures = failingBatches;
+  /** What the device has stored for the relay. */
+  let position: RelayPosition = { cursor, store };
+  const storeChanges: string[] = [];
   const sockets: FakeSocket[] = [];
   const statuses: RelayStatus[] = [];
   /** Each batch handed on, as its envelopes' cursors. */
@@ -59,9 +72,9 @@ function setup(cursor = 0, relays: readonly string[] = [SERVER], failingBatches 
       return socket;
     },
     handlers: {
-      cursor: (relay) => {
+      position: (relay) => {
         cursorsAsked.push(relay);
-        return Promise.resolve(cursor);
+        return Promise.resolve(position);
       },
       onEnvelopes: (batch) => {
         if (failures-- > 0) return Promise.reject(new Error('disk full'));
@@ -70,15 +83,21 @@ function setup(cursor = 0, relays: readonly string[] = [SERVER], failingBatches 
         return Promise.resolve();
       },
       onSynced: (at, relay) => {
-        synced.push(`${at}@${relay}`);
-        handled.push(`synced at ${String(at)}`);
+        position = at;
+        synced.push(`${String(at.cursor)}@${relay}`);
+        handled.push(`synced at ${String(at.cursor)}`);
+        return Promise.resolve();
+      },
+      onStoreChanged: (changed) => {
+        position = { cursor: 0, store: changed };
+        storeChanges.push(changed);
         return Promise.resolve();
       },
       onStored: () => Promise.resolve(),
       onStatus: (status) => statuses.push(status),
     },
   });
-  return { client, sockets, statuses, envelopes, handled, synced, cursorsAsked };
+  return { client, sockets, statuses, envelopes, handled, synced, cursorsAsked, storeChanges };
 }
 
 beforeEach(() => {
@@ -146,7 +165,7 @@ describe('relay client', () => {
     first.open();
     await flush();
     first.receive({ t: 'env', cursor: 8, key: new Uint8Array(16), env: new Uint8Array(50) });
-    first.receive({ t: 'synced', cursor: 8 });
+    first.receive({ t: 'synced', cursor: 8, store: STORE });
     await flush();
     // The sync after the lost batch must not store a cursor past it.
     expect(synced).toEqual([]);
@@ -161,10 +180,66 @@ describe('relay client', () => {
       value: { t: 'join', group: GROUP, after: 7 },
     });
     second.receive({ t: 'env', cursor: 8, key: new Uint8Array(16), env: new Uint8Array(50) });
-    second.receive({ t: 'synced', cursor: 8 });
+    second.receive({ t: 'synced', cursor: 8, store: STORE });
     await flush();
     expect(envelopes).toEqual([[8]]);
     expect(synced).toEqual([`8@${SERVER}`]);
+  });
+
+  it('starts over when the relay has another store than the one it read from', async () => {
+    const OLD = 'BBBBBBBBBBBBBBBBBBBBBA';
+    const { client, sockets, synced, storeChanges } = setup(500, [SERVER], 0, OLD);
+    client.start();
+    await flush();
+    const first = sockets[0];
+    if (!first) throw new Error('no socket');
+    first.open();
+    await flush();
+    first.receive({ t: 'synced', cursor: 20, store: STORE });
+    await flush();
+    expect(storeChanges).toEqual([STORE]);
+    expect(synced).toEqual([]);
+    // It joins the same relay again at once, from the start of the new store.
+    const second = sockets[1];
+    if (!second) throw new Error('no second socket');
+    expect(second.url).toBe(first.url);
+    second.open();
+    await flush();
+    expect(parseClientMessage(second.sent[0] ?? '')).toEqual({
+      ok: true,
+      value: { t: 'join', group: GROUP, after: 0 },
+    });
+    second.receive({ t: 'synced', cursor: 20, store: STORE });
+    await flush();
+    expect(synced).toEqual([`20@${SERVER}`]);
+    expect(client.status).toBe('synced');
+  });
+
+  it('gives up a link that stays silent after a ping, and connects again', async () => {
+    const { client, sockets, statuses } = setup();
+    client.start();
+    await flush();
+    const socket = sockets[0];
+    if (!socket) throw new Error('no socket');
+    socket.open();
+    await flush();
+    socket.receive({ t: 'synced', cursor: 0, store: STORE });
+    await flush();
+    await vi.advanceTimersByTimeAsync(25_000);
+    expect(parseClientMessage(socket.sent.at(-1) ?? '')).toEqual({
+      ok: true,
+      value: { t: 'ping' },
+    });
+    // A pong keeps the link.
+    socket.receive({ t: 'pong' });
+    await vi.advanceTimersByTimeAsync(25_000 + 19_000);
+    expect(client.status).toBe('synced');
+    // Silence after the next ping does not.
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(statuses.at(-1)).toBe('disconnected');
+    expect(sockets).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(sockets).toHaveLength(2);
   });
 
   it('only pushes once synced', async () => {

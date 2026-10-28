@@ -7,6 +7,7 @@ import {
   parseClientMessage,
   parseServerInfo,
   parseServerMessage,
+  parseServerTime,
   relayUrl,
   sameServer,
   serverInfoUrl,
@@ -23,6 +24,7 @@ describe('relay messages', () => {
     for (const message of [
       { t: 'join', group: GROUP, after: 0 },
       { t: 'push', key: KEY, env: ENV },
+      { t: 'ping' },
     ] as const) {
       expect(parseClientMessage(encodeRelayMessage(message))).toEqual({ ok: true, value: message });
     }
@@ -33,6 +35,7 @@ describe('relay messages', () => {
       { t: 'env', cursor: 7, key: KEY, env: ENV },
       { t: 'synced', cursor: 7, store: STORE },
       { t: 'stored', key: KEY },
+      { t: 'pong' },
       { t: 'error', code: 'rate-limited', key: KEY },
       { t: 'error', code: 'unavailable', key: KEY },
       { t: 'error', code: 'not-joined', key: null },
@@ -87,6 +90,15 @@ describe('relay messages', () => {
     expect(parseServerMessage('{"t":"synced","cursor":7}')).toBeNull();
     expect(parseServerMessage('{"t":"synced","cursor":7,"store":"AQID"}')).toBeNull();
     expect(parseServerMessage('{"t":"synced","cursor":7,"store":7}')).toBeNull();
+  });
+
+  it('reads the server clock, when the server gives it', () => {
+    expect(parseServerTime('{"status":"ok","protocolVersion":1,"time":1793000000}')).toBe(
+      1793000000,
+    );
+    expect(parseServerTime('{"status":"ok","protocolVersion":1}')).toBeNull();
+    expect(parseServerTime('{"time":"soon"}')).toBeNull();
+    expect(parseServerTime('not json')).toBeNull();
   });
 
   it('derives the WebSocket URL from the server base URL', () => {

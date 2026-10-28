@@ -45,7 +45,7 @@ describe('push queue', () => {
     queue.add(key(1), env, 'chat');
     queue.add(key(2), env, 'chat');
     queue.stored(key(1));
-    queue.rateLimited(key(2));
+    queue.tryLater(key(2));
     expect(sent).toEqual([1, 2]);
     await vi.advanceTimersByTimeAsync(4999);
     expect(sent).toEqual([1, 2]);
@@ -58,7 +58,7 @@ describe('push queue', () => {
     queue.add(key(1), env, 'chat');
     queue.add(key(1), env, 'chat');
     expect(sent).toEqual([1]);
-    queue.rateLimited(key(1));
+    queue.tryLater(key(1));
     queue.clear();
     await vi.advanceTimersByTimeAsync(10_000);
     expect(sent).toEqual([1]);

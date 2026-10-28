@@ -63,6 +63,10 @@ export const es: Messages = {
     'Este navegador no deja a Tesel guardar sus datos: puede ser una ventana privada o que el dispositivo esté lleno. Prueba en una ventana normal o libera espacio.',
   reload: 'Recargar',
   radioReconnecting: 'Se ha perdido la conexión con la radio. Volviendo a conectar…',
+  clockAhead:
+    'El reloj de este dispositivo va {minutes} min adelantado. Ponlo en hora: el orden de los cambios del grupo depende de él.',
+  clockBehind:
+    'El reloj de este dispositivo va {minutes} min atrasado. Ponlo en hora: el orden de los cambios del grupo depende de él.',
   update: 'Actualizar',
   readyOffline: 'La app ya funciona sin conexión.',
   welcomeTitle: 'Te damos la bienvenida a Tesel',

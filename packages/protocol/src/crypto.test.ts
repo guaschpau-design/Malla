@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { gcm } from '@noble/ciphers/aes.js';
 
 import { MAX_ENVELOPE_SIZE, MAX_EVENT_SIZE } from './constants.ts';
 import {
@@ -61,19 +62,27 @@ describe('envelopes', () => {
   const event = Uint8Array.from({ length: MAX_EVENT_SIZE }, (_, i) => i & 0xff);
 
   it('round-trips an event and stays within the size limit', () => {
-    const envelope = sealEnvelope(keys, event, seededRandom(1));
+    const envelope = sealEnvelope(keys, event);
     expect(envelope.length).toBe(MAX_ENVELOPE_SIZE);
     expect(openEnvelope(keys, envelope)).toEqual(event);
   });
 
-  it('uses a fresh nonce for every envelope', () => {
-    const first = sealEnvelope(keys, event);
-    const second = sealEnvelope(keys, event);
-    expect(toHex(first)).not.toBe(toHex(second));
+  it('seals the same event into the same envelope, and other events with other nonces', () => {
+    expect(toHex(sealEnvelope(keys, event))).toBe(toHex(sealEnvelope(keys, event)));
+    const other = event.slice();
+    other[0] = 0xff;
+    const nonce = (envelope: Uint8Array) => toHex(envelope.subarray(0, 12));
+    expect(nonce(sealEnvelope(keys, other))).not.toBe(nonce(sealEnvelope(keys, event)));
+  });
+
+  it('opens envelopes sealed with a random nonce, as earlier versions did', () => {
+    const nonce = seededRandom(1)(12);
+    const sealed = gcm(keys.contentKey, nonce, keys.groupId).encrypt(event);
+    expect(openEnvelope(keys, Uint8Array.from([...nonce, ...sealed]))).toEqual(event);
   });
 
   it('refuses a tampered envelope', () => {
-    const envelope = sealEnvelope(keys, event, seededRandom(1));
+    const envelope = sealEnvelope(keys, event);
     envelope[20] = (envelope[20] ?? 0) ^ 1;
     expect(openEnvelope(keys, envelope)).toBeNull();
   });

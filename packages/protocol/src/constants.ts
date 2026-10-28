@@ -66,12 +66,14 @@ export const GROUP_ID_SIZE = 16;
 export const CONTENT_KEY_SIZE = 32;
 export const EVENT_KEY_SIZE = 16;
 export const EVENT_KEY_MAC_KEY_SIZE = 32;
+export const NONCE_KEY_SIZE = 32;
 
 /** §5 HKDF salt and info strings. */
 export const KDF_SALT = 'tesel/v1';
 export const KDF_INFO_GROUP_ID = 'group-id';
 export const KDF_INFO_CONTENT_KEY = 'content-key';
 export const KDF_INFO_EVENT_KEY = 'event-key';
+export const KDF_INFO_NONCE_KEY = 'nonce-key';
 
 /** §5.1 AES-GCM nonce and tag sizes, and the resulting largest envelope. */
 export const ENVELOPE_NONCE_SIZE = 12;
