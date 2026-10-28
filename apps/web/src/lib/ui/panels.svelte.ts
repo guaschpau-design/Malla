@@ -20,6 +20,10 @@ export function togglePanel(name: PanelName): void {
   panels.open = panels.open === name ? null : name;
 }
 
+export function openPanel(name: PanelName): void {
+  panels.open = name;
+}
+
 export function closePanel(): void {
   panels.open = null;
 }

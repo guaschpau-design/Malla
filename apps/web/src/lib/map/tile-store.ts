@@ -1,19 +1,17 @@
 // Offline storage of map tiles and of the areas they were downloaded for (IndexedDB).
 //
-// Each tile is stored under its source and coordinates. Areas may overlap, so each tile records
-// which areas need it; deleting an area only removes tiles that no remaining area uses.
+// Each tile is stored under its source and coordinates, and records who needs it: the areas it was
+// downloaded for and the overview of the base map (offline/overview.ts). Areas may overlap; deleting
+// one only removes tiles nothing else needs. Tiles the map showed while online are kept too, the
+// latest of them up to a size, so that a place seen once can be seen again offline (ADR-0056).
 
-import {
-  openDB,
-  type DBSchema,
-  type IDBPDatabase,
-  type IDBPTransaction,
-  type StoreNames,
-} from 'idb';
+import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 
+import { isStorageFull } from '../storage/storage-space.svelte.ts';
 import { IGNORE_VERSION_CHANGE, type VersionChange } from '../storage/version-change.ts';
 import { tileKey, tilesInBounds, type Bounds, type TileCoord } from './tile-math.ts';
 import type { TileSourceId } from './tile-sources.ts';
+import { keyBySource, renameSources } from './tile-store-upgrades.ts';
 
 /** One source of an area and the zoom up to which its tiles were downloaded. */
 export interface AreaLayer {
@@ -41,22 +39,51 @@ export interface StoredTile {
   readonly data: ArrayBuffer;
 }
 
+/** Which of the tiles an owner asked for were stored already, and which are still to download. */
+export interface KeptTiles {
+  readonly missing: TileCoord[];
+  /** How many were stored, and their size. */
+  readonly kept: number;
+  readonly bytes: number;
+}
+
 export interface TileStore {
   getTile(source: TileSourceId, tile: TileCoord): Promise<ArrayBuffer | undefined>;
-  /** Stores tiles of one source for an area in one transaction. */
-  putTiles(areaId: string, source: TileSourceId, tiles: readonly StoredTile[]): Promise<void>;
+  /**
+   * Stores tiles of one source for an owner in one transaction: an area, under its id, or the
+   * overview.
+   */
+  putTiles(owner: string, source: TileSourceId, tiles: readonly StoredTile[]): Promise<void>;
+  /**
+   * Records that `owner` needs those of `tiles` already stored, for whatever reason, so they need
+   * not be downloaded again; returns the others.
+   */
+  keepStored(owner: string, source: TileSourceId, tiles: readonly TileCoord[]): Promise<KeptTiles>;
+  /** Keeps a tile the map showed, among the latest ones seen. Never fails: it is a cache. */
+  keepViewed(source: TileSourceId, tile: TileCoord, data: ArrayBuffer): Promise<void>;
   saveArea(area: OfflineArea): Promise<void>;
   listAreas(): Promise<OfflineArea[]>;
   deleteArea(area: OfflineArea): Promise<void>;
 }
 
-interface MapDb extends DBSchema {
+export interface MapDb extends DBSchema {
+  /** Every tile, with who needs it: no one, for a tile kept only because it was seen. */
   tiles: { key: string; value: { data: ArrayBuffer; areas: string[] } };
   areas: { key: string; value: OfflineArea };
+  /** Tiles kept because the map showed them: when, and their size, by the key of the tile. */
+  viewed: { key: string; value: { seen: number; size: number } };
 }
 
 const DB_NAME = 'tesel-map';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
+
+/**
+ * Room for tiles seen online: some 2,500 tiles of the street map, a city and its surroundings
+ * looked at closely. Downloaded areas are where offline maps are meant to come from.
+ */
+const VIEWED_BYTES = 64 * 1024 * 1024;
+/** Tiles seen between two checks of the room they take. */
+const VIEWED_CHECK_EVERY = 64;
 
 /** Where a tile is kept: its source, then z/x/y. */
 function storageKey(source: TileSourceId, tile: TileCoord): string {
@@ -81,78 +108,16 @@ export async function openTileStore(
       // The upgrade transaction stays open while its requests run; openDB resolves after.
       if (oldVersion === 1) void keyBySource(transaction);
       if (oldVersion === 2 || oldVersion === 3) void renameSources(transaction);
+      if (oldVersion < 5) database.createObjectStore('viewed');
     },
   });
   return new IndexedDbTileStore(db);
 }
 
-/**
- * Version 1 had one source, the base map: its tiles were keyed z/x/y and its areas had one
- * maxZoom. They become the base map's, under the keys and layers of version 2.
- */
-async function keyBySource(
-  transaction: IDBPTransaction<MapDb, StoreNames<MapDb>[], 'versionchange'>,
-): Promise<void> {
-  const tiles = transaction.objectStore('tiles');
-  for (let cursor = await tiles.openCursor(); cursor; cursor = await cursor.continue()) {
-    const key = cursor.key;
-    if (!/^\d+\/\d+\/\d+$/.test(key)) continue;
-    await tiles.put(cursor.value, `basemap/${key}`);
-    await cursor.delete();
-  }
-  const areas = transaction.objectStore('areas');
-  for (let cursor = await areas.openCursor(); cursor; cursor = await cursor.continue()) {
-    const old = cursor.value as OfflineArea & { maxZoom?: number };
-    if (old.maxZoom === undefined) continue;
-    const { maxZoom, ...rest } = old;
-    await cursor.update({ ...rest, layers: [{ source: 'basemap', maxZoom }] });
-  }
-}
-
-/**
- * What became of the sources of versions 2 and 3: a new name, or nothing where their tiles cannot be
- * drawn as the source of that name is now.
- */
-const FORMER_SOURCES: Readonly<Record<string, TileSourceId | null>> = {
-  // Scanned topographic sheets; the topographic map is drawn from vector data (ADR-0034).
-  'ign-topo': null,
-  // IGN's vector map, read now only for the names of the terrain (ADR-0037).
-  'ign-contours': 'ign-names',
-  // Spain's orthophotos, now joined with Portugal's and France's (ADR-0037).
-  'ign-ortho': 'ortho',
-  // Elevation in other encodings and sizes than Mapterhorn's (ADR-0037).
-  'ign-relief': null,
-  terrain: null,
-};
-
-/** Moves the tiles of former sources to their new names, drops the rest, and updates the areas. */
-async function renameSources(
-  transaction: IDBPTransaction<MapDb, StoreNames<MapDb>[], 'versionchange'>,
-): Promise<void> {
-  const tiles = transaction.objectStore('tiles');
-  for (const [former, current] of Object.entries(FORMER_SOURCES)) {
-    const range = IDBKeyRange.bound(`${former}/`, `${former}/\uffff`);
-    for (let cursor = await tiles.openCursor(range); cursor; cursor = await cursor.continue()) {
-      if (current !== null) {
-        await tiles.put(cursor.value, `${current}${cursor.key.slice(former.length)}`);
-      }
-      await cursor.delete();
-    }
-  }
-  const areas = transaction.objectStore('areas');
-  for (let cursor = await areas.openCursor(); cursor; cursor = await cursor.continue()) {
-    const area = cursor.value;
-    const layers = area.layers.flatMap((layer) => {
-      const current = FORMER_SOURCES[layer.source];
-      if (current === undefined) return [layer];
-      return current === null ? [] : [{ ...layer, source: current }];
-    });
-    await cursor.update({ ...area, layers });
-  }
-}
-
 class IndexedDbTileStore implements TileStore {
   private readonly db: IDBPDatabase<MapDb>;
+  /** Tiles seen since the room they take was last checked. */
+  private viewedSinceCheck = 0;
 
   constructor(db: IDBPDatabase<MapDb>) {
     this.db = db;
@@ -162,21 +127,67 @@ class IndexedDbTileStore implements TileStore {
     return (await this.db.get('tiles', storageKey(source, tile)))?.data;
   }
 
-  async putTiles(
-    areaId: string,
-    source: TileSourceId,
-    tiles: readonly StoredTile[],
-  ): Promise<void> {
-    const tx = this.db.transaction('tiles', 'readwrite');
-    await Promise.all(
-      tiles.map(async ({ tile, data }) => {
+  async putTiles(owner: string, source: TileSourceId, tiles: readonly StoredTile[]): Promise<void> {
+    const tx = this.db.transaction(['tiles', 'viewed'], 'readwrite');
+    const store = tx.objectStore('tiles');
+    await Promise.all([
+      ...tiles.map(async ({ tile, data }) => {
         const key = storageKey(source, tile);
-        const existing = await tx.store.get(key);
-        const areas = existing ? [...new Set([...existing.areas, areaId])] : [areaId];
-        await tx.store.put({ data, areas }, key);
+        const existing = await store.get(key);
+        await store.put({ data, areas: withOwner(existing?.areas ?? [], owner) }, key);
+        // Needed now, it is no longer only a tile seen.
+        await tx.objectStore('viewed').delete(key);
+      }),
+      tx.done,
+    ]);
+  }
+
+  async keepStored(
+    owner: string,
+    source: TileSourceId,
+    tiles: readonly TileCoord[],
+  ): Promise<KeptTiles> {
+    const tx = this.db.transaction(['tiles', 'viewed'], 'readwrite');
+    const store = tx.objectStore('tiles');
+    const sizes = await Promise.all(
+      tiles.map(async (tile) => {
+        const key = storageKey(source, tile);
+        const existing = await store.get(key);
+        if (existing === undefined) return null;
+        await store.put({ data: existing.data, areas: withOwner(existing.areas, owner) }, key);
+        await tx.objectStore('viewed').delete(key);
+        return existing.data.byteLength;
       }),
     );
     await tx.done;
+    const kept = sizes.filter((size) => size !== null);
+    return {
+      missing: tiles.filter((_, index) => sizes[index] === null),
+      kept: kept.length,
+      bytes: kept.reduce((sum, size) => sum + size, 0),
+    };
+  }
+
+  async keepViewed(source: TileSourceId, tile: TileCoord, data: ArrayBuffer): Promise<void> {
+    try {
+      const tx = this.db.transaction(['tiles', 'viewed'], 'readwrite');
+      const key = storageKey(source, tile);
+      if ((await tx.objectStore('tiles').getKey(key)) === undefined) {
+        await Promise.all([
+          tx.objectStore('tiles').put({ data, areas: [] }, key),
+          tx.objectStore('viewed').put({ seen: Date.now(), size: data.byteLength }, key),
+        ]);
+      }
+      await tx.done;
+      if (++this.viewedSinceCheck >= VIEWED_CHECK_EVERY) {
+        this.viewedSinceCheck = 0;
+        await this.forgetViewed(VIEWED_BYTES);
+      }
+    } catch (error) {
+      console.warn('Keeping a tile seen failed', error);
+      // Tiles seen are the first to go when the storage is full: the group's log needs the room.
+      if (isStorageFull(error)) await this.forgetViewed(0).catch(() => undefined);
+    }
   }
 
   async saveArea(area: OfflineArea): Promise<void> {
@@ -204,4 +215,30 @@ class IndexedDbTileStore implements TileStore {
     await tx.objectStore('areas').delete(area.id);
     await tx.done;
   }
+
+  /** Forgets the tiles seen longest ago, until those left take at most `room` bytes. */
+  private async forgetViewed(room: number): Promise<void> {
+    const tx = this.db.transaction(['tiles', 'viewed'], 'readwrite');
+    const viewed = tx.objectStore('viewed');
+    const [keys, entries] = await Promise.all([viewed.getAllKeys(), viewed.getAll()]);
+    const seen = entries
+      .map((entry, index) => ({ ...entry, key: keys[index] ?? '' }))
+      .sort((a, b) => a.seen - b.seen);
+    let bytes = seen.reduce((sum, entry) => sum + entry.size, 0);
+    const forget: string[] = [];
+    for (const entry of seen) {
+      if (bytes <= room) break;
+      forget.push(entry.key);
+      bytes -= entry.size;
+    }
+    await Promise.all([
+      ...forget.flatMap((key) => [viewed.delete(key), tx.objectStore('tiles').delete(key)]),
+      tx.done,
+    ]);
+  }
+}
+
+/** The owners of a tile with one more, once. */
+function withOwner(owners: readonly string[], owner: string): string[] {
+  return owners.includes(owner) ? [...owners] : [...owners, owner];
 }

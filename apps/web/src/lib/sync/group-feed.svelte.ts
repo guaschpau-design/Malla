@@ -52,6 +52,7 @@ import { hear, NOTHING_HEARD, type Heard } from '../links/heard.ts';
 import type { Channel } from '../links/links.ts';
 import type { DeviceFix } from '../position/device-location.svelte.ts';
 import type { AppDb, OutboxEntry } from '../storage/app-db.ts';
+import { storageRefusals } from '../storage/storage-space.svelte.ts';
 import { defaultServerUrl } from '../config.ts';
 import type { TaskFields } from '../tasks/tasks.ts';
 import { loadPosition, savePosition } from './cursor-store.ts';
@@ -393,7 +394,11 @@ export class GroupFeed {
     if (event) this.#lora?.offer({ event, bytes }, 'own');
   }
 
-  /** A batch from the relay: stored with its cursor, then applied to the picture at once. */
+  /**
+   * A batch from the relay: stored with its cursor, then applied to the picture at once. If it
+   * cannot be stored, the cursor stays behind it and the relay sends it again on reconnecting; a
+   * full storage is told to the user meanwhile.
+   */
   async #receive(
     batch: readonly ReceivedEnvelope[],
     relay: string,
@@ -407,6 +412,9 @@ export class GroupFeed {
     const readTo = { relay, position: { cursor: last.cursor, store } };
     const received = await receiveEvents(this.#db, this.#group.id, this.#current(opened), {
       readTo,
+    }).catch((error: unknown) => {
+      storageRefusals.note(error);
+      throw error;
     });
     await this.#apply(received.map(({ bytes }) => bytes));
     for (const { bytes } of received) {

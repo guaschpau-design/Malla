@@ -1,4 +1,4 @@
-// Serves map tiles to MapLibre through one protocol for every source: downloaded tiles first,
+// Serves map tiles to MapLibre through one protocol for every source: stored tiles first,
 // then the network (tile-sources.ts).
 
 import { addProtocol } from 'maplibre-gl';
@@ -7,7 +7,7 @@ import { PMTiles } from 'pmtiles';
 import type { TileArchive } from './area-download.ts';
 import { EMPTY_RASTER_TILE, EMPTY_VECTOR_TILE, FLAT_TERRAIN_TILE } from './empty-tiles.ts';
 import { orthoArchive } from './ortho.ts';
-import type { TileCoord } from './tile-math.ts';
+import type { Bounds, TileCoord } from './tile-math.ts';
 import type { TileStore } from './tile-store.ts';
 import {
   namesTileUrl,
@@ -26,14 +26,26 @@ export function tileUrlTemplate(source: TileSourceId): string {
 
 const TILE_URL_PATTERN = new RegExp(`^${PROTOCOL}://([a-z-]+)/(\\d+)/(\\d+)/(\\d+)$`);
 
-function pmtilesArchive(url: string): TileArchive {
+/** Our base map: one PMTiles archive, which also says what part of the world it covers. */
+export interface BasemapArchive extends TileArchive {
+  bounds(): Promise<Bounds>;
+}
+
+function pmtilesArchive(url: string): BasemapArchive {
   const archive = new PMTiles(url);
   return {
     async getTile(z, x, y, signal) {
       return (await archive.getZxy(z, x, y, signal))?.data;
     },
+    async bounds() {
+      const { minLon, minLat, maxLon, maxLat } = await archive.getHeader();
+      return { west: minLon, south: minLat, east: maxLon, north: maxLat };
+    },
   };
 }
+
+/** What reading a tile needs of the tile store: the tiles it holds, and keeping those seen. */
+export type TileReader = Pick<TileStore, 'getTile' | 'keepViewed'>;
 
 /** What each source shows where it has no tile (empty-tiles.ts). */
 const NOTHING: Readonly<Record<TileSourceId, ArrayBuffer>> = {
@@ -43,7 +55,9 @@ const NOTHING: Readonly<Record<TileSourceId, ArrayBuffer>> = {
   terrain: FLAT_TERRAIN_TILE,
 };
 
-export type TileArchives = Readonly<Record<TileSourceId, TileArchive>>;
+export interface TileArchives extends Readonly<Record<TileSourceId, TileArchive>> {
+  readonly basemap: BasemapArchive;
+}
 
 /** Where each source's tiles come from when they are not downloaded. */
 export function tileArchives(basemapUrl: string): TileArchives {
@@ -55,23 +69,31 @@ export function tileArchives(basemapUrl: string): TileArchives {
   };
 }
 
-/** One tile of a source: downloaded first, then the network; undefined if it cannot be had. */
+/**
+ * One tile of a source: stored first (downloaded, or seen before), then the network; undefined if
+ * it cannot be had. A tile from the network is kept among those seen, for when there is none.
+ */
 export async function findTile(
   source: TileSourceId,
   tile: TileCoord,
-  store: TileStore,
+  store: TileReader,
   archives: TileArchives,
   signal?: AbortSignal,
 ): Promise<ArrayBuffer | undefined> {
   const local = await store.getTile(source, tile);
   if (local !== undefined) return local;
   try {
-    return await archives[source].getTile(
+    const data = await archives[source].getTile(
       tile.z,
       tile.x,
       tile.y,
       signal ?? new AbortController().signal,
     );
+    // A copy: MapLibre takes the bytes it is given away to its workers, and the store keeps them
+    // once its transaction is under way.
+    if (data !== undefined && data.byteLength > 0)
+      void store.keepViewed(source, tile, data.slice(0));
+    return data;
   } catch {
     return undefined;
   }
@@ -84,7 +106,7 @@ export async function findTile(
  */
 export async function loadTile(
   url: string,
-  store: TileStore,
+  store: TileReader,
   archives: TileArchives,
   signal: AbortSignal,
 ): Promise<ArrayBuffer> {
@@ -95,7 +117,7 @@ export async function loadTile(
   return (await findTile(source, { z, x, y }, store, archives, signal)) ?? NOTHING[source];
 }
 
-export function registerTileProtocol(store: TileStore, archives: TileArchives): void {
+export function registerTileProtocol(store: TileReader, archives: TileArchives): void {
   addProtocol(PROTOCOL, async (params, abortController) => ({
     data: await loadTile(params.url, store, archives, abortController.signal),
   }));

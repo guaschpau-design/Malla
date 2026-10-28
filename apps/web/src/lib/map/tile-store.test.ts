@@ -62,6 +62,40 @@ describe('offline tile store', () => {
     expect((await store.listAreas()).map((x) => x.id)).toEqual(['b']);
   });
 
+  it('tells which tiles a new owner still needs, and keeps the others for it too', async () => {
+    const store = await freshStore();
+    const a = area('a', { west: 2.1, south: 41.35, east: 2.2, north: 41.42 });
+    const stored = tilesOf(a);
+    await store.putTiles(a.id, 'basemap', stored.slice(1));
+    await store.saveArea(a);
+    const kept = await store.keepStored(
+      'overview',
+      'basemap',
+      stored.map(({ tile }) => tile),
+    );
+    expect(kept.missing).toEqual([stored[0]?.tile]);
+    expect(kept.kept).toBe(stored.length - 1);
+    expect(kept.bytes).toBe(3 * (stored.length - 1));
+    await store.deleteArea(a);
+    for (const { tile } of stored.slice(1)) {
+      expect(await store.getTile('basemap', tile)).toBeDefined();
+    }
+  });
+
+  it('keeps the latest tiles seen up to its room, unless an area needs them', async () => {
+    const store = await freshStore();
+    const seen = (x: number) => ({ z: 18, x, y: 0 });
+    const data = new ArrayBuffer(600 * 1024);
+    // The first tile seen is downloaded with an area afterwards: it is not the cache's to drop.
+    await store.keepViewed('basemap', seen(0), data);
+    await store.putTiles('a', 'basemap', [{ tile: seen(0), data }]);
+    for (let x = 1; x < 128; x++) await store.keepViewed('basemap', seen(x), data);
+
+    expect(await store.getTile('basemap', seen(0))).toBeDefined();
+    expect(await store.getTile('basemap', seen(1))).toBeUndefined();
+    expect(await store.getTile('basemap', seen(127))).toBeDefined();
+  });
+
   it('keeps the tiles and areas of the first version, as the base map’s', async () => {
     const name = `upgrade-${String(dbCounter++)}`;
     const old = await openDB(name, 1, {

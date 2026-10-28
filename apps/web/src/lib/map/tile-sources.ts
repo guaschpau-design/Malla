@@ -42,11 +42,17 @@ export function terrainTileUrl(z: number, x: number, y: number): string {
   return `https://tiles.mapterhorn.com/${String(z)}/${String(x)}/${String(y)}.webp`;
 }
 
-/** A web tile service as a tile archive: undefined where it has no tile. */
+/**
+ * A web tile service as a tile archive: undefined where it has no tile, which it says with a
+ * client error. A server error or too many requests is a failure, worth trying again later.
+ */
 export function webArchive(url: (z: number, x: number, y: number) => string): TileArchive {
   return {
     async getTile(z, x, y, signal) {
       const response = await fetch(url(z, x, y), { signal });
+      if (response.status >= 500 || response.status === 429 || response.status === 408) {
+        throw new Error(`tile service answered ${String(response.status)}`);
+      }
       if (!response.ok) return undefined;
       return response.arrayBuffer();
     },

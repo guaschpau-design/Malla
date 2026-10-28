@@ -24,6 +24,7 @@
   import { openTileStore } from './lib/map/tile-store.ts';
   import type { OfflineMaps } from './lib/offline/offline-maps.ts';
   import OfflineAreasPanel from './lib/offline/OfflineAreasPanel.svelte';
+  import { keepOverview } from './lib/offline/overview.ts';
   import { DeviceLocation } from './lib/position/device-location.svelte.ts';
   import { PositionSharing } from './lib/position/position-sharing.svelte.ts';
   import UpdatePrompt from './lib/pwa/UpdatePrompt.svelte';
@@ -38,9 +39,9 @@
   import { openAppDb, type AppDb } from './lib/storage/app-db.ts';
   import { GroupFeed } from './lib/sync/group-feed.svelte.ts';
   import { fullscreenAtFirstTap, fullscreenSupported } from './lib/ui/fullscreen.svelte.ts';
-  import { closePanel, panels, togglePanel } from './lib/ui/panels.svelte.ts';
+  import { closePanel, openPanel, panels, togglePanel } from './lib/ui/panels.svelte.ts';
   import { notices } from './lib/ui/notices.svelte.ts';
-  import { attempt } from './lib/ui/submission.svelte.ts';
+  import { attempt, useStorageFullNotice } from './lib/ui/submission.svelte.ts';
   import { WeatherFeed } from './lib/weather/weather-feed.svelte.ts';
   import MapWorkspace from './lib/workspace/MapWorkspace.svelte';
 
@@ -90,6 +91,17 @@
   });
   const link = $derived(linkOf(linkInput));
 
+  // Downloaded maps are what can be deleted to make room for the group's log (ADR-0056).
+  useStorageFullNotice(() => ({
+    text: t('storageFull'),
+    action: {
+      label: t('offlineAreas'),
+      run: () => {
+        openPanel('offline');
+      },
+    },
+  }));
+
   const JOIN_NOTICES: Readonly<Record<JoinOutcome, MessageKey>> = {
     joined: 'joined',
     promoted: 'promoted',
@@ -120,6 +132,7 @@
       registerContourProtocol(store, archives);
       elevations = new ElevationReader((tile) => findTile('terrain', tile, store, archives));
       offline = { store, archives };
+      void keepOverview(store, archives);
     }, failed);
     const server = defaultServerUrl();
     let stopWaitingForTap: (() => void) | undefined;

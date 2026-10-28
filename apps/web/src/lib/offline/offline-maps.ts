@@ -2,13 +2,15 @@
 // how much it weighs; and whether the areas already downloaded cover a place. Shared by the
 // offline maps panel and the offer to download the operation area.
 
-import type { MessageKey } from '../i18n/index.ts';
+import { formatBytes } from '../format.ts';
+import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
 import { countAreaTiles, MAX_AREA_TILES, type DownloadLayer } from '../map/area-download.ts';
 import { BASEMAP_MAX_ZOOM } from '../map/style.ts';
 import { containsBounds, type Bounds } from '../map/tile-math.ts';
 import type { TileArchives } from '../map/tile-source.ts';
 import type { OfflineArea, TileStore } from '../map/tile-store.ts';
 import { TERRAIN_MAX_ZOOM, type TileSourceId } from '../map/tile-sources.ts';
+import type { DownloadFailure } from './download-job.svelte.ts';
 
 /** Where downloaded maps are kept, and where their tiles come from. */
 export interface OfflineMaps {
@@ -101,12 +103,16 @@ export function downloadLayers(
     'basemap',
     ...extras.flatMap((extra) => EXTRA_SOURCES[extra]),
   ]);
-  return [...sources].map((source) => ({
-    source,
-    archive: archives[source],
-    maxZoom: sourceMaxZoom(source, maxZoom),
-    concurrency: CONCURRENCY[source],
-  }));
+  return [...sources].map((source) => layerOf(archives, source, sourceMaxZoom(source, maxZoom)));
+}
+
+/** The layers of an area, to download again what it is missing (ADR-0056). */
+export function areaLayers(archives: TileArchives, area: OfflineArea): DownloadLayer[] {
+  return area.layers.map(({ source, maxZoom }) => layerOf(archives, source, maxZoom));
+}
+
+function layerOf(archives: TileArchives, source: TileSourceId, maxZoom: number): DownloadLayer {
+  return { source, archive: archives[source], maxZoom, concurrency: CONCURRENCY[source] };
 }
 
 export function estimatedBytes(bounds: Bounds, layers: readonly DownloadLayer[]): number {
@@ -135,4 +141,23 @@ export function isDownloaded(areas: readonly OfflineArea[], bounds: Bounds): boo
       containsBounds(area.bounds, bounds) &&
       area.layers.some((layer) => layer.source === 'basemap'),
   );
+}
+
+/** What to tell the user about a download that stopped short. */
+export function failureText(failure: DownloadFailure, t: Translate, locale: Locale): string {
+  switch (failure.kind) {
+    case 'no-room':
+      return t('downloadNoRoom', {
+        needed: formatBytes(failure.needed, locale),
+        free: formatBytes(failure.free, locale),
+      });
+    case 'storage-full':
+      return t('downloadStorageFull');
+    case 'unreachable':
+      return t('downloadUnreachable');
+    case 'incomplete':
+      return t('downloadIncomplete');
+    case 'failed':
+      return t('downloadFailed');
+  }
 }
