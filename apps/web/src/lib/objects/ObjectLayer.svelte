@@ -1,38 +1,35 @@
-<!-- Draws the group's markers, shapes and active SOS calls, and reports taps on objects. Objects
-     can be hidden; SOS calls never are. -->
+<!-- Draws the group's markers and shapes, and reports taps on them. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
-  import type { Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
+  import type { Map as MapLibreMap } from 'maplibre-gl';
   import { onMount } from 'svelte';
 
   import { useOverlay } from '../map/overlay.svelte.ts';
-  import { tappedProperty } from '../map/taps.ts';
+  import { textProperty, type MapTaps } from '../map/taps.ts';
   import { themeColor, toneExpression } from '../ui/theme.ts';
-  import { mapObjects } from './object-features.ts';
+  import { markerFeatures, shapeFeatures } from './object-features.ts';
   import { addSymbolImages } from './symbol-images.ts';
 
   interface Props {
     map: MapLibreMap;
-    groupState: GroupState;
-    /** False while drawing or measuring, so taps go there instead. */
-    interactive: boolean;
+    taps: MapTaps;
+    objects: GroupState['objects'];
     /** Whether markers and shapes are shown. */
     visible: boolean;
     onselect: (key: string) => void;
   }
 
-  let { map, groupState, interactive, visible, onselect }: Props = $props();
+  let { map, taps, objects, visible, onselect }: Props = $props();
 
   const MARKERS = 'tesel-markers';
   const SHAPES = 'tesel-shapes';
-  const SOS = 'tesel-sos';
-  const TAPPABLE = [`${MARKERS}-icon`, `${SHAPES}-fill`, `${SHAPES}-line`];
-
-  const data = $derived(mapObjects(groupState));
 
   useOverlay(() => map, {
     level: 'objects',
-    data: { [SHAPES]: () => data.shapes, [MARKERS]: () => data.markers },
+    data: {
+      [SHAPES]: () => shapeFeatures({ objects }),
+      [MARKERS]: () => markerFeatures({ objects }),
+    },
     visible: () => visible,
     prepare: () => {
       addSymbolImages(map);
@@ -87,58 +84,10 @@
     },
   });
 
-  useOverlay(() => map, {
-    level: 'sos',
-    data: { [SOS]: () => data.sos },
-    layers: () => {
-      const danger = themeColor('danger');
-      const halo = themeColor('map-halo');
-      return [
-        {
-          id: `${SOS}-halo`,
-          type: 'circle',
-          source: SOS,
-          paint: { 'circle-radius': 22, 'circle-color': danger, 'circle-opacity': 0.25 },
-        },
-        {
-          id: `${SOS}-dot`,
-          type: 'circle',
-          source: SOS,
-          paint: {
-            'circle-radius': 10,
-            'circle-color': danger,
-            'circle-stroke-width': 3,
-            'circle-stroke-color': halo,
-          },
-        },
-        {
-          id: `${SOS}-label`,
-          type: 'symbol',
-          source: SOS,
-          layout: {
-            'text-field': ['concat', 'SOS · ', ['get', 'label']],
-            'text-font': ['Noto Sans Medium'],
-            'text-size': 13,
-            'text-offset': [0, 1.6],
-            'text-anchor': 'top',
-            'text-allow-overlap': true,
-          },
-          paint: { 'text-color': danger, 'text-halo-color': halo, 'text-halo-width': 2 },
-        },
-      ];
-    },
-  });
-
-  function onClick(event: MapMouseEvent): void {
-    if (!interactive) return;
-    const key = tappedProperty(map, event, TAPPABLE, 'key');
-    if (key !== null) onselect(key);
-  }
-
-  onMount(() => {
-    map.on('click', onClick);
-    return () => {
-      map.off('click', onClick);
-    };
-  });
+  onMount(() =>
+    taps.onFeature([`${MARKERS}-icon`, `${SHAPES}-fill`, `${SHAPES}-line`], (feature) => {
+      const key = textProperty(feature, 'key');
+      if (key !== null) onselect(key);
+    }),
+  );
 </script>

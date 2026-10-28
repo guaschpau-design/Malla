@@ -6,6 +6,7 @@
   measuring, navigating to a point and offline maps.
 -->
 <script lang="ts">
+  import { EMPTY_STATE } from '@tesel/core';
   import type { LatLon, NodeId, SosKind } from '@tesel/protocol';
   import type { Map as MapLibreMap } from 'maplibre-gl';
 
@@ -19,9 +20,11 @@
   import PointPanel from '../coordinates/PointPanel.svelte';
   import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
   import SosDialog from '../incidents/SosDialog.svelte';
+  import SosLayer from '../incidents/SosLayer.svelte';
   import { MAP_LAYERS, type MapLayer } from '../map/layers.ts';
   import { onLongPress } from '../map/long-press.ts';
   import { useStyleCredits } from '../map/style-credits.svelte.ts';
+  import { MapTaps } from '../map/taps.ts';
   import LayersPanel from '../map/LayersPanel.svelte';
   import CompassButton from '../map/CompassButton.svelte';
   import MapControl from '../map/MapControl.svelte';
@@ -61,6 +64,7 @@
   import Dock from './Dock.svelte';
   import GroupPanels from './GroupPanels.svelte';
   import MapStatus from './MapStatus.svelte';
+  import { stateSlices } from './state-slices.svelte.ts';
   import type { MapTool, WorkspaceGroup } from './workspace.ts';
 
   interface Props {
@@ -103,6 +107,10 @@
   let tool: MapTool | null = $state.raw(null);
   /** Drawing or a tool: taps on the map add points instead of opening what they hit. */
   const tapping = $derived(drawing.draft !== null || tool !== null);
+  /** Every tap on the map goes to one owner: the tool in use, or what is drawn on top. */
+  const taps = new MapTaps(() => !tapping);
+  /** The group's state slice by slice: each layer redraws only when its own slices change. */
+  const slices = stateSlices(() => group?.feed.state ?? EMPTY_STATE);
   /** Which map layers are shown, by layer. */
   const shown = $derived(
     Object.fromEntries(
@@ -160,6 +168,8 @@
     inspect(at);
     show(at);
   }
+
+  onMount(() => taps.listen(map));
 
   onMount(() =>
     onLongPress(map, (at) => {
@@ -240,47 +250,46 @@
     {map}
     {locale}
     {location}
-    group={group ? { state: group.feed.state, self: group.self } : null}
+    group={group ? { positions: slices.positions, self: group.self } : null}
   />
 {/if}
 {#if weather}
   <WeatherLayer {map} regions={weather.regions} visible={shown.weather} />
 {/if}
-<ServicesLayer
-  {map}
-  {locale}
-  interactive={!tapping}
-  visible={shown.services}
-  onselect={inspectService}
-/>
+<ServicesLayer {map} {taps} {locale} visible={shown.services} onselect={inspectService} />
 
 {#if group}
   {@const { feed, self, role } = group}
-  <TrailLayer {map} groupState={feed.state} {self} visible={shown.trails} />
-  <ObjectLayer
-    {map}
-    groupState={feed.state}
-    interactive={!tapping}
-    visible={shown.objects}
-    onselect={select}
-  />
+  <TrailLayer {map} trails={slices.trails} {self} visible={shown.trails} />
+  <ObjectLayer {map} {taps} objects={slices.objects} visible={shown.objects} onselect={select} />
   {#key feed}
     <MapTasks
       {t}
       {map}
-      groupState={feed.state}
+      {taps}
+      tasks={slices.tasks}
+      members={slices.members}
       {self}
-      interactive={!tapping}
       visible={shown.tasks}
     />
   {/key}
   <MemberLayer
     {map}
-    groupState={feed.state}
+    {taps}
+    positions={slices.positions}
+    members={slices.members}
+    sos={slices.sos}
+    sosCancels={slices.sosCancels}
     {self}
-    interactive={!tapping}
     visible={shown.members}
     onselect={selectMember}
+  />
+  <SosLayer
+    {map}
+    sos={slices.sos}
+    sosCancels={slices.sosCancels}
+    members={slices.members}
+    positions={slices.positions}
   />
 
   {#if drawing.draft && drawing.describing}
@@ -395,8 +404,10 @@
   {t}
   {locale}
   {map}
+  {taps}
   {location}
   {group}
+  {slices}
   {drawing}
   {tool}
   {tapping}

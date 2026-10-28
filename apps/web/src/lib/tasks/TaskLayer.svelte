@@ -1,31 +1,29 @@
 <!-- Draws the pending tasks that have a place, and opens the one tapped. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
-  import type { Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
+  import type { Map as MapLibreMap } from 'maplibre-gl';
   import { onMount } from 'svelte';
 
   import { useOverlay } from '../map/overlay.svelte.ts';
-  import { tappedProperty } from '../map/taps.ts';
+  import { textProperty, type MapTaps } from '../map/taps.ts';
   import { themeColor } from '../ui/theme.ts';
   import { taskFeatures } from './task-features.ts';
 
   interface Props {
     map: MapLibreMap;
-    groupState: GroupState;
-    /** False while drawing or measuring, so taps go there instead. */
-    interactive: boolean;
+    taps: MapTaps;
+    tasks: GroupState['tasks'];
     visible: boolean;
     onselect: (key: string) => void;
   }
 
-  let { map, groupState, interactive, visible, onselect }: Props = $props();
+  let { map, taps, tasks, visible, onselect }: Props = $props();
 
   const SOURCE = 'tesel-tasks';
-  const data = $derived(taskFeatures(groupState));
 
   useOverlay(() => map, {
     level: 'tasks',
-    data: { [SOURCE]: () => data },
+    data: { [SOURCE]: () => taskFeatures({ tasks }) },
     visible: () => visible,
     layers: () => {
       const ink = themeColor('map-text');
@@ -61,16 +59,10 @@
     },
   });
 
-  function onClick(event: MapMouseEvent): void {
-    if (!interactive) return;
-    const key = tappedProperty(map, event, [`${SOURCE}-dot`], 'key');
-    if (key !== null) onselect(key);
-  }
-
-  onMount(() => {
-    map.on('click', onClick);
-    return () => {
-      map.off('click', onClick);
-    };
-  });
+  onMount(() =>
+    taps.onFeature([`${SOURCE}-dot`], (feature) => {
+      const key = textProperty(feature, 'key');
+      if (key !== null) onselect(key);
+    }),
+  );
 </script>

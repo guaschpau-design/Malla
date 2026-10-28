@@ -2,14 +2,14 @@
      fuel stations) as round icons with their names, and taps on them. They come with the base map,
      so they also work offline in downloaded areas. -->
 <script lang="ts">
-  import type { Map as MapLibreMap, MapGeoJSONFeature, MapMouseEvent } from 'maplibre-gl';
+  import type { Map as MapLibreMap, MapGeoJSONFeature } from 'maplibre-gl';
   import { onMount } from 'svelte';
 
   import type { Locale } from '../i18n/index.ts';
   import { addGlyphImage } from '../map/glyph-images.ts';
   import { useOverlay } from '../map/overlay.svelte.ts';
   import { BASEMAP_SOURCE } from '../map/style.ts';
-  import { tappedFeature } from '../map/taps.ts';
+  import type { MapTaps } from '../map/taps.ts';
   import { GLYPHS } from '../ui/glyphs.ts';
   import { themeColor, toneColor } from '../ui/theme.ts';
   import {
@@ -22,14 +22,13 @@
 
   interface Props {
     map: MapLibreMap;
+    taps: MapTaps;
     locale: Locale;
-    /** False while drawing or measuring, so taps go there instead. */
-    interactive: boolean;
     visible: boolean;
     onselect: (service: TappedService) => void;
   }
 
-  let { map, locale, interactive, visible, onselect }: Props = $props();
+  let { map, taps, locale, visible, onselect }: Props = $props();
 
   const LAYER = 'tesel-services';
   /**
@@ -88,17 +87,10 @@
     return { at: { lat, lon }, name: typeof name === 'string' ? name : null, kind };
   }
 
-  function onClick(event: MapMouseEvent): void {
-    if (!interactive) return;
-    const feature = tappedFeature(map, event, [LAYER]);
-    const service = feature ? tapped(feature) : null;
-    if (service !== null) onselect(service);
-  }
-
-  onMount(() => {
-    map.on('click', onClick);
-    return () => {
-      map.off('click', onClick);
-    };
-  });
+  onMount(() =>
+    taps.onFeature([LAYER], (feature) => {
+      const service = tapped(feature);
+      if (service !== null) onselect(service);
+    }),
+  );
 </script>

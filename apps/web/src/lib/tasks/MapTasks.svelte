@@ -7,6 +7,7 @@
 
   import type { Translate } from '../i18n/index.ts';
   import { aliasOf } from '../incidents/incidents.ts';
+  import type { MapTaps } from '../map/taps.ts';
   import { notices } from '../ui/notices.svelte.ts';
   import { editTask } from './task-editor.svelte.ts';
   import TaskLayer from './TaskLayer.svelte';
@@ -15,16 +16,16 @@
   interface Props {
     t: Translate;
     map: MapLibreMap;
-    groupState: GroupState;
+    taps: MapTaps;
+    tasks: GroupState['tasks'];
+    members: GroupState['members'];
     self: NodeId;
-    /** False while drawing or measuring, so taps go there instead. */
-    interactive: boolean;
     visible: boolean;
   }
 
-  let { t, map, groupState, self, interactive, visible }: Props = $props();
+  let { t, map, taps, tasks, members, self, visible }: Props = $props();
 
-  const mine = $derived(assignedTo(groupState, self));
+  const mine = $derived(assignedTo({ tasks }, self));
   // What was already assigned when the group opened is not news.
   let known = untrack(() => mine);
 
@@ -34,9 +35,9 @@
     known = now;
     if (handed === undefined) return;
     notices.show(
-      t('taskHandedToYou', { name: aliasOf(groupState, handed.origin), text: handed.text }),
+      t('taskHandedToYou', { name: aliasOf({ members }, handed.origin), text: handed.text }),
     );
   });
 </script>
 
-<TaskLayer {map} {groupState} {interactive} {visible} onselect={editTask} />
+<TaskLayer {map} {taps} {tasks} {visible} onselect={editTask} />

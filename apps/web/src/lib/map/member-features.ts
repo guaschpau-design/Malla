@@ -13,11 +13,21 @@ export interface MemberProperties {
   readonly id: NodeId;
   readonly label: string;
   readonly stale: boolean;
+  /** The member has an SOS open: their name is always shown, however crowded the map. */
+  readonly sos: boolean;
 }
 
 export type MemberCollection = FeatureCollection<Point, MemberProperties>;
 
-export function memberFeatures(state: GroupState, self: NodeId, now: number): MemberCollection {
+export function memberFeatures(
+  state: Pick<GroupState, 'positions' | 'members' | 'sos' | 'sosCancels'>,
+  self: NodeId,
+  now: number,
+): MemberCollection {
+  const calling = new Set<NodeId>();
+  for (const [key, call] of state.sos) {
+    if (!state.sosCancels.has(key)) calling.add(call.origin);
+  }
   const features: Feature<Point, MemberProperties>[] = [];
   for (const [origin, report] of state.positions) {
     if (report.type !== 'position' || origin === self) continue;
@@ -28,6 +38,7 @@ export function memberFeatures(state: GroupState, self: NodeId, now: number): Me
         id: origin,
         label: state.members.get(origin)?.alias ?? origin,
         stale: now - report.time > STALE_AFTER_S,
+        sos: calling.has(origin),
       },
     });
   }

@@ -10,18 +10,18 @@
 
   interface Props {
     map: MapLibreMap;
-    groupState: GroupState;
+    trails: GroupState['trails'];
     self: NodeId;
     visible: boolean;
   }
 
-  let { map, groupState, self, visible }: Props = $props();
+  let { map, trails, self, visible }: Props = $props();
 
   const SOURCE = 'tesel-trails';
 
   useOverlay(() => map, {
     level: 'trails',
-    data: { [SOURCE]: () => trailFeatures(groupState, self) },
+    data: { [SOURCE]: () => trailFeatures({ trails }, self) },
     visible: () => visible,
     layers: () => [
       {

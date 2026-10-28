@@ -19,8 +19,8 @@
     map: MapLibreMap;
     locale: Locale;
     location: DeviceLocation;
-    /** The active group and this device in it, for the lines to the nearest members. */
-    group: { readonly state: GroupState; readonly self: NodeId } | null;
+    /** The active group's positions and this device in it, for the lines to the nearest members. */
+    group: { readonly positions: GroupState['positions']; readonly self: NodeId } | null;
   }
 
   let { map, locale, location, group }: Props = $props();
@@ -36,7 +36,7 @@
   const rings = $derived(here ? ringFeatures(here, ringStep(zoom, here.lat), locale) : NOTHING);
   const vectors = $derived(
     here && group
-      ? vectorFeatures(here, nearestMembers(group.state, group.self, here, now.seconds), locale)
+      ? vectorFeatures(here, nearestMembers(group, group.self, here, now.seconds), locale)
       : NOTHING,
   );
 

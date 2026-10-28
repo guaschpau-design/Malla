@@ -57,7 +57,7 @@ export interface Nearby {
  * minutes: an older position may no longer be where they are. This device is left out.
  */
 export function nearestMembers(
-  state: GroupState,
+  state: Pick<GroupState, 'positions'>,
   self: NodeId,
   from: LatLon,
   now: number,

@@ -28,7 +28,22 @@ describe('member features', () => {
       { type: 'position-hidden', origin: CARLA, seq: 3, time: T0 + 1 },
     ]);
     const { features } = memberFeatures(state, ANA, T0 + 10);
-    expect(features.map((f) => f.properties)).toEqual([{ id: BERTA, label: 'Berta', stale: true }]);
+    expect(features.map((f) => f.properties)).toEqual([
+      { id: BERTA, label: 'Berta', stale: true, sos: false },
+    ]);
     expect(features[0]?.geometry.coordinates).toEqual([-0.37, 39.47]);
+  });
+
+  it('marks the members whose SOS is still open', () => {
+    const sos = { kind: 'general', lat: 0, lon: 0, accuracy: null, text: '' } as const;
+    const state = stateOf([
+      { type: 'position', origin: BERTA, seq: 1, time: T0, ...fix },
+      { type: 'position', origin: CARLA, seq: 1, time: T0, ...fix },
+      { type: 'sos', origin: BERTA, seq: 2, time: T0, ...sos },
+      { type: 'sos', origin: CARLA, seq: 2, time: T0, ...sos },
+      { type: 'sos-cancel', origin: CARLA, seq: 3, time: T0 + 1, sos: { origin: CARLA, seq: 2 } },
+    ]);
+    const calling = memberFeatures(state, ANA, T0).features.filter((f) => f.properties.sos);
+    expect(calling.map((f) => f.properties.id)).toEqual([BERTA]);
   });
 });
