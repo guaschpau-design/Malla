@@ -241,6 +241,7 @@ export const es: Messages = {
   navigationArrived: 'Has llegado.',
   navigationTargetGone: 'El destino ya no está en el mapa.',
   navigationStop: 'Parar',
+  mapName: 'Mapa',
   mapPoint: 'Punto del mapa',
   positionAt: 'Última posición: {time}',
   memberNoPosition: 'No comparte su posición.',

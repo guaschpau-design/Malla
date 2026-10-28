@@ -17,7 +17,7 @@ export {
   areaSquareMeters,
   bearingDegrees,
   distanceMeters,
-  EARTH_RADIUS_M,
+  offsetMeters,
   pathMeters,
 } from './geo.ts';
 export {

@@ -1,7 +1,7 @@
 // The operation areas of a group: shapes drawn with the operation area style (protocol §4.2),
 // whose map each member is offered to download for use without a connection.
 
-import { EARTH_RADIUS_M, type GroupState } from '@tesel/core';
+import { offsetMeters, type GroupState } from '@tesel/core';
 import type { LatLon, ShapeGeometry } from '@tesel/protocol';
 
 import { boundsAround, type Bounds } from '../map/tile-math.ts';
@@ -27,10 +27,5 @@ export function operationAreas(state: GroupState): OperationArea[] {
 function extremes(geometry: ShapeGeometry): readonly LatLon[] {
   if (geometry.kind !== 'circle') return geometry.points;
   const { center, radius } = geometry;
-  const dLat = (radius / EARTH_RADIUS_M) * (180 / Math.PI);
-  const dLon = dLat / Math.cos((center.lat * Math.PI) / 180);
-  return [
-    { lat: center.lat - dLat, lon: center.lon - dLon },
-    { lat: center.lat + dLat, lon: center.lon + dLon },
-  ];
+  return [offsetMeters(center, -radius, -radius), offsetMeters(center, radius, radius)];
 }

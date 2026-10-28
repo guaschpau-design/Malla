@@ -12,21 +12,24 @@ export type NavigationTarget = { readonly name: string } & (
 );
 
 /** Where the target is now, or null if it is no longer on the map. */
-export function targetPosition(target: NavigationTarget, state: GroupState | null): LatLon | null {
+export function targetPosition(
+  target: NavigationTarget,
+  state: Pick<GroupState, 'objects' | 'positions'>,
+): LatLon | null {
   switch (target.kind) {
     case 'point':
       return target.at;
     case 'object':
-      return state === null ? null : objectPosition(state, target.key);
+      return objectPosition(state, target.key);
     case 'member': {
-      const report = state?.positions.get(target.id);
+      const report = state.positions.get(target.id);
       return report?.type === 'position' ? { lat: report.lat, lon: report.lon } : null;
     }
   }
 }
 
 /** Where an object is, when it is at one point: a marker, or a circle's centre. */
-export function objectPosition(state: GroupState, key: string): LatLon | null {
+export function objectPosition(state: Pick<GroupState, 'objects'>, key: string): LatLon | null {
   const record = state.objects.get(key);
   if (record?.type === 'marker') return { lat: record.lat, lon: record.lon };
   if (record?.type === 'shape' && record.geometry.kind === 'circle') return record.geometry.center;

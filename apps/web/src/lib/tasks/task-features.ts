@@ -16,7 +16,9 @@ export interface TaskProperties {
   readonly started: boolean;
 }
 
-export function taskFeatures(state: GroupState): FeatureCollection<Point, TaskProperties> {
+export function taskFeatures(
+  state: Pick<GroupState, 'tasks'>,
+): FeatureCollection<Point, TaskProperties> {
   const features: Feature<Point, TaskProperties>[] = [];
   for (const [key, task] of state.tasks) {
     if (task.place === null || !isPending(task.status)) continue;

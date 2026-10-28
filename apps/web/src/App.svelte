@@ -17,6 +17,7 @@
   import ConnectionsPanel from './lib/links/ConnectionsPanel.svelte';
   import LinkButton from './lib/links/LinkButton.svelte';
   import { linkOf, networkStatus, radioLinkOf } from './lib/links/links.ts';
+  import { mapLibreLocale } from './lib/map/maplibre-locale.ts';
   import MapView from './lib/map/MapView.svelte';
   import type { MapTheme } from './lib/map/style.ts';
   import { registerContourProtocol } from './lib/map/contours.ts';
@@ -75,6 +76,8 @@
   let sharing: PositionSharing | undefined;
   let feed: GroupFeed | undefined = $state.raw();
   let map: MapLibreMap | undefined = $state();
+  /** The map opened on its wide view, not on one the address gave: it may frame the group. */
+  let mapOpenedWide = $state(false);
   /** Official weather warnings from the app's own server, once the database is open. */
   let weather: WeatherFeed | null = $state.raw(null);
   const radio = new RadioSession();
@@ -158,7 +161,8 @@
     };
   });
 
-  function onMapReady(instance: MapLibreMap): void {
+  function onMapReady(instance: MapLibreMap, openedWide: boolean): void {
+    mapOpenedWide = openedWide;
     map = instance;
   }
 
@@ -284,6 +288,7 @@
           theme,
           lang: locale,
         }}
+        locale={mapLibreLocale(t)}
         onready={onMapReady}
       />
     {/if}
@@ -293,6 +298,7 @@
         {t}
         {locale}
         {map}
+        {mapOpenedWide}
         group={workspaceGroup}
         {radio}
         {location}

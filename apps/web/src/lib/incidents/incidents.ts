@@ -35,7 +35,7 @@ export interface SosView extends Acknowledgement {
   readonly where: SosWhere;
 }
 
-export function whereSos(state: GroupState, event: SosEvent): SosWhere {
+export function whereSos(state: Pick<GroupState, 'positions'>, event: SosEvent): SosWhere {
   const called = sosPlace(event);
   if (called !== null) return { kind: 'called', at: called };
   const shared = state.positions.get(event.origin);
@@ -124,7 +124,7 @@ export function openRollCall(state: GroupState, self: NodeId, now: number): Roll
   };
 }
 
-export function aliasOf(state: GroupState, id: NodeId): string {
+export function aliasOf(state: Pick<GroupState, 'members'>, id: NodeId): string {
   return state.members.get(id)?.alias ?? id;
 }
 

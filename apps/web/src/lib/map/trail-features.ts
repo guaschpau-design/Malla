@@ -10,7 +10,7 @@ export interface TrailProperties {
 }
 
 export function trailFeatures(
-  state: GroupState,
+  state: Pick<GroupState, 'trails'>,
   self: NodeId,
 ): FeatureCollection<LineString, TrailProperties> {
   const features: Feature<LineString, TrailProperties>[] = [];

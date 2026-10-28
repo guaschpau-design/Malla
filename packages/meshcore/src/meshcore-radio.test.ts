@@ -8,8 +8,8 @@ import {
   type CompanionConnection,
   type SyncedMessage,
 } from './companion.ts';
-import { MeshCoreRadio, RadioError, type OpenedRadio } from './meshcore-radio.ts';
-import type { ReceivedFrame } from './radio-link.ts';
+import { MeshCoreRadio, type OpenedRadio } from './meshcore-radio.ts';
+import { RadioError, type ReceivedFrame } from './radio-link.ts';
 
 const SECRET = new Uint8Array(16).fill(9);
 const EMPTY = new Uint8Array(16);

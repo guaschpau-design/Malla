@@ -202,9 +202,12 @@ export function useOverlay<Source extends string>(
       const data = Object.fromEntries(sources.map((source) => [source, use.data[source]()]));
       return new Overlay(target, { ...use, data: data as Record<Source, OverlayData> });
     });
-    $effect(() => {
-      for (const source of sources) overlay.setData(source, use.data[source]());
-    });
+    // One effect per source: what changes one source's data uploads that source alone.
+    for (const source of sources) {
+      $effect(() => {
+        overlay.setData(source, use.data[source]());
+      });
+    }
     $effect(() => {
       overlay.setVisible(use.visible?.() ?? true);
     });

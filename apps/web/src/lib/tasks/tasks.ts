@@ -104,7 +104,10 @@ export function advance(fields: TaskFields, self: NodeId): TaskFields {
 }
 
 /** Pending tasks of this device, by key: compared before and after to notice new ones. */
-export function assignedTo(state: GroupState, self: NodeId): ReadonlyMap<string, TaskEvent> {
+export function assignedTo(
+  state: Pick<GroupState, 'tasks'>,
+  self: NodeId,
+): ReadonlyMap<string, TaskEvent> {
   const mine = new Map<string, TaskEvent>();
   for (const [key, task] of state.tasks) {
     if (task.assignee === self && isPending(task.status)) mine.set(key, task);

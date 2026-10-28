@@ -2,6 +2,7 @@
 // sectors, mark what they find, talk in the chat and, two minutes in, one of them calls an SOS for
 // the user to acknowledge and follow. Built around a point, in the user's language.
 
+import { offsetMeters } from '@tesel/core';
 import type { LatLon } from '@tesel/protocol';
 import type { Scenario } from '@tesel/scenario';
 
@@ -12,17 +13,8 @@ const BLOCKED_ROAD = 6;
 const MEETING_POINT = 8;
 const SEARCH_ASSIGNED = 2;
 
-const METRES_PER_DEGREE = 111_320;
-
-/** The point `north` and `east` metres from `centre`. */
-function offset(centre: LatLon, north: number, east: number): LatLon {
-  const lat = centre.lat + north / METRES_PER_DEGREE;
-  const lon = centre.lon + east / (METRES_PER_DEGREE * Math.cos((centre.lat * Math.PI) / 180));
-  return { lat, lon };
-}
-
 export function practiceScenario(t: Translate, centre: LatLon): Scenario {
-  const at = (north: number, east: number) => offset(centre, north, east);
+  const at = (north: number, east: number) => offsetMeters(centre, north, east);
   return {
     name: 'practice',
     description: t('practiceDescription'),

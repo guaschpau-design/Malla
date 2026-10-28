@@ -25,10 +25,6 @@ const WebBle = untypedWebBleConnection as {
 /** How long the radio has to finish connecting once the user has picked it. */
 const CONNECT_TIMEOUT_MS = 20_000;
 
-export function isWebBluetoothAvailable(): boolean {
-  return typeof navigator !== 'undefined' && 'bluetooth' in navigator;
-}
-
 /**
  * Shows the browser's Bluetooth picker and resolves once the radio is ready for commands. The
  * same device is opened again without the picker when the connection drops.

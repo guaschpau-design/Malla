@@ -6,10 +6,10 @@ import { PMTiles } from 'pmtiles';
 
 import type { TileArchive } from './area-download.ts';
 import { EMPTY_RASTER_TILE, EMPTY_VECTOR_TILE, FLAT_TERRAIN_TILE } from './empty-tiles.ts';
-import { orthoArchive } from './ortho.ts';
 import type { Bounds, TileCoord } from './tile-math.ts';
 import type { TileStore } from './tile-store.ts';
 import {
+  lazyArchive,
   namesTileUrl,
   terrainTileUrl,
   TILE_SOURCES,
@@ -64,7 +64,8 @@ export function tileArchives(basemapUrl: string): TileArchives {
   return {
     basemap: pmtilesArchive(basemapUrl),
     'ign-names': webArchive(namesTileUrl),
-    ortho: orthoArchive(),
+    // The satellite map and its country outlines, a quarter of a megabyte, load with its first tile.
+    ortho: lazyArchive(async () => (await import('./ortho.ts')).orthoArchive()),
     terrain: webArchive(terrainTileUrl),
   };
 }

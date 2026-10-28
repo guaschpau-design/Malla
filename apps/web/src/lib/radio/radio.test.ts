@@ -8,7 +8,7 @@ import type {
   RadioText,
   ReceivedFrame,
   SendOutcome,
-} from '@tesel/meshcore';
+} from '@tesel/meshcore/link';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { LoraSink } from '../sync/group-feed.svelte.ts';
@@ -143,7 +143,10 @@ afterEach(() => {
 describe('radio session', () => {
   it('configures the active group’s channel once connected and sends its events', async () => {
     const link = new FakeLink();
-    const radio = new RadioSession(link, () => 0);
+    const radio = new RadioSession(
+      () => Promise.resolve(link),
+      () => 0,
+    );
     const feed = new FakeFeed();
     await radio.useFeed(feed);
     expect(feed.sink).toBeNull();
@@ -161,7 +164,10 @@ describe('radio session', () => {
 
   it('links the group again when a lost radio comes back, and says so meanwhile', async () => {
     const link = new FakeLink();
-    const radio = new RadioSession(link, () => 0);
+    const radio = new RadioSession(
+      () => Promise.resolve(link),
+      () => 0,
+    );
     const feed = new FakeFeed();
     await radio.connect();
     await radio.useFeed(feed);
@@ -175,7 +181,10 @@ describe('radio session', () => {
 
   it('keeps what is queued when the same group’s feed opens again, as for a new alias', async () => {
     const link = new FakeLink();
-    const radio = new RadioSession(link, () => 0);
+    const radio = new RadioSession(
+      () => Promise.resolve(link),
+      () => 0,
+    );
     await radio.connect();
     const before = new FakeFeed('rescate');
     await radio.useFeed(before);
@@ -187,7 +196,10 @@ describe('radio session', () => {
 
   it('never sends what was queued for one group on another group’s channel', async () => {
     const link = new FakeLink();
-    const radio = new RadioSession(link, () => 0);
+    const radio = new RadioSession(
+      () => Promise.resolve(link),
+      () => 0,
+    );
     const first = new FakeFeed();
     await radio.connect();
     await radio.useFeed(first);
@@ -200,7 +212,7 @@ describe('radio session', () => {
 
   it('hands what it hears to the feed', async () => {
     const link = new FakeLink();
-    const radio = new RadioSession(link);
+    const radio = new RadioSession(() => Promise.resolve(link));
     const feed = new FakeFeed();
     await radio.connect();
     await radio.useFeed(feed);
@@ -213,13 +225,14 @@ describe('radio session', () => {
     vi.useRealTimers();
     const db = await openAppDb('radio-session-texts');
     const link = new FakeLink();
-    const radio = new RadioSession(link);
+    const radio = new RadioSession(() => Promise.resolve(link));
     await radio.useStorage(db);
+    await radio.connect();
     link.say({ kind: 'channel', channel: 'Public', sender: 'Marta', text: 'Hola', time: 1 });
     expect(radio.texts.map((text) => text.text)).toEqual(['Hola']);
 
     await vi.waitFor(async () => {
-      const restarted = new RadioSession(new FakeLink());
+      const restarted = new RadioSession(() => Promise.resolve(new FakeLink()));
       await restarted.useStorage(db);
       expect(restarted.texts.map((text) => text.text)).toEqual(['Hola']);
     });
@@ -231,7 +244,7 @@ describe('radio session', () => {
     const other = createGroup('Antes', null, 1);
     await saveGroup(db, other);
     const link = new FakeLink();
-    const radio = new RadioSession(link);
+    const radio = new RadioSession(() => Promise.resolve(link));
     await radio.useStorage(db);
     const feed = new FakeFeed();
     await radio.connect();
@@ -249,7 +262,7 @@ describe('radio session', () => {
     const left = createGroup('Antes', null, 1);
     const link = new FakeLink();
     link.held = [left.secret];
-    const radio = new RadioSession(link);
+    const radio = new RadioSession(() => Promise.resolve(link));
     await radio.useStorage(db);
     await radio.forgetGroup(left.secret);
     expect(link.forgotten).toEqual([]);
@@ -260,7 +273,7 @@ describe('radio session', () => {
 
   it('unlinks the feed when the radio goes away', async () => {
     const link = new FakeLink();
-    const radio = new RadioSession(link);
+    const radio = new RadioSession(() => Promise.resolve(link));
     const feed = new FakeFeed();
     await radio.connect();
     await radio.useFeed(feed);

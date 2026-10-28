@@ -17,13 +17,15 @@
     locale: Locale;
     map: MapLibreMap;
     location: DeviceLocation;
-    groupState: GroupState | null;
+    /** The active group's objects and positions, none without a group: targets may move. */
+    objects: GroupState['objects'];
+    positions: GroupState['positions'];
   }
 
-  let { t, locale, map, location, groupState }: Props = $props();
+  let { t, locale, map, location, objects, positions }: Props = $props();
 
   const target = $derived(navigation.target);
-  const at = $derived(target && targetPosition(target, groupState));
+  const at = $derived(target && targetPosition(target, { objects, positions }));
 
   $effect(() => {
     if (target !== null) return location.use();

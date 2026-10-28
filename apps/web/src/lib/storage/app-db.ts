@@ -31,6 +31,8 @@ export type SettingKey =
   | 'coordinateFormat'
   | 'baseMap'
   | 'relief'
+  | 'grid'
+  /** The grid's switch before it was renamed `grid`; moved by settings/preferences.ts. */
   | 'mgrsGrid'
   | 'radar'
   | 'cadastre'

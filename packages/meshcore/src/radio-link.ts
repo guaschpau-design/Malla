@@ -1,7 +1,24 @@
 // The contract between Tesel and a LoRa radio (ADR-0006). The app depends only on this; the
-// MeshCore implementation is in meshcore-radio.ts.
+// MeshCore implementation is in meshcore-radio.ts. This module is the package's light entry
+// (`@tesel/meshcore/link`): the app loads it at start, and the implementation, with the MeshCore
+// library, only when a radio is connected.
 
 export type RadioLinkState = 'disconnected' | 'connecting' | 'ready';
+
+/** Whether this browser can reach a radio at all: links reach radios over Web Bluetooth. */
+export function isWebBluetoothAvailable(): boolean {
+  return typeof navigator !== 'undefined' && 'bluetooth' in navigator;
+}
+
+/** Why a link refused a command. */
+export class RadioError extends Error {
+  readonly code: 'no-free-channel' | 'not-ready' | 'timeout' | 'refused';
+
+  constructor(code: RadioError['code'], message: string) {
+    super(message);
+    this.code = code;
+  }
+}
 
 export interface ReceivedFrame {
   /** Encoded event bytes, exactly as the sender produced them. */

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { drawQr } from '../ui/qr.ts';
-import { decodeQr, type Frame } from './qr-scanning.ts';
+import { loadQrDecoder, type Frame } from './qr-scanning.ts';
 
 /** Renders a QR drawing as a camera would see it: RGBA pixels, `scale` pixels per module. */
 function render(text: string, scale: number): Frame {
@@ -20,13 +20,15 @@ function render(text: string, scale: number): Frame {
 }
 
 describe('QR scanning', () => {
-  it('reads back an invitation link drawn by the app', () => {
+  it('reads back an invitation link drawn by the app', async () => {
     const link = `https://example.github.io/tesel/join#${'AQEHBwcHBwcHBwcHBwcHBwcH'.repeat(8)}`;
-    expect(decodeQr(render(link, 4))).toBe(link);
+    const decode = await loadQrDecoder();
+    expect(decode(render(link, 4))).toBe(link);
   });
 
-  it('finds nothing in an empty frame', () => {
+  it('finds nothing in an empty frame', async () => {
     const blank = new Uint8ClampedArray(64 * 64 * 4).fill(255);
-    expect(decodeQr({ data: blank, width: 64, height: 64 })).toBeNull();
+    const decode = await loadQrDecoder();
+    expect(decode({ data: blank, width: 64, height: 64 })).toBeNull();
   });
 });

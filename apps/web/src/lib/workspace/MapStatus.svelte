@@ -3,12 +3,14 @@
      device is, the operation area's map, then the app's notices. The stack never runs under the
      dock: past its height it scrolls. -->
 <script lang="ts">
+  import type { GroupState } from '@tesel/core';
   import type { EventRef, LatLon } from '@tesel/protocol';
   import type { Map as MapLibreMap } from 'maplibre-gl';
 
   import type { Locale, Translate } from '../i18n/index.ts';
   import IncidentBanners from '../incidents/IncidentBanners.svelte';
   import { mapCentre } from '../map/geometry.ts';
+  import type { MapTaps } from '../map/taps.ts';
   import Measuring from '../measure/Measuring.svelte';
   import Navigation from '../navigation/Navigation.svelte';
   import DangerZoneAlert from '../objects/DangerZoneAlert.svelte';
@@ -29,8 +31,11 @@
     t: Translate;
     locale: Locale;
     map: MapLibreMap;
+    taps: MapTaps;
     location: DeviceLocation;
     group: WorkspaceGroup | null;
+    /** The group's state slice by slice (state-slices.svelte.ts), empty without a group. */
+    slices: GroupState;
     drawing: Drawing;
     tool: MapTool | null;
     /** Drawing or a tool takes taps on the map: incidents and offers wait. */
@@ -48,8 +53,10 @@
     t,
     locale,
     map,
+    taps,
     location,
     group,
+    slices,
     drawing,
     tool,
     tapping,
@@ -79,6 +86,7 @@
   {#if drawing.draft && drawing.tapping}
     <DrawLayer
       {map}
+      {taps}
       points={drawing.draft.points}
       closed={drawing.draft.kind === 'area'}
       onpoint={(at: LatLon) => {
@@ -99,7 +107,7 @@
       }}
     />
   {:else if tool?.kind === 'measure'}
-    <Measuring {t} {locale} {map} from={tool.from} onclose={onclosetool} />
+    <Measuring {t} {locale} {map} {taps} from={tool.from} onclose={onclosetool} />
   {/if}
   {#if group && !tapping}
     <IncidentBanners
@@ -118,7 +126,7 @@
   {#if group}
     <DangerZoneAlert {t} groupState={group.feed.state} {location} />
   {/if}
-  <Navigation {t} {locale} {map} {location} groupState={group?.feed.state ?? null} />
+  <Navigation {t} {locale} {map} {location} objects={slices.objects} positions={slices.positions} />
   {#if group?.practice}
     {#key group.feed}
       <Practice

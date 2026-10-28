@@ -1,8 +1,7 @@
 // Scanning invitation QR codes with the camera from inside the app. The decoder is plain
 // JavaScript (jsQR) so it works in every browser, including Safari on iPhone, where the
-// installed app cannot receive links opened by the camera app.
-
-import jsQR from 'jsqr';
+// installed app cannot receive links opened by the camera app. The decoder weighs over 100 KB, so
+// it is loaded when the camera opens, not with the app.
 
 /** True if this browser can open a camera at all (only in a secure context). */
 export function canScanQr(): boolean {
@@ -16,11 +15,13 @@ export interface Frame {
   readonly height: number;
 }
 
-/** The text of the QR code in a frame, or null if there is none. */
-export function decodeQr(frame: Frame): string | null {
-  return (
-    jsQR(frame.data, frame.width, frame.height, { inversionAttempts: 'dontInvert' })?.data ?? null
-  );
+/** Reads the text of the QR code in a frame, or null if there is none. */
+export type QrDecoder = (frame: Frame) => string | null;
+
+export async function loadQrDecoder(): Promise<QrDecoder> {
+  const { default: jsQR } = await import('jsqr');
+  return (frame) =>
+    jsQR(frame.data, frame.width, frame.height, { inversionAttempts: 'dontInvert' })?.data ?? null;
 }
 
 const SCAN_INTERVAL_MS = 250;
@@ -36,6 +37,8 @@ export async function scanQrCodes(
   onvalue: (text: string) => void,
   signal: AbortSignal,
 ): Promise<void> {
+  // The decoder first: the camera, once open, must not be left on by a decoder that fails to load.
+  const decode = await loadQrDecoder();
   const stream = await navigator.mediaDevices.getUserMedia({
     video: { facingMode: 'environment' },
     audio: false,
@@ -53,7 +56,7 @@ export async function scanQrCodes(
   if (context === null) throw new Error('2D canvas unavailable');
   while (!signal.aborted) {
     const frame = grabFrame(video, canvas, context);
-    const text = frame && decodeQr(frame);
+    const text = frame && decode(frame);
     if (text) onvalue(text);
     await new Promise((resolve) => setTimeout(resolve, SCAN_INTERVAL_MS));
   }

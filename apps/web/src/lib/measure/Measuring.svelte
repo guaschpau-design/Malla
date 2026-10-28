@@ -5,6 +5,7 @@
   import { untrack } from 'svelte';
 
   import type { Locale, Translate } from '../i18n/index.ts';
+  import type { MapTaps } from '../map/taps.ts';
   import DrawLayer from '../objects/DrawLayer.svelte';
   import MeasureBar from './MeasureBar.svelte';
 
@@ -12,12 +13,13 @@
     t: Translate;
     locale: Locale;
     map: MapLibreMap;
+    taps: MapTaps;
     /** Where measuring starts, when it starts from a point. */
     from: LatLon | null;
     onclose: () => void;
   }
 
-  let { t, locale, map, from, onclose }: Props = $props();
+  let { t, locale, map, taps, from, onclose }: Props = $props();
 
   // The starting point is read once: measuring goes on from it however the props change.
   let points: readonly LatLon[] = $state.raw(untrack(() => (from ? [from] : [])));
@@ -25,6 +27,7 @@
 
 <DrawLayer
   {map}
+  {taps}
   {points}
   closed={false}
   onpoint={(at: LatLon) => {

@@ -18,12 +18,13 @@ import {
   type SyncedMessage,
 } from './companion.ts';
 import { ACCEPTED_DATA_TYPES, SEND_DATA_TYPE } from './data-type.ts';
-import type {
-  RadioLink,
-  RadioLinkState,
-  RadioText,
-  ReceivedFrame,
-  SendOutcome,
+import {
+  RadioError,
+  type RadioLink,
+  type RadioLinkState,
+  type RadioText,
+  type ReceivedFrame,
+  type SendOutcome,
 } from './radio-link.ts';
 
 /** An open connection to a radio, and how to open it again without asking the user. */
@@ -42,15 +43,6 @@ const RECONNECT_FIRST_MS = 1000;
 const RECONNECT_MAX_MS = 30_000;
 /** MeshCore companion firmware has at most this many channel slots. */
 const MAX_CHANNELS = 40;
-
-export class RadioError extends Error {
-  readonly code: 'no-free-channel' | 'not-ready' | 'timeout' | 'refused';
-
-  constructor(code: RadioError['code'], message: string) {
-    super(message);
-    this.code = code;
-  }
-}
 
 export class MeshCoreRadio implements RadioLink {
   readonly #connector: Connector;
