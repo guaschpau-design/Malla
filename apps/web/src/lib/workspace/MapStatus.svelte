@@ -116,7 +116,7 @@
       }}
     />
   {:else if tool?.kind === 'measure'}
-    <Measuring {t} {locale} {map} {taps} from={tool.from} onclose={onclosetool} />
+    <Measuring {t} {locale} {map} {taps} onclose={onclosetool} />
   {:else if tool?.kind === 'sweep' && group}
     {@const { feed } = group}
     <SweepPlanner

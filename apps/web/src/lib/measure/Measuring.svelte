@@ -2,7 +2,6 @@
 <script lang="ts">
   import type { LatLon } from '@tesel/protocol';
   import type { Map as MapLibreMap } from 'maplibre-gl';
-  import { untrack } from 'svelte';
 
   import type { Locale, Translate } from '../i18n/index.ts';
   import type { MapTaps } from '../map/taps.ts';
@@ -14,15 +13,12 @@
     locale: Locale;
     map: MapLibreMap;
     taps: MapTaps;
-    /** Where measuring starts, when it starts from a point. */
-    from: LatLon | null;
     onclose: () => void;
   }
 
-  let { t, locale, map, taps, from, onclose }: Props = $props();
+  let { t, locale, map, taps, onclose }: Props = $props();
 
-  // The starting point is read once: measuring goes on from it however the props change.
-  let points: readonly LatLon[] = $state.raw(untrack(() => (from ? [from] : [])));
+  let points: readonly LatLon[] = $state.raw([]);
 </script>
 
 <DrawLayer

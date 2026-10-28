@@ -1,9 +1,8 @@
-<!-- What can be done with the thing a panel shows, as a row of buttons. Up to three fit a phone's
-     width and all show; with more, the first two show and the rest wait in a "⋯" menu at the end
-     of the row (ADR-0065). So list them most used first. -->
+<!-- What can be done with the thing a panel shows, as a row of equal tiles, a pictogram over a
+     verb. Up to three fit a phone's width and all show; with more, the first two show and the rest
+     wait in a "⋯" menu at the end of the row (ADR-0065). So list them most used first. -->
 <script lang="ts">
   import type { Action } from './action.ts';
-  import ActionButton from './ActionButton.svelte';
   import Menu from './Menu.svelte';
   import Pictogram from './Pictogram.svelte';
 
@@ -21,22 +20,25 @@
   const folded = $derived(actions.slice(shown.length));
 </script>
 
-<div class="row">
+<div class="actions">
   {#each shown as action (action.label)}
-    <ActionButton icon={action.icon} label={action.label} onclick={action.run} />
+    <button class="tile" onclick={action.run}>
+      <Pictogram name={action.icon} size={22} />
+      {action.label}
+    </button>
   {/each}
   {#if folded.length > 0}
     <Menu label={moreLabel} place="end">
       {#snippet trigger(expanded: boolean, toggle: () => void)}
         <button
-          class="more"
+          class="tile"
           aria-haspopup="menu"
           aria-expanded={expanded}
           aria-label={moreLabel}
           title={moreLabel}
           onclick={toggle}
         >
-          <Pictogram name="more" size={20} />
+          <Pictogram name="more" size={22} />
         </button>
       {/snippet}
       {#snippet items(close: () => void)}
@@ -58,8 +60,21 @@
 </div>
 
 <style>
-  .more {
-    min-width: var(--control-size);
-    padding: 0;
+  /* Equal columns, however long each verb: a long one wraps under its pictogram. */
+  .actions {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    gap: 0.5rem;
+  }
+
+  .tile {
+    display: grid;
+    flex: 1;
+    gap: 0.2rem;
+    place-items: center;
+    padding: 0.5rem 0.25rem;
+    font-size: var(--text-secondary);
+    font-weight: 600;
   }
 </style>

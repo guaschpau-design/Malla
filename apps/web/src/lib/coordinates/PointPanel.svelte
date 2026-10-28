@@ -22,7 +22,6 @@
     at: LatLon;
     format: Preference<CoordinateFormat>;
     onnavigate: () => void;
-    onmeasure: () => void;
     /** Present when the point can be marked for the group. */
     onmark: (() => void) | null;
     /** Present when a task can be added there for the group. */
@@ -32,25 +31,13 @@
     about?: Snippet;
   }
 
-  let {
-    t,
-    locale,
-    title,
-    at,
-    format,
-    onnavigate,
-    onmeasure,
-    onmark,
-    ontask,
-    onclose,
-    about,
-  }: Props = $props();
+  let { t, locale, title, at, format, onnavigate, onmark, ontask, onclose, about }: Props =
+    $props();
 
   const actions: Action[] = $derived([
     { icon: 'heading', label: t('guideMe'), run: onnavigate },
     ...(onmark ? [{ icon: 'pin', label: t('markHere'), run: onmark } as const] : []),
     ...(ontask ? [{ icon: 'task', label: t('taskHere'), run: ontask } as const] : []),
-    { icon: 'ruler', label: t('measureFromHere'), run: onmeasure },
   ]);
 </script>
 

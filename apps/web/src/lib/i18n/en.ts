@@ -226,7 +226,6 @@ export const en = {
   guideMe: 'Guide me',
   followRoute: 'Follow route',
   followStrip: 'Follow strip',
-  measureFromHere: 'Measure from here',
   measure: 'Measure distances',
   northUp: 'North up',
   layers: 'Map layers',

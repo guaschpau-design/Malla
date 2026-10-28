@@ -1,6 +1,6 @@
 import { device, expect, mapIdle, openMore, test } from './helpers.ts';
 
-test('a point picked on the map is measured from here and navigated to', async ({ browser }) => {
+test('a point picked on the map tells how far it is and is navigated to', async ({ browser }) => {
   const page = await device(browser, 'Ana');
   await page.getByRole('button', { name: 'Mostrar mi ubicación' }).click();
   // Wait for the map to centre on this device, whose view the URL keeps, and settle there; then

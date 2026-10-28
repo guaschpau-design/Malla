@@ -228,7 +228,6 @@ export const es: Messages = {
   guideMe: 'Guíame',
   followRoute: 'Seguir ruta',
   followStrip: 'Seguir franja',
-  measureFromHere: 'Medir desde aquí',
   measure: 'Medir distancias',
   northUp: 'Norte arriba',
   layers: 'Capas del mapa',

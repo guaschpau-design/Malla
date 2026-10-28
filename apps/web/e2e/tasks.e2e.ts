@@ -10,8 +10,7 @@ test('a task at a point reaches its assignee, who starts and finishes it', async
   // Ana picks a point of the map and leaves a task there for Berta.
   await ana.locator('.maplibregl-canvas').click({ button: 'right' });
   const point = ana.getByRole('region', { name: 'Punto del mapa' });
-  await point.getByRole('button', { name: 'Más acciones' }).click();
-  await point.getByRole('menuitem', { name: 'Tarea aquí' }).click();
+  await point.getByRole('button', { name: 'Tarea aquí' }).click();
   const anaTasks = ana.getByRole('region', { name: 'Tareas' });
   await anaTasks.getByLabel('Qué hay que hacer').fill('Revisar el almacén');
   await anaTasks.getByLabel('Para').selectOption({ label: 'Berta' });

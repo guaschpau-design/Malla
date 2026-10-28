@@ -31,14 +31,11 @@
     credits: readonly string[];
     /** Shows a coordinate found: its point, on the map. */
     onfind: (at: LatLon) => void;
-    /** Starts measuring from a point. */
-    onmeasure: (from: LatLon) => void;
     /** Starts a marker at a point of the group's map. */
     onmark: (at: LatLon) => void;
   }
 
-  let { t, locale, map, group, preferences, weather, credits, onfind, onmeasure, onmark }: Props =
-    $props();
+  let { t, locale, map, group, preferences, weather, credits, onfind, onmark }: Props = $props();
 </script>
 
 {#if panels.open?.name === 'point'}
@@ -53,9 +50,6 @@
     format={preferences.coordinateFormat}
     onnavigate={() => {
       navigateTo({ kind: 'point', at, name });
-    }}
-    onmeasure={() => {
-      onmeasure(at);
     }}
     onmark={group
       ? () => {

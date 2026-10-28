@@ -339,9 +339,6 @@
   weather={shown.weather ? weather : null}
   {credits}
   onfind={find}
-  onmeasure={(from: LatLon) => {
-    startTool({ kind: 'measure', from });
-  }}
   onmark={markAt}
 />
 <SelfLayer {map} />
@@ -400,7 +397,7 @@
   onsos={() => (sosOpen = true)}
   ondraw={startDrawing}
   onmeasure={() => {
-    startTool({ kind: 'measure', from: null });
+    startTool({ kind: 'measure' });
   }}
   tasksForMe={group ? myPendingCount(group.feed.state, group.self) : 0}
   {drawingOrMeasuring}
