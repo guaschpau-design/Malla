@@ -44,6 +44,8 @@ test('a second device joins a group through its invitation link', async ({ brows
 
   // A coordinator invitation, pasted, promotes the member.
   const coordinatorLink = await invitationLink(coordinator, 'coordinador');
+  // With a group in use, the ways to another fold under it.
+  await member.getByText('Tus otros grupos').click();
   await member.getByRole('button', { name: 'Unirme a un grupo' }).click();
   await member.getByLabel('Enlace de invitación').fill(coordinatorLink);
   await member.getByRole('button', { name: 'Unirme', exact: true }).click();

@@ -24,6 +24,7 @@ export const en = {
   mediumLora: 'LoRa',
   radioUnnamed: 'unnamed radio',
   language: 'Language',
+  settings: 'Settings',
   offlineAreas: 'Offline maps',
   close: 'Close',
   areasIntro:
@@ -102,6 +103,7 @@ export const en = {
   roleCoordinator: 'coordinator',
   joinGroup: 'Join a group',
   otherGroups: 'Your other groups',
+  createOrJoin: 'Create one or join',
   groups: 'Groups',
   noGroup: 'No group',
   guide: 'User guide',
@@ -215,6 +217,7 @@ export const en = {
   diaryStatus: 'Status: {status}.',
   add: 'Add',
   more: 'More',
+  moreActions: 'More actions',
   dock: 'Main actions',
   accuracyWithin: 'Accuracy ±{distance}',
   accuracyGood: 'good',
@@ -447,7 +450,6 @@ export const en = {
     'The radio does not answer. Check that it runs MeshCore Companion Bluetooth firmware v1.18 or later.',
   radioFailed: 'Could not connect to the radio. Try again.',
   chatGroup: 'Group',
-  chatActions: 'More options',
   chatMeshcore: 'MeshCore',
   meshcoreIntro:
     'Messages from people nearby who use the MeshCore app with their radios. Tesel keeps them here so they are not lost. To reply, use the MeshCore app.',
@@ -505,8 +507,7 @@ export const en = {
   checkInFine: 'I am OK',
   checkInSosText: 'No answer to “Are you OK?”',
   checkInSwitch: '“Are you OK?” check',
-  checkInHint:
-    'Asks anyone active who has not moved or touched their phone for {minutes} min; without an answer in 2 min, it sends an SOS. Only while Tesel is open.',
+  checkInHint: 'Anyone still for {minutes} min; no answer, SOS.',
   diaryCheckInOn: 'Turns on the “Are you OK?” check after {minutes} min.',
   diaryCheckInOff: 'Turns off the “Are you OK?” check.',
   incidentFire: 'Fire',

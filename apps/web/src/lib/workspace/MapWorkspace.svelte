@@ -402,8 +402,6 @@
   onmeasure={() => {
     startTool({ kind: 'measure', from: null });
   }}
-  {preferences}
-  {locale}
   tasksForMe={group ? myPendingCount(group.feed.state, group.self) : 0}
   {drawingOrMeasuring}
 />

@@ -267,15 +267,15 @@
         void send('message');
       }}
     >
-      <Menu label={t('chatActions')} place="start">
+      <Menu label={t('moreActions')} place="start">
         {#snippet trigger(expanded: boolean, toggle: () => void)}
           <button
             type="button"
             class="icon"
             aria-haspopup="menu"
             aria-expanded={expanded}
-            aria-label={t('chatActions')}
-            title={t('chatActions')}
+            aria-label={t('moreActions')}
+            title={t('moreActions')}
             onclick={toggle}
           >
             <Pictogram name="plus" size={22} />

@@ -41,5 +41,5 @@ test('distances are measured point by point, with the area they enclose', async 
   await card.getByRole('button', { name: 'Deshacer' }).click();
   await expect(page.getByText('área encerrada')).toBeHidden();
   await page.getByRole('button', { name: 'Cerrar' }).click();
-  await expect(page.getByRole('button', { name: 'Más' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Más', exact: true })).toBeVisible();
 });

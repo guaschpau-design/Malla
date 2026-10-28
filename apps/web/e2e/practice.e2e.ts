@@ -13,7 +13,7 @@ test('a practice group talks, answers the roll call and ends', async ({ browser 
   // The simulated teammates announce themselves and speak in the chat.
   await page.getByRole('button', { name: 'Chat' }).click();
   await expect(page.getByText('Llego a la zona. Monto el punto de encuentro.')).toBeVisible();
-  await page.getByRole('button', { name: 'Más opciones' }).click();
+  await page.getByRole('button', { name: 'Más acciones' }).click();
   await page.getByRole('menuitem', { name: 'Pasar lista' }).click();
   const rollCall = page.getByRole('region', { name: 'Pase de lista' });
   await expect(rollCall).toContainText('Responden 0 de 4');

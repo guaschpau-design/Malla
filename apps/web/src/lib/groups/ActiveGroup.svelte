@@ -54,10 +54,12 @@
           attempt(() => current.setCheckInTimer(on ? 0 : CHECK_IN_MINUTES), t('actionFailed'));
         }}
       >
-        {t('checkInSwitch')}
+        <span class="label">
+          {t('checkInSwitch')}
+          <small>{t('checkInHint', { minutes: CHECK_IN_MINUTES })}</small>
+        </span>
         <Switch {on} />
       </button>
-      <p class="hint">{t('checkInHint', { minutes: CHECK_IN_MINUTES })}</p>
     {/if}
   {/if}
   <div class="row">
@@ -81,6 +83,15 @@
     justify-content: space-between;
     width: 100%;
     text-align: left;
+  }
+
+  .label {
+    display: grid;
+  }
+
+  .label small {
+    color: var(--muted);
+    font-size: var(--text-small);
   }
 
   .group {

@@ -1,6 +1,7 @@
 <!-- The groups: the one in use, the others, two big buttons to create or join one, and a practice
-     with a simulated group. Creating, joining, inviting and scanning each open in the panel and
-     come back here. -->
+     with a simulated group. With a group in use, the others and the ways to a new one fold under
+     it: they are seldom needed during an operation. Creating, joining, inviting and scanning each
+     open in the panel and come back here. -->
 <script lang="ts">
   import type { Invitation } from '@tesel/protocol';
 
@@ -9,6 +10,7 @@
   import type { Session } from '../session.svelte.ts';
   import type { GroupFeed } from '../sync/group-feed.svelte.ts';
   import { confirmations } from '../ui/confirmations.svelte.ts';
+  import Fold from '../ui/Fold.svelte';
   import Panel from '../ui/Panel.svelte';
   import Pictogram from '../ui/Pictogram.svelte';
   import ActiveGroup from './ActiveGroup.svelte';
@@ -70,6 +72,33 @@
   }
 </script>
 
+{#snippet elsewhere()}
+  {#if others.length > 0}
+    <ul class="others" aria-label={t('otherGroups')}>
+      {#each others as group (group.id)}
+        <li>
+          <span>{group.name}</span>
+          <button onclick={() => session.activate(group.id)}>{t('use')}</button>
+        </li>
+      {/each}
+    </ul>
+  {/if}
+
+  <div class="actions">
+    <button onclick={() => (view = { kind: 'create' })}>
+      <Pictogram name="plus" size={26} />
+      {t('createGroup')}
+    </button>
+    <button onclick={() => (view = { kind: 'join' })}>
+      <Pictogram name="qr" size={26} />
+      {t('joinGroup')}
+    </button>
+  </div>
+  {#if !session.groups.some((group) => group.practice)}
+    <button class="practice" onclick={practise}>{t('startPractice')}</button>
+  {/if}
+{/snippet}
+
 <Panel title={t('groups')} closeLabel={t('close')} {onclose}>
   {#if view.kind === 'create'}
     <CreateGroupForm {t} {session} onback={home} />
@@ -97,29 +126,17 @@
         <p class="hint">{t('noGroups')}</p>
       {/if}
 
-      {#if others.length > 0}
-        <ul class="others" aria-label={t('otherGroups')}>
-          {#each others as group (group.id)}
-            <li>
-              <span>{group.name}</span>
-              <button onclick={() => session.activate(group.id)}>{t('use')}</button>
-            </li>
-          {/each}
-        </ul>
-      {/if}
-
-      <div class="actions">
-        <button onclick={() => (view = { kind: 'create' })}>
-          <Pictogram name="plus" size={26} />
-          {t('createGroup')}
-        </button>
-        <button onclick={() => (view = { kind: 'join' })}>
-          <Pictogram name="qr" size={26} />
-          {t('joinGroup')}
-        </button>
-      </div>
-      {#if !session.groups.some((group) => group.practice)}
-        <button class="practice" onclick={practise}>{t('startPractice')}</button>
+      {#if session.activeGroup}
+        <Fold
+          title={t('otherGroups')}
+          summary={others.length > 0
+            ? others.map((group) => group.name).join(', ')
+            : t('createOrJoin')}
+        >
+          {@render elsewhere()}
+        </Fold>
+      {:else}
+        {@render elsewhere()}
       {/if}
 
       {#if session.identity}

@@ -15,6 +15,7 @@
   import { resolveLocale, translator, type Locale, type MessageKey } from './lib/i18n/index.ts';
   import Onboarding from './lib/identity/Onboarding.svelte';
   import ConnectionsPanel from './lib/links/ConnectionsPanel.svelte';
+  import SettingsPanel from './lib/settings/SettingsPanel.svelte';
   import LinkButton from './lib/links/LinkButton.svelte';
   import { linkOf, networkStatus, radioLinkOf } from './lib/links/links.ts';
   import { mapLibreLocale } from './lib/map/style/maplibre-locale.ts';
@@ -311,6 +312,10 @@
 
     {#if map && offline && isOpen('offline')}
       <OfflineAreasPanel {t} {locale} {map} {offline} onclose={closePanel} />
+    {/if}
+
+    {#if preferences && isOpen('settings')}
+      <SettingsPanel {t} {preferences} {locale} onclose={closePanel} />
     {/if}
 
     {#if isOpen('connections')}

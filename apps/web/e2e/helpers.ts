@@ -153,7 +153,7 @@ export async function tapMapUntil(
 
 /** Opens one of the items of the dock's "More" menu. */
 export async function openMore(page: Page, item: string): Promise<void> {
-  await page.getByRole('button', { name: 'Más' }).click();
+  await page.getByRole('button', { name: 'Más', exact: true }).click();
   await page.getByRole('menuitem', { name: item }).click();
 }
 

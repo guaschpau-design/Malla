@@ -7,8 +7,7 @@
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import Panel from '../ui/Panel.svelte';
-  import Pictogram from '../ui/Pictogram.svelte';
-  import Switch from '../ui/Switch.svelte';
+  import SwitchRow from '../ui/SwitchRow.svelte';
   import BaseMapPreview from './BaseMapPreview.svelte';
   import {
     isFlag,
@@ -66,16 +65,12 @@
     <section class="layers section" aria-label={t(section.title)}>
       <h3>{t(section.title)}</h3>
       {#each section.switches as name (name)}
-        <button
-          class="layer"
-          role="switch"
-          aria-checked={isOn(name)}
+        <SwitchRow
+          icon={LAYER_SWITCHES[name].icon}
+          label={t(LAYER_SWITCHES[name].label)}
+          on={isOn(name)}
           onclick={() => void toggle(name)}
-        >
-          <Pictogram name={LAYER_SWITCHES[name].icon} size={20} />
-          <span>{t(LAYER_SWITCHES[name].label)}</span>
-          <Switch on={isOn(name)} />
-        </button>
+        />
       {/each}
     </section>
   {/each}
@@ -124,20 +119,6 @@
     color: var(--muted);
     font-size: var(--text-small);
     font-weight: 600;
-  }
-
-  .layer {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 0.75rem;
-    align-items: center;
-    padding: 0.55rem 0.4rem;
-    text-align: left;
-    border-color: transparent;
-  }
-
-  .layer[aria-checked='false'] :global(svg) {
-    opacity: 0.45;
   }
 
   /* The credits are small print. */

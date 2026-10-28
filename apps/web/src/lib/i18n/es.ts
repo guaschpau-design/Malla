@@ -24,6 +24,7 @@ export const es: Messages = {
   mediumLora: 'LoRa',
   radioUnnamed: 'radio sin nombre',
   language: 'Idioma',
+  settings: 'Ajustes',
   offlineAreas: 'Mapas sin conexión',
   close: 'Cerrar',
   areasIntro:
@@ -103,6 +104,7 @@ export const es: Messages = {
   roleCoordinator: 'coordinador',
   joinGroup: 'Unirme a un grupo',
   otherGroups: 'Tus otros grupos',
+  createOrJoin: 'Crear uno o unirte',
   groups: 'Grupos',
   noGroup: 'Sin grupo',
   guide: 'Guía de uso',
@@ -217,6 +219,7 @@ export const es: Messages = {
   diaryStatus: 'Estado: {status}.',
   add: 'Añadir',
   more: 'Más',
+  moreActions: 'Más acciones',
   dock: 'Acciones principales',
   accuracyWithin: 'Precisión ±{distance}',
   accuracyGood: 'buena',
@@ -449,7 +452,6 @@ export const es: Messages = {
     'La radio no responde. Comprueba que lleva el firmware MeshCore Companion Bluetooth v1.18 o posterior.',
   radioFailed: 'No se pudo conectar con la radio. Inténtalo de nuevo.',
   chatGroup: 'Grupo',
-  chatActions: 'Más opciones',
   chatMeshcore: 'MeshCore',
   meshcoreIntro:
     'Mensajes de personas cercanas que usan la app MeshCore con sus radios. Tesel los guarda aquí para que no se pierdan. Para responder, usa la app MeshCore.',
@@ -507,8 +509,7 @@ export const es: Messages = {
   checkInFine: 'Estoy bien',
   checkInSosText: 'Sin respuesta al aviso «¿Sigues bien?»',
   checkInSwitch: 'Aviso «¿Sigues bien?»',
-  checkInHint:
-    'Pregunta a quien esté activo y lleve {minutes} min sin moverse ni tocar el móvil; si no responde en 2 min, envía un SOS. Solo funciona con Tesel abierta.',
+  checkInHint: 'A quien lleve {minutes} min quieto; sin respuesta, SOS.',
   diaryCheckInOn: 'Activa el aviso «¿Sigues bien?» a los {minutes} min.',
   diaryCheckInOff: 'Desactiva el aviso «¿Sigues bien?».',
   incidentFire: 'Incendio',

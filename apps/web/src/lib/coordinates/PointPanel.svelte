@@ -8,7 +8,8 @@
   import type { Locale, Translate } from '../i18n/index.ts';
   import FromHere from '../navigation/FromHere.svelte';
   import type { Preference } from '../settings/preference.svelte.ts';
-  import ActionButton from '../ui/ActionButton.svelte';
+  import type { Action } from '../ui/action.ts';
+  import Actions from '../ui/Actions.svelte';
   import Panel from '../ui/Panel.svelte';
   import CoordinateBlock from './CoordinateBlock.svelte';
   import type { CoordinateFormat } from './coordinates.ts';
@@ -44,6 +45,13 @@
     onclose,
     about,
   }: Props = $props();
+
+  const actions: Action[] = $derived([
+    { icon: 'heading', label: t('guideMe'), run: onnavigate },
+    ...(onmark ? [{ icon: 'pin', label: t('markHere'), run: onmark } as const] : []),
+    ...(ontask ? [{ icon: 'task', label: t('taskHere'), run: ontask } as const] : []),
+    { icon: 'ruler', label: t('measureFromHere'), run: onmeasure },
+  ]);
 </script>
 
 <Panel {title} closeLabel={t('close')} {onclose}>
@@ -51,11 +59,6 @@
     <CoordinateBlock {t} {at} {format} />
     <FromHere {t} {locale} {at} />
     {@render about?.()}
-    <div class="row">
-      <ActionButton icon="heading" label={t('guideMe')} onclick={onnavigate} />
-      {#if onmark}<ActionButton icon="pin" label={t('markHere')} onclick={onmark} />{/if}
-      {#if ontask}<ActionButton icon="task" label={t('taskHere')} onclick={ontask} />{/if}
-      <ActionButton icon="ruler" label={t('measureFromHere')} onclick={onmeasure} />
-    </div>
+    <Actions {actions} moreLabel={t('moreActions')} />
   </div>
 </Panel>

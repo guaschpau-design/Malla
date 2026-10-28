@@ -13,7 +13,8 @@
   import FromHere from '../navigation/FromHere.svelte';
   import { objectDestination } from '../navigation/target.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
-  import ActionButton from '../ui/ActionButton.svelte';
+  import type { Action } from '../ui/action.ts';
+  import Actions from '../ui/Actions.svelte';
   import { confirmations } from '../ui/confirmations.svelte.ts';
   import Panel from '../ui/Panel.svelte';
   import { openPanel } from '../ui/panels.svelte.ts';
@@ -125,6 +126,45 @@
     const keys = strips.map((item) => item.key);
     attempt(() => onremovesweep(keys), t('actionFailed'));
   }
+
+  /** Most used first: deleting comes last. */
+  const actions: Action[] = $derived.by(() => {
+    if (!object) return [];
+    const list: Action[] = [];
+    if (canPlan) list.push({ icon: 'sweep', label: t('sweepPlan'), run: onplansweep });
+    if (destination) {
+      list.push({
+        icon: destination.kind === 'route' ? 'route' : 'heading',
+        label: t(follow),
+        run: () => {
+          onnavigate(title);
+        },
+      });
+    }
+    if (strip) {
+      const area = strip.area;
+      list.push({
+        icon: 'area',
+        label: t('stripShowArea'),
+        run: () => {
+          openPanel({ name: 'object', key: eventRefKey(area.object) });
+        },
+      });
+    }
+    const place: Place = { kind: 'object', object: object.object };
+    list.push({
+      icon: 'task',
+      label: t(taskLabel),
+      run: () => {
+        ontask(place);
+      },
+    });
+    if (coordinator && strips.length > 0) {
+      list.push({ icon: 'sweep', label: t('sweepRemove'), run: () => void removeSweep() });
+    }
+    list.push({ icon: 'trash', label: t('delete'), run: () => void remove() });
+    return list;
+  });
 </script>
 
 {#if object}
@@ -157,41 +197,7 @@
           time: formatTime(object.time * 1000, locale),
         })}
       </p>
-      <div class="row">
-        {#if canPlan}
-          <ActionButton icon="sweep" label={t('sweepPlan')} onclick={onplansweep} />
-        {/if}
-        {#if destination}
-          <ActionButton
-            icon={destination.kind === 'route' ? 'route' : 'heading'}
-            label={t(follow)}
-            onclick={() => {
-              onnavigate(title);
-            }}
-          />
-        {/if}
-        {#if strip}
-          {@const area = strip.area}
-          <ActionButton
-            icon="area"
-            label={t('stripShowArea')}
-            onclick={() => {
-              openPanel({ name: 'object', key: eventRefKey(area.object) });
-            }}
-          />
-        {/if}
-        <ActionButton
-          icon="task"
-          label={t(taskLabel)}
-          onclick={() => {
-            ontask({ kind: 'object', object: object.object });
-          }}
-        />
-        {#if coordinator && strips.length > 0}
-          <button onclick={removeSweep}>{t('sweepRemove')}</button>
-        {/if}
-        <button onclick={remove}>{t('delete')}</button>
-      </div>
+      <Actions {actions} moreLabel={t('moreActions')} />
     </div>
   </Panel>
 {/if}

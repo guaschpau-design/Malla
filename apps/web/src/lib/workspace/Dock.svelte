@@ -1,12 +1,11 @@
 <!-- The bottom of the map: the SOS button and the dock — Me and More always; with a group, the SOS
      button, Add, Chat and Tasks. Everything else starts from what is tapped on the map. -->
 <script lang="ts">
-  import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
+  import type { MessageKey, Translate } from '../i18n/index.ts';
   import AddMenu from '../objects/AddMenu.svelte';
   import type { DraftKind } from '../objects/draft.ts';
   import type { PositionMode } from '../position/position-mode.ts';
   import type { PositionSharing } from '../position/position-sharing.svelte.ts';
-  import type { Preferences } from '../settings/preferences.ts';
   import DockButton from '../ui/DockButton.svelte';
   import { TASK_LIST } from '../tasks/task-editor.ts';
   import { CHAT } from '../chat/chat-tabs.ts';
@@ -20,25 +19,13 @@
     onsos: () => void;
     ondraw: (kind: DraftKind) => void;
     onmeasure: () => void;
-    preferences: Preferences;
-    locale: Locale;
     /** Pending tasks assigned to this device. */
     tasksForMe: number;
     /** Drawing or measuring: only the SOS button stays, the rest makes room for the map. */
     drawingOrMeasuring: boolean;
   }
 
-  let {
-    t,
-    sharing,
-    onsos,
-    ondraw,
-    onmeasure,
-    preferences,
-    locale,
-    tasksForMe,
-    drawingOrMeasuring,
-  }: Props = $props();
+  let { t, sharing, onsos, ondraw, onmeasure, tasksForMe, drawingOrMeasuring }: Props = $props();
 
   /** With a group there is always a way of sharing the position in it. */
   const inGroup = $derived(sharing !== null);
@@ -87,7 +74,7 @@
           }}
         />
       {/if}
-      <MoreMenu {t} {preferences} {locale} {onmeasure} withGroup={inGroup} />
+      <MoreMenu {t} {onmeasure} withGroup={inGroup} />
     </nav>
   {/if}
 </div>

@@ -87,7 +87,7 @@ test('a critical alert stays on screen until each member acknowledges it', async
 
   await ana.getByRole('button', { name: 'Chat' }).click();
   await ana.getByLabel('Mensaje').fill('Evacuad la zona norte');
-  await ana.getByRole('button', { name: 'Más opciones' }).click();
+  await ana.getByRole('button', { name: 'Más acciones' }).click();
   await ana.getByRole('menuitem', { name: /Enviar como alerta/ }).click();
 
   const alert = berta.getByRole('region', { name: 'Alerta crítica' });
@@ -104,7 +104,7 @@ test('a roll call is answered by each member and followed by its caller', async 
   const { ana, berta } = await twoMembers(browser, VIEW);
 
   await ana.getByRole('button', { name: 'Chat' }).click();
-  await ana.getByRole('button', { name: 'Más opciones' }).click();
+  await ana.getByRole('button', { name: 'Más acciones' }).click();
   await ana.getByRole('menuitem', { name: 'Pasar lista' }).click();
   const caller = ana.getByRole('region', { name: 'Pase de lista' });
   await expect(caller).toContainText('Responden 0 de 1');

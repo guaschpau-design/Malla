@@ -13,6 +13,9 @@ Each feature added a button where it was used: the chat gained one for situation
 - The chat fills the height between the top bar and the dock, with its tabs as its header beside the close button. It writes in one row: a "+" menu (a new report; for coordinators, send the text as an alert and call the roll), the text with its microphone, and Send as an arrow.
 - Lines of one person within five minutes of each other run under one name; one's own lines carry none. Each line ends with its time.
 - A report in the chat timeline is one pinned line, with who sent it and when, that opens with a tap; the reports tab shows them open.
+- A panel's actions are one row (`ui/Actions.svelte`): up to three show; with more, the first two show and the rest wait in a "⋯" menu, so a point of the map shows Guide me and Mark, and an object's Delete is always last.
+- The dock's "More" menu holds tools only; the choices of this device (alarm sound, notifications, screen on, full screen, language) are a settings panel it opens.
+- With a group in use, the groups panel folds the other groups and the ways to create or join one under it.
 
 This amends [ADR-0026](0026-one-kind-of-alert.md), where Send as alert sat beside Send, and [ADR-0063](0063-situation-reports.md), where reports were written from a button of their own and shown open in the chat.
 

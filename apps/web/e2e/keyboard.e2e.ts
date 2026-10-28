@@ -8,11 +8,11 @@ import { device, expect, test } from './helpers.ts';
 
 test('panels and menus take the focus, close with Escape and give it back', async ({ browser }) => {
   const page = await device(browser, 'Ana');
-  const more = page.getByRole('button', { name: 'Más' });
+  const more = page.getByRole('button', { name: 'Más', exact: true });
 
   // The menu follows its button, as screen readers read the page.
   await more.click();
-  const menu = page.getByRole('menu', { name: 'Más' });
+  const menu = page.getByRole('menu', { name: 'Más', exact: true });
   const follows = await menu.evaluate((element) => {
     const button = document.querySelector('button[aria-expanded="true"]');
     const position = button?.compareDocumentPosition(element) ?? 0;
@@ -73,8 +73,8 @@ test('in a phone held sideways, menus and panels rise over the cards', async ({ 
   const card = page.getByRole('region', { name: 'Práctica' });
   await expect(card).toBeVisible();
 
-  await page.getByRole('button', { name: 'Más' }).click();
-  const menu = page.getByRole('menu', { name: 'Más' });
+  await page.getByRole('button', { name: 'Más', exact: true }).click();
+  const menu = page.getByRole('menu', { name: 'Más', exact: true });
   expect(await coversAtOverlap(menu, card)).toBe(true);
   // Below the top bar, whole.
   const bar = await page.locator('header').boundingBox();
