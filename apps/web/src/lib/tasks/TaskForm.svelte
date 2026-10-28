@@ -15,6 +15,7 @@
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import { aliasOf } from '../incidents/incidents.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
+  import { confirmations } from '../ui/confirmations.svelte.ts';
   import { Submission } from '../ui/submission.svelte.ts';
   import type { TaskEditing } from './task-editor.svelte.ts';
   import { TASK_PRESETS } from './task-presets.ts';
@@ -88,7 +89,8 @@
   }
 
   async function cancelTask(): Promise<void> {
-    if (!confirm(t('confirmCancelTask', { text: initial.text }))) return;
+    const question = t('confirmCancelTask', { text: initial.text });
+    if (!(await confirmations.ask({ text: question, confirm: t('taskCancel') }))) return;
     await save({ ...fields(), text: text.trim() || initial.text, status: 'cancelled' });
   }
 </script>

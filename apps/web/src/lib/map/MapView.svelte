@@ -70,4 +70,9 @@
     position: absolute;
     inset: 0;
   }
+
+  /* The map's controls stay clear of a notch when the phone is held sideways. */
+  .map :global(.maplibregl-ctrl-top-right) {
+    right: env(safe-area-inset-right);
+  }
 </style>

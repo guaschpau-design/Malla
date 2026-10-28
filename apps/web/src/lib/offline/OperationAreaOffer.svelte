@@ -79,10 +79,11 @@
 
 {#if offer}
   {@const { area, layers, bytes } = offer}
-  <MapCard>
-    <strong>
-      {area.label ? t('operationAreaTitle', { name: area.label }) : t('styleOperationArea')}
-    </strong>
+  {@const title = area.label
+    ? t('operationAreaTitle', { name: area.label })
+    : t('styleOperationArea')}
+  <MapCard label={title}>
+    <strong>{title}</strong>
     {#if job.progress}
       <progress max={job.progress.total} value={job.progress.done}></progress>
       <div class="row">

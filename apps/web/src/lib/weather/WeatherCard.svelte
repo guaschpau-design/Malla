@@ -21,16 +21,17 @@
 
   /** Warnings closed on this device, by what tells one apart. */
   const dismissed = new SvelteSet<string>();
-  const here = $derived(location.fix ? warningsAt(weather.regions, location.fix.at) : []);
-  const keys = $derived(here.map((w) => `${w.level}:${w.onset}:${w.expires}`));
+  const here = $derived(location.fix ? warningsAt(weather.regions, location.fix.at) : null);
+  const keys = $derived(here?.warnings.map((w) => `${w.level}:${w.onset}:${w.expires}`) ?? []);
   const shown = $derived(keys.some((key) => !dismissed.has(key)));
 </script>
 
-{#if shown && here[0]}
+{#if shown && here?.warnings[0]}
   <!-- The highest level here, first in the list, colours the card's edge. -->
-  <MapCard edge="var(--tone-{WARNING_LOOKS[here[0].level].tone})">
+  {@const tone = WARNING_LOOKS[here.warnings[0].level].tone}
+  <MapCard label={t('weatherHere')} edge="var(--tone-{tone})">
     <strong>{t('weatherHere')}</strong>
-    <WarningList {t} {locale} warnings={here} source={weather.source} />
+    <WarningList {t} {locale} {here} source={weather.source} />
     <div class="row">
       <button
         onclick={() => {

@@ -347,14 +347,14 @@
 
   /* Listening: in the colour of what is live, pulsing gently. */
   .dictate[aria-pressed='true'] {
-    color: #fff;
-    background: var(--danger);
+    color: var(--on-danger);
+    background: var(--danger-fill);
     animation: listening 1.4s ease-in-out infinite;
   }
 
   @keyframes listening {
     50% {
-      box-shadow: 0 0 0 0.35rem color-mix(in srgb, var(--danger) 30%, transparent);
+      box-shadow: 0 0 0 0.35rem color-mix(in srgb, var(--danger-fill) 30%, transparent);
     }
   }
 

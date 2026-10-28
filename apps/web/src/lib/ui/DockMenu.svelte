@@ -1,8 +1,9 @@
 <!-- A dock button that opens a menu above the dock, aligned with the dock's right edge so it stays
      on screen. The menu closes when an item that does something calls `close`, when the user taps
      elsewhere or presses Escape; a switch in it leaves it open, so its change is seen. From the
-     keyboard, the first item takes the focus, the arrow keys move between items and Escape gives
-     the focus back to the button. -->
+     keyboard, the first item takes the focus, the arrow keys move between items, and closing gives
+     the focus back to the button. The menu follows its button in the page, as screen readers read
+     it. -->
 <script lang="ts">
   import { tick, type Snippet } from 'svelte';
 
@@ -23,7 +24,12 @@
   let menu: HTMLDivElement | undefined = $state();
 
   function close(): void {
+    if (menu?.contains(document.activeElement)) button()?.focus();
     open = false;
+  }
+
+  function button(): HTMLElement | null {
+    return root.querySelector<HTMLElement>(':scope > button');
   }
 
   async function toggle(): Promise<void> {
@@ -61,13 +67,12 @@
 <svelte:window
   onpointerdown={onPointerDown}
   onkeydown={(event: KeyboardEvent) => {
-    if (event.key !== 'Escape' || !open) return;
-    close();
-    root.querySelector<HTMLElement>(':scope > button')?.focus();
+    if (event.key === 'Escape' && open) close();
   }}
 />
 
 <div class="dock-menu" bind:this={root}>
+  <DockButton {icon} {label} expanded={open} onclick={() => void toggle()} />
   {#if open}
     <div
       class="menu"
@@ -80,7 +85,6 @@
       {@render items(close)}
     </div>
   {/if}
-  <DockButton {icon} {label} expanded={open} onclick={() => void toggle()} />
 </div>
 
 <style>

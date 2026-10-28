@@ -20,8 +20,11 @@ test('a marker drawn by one member can be opened and deleted by another', async 
   await tapMapUntil(berta, {}, () => expect(details).toBeVisible({ timeout: 2000 }));
   await expect(details).toContainText('Último cambio de Ana');
 
-  berta.once('dialog', (dialog) => void dialog.accept());
   await details.getByRole('button', { name: 'Borrar' }).click();
+  await berta
+    .getByRole('dialog', { name: /Borrar «Foco norte»/ })
+    .getByRole('button', { name: 'Borrar' })
+    .click();
   await expect(details).toBeHidden();
   // Ana taps the same spot until the deletion has arrived and the marker opens no more.
   await tapMapUntil(ana, {}, () =>
@@ -45,8 +48,9 @@ test('an SOS is acknowledged by the group and cancelled by its sender', async ({
   await call.getByRole('button', { name: 'Recibido' }).click();
   await expect(berta.getByRole('region', { name: 'SOS' })).toContainText('Recibido por Ana');
 
-  berta.once('dialog', (confirm) => void confirm.accept());
   await berta.getByRole('button', { name: 'Cancelar SOS' }).click();
+  const confirm = berta.getByRole('dialog', { name: '¿Cancelar este SOS para todo el grupo?' });
+  await confirm.getByRole('button', { name: 'Cancelar SOS' }).click();
   await expect(call).toBeHidden();
 });
 
@@ -109,7 +113,7 @@ test('a roll call is answered by each member and followed by its caller', async 
   await call.getByRole('button', { name: 'Estoy bien' }).click();
   await expect(call).toBeHidden();
 
-  await expect(caller).toContainText('Responden 1 de 1');
+  await expect(caller).toContainText('Responde 1 de 1');
   await expect(caller).toContainText('Han respondido todos.');
 });
 
@@ -156,9 +160,7 @@ test('members inside a danger area are warned', async ({ browser }) => {
   await ana.getByLabel('Etiqueta (opcional)').fill('Derrumbe');
   await ana.getByRole('button', { name: 'Guardar' }).click();
 
-  const warning = berta
-    .getByRole('status')
-    .filter({ hasText: 'Has entrado en una zona de peligro' });
+  const warning = berta.getByRole('region', { name: 'Has entrado en una zona de peligro' });
   await expect(warning).toContainText('Derrumbe', { timeout: 15_000 });
   await warning.getByRole('button', { name: 'Entendido' }).click();
   await expect(warning).toBeHidden();

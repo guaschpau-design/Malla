@@ -42,7 +42,7 @@
   .credits {
     position: absolute;
     bottom: var(--dock-clearance);
-    left: 0.75rem;
+    left: max(0.75rem, env(safe-area-inset-left));
     z-index: var(--layer-dock);
     max-width: min(26rem, 70vw);
     margin: 0;

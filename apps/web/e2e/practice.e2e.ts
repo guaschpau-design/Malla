@@ -7,7 +7,7 @@ test('a practice group talks, answers the roll call and ends', async ({ browser 
   const page = await device(browser, 'Ana');
   await page.getByRole('button', { name: 'Grupos: Sin grupo' }).click();
   await page.getByRole('button', { name: 'Practicar con un grupo simulado' }).click();
-  const card = page.getByRole('status').filter({ hasText: 'Nada sale de este dispositivo.' });
+  const card = page.getByRole('region', { name: 'Práctica' });
   await expect(card).toBeVisible();
 
   // The simulated teammates announce themselves and speak in the chat.

@@ -42,7 +42,7 @@
     <button class="sos" onclick={onsos}>{t('sos')}</button>
   {/if}
   {#if !tapping}
-    <nav class="dock" aria-label={t('dock')}>
+    <nav class="dock chrome" aria-label={t('dock')}>
       <DockButton
         icon="person"
         label={t('me')}
@@ -85,7 +85,7 @@
      context of the dock's own would keep them under. */
   .bottom {
     position: absolute;
-    right: 0.75rem;
+    right: max(0.75rem, env(safe-area-inset-right));
     bottom: calc(0.75rem + env(safe-area-inset-bottom));
     left: max(0.75rem, env(safe-area-inset-left));
     display: flex;
@@ -102,9 +102,7 @@
     gap: 0.15rem;
     max-width: 24rem;
     padding: 0.25rem;
-    color: var(--chrome-fg);
     pointer-events: auto;
-    background: var(--chrome-bg);
     border-radius: var(--radius-sheet);
     box-shadow: var(--shadow-float);
   }
@@ -114,10 +112,10 @@
     width: 4rem;
     height: 4rem;
     font-weight: 800;
-    color: #fff;
+    color: var(--on-danger);
     pointer-events: auto;
-    background: var(--danger);
-    border: 3px solid #fff;
+    background: var(--danger-fill);
+    border: 3px solid var(--on-danger);
     border-radius: 50%;
     box-shadow: var(--shadow-float);
   }

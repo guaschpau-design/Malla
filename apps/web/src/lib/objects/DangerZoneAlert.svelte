@@ -43,7 +43,7 @@
 </script>
 
 {#if warned.length > 0}
-  <MapCard edge="var(--danger)">
+  <MapCard label={t('dangerZoneEntered')} edge="var(--danger)">
     <strong class="title">{t('dangerZoneEntered')}</strong>
     <p>{warned.map((zone) => zone.label || t('styleDanger')).join(' · ')}</p>
     <div class="row">

@@ -41,7 +41,7 @@
   }
 </script>
 
-<Dialog title={t('sosTitle')}>
+<Dialog title={t('sosTitle')} {oncancel}>
   <form
     class="stack"
     onsubmit={(event) => {

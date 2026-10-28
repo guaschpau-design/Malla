@@ -2,8 +2,16 @@
 
 import type { LatLon, ShapeGeometry } from '@tesel/protocol';
 
+import type { MessageKey } from '../i18n/index.ts';
+
 /** What can be drawn: a marker or an area. Lines and circles drawn by older versions still show. */
 export type DraftKind = 'marker' | 'area';
+
+/** What a draft is called while it is drawn and described. */
+export const DRAFT_TITLES: Readonly<Record<DraftKind, MessageKey>> = {
+  marker: 'newMarker',
+  area: 'newArea',
+};
 
 export interface Draft {
   readonly kind: DraftKind;

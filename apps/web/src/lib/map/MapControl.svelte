@@ -24,16 +24,16 @@
   });
 </script>
 
-<div class="maplibregl-ctrl maplibregl-ctrl-group" bind:this={element}>
+<div class="maplibregl-ctrl maplibregl-ctrl-group chrome" bind:this={element}>
   {@render children()}
 </div>
 
 <style>
   /* Chrome, like the dock: ink, round like what floats on the map, with buttons a finger can hit.
-     MapLibre's own look for control groups is replaced. */
+     MapLibre's own look for control groups is replaced, its white background too, which its
+     stylesheet would otherwise give back over .chrome. */
   div {
     overflow: hidden;
-    color: var(--chrome-fg);
     background: var(--chrome-bg);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-float);

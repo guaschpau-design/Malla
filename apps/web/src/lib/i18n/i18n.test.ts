@@ -3,9 +3,8 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { en } from './en.ts';
-import { es } from './es.ts';
-import { detectLocale, nextLocale, resolveLocale, translator } from './index.ts';
+import { en, type Plural } from './en.ts';
+import { detectLocale, locales, nextLocale, resolveLocale, translator } from './index.ts';
 
 describe('translations', () => {
   it('detects the browser language, defaulting to Spanish', () => {
@@ -27,10 +26,40 @@ describe('translations', () => {
     expect(translator('en')('downloading', { done: 3, total: 10 })).toBe('Downloading… 3 of 10');
   });
 
-  it('uses the same placeholders in every language', () => {
+  it('writes numbers as each language does', () => {
+    expect(translator('en')('downloading', { done: 1500, total: 12000 })).toBe(
+      'Downloading… 1,500 of 12,000',
+    );
+    expect(translator('es')('downloading', { done: 1500, total: 12000 })).toBe(
+      'Descargando… 1500 de 12.000',
+    );
+  });
+
+  it('picks the plural form the count asks for', () => {
+    const english = translator('en');
+    expect(english('logLoaded', { count: 1, total: 4 })).toBe('Log loaded: 1 new event of 4.');
+    expect(english('logLoaded', { count: 0, total: 4 })).toBe('Log loaded: 0 new events of 4.');
+    const spanish = translator('es');
+    expect(spanish('rollCallAnswered', { count: 1, expected: 3 })).toBe('Responde 1 de 3');
+    expect(spanish('rollCallAnswered', { count: 2, expected: 3 })).toBe('Responden 2 de 3');
+  });
+
+  it('falls back to the "other" form for a category a text does not give', () => {
+    // Spanish puts a million in "many".
+    expect(translator('es')('estimate', { count: 1_000_000, size: '1 GB' })).toBe(
+      '1.000.000 teselas, unos 1 GB',
+    );
+  });
+
+  it('uses the same placeholders in every language and plural form', () => {
+    const forms = (message: string | Plural) =>
+      typeof message === 'string' ? [message] : Object.values(message);
     const placeholders = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
     for (const key of Object.keys(en) as (keyof typeof en)[]) {
-      expect(placeholders(es[key])).toEqual(placeholders(en[key]));
+      const [expected] = forms(en[key]).map(placeholders);
+      for (const messages of Object.values(locales)) {
+        for (const form of forms(messages[key])) expect(placeholders(form)).toEqual(expected);
+      }
     }
   });
 });

@@ -90,7 +90,7 @@
       </label>
     </div>
     {#if loaded?.kind === 'loaded'}
-      <p role="status">{t('logLoaded', { added: loaded.added, total: loaded.total })}</p>
+      <p role="status">{t('logLoaded', { count: loaded.added, total: loaded.total })}</p>
     {:else if loaded}
       <p class="warning" role="status">{t(OUTCOMES[loaded.kind])}</p>
     {/if}

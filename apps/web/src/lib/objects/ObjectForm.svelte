@@ -3,11 +3,11 @@
   import { MARKER_LABEL_MAX_BYTES, SHAPE_LABEL_MAX_BYTES, utf8ByteLength } from '@tesel/protocol';
 
   import { UnencodableEvent } from '../events/event-log.ts';
-  import type { MessageKey, Translate } from '../i18n/index.ts';
+  import type { Translate } from '../i18n/index.ts';
   import Panel from '../ui/Panel.svelte';
   import { Submission } from '../ui/submission.svelte.ts';
   import { areaStyles, SYMBOLS } from './catalog.ts';
-  import type { DraftKind } from './draft.ts';
+  import { DRAFT_TITLES, type DraftKind } from './draft.ts';
   import SymbolIcon from './SymbolIcon.svelte';
 
   interface Props {
@@ -22,11 +22,6 @@
 
   let { t, kind, coordinator, onsave, oncancel }: Props = $props();
 
-  const TITLES: Readonly<Record<DraftKind, MessageKey>> = {
-    marker: 'newMarker',
-    area: 'newArea',
-  };
-
   const isMarker = $derived(kind === 'marker');
   const maxBytes = $derived(isMarker ? MARKER_LABEL_MAX_BYTES : SHAPE_LABEL_MAX_BYTES);
 
@@ -36,7 +31,7 @@
   const tooLong = $derived(utf8ByteLength(label.trim()) > maxBytes);
 </script>
 
-<Panel title={t(TITLES[kind])} closeLabel={t('close')} onclose={oncancel}>
+<Panel title={t(DRAFT_TITLES[kind])} closeLabel={t('close')} onclose={oncancel}>
   <form
     class="stack section"
     onsubmit={(event) => {

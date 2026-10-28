@@ -17,7 +17,7 @@ test('a point picked on the map is measured from here and navigated to', async (
   await expect(panel.getByText(/^\d+ m · (00\d|35\d)° N desde ti$/)).toBeVisible();
   await panel.getByRole('button', { name: 'Guíame' }).click();
 
-  const card = page.getByRole('status').filter({ hasText: 'Hacia Punto del mapa' });
+  const card = page.getByRole('region', { name: 'Hacia Punto del mapa' });
   await expect(card).toContainText(/\d+ m · (00\d|35\d)° N/);
   await card.getByRole('button', { name: 'Parar' }).click();
   await expect(card).toBeHidden();
@@ -26,8 +26,8 @@ test('a point picked on the map is measured from here and navigated to', async (
 test('distances are measured point by point, with the area they enclose', async ({ browser }) => {
   const page = await device(browser, 'Ana');
   await openMore(page, 'Medir distancias');
-  const card = page.getByRole('status').filter({ hasText: 'Toca el mapa para medir' });
-  await expect(card).toBeVisible();
+  const card = page.getByRole('region', { name: 'Medir distancias' });
+  await expect(card).toContainText('Toca el mapa para medir');
 
   const canvas = page.locator('.maplibregl-canvas');
   for (const position of [
@@ -37,9 +37,8 @@ test('distances are measured point by point, with the area they enclose', async 
   ]) {
     await canvas.click({ position });
   }
-  const measures = page.getByRole('status').filter({ hasText: 'área encerrada' });
-  await expect(measures).toContainText(/^\s*[\d,.]+ (m|km) · área encerrada [\d,.]+ (m²|ha|km²)/);
-  await measures.getByRole('button', { name: 'Deshacer' }).click();
+  await expect(card).toContainText(/^\s*[\d,.]+ (m|km) · área encerrada [\d,.]+ (m²|ha|km²)/);
+  await card.getByRole('button', { name: 'Deshacer' }).click();
   await expect(page.getByText('área encerrada')).toBeHidden();
   await page.getByRole('button', { name: 'Cerrar' }).click();
   await expect(page.getByRole('button', { name: 'Más' })).toBeVisible();
