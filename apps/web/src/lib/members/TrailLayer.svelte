@@ -5,7 +5,7 @@
   import type { Map as MapLibreMap } from 'maplibre-gl';
 
   import { themeColor } from '../ui/theme.ts';
-  import { useOverlay } from './overlay.svelte.ts';
+  import { useOverlay } from '../map/overlay.svelte.ts';
   import { trailFeatures } from './trail-features.ts';
 
   interface Props {

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import type { TileArchive } from './area-download.ts';
-import type { TileCoord } from './tile-math.ts';
-import { loadTile, type TileArchives, type TileReader } from './tile-source.ts';
-import { lazyArchive, type TileSourceId } from './tile-sources.ts';
+import type { TileArchive } from './sources.ts';
+import type { TileCoord } from './math.ts';
+import { loadTile, type TileArchives, type TileReader } from './protocol.ts';
+import { lazyArchive, type TileSourceId } from './sources.ts';
 
 const stored = new Uint8Array([1]).buffer;
 const remote = new Uint8Array([2]).buffer;

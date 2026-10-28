@@ -1,4 +1,4 @@
-// Contour lines, worked out on the device from the elevation tiles (tile-sources.ts) for the
+// Contour lines, worked out on the device from the elevation tiles (tiles/sources.ts) for the
 // topographic map, wherever there is elevation (ADR-0037). maplibre-contour turns them into vector
 // tiles served through a protocol of their own; it reads the elevation tiles through ours, so the
 // lines are there offline wherever the relief was downloaded.
@@ -6,10 +6,10 @@
 import mlcontour from 'maplibre-contour';
 import { addProtocol } from 'maplibre-gl';
 
-import type { TileArchives } from './tile-source.ts';
-import { loadTile, tileUrlTemplate } from './tile-source.ts';
-import type { TileStore } from './tile-store.ts';
-import { TERRAIN_MAX_ZOOM } from './tile-sources.ts';
+import type { TileArchives } from '../tiles/protocol.ts';
+import { loadTile, tileUrlTemplate } from '../tiles/protocol.ts';
+import type { TileStore } from '../tiles/store.ts';
+import { TERRAIN_MAX_ZOOM } from '../tiles/sources.ts';
 
 const PROTOCOL = 'tesel-contours';
 const URL_PATTERN = new RegExp(`^${PROTOCOL}://(\\d+)/(\\d+)/(\\d+)$`);

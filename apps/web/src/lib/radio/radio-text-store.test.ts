@@ -3,7 +3,8 @@ import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
 
 import { openAppDb } from '../storage/app-db.ts';
-import { loadRadioTexts, MAX_RADIO_TEXTS, saveRadioText } from './radio-texts.ts';
+import { loadRadioTexts, saveRadioText } from './radio-text-store.ts';
+import { MAX_RADIO_TEXTS } from './radio-texts.ts';
 
 const text = (n: number) => ({
   kind: 'channel' as const,

@@ -11,7 +11,14 @@ import {
   type TaskStatus,
 } from '@tesel/protocol';
 
-import { aliasOf } from '../incidents/incidents.ts';
+import { aliasOf } from '../members/alias.ts';
+
+/** What the tasks panel edits: a new task, at a place or nowhere in particular, or an existing one. */
+export type TaskEditing =
+  /** A new task, at a place of the map or nowhere in particular. */
+  | { readonly kind: 'new'; readonly place: LatLon | null }
+  /** An existing task, by its reference's key. */
+  | { readonly kind: 'existing'; readonly key: string };
 
 /** What a task holds besides its reference: what the form edits and the feed sends. */
 export interface TaskFields {

@@ -7,7 +7,7 @@
 
 import { toWebMercator } from '../map/geometry.ts';
 import type { MapImage } from '../map/overlay.svelte.ts';
-import type { Bounds } from '../map/tile-math.ts';
+import type { Bounds } from '../map/tiles/math.ts';
 
 /** Below this zoom a view holds too many parcels to read them. */
 export const CADASTRE_MIN_ZOOM = 15;
@@ -24,7 +24,7 @@ export interface CadastreService {
   readonly version: '1.1.1' | '1.3.0';
   readonly layer: string;
   readonly style: string;
-  /** The credit the service asks for, as HTML (map/style-credits.svelte.ts). */
+  /** The credit the service asks for, as HTML (map/style/style-credits.svelte.ts). */
   readonly credit: string;
 }
 

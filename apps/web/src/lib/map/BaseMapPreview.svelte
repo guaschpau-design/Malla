@@ -4,7 +4,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
-  import type { BaseMap } from './style.ts';
+  import type { BaseMap } from './style/style.ts';
 
   interface Props {
     base: BaseMap;

@@ -8,7 +8,7 @@
 
   interface Props {
     map: MapLibreMap;
-    /** Each source's attribution, as HTML of our own (style-credits.svelte.ts). */
+    /** Each source's attribution, as HTML of our own (style/style-credits.svelte.ts). */
     credits: readonly string[];
   }
 

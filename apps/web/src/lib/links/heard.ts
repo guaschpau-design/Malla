@@ -7,7 +7,8 @@
 
 import type { NodeId } from '@tesel/protocol';
 
-import type { Channel } from './links.ts';
+/** How an event reaches this device. */
+export type Channel = 'internet' | 'command-post' | 'radio';
 
 /** Per member and channel, the event time (seconds) of the newest event heard through it. */
 export type Heard = ReadonlyMap<NodeId, Readonly<Partial<Record<Channel, number>>>>;

@@ -2,10 +2,10 @@ import 'fake-indexeddb/auto';
 
 import { describe, expect, it } from 'vitest';
 
-import type { TileArchive } from '../map/area-download.ts';
-import { countTiles, tilesInBounds } from '../map/tile-math.ts';
-import type { TileArchives } from '../map/tile-source.ts';
-import { openTileStore } from '../map/tile-store.ts';
+import type { TileArchive } from '../map/tiles/sources.ts';
+import { countTiles, tilesInBounds } from '../map/tiles/math.ts';
+import type { TileArchives } from '../map/tiles/protocol.ts';
+import { openTileStore } from '../map/tiles/store.ts';
 import { keepOverview, overviewZoom } from './overview.ts';
 
 /** What the map our servers publish covers: Spain and Portugal (deploy/vps/maps.sh). */

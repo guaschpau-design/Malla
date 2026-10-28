@@ -9,7 +9,7 @@ import type { Feature, FeatureCollection, LineString, Point } from 'geojson';
 import { formatBearing, formatDistance } from '../format.ts';
 import type { Locale } from '../i18n/index.ts';
 import { circleRing, metresPerPixel, toPosition } from '../map/geometry.ts';
-import { STALE_AFTER_S } from '../map/member-features.ts';
+import { STALE_AFTER_S } from '../members/member-features.ts';
 
 /** Rings drawn around the device. */
 export const RING_COUNT = 4;

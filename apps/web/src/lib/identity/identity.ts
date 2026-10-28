@@ -10,8 +10,6 @@ import {
   type RandomSource,
 } from '@tesel/protocol';
 
-import type { AppDb } from '../storage/app-db.ts';
-
 export interface LocalIdentity extends Identity {
   readonly alias: string;
   /** Milliseconds since the epoch. */
@@ -31,12 +29,4 @@ export function createLocalIdentity(
   random?: RandomSource,
 ): LocalIdentity {
   return { ...generateIdentity(random), alias, createdAt: now };
-}
-
-export async function loadIdentity(db: AppDb): Promise<LocalIdentity | undefined> {
-  return db.get('identity', 'self');
-}
-
-export async function saveIdentity(db: AppDb, identity: LocalIdentity): Promise<void> {
-  await db.put('identity', identity, 'self');
 }

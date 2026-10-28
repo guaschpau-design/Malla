@@ -140,7 +140,7 @@ async function seedTiles(page: Page, tiles: Record<string, string>): Promise<voi
     const tx = db.transaction('tiles', 'readwrite');
     for (const [key, base64] of entries) {
       const data = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
-      // Keyed by source, then z/x/y, as the app keeps them (map/tile-store.ts).
+      // Keyed by source, then z/x/y, as the app keeps them (map/tiles/store.ts).
       tx.objectStore('tiles').put({ data: data.buffer, areas: ['screenshots'] }, `basemap/${key}`);
     }
     await new Promise((resolve) => {

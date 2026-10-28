@@ -7,7 +7,7 @@
   import type { CoordinateFormat } from '../coordinates/coordinates.ts';
   import { formatArea, formatDistance, formatTime } from '../format.ts';
   import type { Locale, Translate } from '../i18n/index.ts';
-  import { aliasOf } from '../incidents/incidents.ts';
+  import { aliasOf } from '../members/alias.ts';
   import FromHere from '../navigation/FromHere.svelte';
   import { objectPosition } from '../navigation/target.ts';
   import type { DeviceLocation } from '../position/device-location.svelte.ts';

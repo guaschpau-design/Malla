@@ -14,7 +14,7 @@ import {
 
 import type { MessageKey, Translate } from '../i18n/index.ts';
 import { ROLE_LABELS } from '../groups/role-label.ts';
-import { aliasOf } from '../incidents/incidents.ts';
+import { aliasOf } from '../members/alias.ts';
 import { ALERT_LEVELS, SOS_KINDS } from '../incidents/sos-kinds.ts';
 import { objectKind } from '../objects/catalog.ts';
 

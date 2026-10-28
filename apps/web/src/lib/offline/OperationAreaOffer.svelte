@@ -8,8 +8,8 @@
 
   import { formatBytes } from '../format.ts';
   import type { Locale, Translate } from '../i18n/index.ts';
-  import { BASEMAP_MAX_ZOOM } from '../map/style.ts';
-  import type { OfflineArea } from '../map/tile-store.ts';
+  import { BASEMAP_MAX_ZOOM } from '../map/style/style.ts';
+  import type { OfflineArea } from '../map/tiles/store-schema.ts';
   import { operationAreas } from '../objects/operation-areas.ts';
   import MapCard from '../ui/MapCard.svelte';
   import { DownloadJob } from './download-job.svelte.ts';

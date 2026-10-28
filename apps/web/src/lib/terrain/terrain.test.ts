@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { climbOf, samplesAlong } from './climb.ts';
-import { tileAt } from '../map/tile-math.ts';
-import { TERRAIN_MAX_ZOOM } from '../map/tile-sources.ts';
+import { tileAt } from '../map/tiles/math.ts';
+import { TERRAIN_MAX_ZOOM } from '../map/tiles/sources.ts';
 import { ElevationReader, terrariumMetres, type Pixels } from './elevation.ts';
 
 const A = { lat: 39.47, lon: -0.37 };

@@ -2,7 +2,7 @@
 // which screen readers announce. The rest belong to MapLibre's controls, which the app does not
 // use, and the units of its scale are symbols, the same in every language.
 
-import type { Translate } from '../i18n/index.ts';
+import type { Translate } from '../../i18n/index.ts';
 
 /** The strings MapLibre takes in its `locale` option, by its own IDs. */
 export type MapLibreLocale = { readonly 'Map.Title': string };

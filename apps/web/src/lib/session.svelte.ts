@@ -6,12 +6,8 @@ import type { Invitation } from '@tesel/protocol';
 import type { JoinOutcome, StoredGroup } from './groups/group.ts';
 import { getActiveGroupId, listGroups, setActiveGroupId } from './groups/group-store.ts';
 import { joinGroup, leaveGroup, startGroup, startPractice } from './groups/membership.ts';
-import {
-  createLocalIdentity,
-  loadIdentity,
-  saveIdentity,
-  type LocalIdentity,
-} from './identity/identity.ts';
+import { createLocalIdentity, type LocalIdentity } from './identity/identity.ts';
+import { loadIdentity, saveIdentity } from './identity/identity-store.ts';
 import type { AppDb } from './storage/app-db.ts';
 import { keepStorage } from './storage/storage-space.svelte.ts';
 

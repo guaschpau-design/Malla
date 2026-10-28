@@ -6,9 +6,8 @@
 import { namedFlavor, type Flavor } from '@protomaps/basemaps';
 import type { ExpressionSpecification, LayerSpecification } from 'maplibre-gl';
 
-import { themeColor } from '../ui/theme.ts';
+import { themeColor, type MapTheme } from '../../ui/theme.ts';
 import { CONTOUR_LAYER, HEIGHT_KEY, RANK_KEY } from './contours.ts';
-import type { MapTheme } from './style.ts';
 
 /** The style's names for the contour lines and for IGN's vector map. */
 export const CONTOURS_SOURCE = 'contours';

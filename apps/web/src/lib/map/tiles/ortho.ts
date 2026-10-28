@@ -4,13 +4,13 @@
 // France's (IGN France, BD ORTHO). Where no country's photographs reach, such as Andorra, the
 // mosaic stays. A tile inside one outline is that country's tile as its service gives it; a tile
 // across outlines is put together on the device. This module and the outlines are loaded with the
-// first tile of the satellite map (tile-source.ts); its credit and zooms are in tile-sources.ts.
+// first tile of the satellite map (protocol.ts); its credit and zooms are in sources.ts.
 
-import type { TileArchive } from './area-download.ts';
+import type { TileArchive } from './sources.ts';
 import { FRANCE_SOUTH, PORTUGAL, SPAIN, type Outline } from './borders-data.ts';
-import { outlineCoverage, toWebMercator } from './geometry.ts';
-import { positionInTile, tileBounds, type TileCoord } from './tile-math.ts';
-import { MOSAIC, webArchive } from './tile-sources.ts';
+import { outlineCoverage, toWebMercator } from '../geometry.ts';
+import { positionInTile, tileBounds, type TileCoord } from './math.ts';
+import { MOSAIC, webArchive } from './sources.ts';
 
 /**
  * From this zoom, about a town's view, each country's photographs are laid over the mosaic: further

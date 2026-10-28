@@ -7,7 +7,7 @@
   import type { CoordinateFormat } from '../coordinates/coordinates.ts';
   import { formatAgo, formatTime } from '../format.ts';
   import type { Locale, Translate } from '../i18n/index.ts';
-  import { aliasOf } from '../incidents/incidents.ts';
+  import { aliasOf } from '../members/alias.ts';
   import FromHere from '../navigation/FromHere.svelte';
   import type { DeviceLocation } from '../position/device-location.svelte.ts';
   import type { Heard } from '../links/heard.ts';
@@ -15,7 +15,7 @@
   import { useNow } from '../ui/now.svelte.ts';
   import ActionButton from '../ui/ActionButton.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { ROLE_LABELS } from './role-label.ts';
+  import { ROLE_LABELS } from '../groups/role-label.ts';
 
   interface Props {
     t: Translate;

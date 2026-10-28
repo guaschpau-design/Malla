@@ -3,8 +3,9 @@ import 'fake-indexeddb/auto';
 import { openDB } from 'idb';
 import { describe, expect, it } from 'vitest';
 
-import { tilesInBounds, type Bounds, type TileCoord } from './tile-math.ts';
-import { openTileStore, type OfflineArea } from './tile-store.ts';
+import { tilesInBounds, type Bounds, type TileCoord } from './math.ts';
+import { openTileStore } from './store.ts';
+import type { OfflineArea } from './store-schema.ts';
 
 let dbCounter = 0;
 const freshStore = () => openTileStore(`test-${String(dbCounter++)}`);

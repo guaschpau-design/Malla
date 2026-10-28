@@ -12,7 +12,7 @@ import {
   TILE_RADIUS,
   tilePath,
   type Glyph,
-} from '../ui/glyphs.ts';
+} from '../../ui/glyphs.ts';
 
 export type IconShape = 'hexagon' | 'circle' | 'square';
 

@@ -1,9 +1,9 @@
 // Marker icons for the map: each symbol's pictogram on a hexagon of its family's colour
-// (map/glyph-images.ts).
+// (map/style/glyph-images.ts).
 
 import type { Map as MapLibreMap } from 'maplibre-gl';
 
-import { addGlyphImage } from '../map/glyph-images.ts';
+import { addGlyphImage } from '../map/style/glyph-images.ts';
 import { GLYPHS } from '../ui/glyphs.ts';
 import { toneColor } from '../ui/theme.ts';
 import { SYMBOLS, symbolImageName } from './catalog.ts';

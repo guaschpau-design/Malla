@@ -3,6 +3,9 @@
 
 import type { ExpressionSpecification } from 'maplibre-gl';
 
+/** The app's two looks, which the map follows (light and dark styles of every base map). */
+export type MapTheme = 'light' | 'dark';
+
 /** Families of colour for map symbols and shapes, each a `--tone-*` variable in app.css. */
 export const TONES = ['slate', 'red', 'orange', 'amber', 'blue', 'green', 'teal', 'ink'] as const;
 export type Tone = (typeof TONES)[number];

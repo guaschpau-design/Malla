@@ -1,13 +1,13 @@
 // Serves map tiles to MapLibre through one protocol for every source: stored tiles first,
-// then the network (tile-sources.ts).
+// then the network (sources.ts).
 
 import { addProtocol } from 'maplibre-gl';
 import { PMTiles } from 'pmtiles';
 
-import type { TileArchive } from './area-download.ts';
+import type { TileArchive } from './sources.ts';
 import { EMPTY_RASTER_TILE, EMPTY_VECTOR_TILE, FLAT_TERRAIN_TILE } from './empty-tiles.ts';
-import type { Bounds, TileCoord } from './tile-math.ts';
-import type { TileStore } from './tile-store.ts';
+import type { Bounds, TileCoord } from './math.ts';
+import type { TileStore } from './store.ts';
 import {
   lazyArchive,
   namesTileUrl,
@@ -15,7 +15,7 @@ import {
   TILE_SOURCES,
   webArchive,
   type TileSourceId,
-} from './tile-sources.ts';
+} from './sources.ts';
 
 const PROTOCOL = 'tesel-tiles';
 

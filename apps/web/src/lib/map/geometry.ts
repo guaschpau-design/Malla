@@ -4,7 +4,7 @@ import { offsetMeters } from '@tesel/core';
 import type { LatLon } from '@tesel/protocol';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 
-import type { Bounds } from './tile-math.ts';
+import type { Bounds } from './tiles/math.ts';
 
 /** A circle as a closed ring of [lon, lat] positions, for drawing. */
 export function circleRing(center: LatLon, radius: number, steps = 48): [number, number][] {

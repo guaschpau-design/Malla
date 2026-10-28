@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { FRANCE_SOUTH, PORTUGAL, SPAIN, type Outline } from './borders-data.ts';
-import { insideRing, outlineCoverage } from './geometry.ts';
-import { positionInTile, tileAt, tileBounds } from './tile-math.ts';
+import { insideRing, outlineCoverage } from '../geometry.ts';
+import { positionInTile, tileAt, tileBounds } from './math.ts';
 
 /** How much of the zoom-14 tile of a point an outline covers. */
 const coverage = (outline: Outline, lat: number, lon: number) =>

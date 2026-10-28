@@ -7,7 +7,7 @@
   import type { GroupFeed } from '../sync/group-feed.svelte.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import { canInvite, type StoredGroup } from './group.ts';
-  import MemberList from './MemberList.svelte';
+  import MemberList from '../members/MemberList.svelte';
   import { ROLE_LABELS } from './role-label.ts';
 
   interface Props {

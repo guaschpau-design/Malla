@@ -4,7 +4,7 @@
 
   import ChatPanel from '../chat/ChatPanel.svelte';
   import DiaryPanel from '../diary/DiaryPanel.svelte';
-  import MemberDetails from '../groups/MemberDetails.svelte';
+  import MemberDetails from '../members/MemberDetails.svelte';
   import type { Locale, Translate } from '../i18n/index.ts';
   import { navigateTo } from '../navigation/navigation.svelte.ts';
   import ObjectDetails from '../objects/ObjectDetails.svelte';

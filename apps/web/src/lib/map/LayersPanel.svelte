@@ -18,7 +18,7 @@
     type MapFlag,
     type MapLayer,
   } from './layers.ts';
-  import { BASE_MAPS, type BaseMap } from './style.ts';
+  import { BASE_MAPS, type BaseMap } from './style/style.ts';
 
   interface Props {
     t: Translate;

@@ -10,9 +10,9 @@
   import ActionButton from '../ui/ActionButton.svelte';
   import Panel from '../ui/Panel.svelte';
   import Pictogram from '../ui/Pictogram.svelte';
-  import { editTask, newTask, stopEditingTask, type TaskEditing } from './task-editor.svelte.ts';
+  import { editTask, newTask, stopEditingTask } from './task-editor.svelte.ts';
   import TaskForm from './TaskForm.svelte';
-  import { advance, taskList, type TaskFields, type TaskRow } from './tasks.ts';
+  import { advance, taskList, type TaskEditing, type TaskFields, type TaskRow } from './tasks.ts';
 
   interface Props {
     t: Translate;

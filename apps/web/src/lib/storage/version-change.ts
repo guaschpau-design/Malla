@@ -1,6 +1,6 @@
 // When two windows of the app use the same database, as a browser tab and the installed app on
 // Android do, a new version in one cannot upgrade the database while the other holds it open.
-// Both databases (app-db.ts, map/tile-store.ts) tell the app so, instead of waiting forever.
+// Both databases (app-db.ts, map/tiles/store.ts) tell the app so, instead of waiting forever.
 
 export interface VersionChange {
   /** This window waits to upgrade the database: another window of an older version holds it. */

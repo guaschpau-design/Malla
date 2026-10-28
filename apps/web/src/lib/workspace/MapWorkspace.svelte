@@ -23,7 +23,7 @@
   import SosLayer from '../incidents/SosLayer.svelte';
   import { MAP_LAYERS, type MapLayer } from '../map/layers.ts';
   import { onLongPress } from '../map/long-press.ts';
-  import { useStyleCredits } from '../map/style-credits.svelte.ts';
+  import { useStyleCredits } from '../map/style/style-credits.svelte.ts';
   import { groupPoints, StartFraming } from '../map/start-framing.ts';
   import { MapTaps } from '../map/taps.ts';
   import LayersPanel from '../map/LayersPanel.svelte';
@@ -31,8 +31,8 @@
   import MapControl from '../map/MapControl.svelte';
   import MapCredits from '../map/MapCredits.svelte';
   import MapScale from '../map/MapScale.svelte';
-  import MemberLayer from '../map/MemberLayer.svelte';
-  import TrailLayer from '../map/TrailLayer.svelte';
+  import MemberLayer from '../members/MemberLayer.svelte';
+  import TrailLayer from '../members/TrailLayer.svelte';
   import { navigateTo, navigation } from '../navigation/navigation.svelte.ts';
   import { draftGeometry, type DraftKind } from '../objects/draft.ts';
   import { Drawing } from '../objects/drawing.svelte.ts';

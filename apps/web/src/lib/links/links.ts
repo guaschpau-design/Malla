@@ -8,8 +8,7 @@ import type { MessageKey } from '../i18n/index.ts';
 import type { GlyphName } from '../ui/glyphs.ts';
 import type { StatusTone } from '../ui/status-tone.ts';
 import type { FeedStatus } from '../sync/group-feed.svelte.ts';
-
-export type Channel = 'internet' | 'command-post' | 'radio';
+import type { Channel } from './heard.ts';
 
 /** What the browser says of its network (Network Information API); undefined where it does not. */
 export interface Network {

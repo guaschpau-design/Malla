@@ -5,34 +5,14 @@
 // one only removes tiles nothing else needs. Tiles the map showed while online are kept too, the
 // latest of them up to a size, so that a place seen once can be seen again offline (ADR-0056).
 
-import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import { openDB, type IDBPDatabase } from 'idb';
 
-import { isStorageFull } from '../storage/storage-space.svelte.ts';
-import { IGNORE_VERSION_CHANGE, type VersionChange } from '../storage/version-change.ts';
-import { tileKey, tilesInBounds, type Bounds, type TileCoord } from './tile-math.ts';
-import type { TileSourceId } from './tile-sources.ts';
-import { keyBySource, renameSources } from './tile-store-upgrades.ts';
-
-/** One source of an area and the zoom up to which its tiles were downloaded. */
-interface AreaLayer {
-  readonly source: TileSourceId;
-  readonly maxZoom: number;
-}
-
-export interface OfflineArea {
-  readonly id: string;
-  readonly name: string;
-  readonly bounds: Bounds;
-  readonly minZoom: number;
-  readonly layers: readonly AreaLayer[];
-  /** Tiles that exist in the sources; empty tiles (open sea) are not stored. */
-  readonly storedTiles: number;
-  readonly bytes: number;
-  /** Milliseconds since the epoch. */
-  readonly createdAt: number;
-  /** False while downloading or if a download was interrupted. */
-  readonly complete: boolean;
-}
+import { isStorageFull } from '../../storage/storage-space.svelte.ts';
+import { IGNORE_VERSION_CHANGE, type VersionChange } from '../../storage/version-change.ts';
+import { tileKey, tilesInBounds, type TileCoord } from './math.ts';
+import type { TileSourceId } from './sources.ts';
+import type { MapDb, OfflineArea } from './store-schema.ts';
+import { keyBySource, renameSources } from './store-upgrades.ts';
 
 export interface StoredTile {
   readonly tile: TileCoord;
@@ -64,14 +44,6 @@ export interface TileStore {
   saveArea(area: OfflineArea): Promise<void>;
   listAreas(): Promise<OfflineArea[]>;
   deleteArea(area: OfflineArea): Promise<void>;
-}
-
-export interface MapDb extends DBSchema {
-  /** Every tile, with who needs it: no one, for a tile kept only because it was seen. */
-  tiles: { key: string; value: { data: ArrayBuffer; areas: string[] } };
-  areas: { key: string; value: OfflineArea };
-  /** Tiles kept because the map showed them: when, and their size, by the key of the tile. */
-  viewed: { key: string; value: { seen: number; size: number } };
 }
 
 const DB_NAME = 'tesel-map';

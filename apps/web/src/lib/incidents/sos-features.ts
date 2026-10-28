@@ -4,7 +4,8 @@ import type { GroupState } from '@tesel/core';
 import type { Feature, FeatureCollection, Point } from 'geojson';
 
 import { toPosition } from '../map/geometry.ts';
-import { aliasOf, whereSos } from './incidents.ts';
+import { aliasOf } from '../members/alias.ts';
+import { whereSos } from './incidents.ts';
 
 export interface SosProperties {
   /** The call's reference key. */

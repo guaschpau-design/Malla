@@ -6,11 +6,12 @@ import {
   downloadArea,
   SourceUnreachable,
   type DownloadLayer,
-} from '../map/area-download.ts';
-import type { Bounds } from '../map/tile-math.ts';
-import type { OfflineArea, TileStore } from '../map/tile-store.ts';
+} from '../map/tiles/area-download.ts';
+import type { Bounds } from '../map/tiles/math.ts';
+import type { TileStore } from '../map/tiles/store.ts';
+import type { OfflineArea } from '../map/tiles/store-schema.ts';
 import { isStorageFull, keepStorage, roomForMaps } from '../storage/storage-space.svelte.ts';
-import { estimatedBytes } from './offline-maps.ts';
+import { estimatedBytes, type DownloadFailure } from './offline-maps.ts';
 
 export interface DownloadPlan {
   readonly name: string;
@@ -19,18 +20,6 @@ export interface DownloadPlan {
   /** The incomplete area this download resumes: it keeps its id and its date. */
   readonly resumes?: OfflineArea;
 }
-
-/** Why a download stopped short of the whole area. */
-export type DownloadFailure =
-  /** It did not start: it would leave too little room for the group's log (ADR-0056). */
-  | { readonly kind: 'no-room'; readonly needed: number; readonly free: number }
-  /** The storage filled up while downloading. */
-  | { readonly kind: 'storage-full' }
-  /** Tile after tile could not be had: no connection, or the service is down. */
-  | { readonly kind: 'unreachable' }
-  /** It went to the end, but some tiles never came. */
-  | { readonly kind: 'incomplete' }
-  | { readonly kind: 'failed' };
 
 export class DownloadJob {
   /** Tiles done out of the total while downloading, or null. */

@@ -4,13 +4,25 @@
 
 import { formatBytes } from '../format.ts';
 import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
-import { countAreaTiles, MAX_AREA_TILES, type DownloadLayer } from '../map/area-download.ts';
-import { BASEMAP_MAX_ZOOM } from '../map/style.ts';
-import { containsBounds, type Bounds } from '../map/tile-math.ts';
-import type { TileArchives } from '../map/tile-source.ts';
-import type { OfflineArea, TileStore } from '../map/tile-store.ts';
-import { TERRAIN_MAX_ZOOM, type TileSourceId } from '../map/tile-sources.ts';
-import type { DownloadFailure } from './download-job.svelte.ts';
+import { countAreaTiles, MAX_AREA_TILES, type DownloadLayer } from '../map/tiles/area-download.ts';
+import { BASEMAP_MAX_ZOOM } from '../map/style/style.ts';
+import { containsBounds, type Bounds } from '../map/tiles/math.ts';
+import type { TileArchives } from '../map/tiles/protocol.ts';
+import type { TileStore } from '../map/tiles/store.ts';
+import type { OfflineArea } from '../map/tiles/store-schema.ts';
+import { TERRAIN_MAX_ZOOM, type TileSourceId } from '../map/tiles/sources.ts';
+
+/** Why a download stopped short of the whole area. */
+export type DownloadFailure =
+  /** It did not start: it would leave too little room for the group's log (ADR-0056). */
+  | { readonly kind: 'no-room'; readonly needed: number; readonly free: number }
+  /** The storage filled up while downloading. */
+  | { readonly kind: 'storage-full' }
+  /** Tile after tile could not be had: no connection, or the service is down. */
+  | { readonly kind: 'unreachable' }
+  /** It went to the end, but some tiles never came. */
+  | { readonly kind: 'incomplete' }
+  | { readonly kind: 'failed' };
 
 /** Where downloaded maps are kept, and where their tiles come from. */
 export interface OfflineMaps {
@@ -61,7 +73,7 @@ const AVERAGE_TILE_BYTES: Readonly<Record<TileSourceId, number>> = {
  * Requests in flight at once to each source while downloading. Our own archive takes six, as many
  * as a browser opens to one host. The others are public services, free to use but not ours to
  * load: a download asks them for up to tens of thousands of tiles, and Portugal's DGT draws each
- * one on request (ortho.ts). They are asked two at a time: the download takes longer, and spreads
+ * one on request (map/tiles/ortho.ts). They are asked two at a time: the download takes longer, and spreads
  * its load on them over that time.
  */
 const CONCURRENCY: Readonly<Record<TileSourceId, number>> = {
@@ -80,7 +92,7 @@ const ORTHO_EXTRA_ZOOM = 3;
 /** How deep each source is downloaded, for a street map to `maxZoom`. */
 function sourceMaxZoom(source: TileSourceId, maxZoom: number): number {
   switch (source) {
-    // IGN's names go as deep as the street map (tile-sources.ts).
+    // IGN's names go as deep as the street map (map/tiles/sources.ts).
     case 'basemap':
     case 'ign-names':
       return maxZoom;

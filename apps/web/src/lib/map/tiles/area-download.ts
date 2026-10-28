@@ -2,18 +2,10 @@
 // A tile that fails is tried again a few times; one that still fails is left out, and the area is
 // kept incomplete, to be resumed: a resumed download skips the tiles already stored (ADR-0056).
 
-import { countTiles, tilesInBounds, type Bounds, type TileCoord } from './tile-math.ts';
-import type { OfflineArea, StoredTile, TileStore } from './tile-store.ts';
-import type { TileSourceId } from './tile-sources.ts';
-
-/** Anything that can return a tile: our PMTiles archive, or a web map service. */
-export interface TileArchive {
-  /**
-   * Resolves to the tile bytes, or undefined if the archive has no tile there (empty area); rejects
-   * if the tile cannot be had now.
-   */
-  getTile(z: number, x: number, y: number, signal: AbortSignal): Promise<ArrayBuffer | undefined>;
-}
+import { countTiles, tilesInBounds, type Bounds, type TileCoord } from './math.ts';
+import type { StoredTile, TileStore } from './store.ts';
+import type { OfflineArea } from './store-schema.ts';
+import type { TileArchive, TileSourceId } from './sources.ts';
 
 /** One source to download, up to a zoom, from its archive. */
 export interface DownloadLayer {

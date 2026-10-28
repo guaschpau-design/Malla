@@ -3,7 +3,7 @@
 
 import type { LatLon, NodeId } from '@tesel/protocol';
 
-import type { TaskEditing } from '../tasks/task-editor.svelte.ts';
+import type { TaskEditing } from '../tasks/tasks.ts';
 
 /** Panels that show the same thing whenever they open. */
 export type PlainPanelName =

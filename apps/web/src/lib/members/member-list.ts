@@ -4,7 +4,7 @@ import type { GroupState } from '@tesel/core';
 import type { NodeId, Role } from '@tesel/protocol';
 
 import type { Heard } from '../links/heard.ts';
-import { STALE_AFTER_S } from '../map/member-features.ts';
+import { STALE_AFTER_S } from './member-features.ts';
 
 export type PositionStatus = 'live' | 'stale' | 'hidden' | 'never';
 

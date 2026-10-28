@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import type { TileArchive } from '../map/area-download.ts';
-import type { TileArchives } from '../map/tile-source.ts';
-import type { OfflineArea } from '../map/tile-store.ts';
-import { TERRAIN_MAX_ZOOM } from '../map/tile-sources.ts';
+import type { TileArchive } from '../map/tiles/sources.ts';
+import type { TileArchives } from '../map/tiles/protocol.ts';
+import type { OfflineArea } from '../map/tiles/store-schema.ts';
+import { TERRAIN_MAX_ZOOM } from '../map/tiles/sources.ts';
 import { areaContents, areaLayers, downloadLayers } from './offline-maps.ts';
 
 const archive: TileArchive = { getTile: () => Promise.resolve(undefined) };

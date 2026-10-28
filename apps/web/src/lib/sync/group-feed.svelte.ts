@@ -48,8 +48,7 @@ import {
 } from '../events/event-log.ts';
 import type { StoredGroup } from '../groups/group.ts';
 import type { LocalIdentity } from '../identity/identity.ts';
-import { hear, NOTHING_HEARD, type Heard } from '../links/heard.ts';
-import type { Channel } from '../links/links.ts';
+import { hear, NOTHING_HEARD, type Channel, type Heard } from '../links/heard.ts';
 import type { DeviceFix } from '../position/device-location.svelte.ts';
 import type { AppDb, OutboxEntry } from '../storage/app-db.ts';
 import { storageRefusals } from '../storage/storage-space.svelte.ts';

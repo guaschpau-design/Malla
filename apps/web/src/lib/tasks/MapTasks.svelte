@@ -6,7 +6,7 @@
   import { untrack } from 'svelte';
 
   import type { Translate } from '../i18n/index.ts';
-  import { aliasOf } from '../incidents/incidents.ts';
+  import { aliasOf } from '../members/alias.ts';
   import type { MapTaps } from '../map/taps.ts';
   import { notices } from '../ui/notices.svelte.ts';
   import { editTask } from './task-editor.svelte.ts';

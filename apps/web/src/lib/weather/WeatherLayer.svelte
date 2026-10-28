@@ -1,11 +1,11 @@
 <!-- The regions under an official weather warning, beneath everything else on the map. They are
      drawn unlike the group's own areas, which are filled flat with a thick edge: hatched in the
      colour of their level, with a thin edge and a cloud on a rounded square, the sign of official
-     warnings (map/glyph-images.ts). Dashes are left to what is being drawn. -->
+     warnings (map/style/glyph-images.ts). Dashes are left to what is being drawn. -->
 <script lang="ts">
   import type { Map as MapLibreMap } from 'maplibre-gl';
 
-  import { addGlyphImage, addHatchImage } from '../map/glyph-images.ts';
+  import { addGlyphImage, addHatchImage } from '../map/style/glyph-images.ts';
   import { useOverlay } from '../map/overlay.svelte.ts';
   import { GLYPHS } from '../ui/glyphs.ts';
   import { toneColor, toneExpression } from '../ui/theme.ts';

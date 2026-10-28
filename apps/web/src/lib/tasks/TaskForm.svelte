@@ -13,11 +13,11 @@
 
   import { formatCoordinate, type CoordinateFormat } from '../coordinates/coordinates.ts';
   import type { MessageKey, Translate } from '../i18n/index.ts';
-  import { aliasOf } from '../incidents/incidents.ts';
+  import { aliasOf } from '../members/alias.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import { confirmations } from '../ui/confirmations.svelte.ts';
   import { Submission } from '../ui/submission.svelte.ts';
-  import type { TaskEditing } from './task-editor.svelte.ts';
+  import type { TaskEditing } from './tasks.ts';
   import { TASK_PRESETS } from './task-presets.ts';
   import { fieldsOf, type TaskFields } from './tasks.ts';
 

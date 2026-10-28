@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Writes src/lib/map/borders-data.ts: where the satellite map lays each country's own photographs
-over the common Sentinel-2 mosaic, close up (map/ortho.ts, ADR-0041).
+"""Writes src/lib/map/tiles/borders-data.ts: where the satellite map lays each country's own photographs
+over the common Sentinel-2 mosaic, close up (map/tiles/ortho.ts, ADR-0041).
 
 From geo-maps' countries at 10 m (OpenStreetMap's coastlines and borders, ODbL), whose shores are
 true to a few metres, with shapely 2 and pyproj:
@@ -92,7 +92,7 @@ def main(path: str) -> None:
         lines.append("")
         lines.append(f"/** {descriptions[name]}, {MARGIN_M} m out. */")
         lines.append(f"export const {name}: Outline = {json.dumps(data, separators=(',', ':'))};")
-    out = Path(__file__).parent.parent / "src/lib/map/borders-data.ts"
+    out = Path(__file__).parent.parent / "src/lib/map/tiles/borders-data.ts"
     out.write_text("\n".join(lines) + "\n")
     print(f"{out}: {', '.join(counts)}, {out.stat().st_size // 1024} KiB")
 

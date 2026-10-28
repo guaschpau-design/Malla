@@ -8,7 +8,7 @@ import {
   tileAt,
   tileKey,
   tilesInBounds,
-} from './tile-math.ts';
+} from './math.ts';
 
 const valencia = { west: -0.42, south: 39.44, east: -0.33, north: 39.5 };
 

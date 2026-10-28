@@ -3,7 +3,8 @@ import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
 
 import { openAppDb } from '../storage/app-db.ts';
-import { createLocalIdentity, loadIdentity, normalizeAlias, saveIdentity } from './identity.ts';
+import { loadIdentity, saveIdentity } from './identity-store.ts';
+import { createLocalIdentity, normalizeAlias } from './identity.ts';
 
 describe('local identity', () => {
   it('accepts aliases of 1 to 32 bytes after trimming', () => {

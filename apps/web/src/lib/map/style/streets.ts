@@ -5,7 +5,7 @@
 
 import { namedFlavor, type Flavor } from '@protomaps/basemaps';
 
-import type { MapTheme } from './style.ts';
+import type { MapTheme } from '../../ui/theme.ts';
 
 const STREET_PALETTE: Readonly<Record<MapTheme, Partial<Flavor>>> = {
   light: {

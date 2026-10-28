@@ -12,6 +12,8 @@ import {
   type SosEvent,
 } from '@tesel/protocol';
 
+import { aliasOf } from '../members/alias.ts';
+
 interface Acknowledgement {
   /** Members who acknowledged, by alias. */
   readonly by: readonly string[];
@@ -122,10 +124,6 @@ export function openRollCall(state: GroupState, self: NodeId, now: number): Roll
     answered: answered.sort(byName),
     pending: pending.sort(byName),
   };
-}
-
-export function aliasOf(state: Pick<GroupState, 'members'>, id: NodeId): string {
-  return state.members.get(id)?.alias ?? id;
 }
 
 function acknowledgement(state: GroupState, key: string, self: NodeId): Acknowledgement {

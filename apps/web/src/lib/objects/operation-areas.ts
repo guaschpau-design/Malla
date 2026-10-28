@@ -4,7 +4,7 @@
 import { offsetMeters, type GroupState } from '@tesel/core';
 import type { LatLon, ShapeGeometry } from '@tesel/protocol';
 
-import { boundsAround, type Bounds } from '../map/tile-math.ts';
+import { boundsAround, type Bounds } from '../map/tiles/math.ts';
 import { OPERATION_AREA_STYLE } from './catalog.ts';
 
 export interface OperationArea {

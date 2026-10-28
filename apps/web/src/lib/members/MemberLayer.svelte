@@ -9,8 +9,8 @@
   import { useNow } from '../ui/now.svelte.ts';
   import { themeColor } from '../ui/theme.ts';
   import { memberFeatures } from './member-features.ts';
-  import { useOverlay } from './overlay.svelte.ts';
-  import { textProperty, type MapTaps } from './taps.ts';
+  import { useOverlay } from '../map/overlay.svelte.ts';
+  import { textProperty, type MapTaps } from '../map/taps.ts';
 
   interface Props {
     map: MapLibreMap;

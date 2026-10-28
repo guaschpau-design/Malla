@@ -6,11 +6,11 @@
   import RadioCard from '../radio/RadioCard.svelte';
   import Panel from '../ui/Panel.svelte';
   import ChannelCard from './ChannelCard.svelte';
+  import type { Channel } from './heard.ts';
   import {
     channelName,
     networkSign,
     networkStatus,
-    type Channel,
     type LinkInput,
     type Network,
   } from './links.ts';

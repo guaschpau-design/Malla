@@ -1,11 +1,11 @@
-// Elevations of points, read from Terrarium elevation tiles (map/tile-sources.ts): the tiles are
+// Elevations of points, read from Terrarium elevation tiles (map/tiles/sources.ts): the tiles are
 // decoded once and kept while they are in use, since guidance asks for the same ones again and
 // again as the device moves.
 
 import type { LatLon } from '@tesel/protocol';
 
-import { tileAt, tileKey, type TileCoord } from '../map/tile-math.ts';
-import { TERRAIN_MAX_ZOOM } from '../map/tile-sources.ts';
+import { tileAt, tileKey, type TileCoord } from '../map/tiles/math.ts';
+import { TERRAIN_MAX_ZOOM } from '../map/tiles/sources.ts';
 
 /** The pixels of a decoded tile: RGBA, row by row. */
 export interface Pixels {

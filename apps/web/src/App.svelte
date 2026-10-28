@@ -17,12 +17,11 @@
   import ConnectionsPanel from './lib/links/ConnectionsPanel.svelte';
   import LinkButton from './lib/links/LinkButton.svelte';
   import { linkOf, networkStatus, radioLinkOf } from './lib/links/links.ts';
-  import { mapLibreLocale } from './lib/map/maplibre-locale.ts';
+  import { mapLibreLocale } from './lib/map/style/maplibre-locale.ts';
   import MapView from './lib/map/MapView.svelte';
-  import type { MapTheme } from './lib/map/style.ts';
-  import { registerContourProtocol } from './lib/map/contours.ts';
-  import { findTile, registerTileProtocol, tileArchives } from './lib/map/tile-source.ts';
-  import { openTileStore } from './lib/map/tile-store.ts';
+  import { registerContourProtocol } from './lib/map/style/contours.ts';
+  import { findTile, registerTileProtocol, tileArchives } from './lib/map/tiles/protocol.ts';
+  import { openTileStore } from './lib/map/tiles/store.ts';
   import type { OfflineMaps } from './lib/offline/offline-maps.ts';
   import OfflineAreasPanel from './lib/offline/OfflineAreasPanel.svelte';
   import { keepOverview } from './lib/offline/overview.ts';
@@ -44,6 +43,7 @@
   import { closePanel, isOpen, openPanel, togglePanel } from './lib/ui/panels.svelte.ts';
   import { notices } from './lib/ui/notices.svelte.ts';
   import { attempt, useStorageFullNotice } from './lib/ui/submission.svelte.ts';
+  import type { MapTheme } from './lib/ui/theme.ts';
   import { WeatherFeed } from './lib/weather/weather-feed.svelte.ts';
   import MapWorkspace from './lib/workspace/MapWorkspace.svelte';
 

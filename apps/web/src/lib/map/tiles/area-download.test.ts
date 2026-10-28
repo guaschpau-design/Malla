@@ -7,10 +7,10 @@ import {
   MAX_AREA_TILES,
   SourceUnreachable,
   type AreaRequest,
-  type TileArchive,
 } from './area-download.ts';
-import { countTiles, tileKey, tilesInBounds } from './tile-math.ts';
-import { openTileStore, type TileStore } from './tile-store.ts';
+import { countTiles, tileKey, tilesInBounds } from './math.ts';
+import type { TileArchive } from './sources.ts';
+import { openTileStore, type TileStore } from './store.ts';
 
 let dbCounter = 0;
 const freshStore = () => openTileStore(`download-${String(dbCounter++)}`);

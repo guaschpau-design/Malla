@@ -9,8 +9,8 @@ import type { LatLon, NodeId } from '@tesel/protocol';
 import type { Map as MapLibreMap, MapLibreEvent } from 'maplibre-gl';
 
 import { toPosition } from './geometry.ts';
-import { STALE_AFTER_S } from './member-features.ts';
-import { boundsAround } from './tile-math.ts';
+import { STALE_AFTER_S } from '../members/member-features.ts';
+import { boundsAround } from './tiles/math.ts';
 
 /** Closer than this the map would show one person's street, not where the group is. */
 const MAX_ZOOM = 15;

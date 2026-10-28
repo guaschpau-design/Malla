@@ -3,10 +3,18 @@
 // close up (ortho.ts, ADR-0023, ADR-0041). The topographic map's names of the terrain come from
 // IGN's vector map of Spain (ADR-0034). Elevation, for the relief, the contour lines and every
 // measure, comes from Mapterhorn (ADR-0037). Every source is read through the same protocol, which answers from the
-// tiles downloaded for offline use first (tile-source.ts).
+// tiles downloaded for offline use first (protocol.ts).
 
-import { satelliteMosaic, type SatelliteMosaic } from '../config.ts';
-import type { TileArchive } from './area-download.ts';
+import { satelliteMosaic, type SatelliteMosaic } from '../../config.ts';
+
+/** Anything that can return a tile: our PMTiles archive, or a web map service. */
+export interface TileArchive {
+  /**
+   * Resolves to the tile bytes, or undefined if the archive has no tile there (empty area); rejects
+   * if the tile cannot be had now.
+   */
+  getTile(z: number, x: number, y: number, signal: AbortSignal): Promise<ArrayBuffer | undefined>;
+}
 
 export const TILE_SOURCES = ['basemap', 'ign-names', 'ortho', 'terrain'] as const;
 export type TileSourceId = (typeof TILE_SOURCES)[number];

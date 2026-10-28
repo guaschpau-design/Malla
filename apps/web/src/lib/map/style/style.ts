@@ -1,7 +1,7 @@
 // MapLibre styles for each base map, light or dark: the Protomaps OpenStreetMap map as a street
 // map (streets.ts) or as a topographic map, with contour lines and names of the terrain (topo.ts);
-// or the national orthophotos (ortho.ts) with our labels over them. All served through our tile protocol
-// (tile-source.ts), so downloaded areas work offline whichever is shown.
+// or the national orthophotos (tiles/ortho.ts) with our labels over them. All served through our tile protocol
+// (tiles/protocol.ts), so downloaded areas work offline whichever is shown.
 
 import { layers, namedFlavor, type Flavor } from '@protomaps/basemaps';
 import type {
@@ -11,10 +11,10 @@ import type {
   StyleSpecification,
 } from 'maplibre-gl';
 
-import { themeColor } from '../ui/theme.ts';
+import { themeColor, type MapTheme } from '../../ui/theme.ts';
 import { CONTOURS_MAX_ZOOM, CONTOURS_MIN_ZOOM, contourTileUrl } from './contours.ts';
 import { streetFlavor } from './streets.ts';
-import { tileUrlTemplate } from './tile-source.ts';
+import { tileUrlTemplate } from '../tiles/protocol.ts';
 import {
   NAMES_ATTRIBUTION,
   NAMES_MAX_ZOOM,
@@ -23,7 +23,7 @@ import {
   TERRAIN_ATTRIBUTION,
   TERRAIN_MAX_ZOOM,
   TERRAIN_TILE_SIZE,
-} from './tile-sources.ts';
+} from '../tiles/sources.ts';
 import {
   CONTOURS_SOURCE,
   contourLayers,
@@ -31,8 +31,6 @@ import {
   terrainNameLayers,
   topoFlavor,
 } from './topo.ts';
-
-export type MapTheme = 'light' | 'dark';
 
 export const BASE_MAPS = ['streets', 'topo', 'aerial'] as const;
 export type BaseMap = (typeof BASE_MAPS)[number];
@@ -149,7 +147,7 @@ function protomapsLayers(flavor: Flavor, lang: string): Omit<BaseMapLayers, 'sou
   return { ground: all.slice(0, at), lines: [], names: all.slice(at) };
 }
 
-/** Shading of the terrain from the elevation tiles (tile-sources.ts). */
+/** Shading of the terrain from the elevation tiles (tiles/sources.ts). */
 function reliefShading(theme: MapTheme): {
   source: SourceSpecification;
   layer: HillshadeLayerSpecification;

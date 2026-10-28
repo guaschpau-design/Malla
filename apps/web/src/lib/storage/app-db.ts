@@ -1,5 +1,5 @@
 // The app's own IndexedDB database: identity, groups, settings and each group's event log.
-// Map tiles live in a separate database (map/tile-store.ts) so they can be cleared without
+// Map tiles live in a separate database (map/tiles/store.ts) so they can be cleared without
 // touching anything else.
 
 import type { NodeId, ServerInfo, WeatherWarnings } from '@tesel/protocol';

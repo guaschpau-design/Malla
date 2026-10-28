@@ -11,7 +11,7 @@
   import { useNow } from '../ui/now.svelte.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import { memberRows, type PositionStatus } from './member-list.ts';
-  import { ROLE_LABELS } from './role-label.ts';
+  import { ROLE_LABELS } from '../groups/role-label.ts';
 
   interface Props {
     t: Translate;

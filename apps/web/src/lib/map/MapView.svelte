@@ -8,8 +8,8 @@
   import { onMount } from 'svelte';
 
   import { mapAssetsUrl } from '../config.ts';
-  import type { MapLibreLocale } from './maplibre-locale.ts';
-  import { buildStyle, type StyleChoice } from './style.ts';
+  import type { MapLibreLocale } from './style/maplibre-locale.ts';
+  import { buildStyle, type StyleChoice } from './style/style.ts';
 
   interface Props {
     /** What the map looks like: base map, relief, theme and the language of its names. */

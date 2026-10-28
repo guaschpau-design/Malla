@@ -1,10 +1,10 @@
-// How the tile store's earlier versions become the current one (tile-store.ts): each step runs
+// How the tile store's earlier versions become the current one (store.ts): each step runs
 // inside the upgrade transaction, which stays open while its requests run.
 
 import type { IDBPTransaction, StoreNames } from 'idb';
 
-import type { MapDb, OfflineArea } from './tile-store.ts';
-import type { TileSourceId } from './tile-sources.ts';
+import type { MapDb, OfflineArea } from './store-schema.ts';
+import type { TileSourceId } from './sources.ts';
 
 type Upgrade = IDBPTransaction<MapDb, StoreNames<MapDb>[], 'versionchange'>;
 

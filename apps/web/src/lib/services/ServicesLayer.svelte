@@ -6,9 +6,9 @@
   import { onMount } from 'svelte';
 
   import type { Locale } from '../i18n/index.ts';
-  import { addGlyphImage } from '../map/glyph-images.ts';
+  import { addGlyphImage } from '../map/style/glyph-images.ts';
   import { useOverlay } from '../map/overlay.svelte.ts';
-  import { BASEMAP_SOURCE } from '../map/style.ts';
+  import { BASEMAP_SOURCE } from '../map/style/style.ts';
   import type { MapTaps } from '../map/taps.ts';
   import { GLYPHS } from '../ui/glyphs.ts';
   import { themeColor, toneColor } from '../ui/theme.ts';
@@ -33,7 +33,7 @@
   const LAYER = 'tesel-services';
   /**
    * Services appear from this zoom. Which ones is the base map's choice: hospitals, fire stations
-   * and town halls are in its levels from about here, the rest only in its last level (style.ts).
+   * and town halls are in its levels from about here, the rest only in its last level (map/style/style.ts).
    */
   const MIN_ZOOM = 12;
 

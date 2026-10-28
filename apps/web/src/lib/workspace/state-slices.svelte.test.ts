@@ -4,9 +4,9 @@ import { flushSync } from 'svelte';
 import { describe, expect, it } from 'vitest';
 
 import { FakeMap } from '../map/fake-map.ts';
-import { memberFeatures } from '../map/member-features.ts';
+import { memberFeatures } from '../members/member-features.ts';
 import { useOverlay } from '../map/overlay.svelte.ts';
-import { trailFeatures } from '../map/trail-features.ts';
+import { trailFeatures } from '../members/trail-features.ts';
 import { markerFeatures, shapeFeatures } from '../objects/object-features.ts';
 import { taskFeatures } from '../tasks/task-features.ts';
 import { stateSlices } from './state-slices.svelte.ts';

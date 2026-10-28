@@ -13,7 +13,7 @@
 
   import { formatTime } from '../format.ts';
   import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
-  import { aliasOf } from '../incidents/incidents.ts';
+  import { aliasOf } from '../members/alias.ts';
   import { ALERT_LEVELS } from '../incidents/sos-kinds.ts';
   import type { StoredRadioText } from '../radio/radio-texts.ts';
   import Panel from '../ui/Panel.svelte';

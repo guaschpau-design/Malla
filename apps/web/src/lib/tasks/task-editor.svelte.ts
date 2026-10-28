@@ -6,12 +6,6 @@ import type { LatLon } from '@tesel/protocol';
 
 import { openPanel } from '../ui/panels.svelte.ts';
 
-export type TaskEditing =
-  /** A new task, at a place of the map or nowhere in particular. */
-  | { readonly kind: 'new'; readonly place: LatLon | null }
-  /** An existing task, by its reference's key. */
-  | { readonly kind: 'existing'; readonly key: string };
-
 /** The tasks panel with its list. */
 export const TASK_LIST = { name: 'tasks', editing: null } as const;
 

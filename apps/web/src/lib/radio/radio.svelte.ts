@@ -17,12 +17,8 @@ import { getGroup } from '../groups/group-store.ts';
 import type { AppDb } from '../storage/app-db.ts';
 import { storageRefusals } from '../storage/storage-space.svelte.ts';
 import type { GroupFeed, LoraSink } from '../sync/group-feed.svelte.ts';
-import {
-  loadRadioTexts,
-  MAX_RADIO_TEXTS,
-  saveRadioText,
-  type StoredRadioText,
-} from './radio-texts.ts';
+import { loadRadioTexts, saveRadioText } from './radio-text-store.ts';
+import { MAX_RADIO_TEXTS, type StoredRadioText } from './radio-texts.ts';
 
 /** What the radio needs from the active group's feed. */
 export type RadioFeed = Pick<

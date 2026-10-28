@@ -3,10 +3,10 @@
 // the big places (ADR-0056). Its tiles belong to the overview, not to an area: deleting areas
 // leaves them, and they are not listed among the areas.
 
-import { countTiles, type Bounds } from '../map/tile-math.ts';
-import { downloadTiles } from '../map/area-download.ts';
-import type { TileArchives } from '../map/tile-source.ts';
-import type { TileStore } from '../map/tile-store.ts';
+import { countTiles, type Bounds } from '../map/tiles/math.ts';
+import { downloadTiles } from '../map/tiles/area-download.ts';
+import type { TileArchives } from '../map/tiles/protocol.ts';
+import type { TileStore } from '../map/tiles/store.ts';
 import { roomForMaps } from '../storage/storage-space.svelte.ts';
 import { downloadLayers, estimatedBytes } from './offline-maps.ts';
 

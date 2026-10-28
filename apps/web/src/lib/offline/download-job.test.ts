@@ -2,8 +2,8 @@ import 'fake-indexeddb/auto';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { TileArchive } from '../map/area-download.ts';
-import { openTileStore, type TileStore } from '../map/tile-store.ts';
+import type { TileArchive } from '../map/tiles/sources.ts';
+import { openTileStore, type TileStore } from '../map/tiles/store.ts';
 import { DownloadJob, type DownloadPlan } from './download-job.svelte.ts';
 
 let databases = 0;

@@ -7,10 +7,10 @@
   import { onMount } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
 
-  import { TRANSPARENT_IMAGE_URL } from '../map/empty-tiles.ts';
+  import { TRANSPARENT_IMAGE_URL } from '../map/tiles/empty-tiles.ts';
   import { mapBounds } from '../map/geometry.ts';
   import { useOverlay, type MapImage } from '../map/overlay.svelte.ts';
-  import type { Bounds } from '../map/tile-math.ts';
+  import type { Bounds } from '../map/tiles/math.ts';
   import {
     CADASTRE_MIN_ZOOM,
     CADASTRES,

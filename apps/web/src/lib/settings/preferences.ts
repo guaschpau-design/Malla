@@ -3,7 +3,7 @@
 import { COORDINATE_FORMATS, type CoordinateFormat } from '../coordinates/coordinates.ts';
 import { LANGUAGE_CHOICES, type LanguageChoice } from '../i18n/index.ts';
 import { MAP_LAYERS, type MapLayer } from '../map/layers.ts';
-import { BASE_MAPS, type BaseMap } from '../map/style.ts';
+import { BASE_MAPS, type BaseMap } from '../map/style/style.ts';
 import { POSITION_MODES, type PositionMode } from '../position/position-mode.ts';
 import type { AppDb } from '../storage/app-db.ts';
 import { choice, flag, Preference, subset } from './preference.svelte.ts';
