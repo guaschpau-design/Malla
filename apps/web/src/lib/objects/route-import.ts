@@ -1,12 +1,11 @@
 // A route read from a file the user picks: refused if the file is too big to be a route, and
 // thinned to the points a shape can carry over the radio (draft.ts), with what that cost.
 
-import { SHAPE_LABEL_MAX_BYTES, type LatLon, type Result } from '@tesel/protocol';
+import { simplifyLine } from '@tesel/core';
+import { SHAPE_LABEL_MAX_BYTES, SHAPE_MAX_POINTS, type LatLon, type Result } from '@tesel/protocol';
 
 import { fitBytes } from '../text.ts';
-import { MAX_SHAPE_POINTS } from './draft.ts';
 import { readRouteFile, type RouteFileError } from './route-file.ts';
-import { simplifyLine } from './simplify.ts';
 
 /** A route of a whole day's walk, recorded every second, takes a few megabytes of GPX. */
 export const MAX_ROUTE_FILE_BYTES = 5 * 1024 * 1024;
@@ -35,7 +34,7 @@ export async function importRoute(file: File): Promise<Result<ImportedRoute, Rou
   if (!read.ok) return read;
   const line = withoutRepeats(read.value.points);
   if (line.length < 2) return { ok: false, error: 'no-line' };
-  const { points, deviation } = simplifyLine(line, MAX_SHAPE_POINTS);
+  const { points, deviation } = simplifyLine(line, SHAPE_MAX_POINTS);
   const name = read.value.name || file.name.replace(/\.[^.]*$/, '');
   return {
     ok: true,

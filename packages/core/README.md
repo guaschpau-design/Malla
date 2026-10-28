@@ -14,6 +14,8 @@ Pure TypeScript. Time and randomness are passed in, never read globally, so ever
 | `urgency.ts`        | How urgent each event type is, for the scheduler and for the app's queue of pushes to the server                                  |
 | `airtime.ts`        | LoRa time on air of an event                                                                                                      |
 | `geo.ts`            | Distances, bearings and areas on the Earth                                                                                        |
+| `sweep.ts`          | The lanes of a sweep of an area, a strip's share of them, and how much of them trails have swept                                  |
+| `simplify.ts`       | Thinning a line to the few points that keep its shape (Douglas–Peucker)                                                           |
 | `token-bucket.ts`   | Rate limiting, used by the server's relay limits and the app's pushes                                                             |
 
 The event log and the outbox, the queue of events waiting for the server, are storage, so they live in the app: `apps/web/src/lib/events/event-log.ts` keeps both in IndexedDB.

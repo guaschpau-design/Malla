@@ -1,8 +1,9 @@
 // Joining, creating and leaving groups: the steps that touch more than one record.
 
-import type { Invitation } from '@tesel/protocol';
+import type { Invitation, Role } from '@tesel/protocol';
 
 import { deleteGroupEvents } from '../events/event-log.ts';
+import type { Situation } from '../practice/situations.ts';
 import type { AppDb } from '../storage/app-db.ts';
 import {
   applyInvitation,
@@ -43,8 +44,17 @@ export async function startGroup(
  * Creates a practice group and makes it the active group: one without a server, whose other
  * members a practice run simulates on this device.
  */
-export async function startPractice(db: AppDb, name: string, now: number): Promise<StoredGroup> {
-  const group: StoredGroup = { ...createGroup(name, null, now), practice: true };
+export async function startPractice(
+  db: AppDb,
+  name: string,
+  practice: { readonly situation: Situation; readonly role: Role },
+  now: number,
+): Promise<StoredGroup> {
+  const group: StoredGroup = {
+    ...createGroup(name, null, now),
+    role: practice.role,
+    practice: practice.situation,
+  };
   await saveGroup(db, group);
   await setActiveGroupId(db, group.id);
   return group;

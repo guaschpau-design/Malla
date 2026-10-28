@@ -1,12 +1,13 @@
 // Reactive view of who this device is and which groups it belongs to. Components read it and
 // call its methods; the rules live in identity/ and groups/, persistence in storage/.
 
-import type { Invitation } from '@tesel/protocol';
+import type { Invitation, Role } from '@tesel/protocol';
 
 import type { JoinOutcome, StoredGroup } from './groups/group.ts';
 import { getActiveGroupId, listGroups, setActiveGroupId } from './groups/group-store.ts';
 import { joinGroup, leaveGroup, startGroup, startPractice } from './groups/membership.ts';
 import { createLocalIdentity, type LocalIdentity } from './identity/identity.ts';
+import type { Situation } from './practice/situations.ts';
 import { loadIdentity, saveIdentity } from './identity/identity-store.ts';
 import type { AppDb } from './storage/app-db.ts';
 import { keepStorage } from './storage/storage-space.svelte.ts';
@@ -59,11 +60,14 @@ export class Session {
     return group;
   }
 
-  /** Starts a practice in a new practice group, which becomes the active group. */
-  async startPractice(name: string): Promise<void> {
+  /**
+   * Starts a practice of a situation in a new practice group, which becomes the active group, with
+   * the user as a member or as its coordinator.
+   */
+  async startPractice(name: string, situation: Situation, role: Role): Promise<void> {
     await this.endPractice();
     this.#beforePractice = this.activeGroupId;
-    await startPractice(this.#db, name, Date.now());
+    await startPractice(this.#db, name, { situation, role }, Date.now());
     await this.#refreshGroups();
   }
 

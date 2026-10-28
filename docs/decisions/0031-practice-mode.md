@@ -1,6 +1,6 @@
 # 0031. Practice mode: a simulated group played on the device
 
-- Status: Accepted
+- Status: Accepted, amended by [0066](0066-practice-situations.md) (situations, parts, streets, guide)
 - Date: 2026-10-26
 
 ## Context

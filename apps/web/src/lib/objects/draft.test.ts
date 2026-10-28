@@ -1,14 +1,7 @@
+import { SHAPE_MAX_POINTS } from '@tesel/protocol';
 import { describe, expect, it } from 'vitest';
 
-import {
-  addPoint,
-  draftGeometry,
-  isComplete,
-  isFull,
-  MAX_SHAPE_POINTS,
-  startDraft,
-  undoPoint,
-} from './draft.ts';
+import { addPoint, draftGeometry, isComplete, isFull, startDraft, undoPoint } from './draft.ts';
 
 const A = { lat: 39.47, lon: -0.37 };
 const B = { lat: 39.471, lon: -0.37 };
@@ -38,9 +31,9 @@ describe('drawing drafts', () => {
 
   it('stops taking points at the most a radio message can carry', () => {
     let draft = startDraft('area');
-    for (let i = 0; i < MAX_SHAPE_POINTS + 5; i++)
+    for (let i = 0; i < SHAPE_MAX_POINTS + 5; i++)
       draft = addPoint(draft, { lat: 39 + i / 1000, lon: 0 });
-    expect(draft.points).toHaveLength(MAX_SHAPE_POINTS);
+    expect(draft.points).toHaveLength(SHAPE_MAX_POINTS);
     expect(isFull(draft)).toBe(true);
   });
 });

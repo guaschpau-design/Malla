@@ -1,6 +1,6 @@
 // A map object being drawn: the points tapped so far and what they will become.
 
-import type { LatLon, ShapeGeometry } from '@tesel/protocol';
+import { SHAPE_MAX_POINTS, type LatLon, type ShapeGeometry } from '@tesel/protocol';
 
 import type { MessageKey } from '../i18n/index.ts';
 
@@ -20,17 +20,11 @@ export interface Draft {
   readonly points: readonly LatLon[];
 }
 
-/**
- * Most points a route or an area may have. A shape holds up to 33 points with an empty label but 25
- * with the longest one (protocol §3.7); 25 keeps every label possible.
- */
-export const MAX_SHAPE_POINTS = 25;
-
 const NEEDED: Readonly<Record<DraftKind, number>> = { marker: 1, route: 2, area: 3 };
 const MAXIMUM: Readonly<Record<DraftKind, number>> = {
   marker: 1,
-  route: MAX_SHAPE_POINTS,
-  area: MAX_SHAPE_POINTS,
+  route: SHAPE_MAX_POINTS,
+  area: SHAPE_MAX_POINTS,
 };
 
 export function startDraft(kind: DraftKind): Draft {

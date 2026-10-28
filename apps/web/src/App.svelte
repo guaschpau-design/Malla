@@ -87,7 +87,7 @@
   // A practice syncs with nothing: the indicator shows this device's own connection, as without a
   // group.
   const linkInput = $derived({
-    server: session?.activeGroup?.practice ? null : (feed?.status ?? null),
+    server: session?.activeGroup?.practice !== undefined ? null : (feed?.status ?? null),
     radio: radioLinkOf(radio),
     browserOnline: connection.online,
   });
@@ -203,7 +203,7 @@
 
   // The radio follows the active group: its channel, its events. A practice stays on this device.
   // Derived first, so that reloading the list of groups does not configure the radio again.
-  const radioFeed = $derived(session?.activeGroup?.practice === true ? null : (feed ?? null));
+  const radioFeed = $derived(session?.activeGroup?.practice !== undefined ? null : (feed ?? null));
   $effect(() => {
     void radio.useFeed(radioFeed);
   });
@@ -222,7 +222,7 @@
           sharing,
           self: session.identity.nodeId,
           role: session.activeGroup.role,
-          practice: session.activeGroup.practice === true,
+          practice: session.activeGroup.practice ?? null,
         }
       : null,
   );

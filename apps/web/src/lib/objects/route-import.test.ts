@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { MAX_SHAPE_POINTS } from './draft.ts';
+import { SHAPE_MAX_POINTS } from '@tesel/protocol';
 import { importRoute, MAX_ROUTE_FILE_BYTES } from './route-import.ts';
 
 function gpx(points: number, name = ''): string {
@@ -20,7 +20,7 @@ describe('importing a route', () => {
     if (!result.ok) return;
     expect(result.value.name).toBe('Ronda');
     expect(result.value.read).toBe(500);
-    expect(result.value.points).toHaveLength(MAX_SHAPE_POINTS);
+    expect(result.value.points).toHaveLength(SHAPE_MAX_POINTS);
     expect(result.value.deviation).toBeGreaterThan(5);
   });
 

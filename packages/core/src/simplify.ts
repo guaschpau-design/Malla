@@ -2,7 +2,7 @@
 // one radio message. Douglas–Peucker, keeping first the point where the line strays most, until
 // the points run out or the line no longer strays.
 
-import { nearestOnSegment } from '@tesel/core';
+import { nearestOnSegment } from './geo.ts';
 import type { LatLon } from '@tesel/protocol';
 
 /** Straying less than this, in metres, is not worth a point. */

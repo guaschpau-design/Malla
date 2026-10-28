@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { MAX_SHAPE_POINTS } from './draft.ts';
+import { SHAPE_MAX_POINTS } from '@tesel/protocol';
 import { Drawing } from './drawing.svelte.ts';
 
 const at = (n: number) => ({ lat: 39.47 + n / 1000, lon: -0.37 });
@@ -30,7 +30,7 @@ describe('drawing', () => {
 
     const area = new Drawing();
     area.start('area');
-    for (let n = 0; n < MAX_SHAPE_POINTS; n++) area.add(at(n));
+    for (let n = 0; n < SHAPE_MAX_POINTS; n++) area.add(at(n));
     expect(area.describing).toBe(true);
   });
 

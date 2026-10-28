@@ -143,7 +143,7 @@ export class GroupFeed {
   ): Promise<GroupFeed> {
     const feed = new GroupFeed(db, group, identity, createSocket);
     await feed.#apply(await loadEvents(db, group.id));
-    if (!group.practice) {
+    if (group.practice === undefined) {
       // The outbox also holds other members' events this device heard by radio and forwards: those
       // are not its to deliver.
       for (const { entry } of await pendingEvents(db, group.id)) {
@@ -182,7 +182,7 @@ export class GroupFeed {
    */
   async attachRadio(sink: LoraSink | null): Promise<void> {
     // A practice never reaches the air, whatever the caller does (ADR-0031).
-    this.#lora = this.#group.practice === true ? null : sink;
+    this.#lora = this.#group.practice !== undefined ? null : sink;
     if (this.#lora === null) return;
     const pending = await pendingEvents(this.#db, this.#group.id);
     for (const packet of catchUpPackets(this.state, this.#identity.nodeId, pending)) {
@@ -394,7 +394,7 @@ export class GroupFeed {
   async #publish(build: (header: EventHeader) => TeselEvent): Promise<EventRef> {
     const header = { origin: this.#identity.nodeId, time: Math.floor(Date.now() / 1000) };
     const { entry, bytes } = await publishEvent(this.#db, this.#group.id, build, header);
-    if (!this.#group.practice) this.#undelivered.add(eventRefKey(entry));
+    if (this.#group.practice === undefined) this.#undelivered.add(eventRefKey(entry));
     const [event] = await this.#apply([bytes]);
     this.#push(entry, bytes);
     if (event) this.#lora?.offer({ event, bytes }, 'own');

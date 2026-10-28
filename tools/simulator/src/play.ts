@@ -29,7 +29,8 @@ export async function play(scenario: Scenario, options: PlayOptions): Promise<vo
   for (const member of scenario.members) {
     devices.set(member.alias, await SimulatedDevice.connect(options.server, keys));
   }
-  const performer = new ScenarioPerformer();
+  // The simulator plays nobody's part but the members': a scenario that names YOU is refused.
+  const performer = new ScenarioPerformer((name) => devices.get(name)?.identity.nodeId);
   const instant = !Number.isFinite(options.speed);
   const startMs = Date.now();
   const startTime = Math.floor(startMs / 1000) - (instant ? scenario.duration : 0);

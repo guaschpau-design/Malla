@@ -95,6 +95,12 @@ export const ALIAS_MAX_BYTES = 32;
 /** §3.7 Shape label length in bytes. */
 export const SHAPE_LABEL_MAX_BYTES = 32;
 
+/**
+ * §3.7 Most points a line or a polygon of the app may have: a shape holds up to 33 points with an
+ * empty label but 25 with the longest one; 25 keeps every label possible.
+ */
+export const SHAPE_MAX_POINTS = 25;
+
 /** §3.7 Shape kind codes. */
 export const ShapeKindCode = { POLYLINE: 1, POLYGON: 2, CIRCLE: 3 } as const;
 

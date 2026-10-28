@@ -2,8 +2,24 @@
 // scenario always gives the same plan, which a runner then sends: the simulator over the relay,
 // the web app's practice mode straight into its own group.
 
-import { distanceMeters } from '@tesel/core';
-import type { AlertLevel, LatLon, Role, ShapeGeometry, SosKind } from '@tesel/protocol';
+import { distanceMeters, pathMeters } from '@tesel/core';
+import type {
+  AlertLevel,
+  Casualties,
+  DutyStatus,
+  Equipment,
+  Hazard,
+  IncidentType,
+  LatLon,
+  Profile,
+  Resource,
+  Role,
+  SceneAccess,
+  ShapeGeometry,
+  SosKind,
+  TaskStatus,
+  TeamColour,
+} from '@tesel/protocol';
 
 export interface ScenarioMember {
   readonly alias: string;
@@ -20,10 +36,29 @@ export interface ScenarioMember {
   readonly hidden?: boolean;
 }
 
-/** What a member does at a moment of the scenario. Objects and SOS calls are named by `id`. */
+/**
+ * Whoever plays the scenario on their own device, as the app's practice has it: tasks and teams
+ * can name them beside the members. A runner without such a person refuses a scenario that does.
+ */
+export const YOU = '@you';
+
+/** Where a task is: a point, or one of the scenario's objects by its `id`. */
+export type ScenarioPlace =
+  | { readonly kind: 'point'; readonly at: LatLon }
+  | { readonly kind: 'object'; readonly id: string };
+
+/**
+ * What a member does at a moment of the scenario. What later steps refer to (objects, SOS calls,
+ * alerts, roll calls, teams, tasks) is named by `id`; members by their alias, or `YOU`.
+ */
 export type ScenarioAction =
   | { readonly type: 'chat'; readonly text: string }
-  | { readonly type: 'alert'; readonly level: AlertLevel; readonly text: string }
+  | {
+      readonly type: 'alert';
+      readonly id?: string;
+      readonly level: AlertLevel;
+      readonly text: string;
+    }
   | {
       readonly type: 'marker';
       readonly id: string;
@@ -41,7 +76,54 @@ export type ScenarioAction =
   /** An SOS from where the member is at that moment. */
   | { readonly type: 'sos'; readonly id: string; readonly kind: SosKind; readonly text: string }
   | { readonly type: 'ack'; readonly of: string }
-  | { readonly type: 'cancel-sos'; readonly of: string };
+  | { readonly type: 'cancel-sos'; readonly of: string }
+  /** What the member tells about themselves (protocol §3.14). */
+  | {
+      readonly type: 'state';
+      readonly profile: Profile;
+      readonly status: DutyStatus;
+      readonly battery: number | null;
+      readonly equipment: readonly Equipment[];
+    }
+  /** A team, or a new version of it: `members` are aliases or `YOU`. */
+  | {
+      readonly type: 'team';
+      readonly id: string;
+      readonly name: string;
+      readonly colour: TeamColour;
+      readonly members: readonly string[];
+    }
+  /** A new task, open, for a member or `YOU` (by alias), a team (by `id`) or anyone (null). */
+  | {
+      readonly type: 'task';
+      readonly id: string;
+      readonly text: string;
+      readonly assignee: string | null;
+      readonly place: ScenarioPlace | null;
+    }
+  /** A task taken, finished or cancelled: the rest of it stays as it was. */
+  | { readonly type: 'task-status'; readonly of: string; readonly status: TaskStatus }
+  /** A situation report from where the member is at that moment (protocol §3.16). */
+  | {
+      readonly type: 'report';
+      readonly incident: IncidentType;
+      readonly hazards: readonly Hazard[];
+      readonly access: SceneAccess;
+      readonly casualties: Casualties;
+      readonly resources: readonly Resource[];
+      readonly note: string;
+    }
+  /** One strip of the sweep of an area, which the scenario names by its `id` (protocol §3.13). */
+  | {
+      readonly type: 'sweep';
+      readonly id: string;
+      readonly area: string;
+      readonly spacing: number;
+      readonly heading: number;
+      readonly strip: number;
+      readonly strips: number;
+    }
+  | { readonly type: 'roll-call'; readonly id?: string };
 
 export interface ScenarioStep {
   /** Seconds from the start of the scenario. */
@@ -62,15 +144,18 @@ export interface Scenario {
   readonly steps: readonly ScenarioStep[];
 }
 
+/** Actions sent from where their member is at that moment. */
+type PlacedAction = Extract<ScenarioAction, { readonly type: 'sos' | 'report' }>;
+
 /**
  * One thing to send: a member's announcement, a position or a step of the scenario, with an SOS
- * placed where its sender is at that moment.
+ * or a report placed where its sender is at that moment.
  */
 export type PlannedAction =
   | { readonly type: 'announce'; readonly role: Role }
   | { readonly type: 'position'; readonly where: LatLon }
-  | Exclude<ScenarioAction, { readonly type: 'sos' }>
-  | (Extract<ScenarioAction, { readonly type: 'sos' }> & { readonly where: LatLon });
+  | Exclude<ScenarioAction, PlacedAction>
+  | (PlacedAction & { readonly where: LatLon });
 
 export interface PlannedEvent {
   readonly at: number;
@@ -79,16 +164,19 @@ export interface PlannedEvent {
 }
 
 export interface PlanOptions {
-  /** Seconds between position reports of each member. */
-  readonly positionEvery: number;
+  /**
+   * Seconds between position reports of each member; null for none, when the runner moves the
+   * members itself (the app's practice, where they walk to their tasks).
+   */
+  readonly positionEvery: number | null;
 }
 
 /** Walking pace, in metres per second. */
-const WALKING_SPEED = 1.2;
+export const WALKING_SPEED = 1.2;
 
 /**
  * Every event of the scenario in time order. Members announce themselves first, positions follow
- * their routes, and SOS calls take the position of their sender at that moment.
+ * their routes, and SOS calls and reports take the position of their sender at that moment.
  */
 export function plan(scenario: Scenario, options: PlanOptions): PlannedEvent[] {
   const members = new Map(scenario.members.map((member) => [member.alias, member]));
@@ -96,7 +184,7 @@ export function plan(scenario: Scenario, options: PlanOptions): PlannedEvent[] {
     const member = members.get(step.by);
     if (member === undefined) throw new Error(`step at ${String(step.at)}s: no member ${step.by}`);
     const { action } = step;
-    return action.type === 'sos'
+    return action.type === 'sos' || action.type === 'report'
       ? { ...step, action: { ...action, where: whereAt(member, step.at) } }
       : { ...step, action };
   });
@@ -105,14 +193,17 @@ export function plan(scenario: Scenario, options: PlanOptions): PlannedEvent[] {
     by: member.alias,
     action: { type: 'announce', role: member.role ?? 'member' },
   }));
-  for (const member of scenario.members) {
-    if (member.route === undefined || member.hidden === true) continue;
-    for (let at = 0; at <= scenario.duration; at += options.positionEvery) {
-      planned.push({
-        at,
-        by: member.alias,
-        action: { type: 'position', where: whereAt(member, at) },
-      });
+  const every = options.positionEvery;
+  if (every !== null) {
+    for (const member of scenario.members) {
+      if (member.route === undefined || member.hidden === true) continue;
+      for (let at = 0; at <= scenario.duration; at += every) {
+        planned.push({
+          at,
+          by: member.alias,
+          action: { type: 'position', where: whereAt(member, at) },
+        });
+      }
     }
   }
   planned.push(...steps);
@@ -123,25 +214,31 @@ export function plan(scenario: Scenario, options: PlanOptions): PlannedEvent[] {
 /** Where a member is after `seconds`: walking their route back and forth, or standing still. */
 export function whereAt(member: ScenarioMember, seconds: number): LatLon {
   const route = member.route ?? [];
-  const first = route[0];
-  if (first === undefined) throw new Error(`${member.alias} has no route`);
-  if (route.length === 1) return first;
-  const legs = route.slice(1).map((to, index) => ({ from: route[index] ?? first, to }));
-  const lengths = legs.map(({ from, to }) => distanceMeters(from, to));
-  const total = lengths.reduce((sum, length) => sum + length, 0);
+  if (route[0] === undefined) throw new Error(`${member.alias} has no route`);
+  const total = pathMeters(route);
+  if (total === 0) return route[0];
   // Out and back: the walk repeats every two lengths of the route.
   const travelled = (seconds * (member.speed ?? WALKING_SPEED)) % (2 * total);
-  let along = travelled <= total ? travelled : 2 * total - travelled;
-  for (const [index, leg] of legs.entries()) {
-    const length = lengths[index] ?? 0;
-    if (along <= length || index === legs.length - 1) {
-      const fraction = length === 0 ? 0 : Math.min(along / length, 1);
+  return pointAlong(route, travelled <= total ? travelled : 2 * total - travelled);
+}
+
+/** The point `meters` along a route from its start; its end, past it. */
+export function pointAlong(route: readonly LatLon[], meters: number): LatLon {
+  const first = route[0];
+  if (first === undefined) throw new Error('a route with no points');
+  let left = meters;
+  for (let index = 1; index < route.length; index += 1) {
+    const from = route[index - 1] ?? first;
+    const to = route[index] ?? from;
+    const length = distanceMeters(from, to);
+    if (left <= length) {
+      const fraction = length === 0 ? 0 : left / length;
       return {
-        lat: leg.from.lat + (leg.to.lat - leg.from.lat) * fraction,
-        lon: leg.from.lon + (leg.to.lon - leg.from.lon) * fraction,
+        lat: from.lat + (to.lat - from.lat) * fraction,
+        lon: from.lon + (to.lon - from.lon) * fraction,
       };
     }
-    along -= length;
+    left -= length;
   }
-  return first;
+  return route.at(-1) ?? first;
 }

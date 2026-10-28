@@ -6,6 +6,7 @@ from shapely.geometry import box, LineString, Point
 
 W,S,E,N = -0.45, 39.40, -0.30, 39.53   # Valencia area
 SEA_LON = -0.33
+CENTRE = (-0.3763, 39.4699)   # Valencia's place label, where the tests' devices stand
 
 def tile_bounds(z,x,y):
     n=2**z
@@ -41,9 +42,19 @@ with open(out,'wb') as f:
             roads.append({'geometry':LineString([(W,lat),(SEA_LON,lat)]).intersection(tb),'properties':{'kind':'major_road','min_zoom':6}})
             lon=W+(SEA_LON-W)*i/7
             roads.append({'geometry':LineString([(lon,S),(lon,N)]).intersection(tb),'properties':{'kind':'minor_road','min_zoom':10}})
+        # Streets every 100 m for 600 m round the centre, a footpath across them and a motorway
+        # between them, from zoom 14: where the practice's members walk (practice.e2e.ts).
+        if z>=14:
+            m_lat=1/111320; m_lon=1/(111320*math.cos(math.radians(CENTRE[1])))
+            for i in range(-6,7):
+                lat=CENTRE[1]+i*100*m_lat; lon=CENTRE[0]+i*100*m_lon
+                roads.append({'geometry':LineString([(CENTRE[0]-600*m_lon,lat),(CENTRE[0]+600*m_lon,lat)]).intersection(tb),'properties':{'kind':'minor_road','min_zoom':14}})
+                roads.append({'geometry':LineString([(lon,CENTRE[1]-600*m_lat),(lon,CENTRE[1]+600*m_lat)]).intersection(tb),'properties':{'kind':'minor_road','min_zoom':14}})
+            roads.append({'geometry':LineString([(CENTRE[0]-300*m_lon,CENTRE[1]-300*m_lat),(CENTRE[0]+300*m_lon,CENTRE[1]+300*m_lat)]).intersection(tb),'properties':{'kind':'path','min_zoom':14}})
+            roads.append({'geometry':LineString([(CENTRE[0]-600*m_lon,CENTRE[1]+350*m_lat),(CENTRE[0]+600*m_lon,CENTRE[1]+350*m_lat)]).intersection(tb),'properties':{'kind':'highway','min_zoom':14}})
         roads=[r for r in roads if not r['geometry'].is_empty]
         if roads: layers.append({'name':'roads','features':roads})
-        p=Point(-0.3763,39.4699)
+        p=Point(*CENTRE)
         if tb.contains(p): layers.append({'name':'places','features':[{'geometry':p,'properties':{'kind':'locality','name':'Valencia','name:es':'Valencia','min_zoom':4,'population_rank':12}}]})
         # Public services, for the services layer: a hospital a little north-east of the centre and,
         # like the real base map carries minor ones only in its last level, a pharmacy to its west.

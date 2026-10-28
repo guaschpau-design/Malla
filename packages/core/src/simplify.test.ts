@@ -1,4 +1,4 @@
-import { distanceMeters, offsetMeters } from '@tesel/core';
+import { distanceMeters, offsetMeters } from './geo.ts';
 import { describe, expect, it } from 'vitest';
 
 import { simplifyLine } from './simplify.ts';

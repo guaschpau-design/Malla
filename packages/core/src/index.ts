@@ -13,6 +13,7 @@ export {
 } from './reducer.ts';
 export { openSosCalls } from './state/sos.ts';
 export { teamOf } from './state/teams.ts';
+export { simplifyLine, type Simplified } from './simplify.ts';
 export { TRAIL_POINTS } from './state/trails.ts';
 export { EU_NARROW, eventAirtimeMs, timeOnAirMs, type LoraPreset } from './airtime.ts';
 export {

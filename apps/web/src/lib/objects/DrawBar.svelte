@@ -2,17 +2,13 @@
      tapped, how many of the most there may be. A route can also be read from a file, which is then
      shown as drawn, to look over before finishing. -->
 <script lang="ts">
+  import { SHAPE_MAX_POINTS } from '@tesel/protocol';
+
   import { formatDistance } from '../format.ts';
   import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import ToolCard from '../ui/ToolCard.svelte';
-  import {
-    DRAFT_TITLES,
-    isComplete,
-    MAX_SHAPE_POINTS,
-    type Draft,
-    type DraftKind,
-  } from './draft.ts';
+  import { DRAFT_TITLES, isComplete, type Draft, type DraftKind } from './draft.ts';
   import { importRoute, type ImportedRoute, type RouteImportError } from './route-import.ts';
 
   interface Props {
@@ -56,7 +52,7 @@
   const progress = $derived(
     draft.kind === 'marker' || draft.points.length === 0
       ? t(HINTS[draft.kind])
-      : t('drawPoints', { count: draft.points.length, max: MAX_SHAPE_POINTS }),
+      : t('drawPoints', { count: draft.points.length, max: SHAPE_MAX_POINTS }),
   );
 </script>
 

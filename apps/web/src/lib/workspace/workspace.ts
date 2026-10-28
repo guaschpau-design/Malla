@@ -4,6 +4,7 @@
 import type { NodeId, Role } from '@tesel/protocol';
 
 import type { PositionSharing } from '../position/position-sharing.svelte.ts';
+import type { Situation } from '../practice/situations.ts';
 import type { GroupFeed } from '../sync/group-feed.svelte.ts';
 
 /**
@@ -15,7 +16,8 @@ export interface WorkspaceGroup {
   readonly self: NodeId;
   readonly role: Role;
   readonly sharing: PositionSharing;
-  readonly practice: boolean;
+  /** The situation a practice plays; null for a real group. */
+  readonly practice: Situation | null;
 }
 
 /**

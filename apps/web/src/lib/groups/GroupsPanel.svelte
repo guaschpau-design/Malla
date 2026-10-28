@@ -3,10 +3,12 @@
      it: they are seldom needed during an operation. Creating, joining, inviting and scanning each
      open in the panel and come back here. -->
 <script lang="ts">
-  import type { Invitation } from '@tesel/protocol';
+  import type { Invitation, Role } from '@tesel/protocol';
 
   import { guideUrl } from '../config.ts';
   import type { Translate } from '../i18n/index.ts';
+  import PracticeSetup from '../practice/PracticeSetup.svelte';
+  import type { Situation } from '../practice/situations.ts';
   import type { Session } from '../session.svelte.ts';
   import type { GroupFeed } from '../sync/group-feed.svelte.ts';
   import { confirmations } from '../ui/confirmations.svelte.ts';
@@ -40,6 +42,7 @@
     | { kind: 'create' }
     | { kind: 'join' }
     | { kind: 'scan' }
+    | { kind: 'practice' }
     | { kind: 'invite'; group: StoredGroup };
   let view: View = $state.raw({ kind: 'home' });
 
@@ -64,11 +67,9 @@
     }, t('actionFailed'));
   }
 
-  function practise(): void {
-    attempt(async () => {
-      await session.startPractice(t('practiceGroupName'));
-      onclose();
-    }, t('actionFailed'));
+  async function practise(situation: Situation, role: Role): Promise<void> {
+    await session.startPractice(t('practiceGroupName'), situation, role);
+    onclose();
   }
 </script>
 
@@ -95,7 +96,9 @@
     </button>
   </div>
   {#if !session.groups.some((group) => group.practice)}
-    <button class="practice" onclick={practise}>{t('startPractice')}</button>
+    <button class="practice" onclick={() => (view = { kind: 'practice' })}
+      >{t('startPractice')}</button
+    >
   {/if}
 {/snippet}
 
@@ -104,6 +107,8 @@
     <CreateGroupForm {t} {session} onback={home} />
   {:else if view.kind === 'join'}
     <JoinGroup {t} {oninvitation} onscan={() => (view = { kind: 'scan' })} onback={home} />
+  {:else if view.kind === 'practice'}
+    <PracticeSetup {t} onstart={practise} onback={home} />
   {:else if view.kind === 'scan'}
     <QrScanner {t} onresult={scanned} oncancel={home} />
   {:else if view.kind === 'invite' && session.identity}

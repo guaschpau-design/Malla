@@ -1,6 +1,8 @@
-// A search along the old Turia riverbed in Valencia: a sector being searched, a meeting point, a
-// first-aid post and a closed path, a medical SOS acknowledged by a teammate, and the team's chat.
-// It is the operation the site's screenshots show; Ana, the coordinator, is the browser.
+// A search along the old Turia riverbed in Valencia: a sector being searched by a team, a meeting
+// point, a first-aid post and a closed path, what each member carries, a medical SOS acknowledged
+// by a teammate and a report of it, and the team's chat. Everyone keeps to the riverbed's park,
+// open ground with paths. It is the operation the site's screenshots show; Ana, the coordinator,
+// is the browser.
 
 import { ShapeStyleCode, SymbolCode } from '@tesel/protocol';
 import type { Scenario } from '@tesel/scenario';
@@ -24,6 +26,18 @@ export const turia: Scenario = {
     { alias: 'Marta', route: [{ lat: 39.4771, lon: -0.3714 }], hidden: true },
   ],
   steps: [
+    ...(
+      [
+        ['Luis', 'rescue', ['rope', 'radio', 'light'], 91],
+        ['Jordi', 'volunteer', ['light', 'water'], 64],
+        ['Carmen', 'medical', ['first-aid', 'stretcher'], 78],
+        ['Marta', 'volunteer', ['water'], 55],
+      ] as const
+    ).map(([by, profile, equipment, battery]) => ({
+      at: 0,
+      by,
+      action: { type: 'state', profile, status: 'active', battery, equipment } as const,
+    })),
     {
       at: 0,
       by: 'Luis',
@@ -77,6 +91,33 @@ export const turia: Scenario = {
       },
     },
     {
+      at: 20,
+      by: 'Luis',
+      action: {
+        type: 'team',
+        id: 'north',
+        name: 'Norte',
+        colour: 'blue',
+        members: ['Luis', 'Jordi'],
+      },
+    },
+    {
+      at: 25,
+      by: 'Luis',
+      action: {
+        type: 'task',
+        id: 'sector-2-task',
+        text: 'Batir el sector 2',
+        assignee: 'north',
+        place: { kind: 'object', id: 'sector-2' },
+      },
+    },
+    {
+      at: 55,
+      by: 'Luis',
+      action: { type: 'task-status', of: 'sector-2-task', status: 'in-progress' },
+    },
+    {
       at: 60,
       by: 'Luis',
       action: { type: 'chat', text: 'Empiezo el sector 2 por el puente. Sin novedad.' },
@@ -101,6 +142,19 @@ export const turia: Scenario = {
       at: 340,
       by: 'Jordi',
       action: { type: 'chat', text: 'Voy hacia Marta, llego en 4 minutos.' },
+    },
+    {
+      at: 350,
+      by: 'Carmen',
+      action: {
+        type: 'report',
+        incident: 'medical',
+        hazards: [],
+        access: 'clear',
+        casualties: { red: null, yellow: 1, green: null, black: null },
+        resources: ['ambulance'],
+        note: 'Torcedura de tobillo junto al puente',
+      },
     },
   ],
 };

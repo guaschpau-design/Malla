@@ -15,6 +15,8 @@ import {
   type Role,
 } from '@tesel/protocol';
 
+import type { Situation } from '../practice/situations.ts';
+
 export interface StoredGroup {
   /** Group ID (protocol §5) in base64url: public, safe to use as a key and in logs. */
   readonly id: string;
@@ -28,8 +30,11 @@ export interface StoredGroup {
   readonly invitedBy: NodeId | null;
   /** Milliseconds since the epoch. */
   readonly joinedAt: number;
-  /** Present on a practice group: its other members are simulated on this device (lib/practice). */
-  readonly practice?: true;
+  /**
+   * Present on a practice group, as the situation it plays: its other members are simulated on
+   * this device (lib/practice).
+   */
+  readonly practice?: Situation;
 }
 
 /** What joining through an invitation did. */
@@ -114,5 +119,5 @@ export function invitationFor(group: StoredGroup, role: Role, issuer: NodeId): I
 /** In v0.1 only coordinators invite; the role is advisory, so this is a UI rule (ADR-0005). */
 export function canInvite(group: StoredGroup): boolean {
   // A practice group's other members are simulated: there is no one to invite.
-  return group.role === 'coordinator' && group.practice !== true;
+  return group.role === 'coordinator' && group.practice === undefined;
 }

@@ -202,7 +202,10 @@
         {t}
         feed={group.feed}
         self={group.self}
+        role={group.role}
+        situation={group.practice}
         centre={deviceLocation.fix?.at ?? mapCentre(map)}
+        {offline}
         onend={onendpractice}
       />
     {/key}
