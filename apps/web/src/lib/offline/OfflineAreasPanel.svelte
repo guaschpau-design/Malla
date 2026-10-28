@@ -3,11 +3,12 @@
      of areas, to show or delete them. -->
 <script lang="ts">
   import type { Map as MapLibreMap } from 'maplibre-gl';
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
 
   import { formatBytes, formatDateTime } from '../format.ts';
   import type { Locale, Translate } from '../i18n/index.ts';
   import { countAreaTiles, MAX_AREA_TILES } from '../map/area-download.ts';
+  import { mapBounds } from '../map/geometry.ts';
   import { BASEMAP_MAX_ZOOM } from '../map/style.ts';
   import type { Bounds } from '../map/tile-math.ts';
   import type { OfflineArea } from '../map/tile-store.ts';
@@ -42,7 +43,8 @@
 
   let areas: OfflineArea[] = $state([]);
   // Raw state: the value is stored in IndexedDB, which cannot clone Svelte's reactive proxies.
-  let bounds: Bounds = $state.raw(currentBounds());
+  // The view as the panel opens; each move of the map updates it.
+  let bounds: Bounds = $state.raw(untrack(() => mapBounds(map)));
   let maxZoom: number = $state(BASEMAP_MAX_ZOOM);
   let name = $state('');
   let storage: { used: number; quota: number } | null = $state(null);
@@ -53,11 +55,6 @@
   const tileCount = $derived(countAreaTiles(bounds, layers));
   const bytes = $derived(estimatedBytes(bounds, layers));
   const tooLarge = $derived(tileCount > MAX_AREA_TILES);
-
-  function currentBounds(): Bounds {
-    const b = map.getBounds();
-    return { west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth() };
-  }
 
   async function refresh(): Promise<void> {
     areas = await offline.store.listAreas();
@@ -88,7 +85,7 @@
   }
 
   onMount(() => {
-    const update = () => (bounds = currentBounds());
+    const update = () => (bounds = mapBounds(map));
     map.on('moveend', update);
     attempt(refresh, t('actionFailed'));
     return () => {

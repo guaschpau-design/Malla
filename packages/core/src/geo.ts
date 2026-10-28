@@ -4,9 +4,21 @@
 import type { LatLon } from '@tesel/protocol';
 
 /** Mean Earth radius in metres. */
-export const EARTH_RADIUS_M = 6_371_000;
+const EARTH_RADIUS_M = 6_371_000;
 
 const RAD = Math.PI / 180;
+
+/**
+ * The point `north` and `east` metres from `from` (negative for south and west), on a plane
+ * fitted at `from`: for drawing circles and placing points a few kilometres away, not for long
+ * journeys.
+ */
+export function offsetMeters(from: LatLon, north: number, east: number): LatLon {
+  return {
+    lat: from.lat + north / EARTH_RADIUS_M / RAD,
+    lon: from.lon + east / (EARTH_RADIUS_M * Math.cos(from.lat * RAD)) / RAD,
+  };
+}
 
 /** Great-circle distance (haversine), in metres. */
 export function distanceMeters(a: LatLon, b: LatLon): number {

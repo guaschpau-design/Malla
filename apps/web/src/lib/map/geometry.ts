@@ -1,6 +1,6 @@
 // Geometry helpers for the map. Distances come from @tesel/core.
 
-import { EARTH_RADIUS_M } from '@tesel/core';
+import { offsetMeters } from '@tesel/core';
 import type { LatLon } from '@tesel/protocol';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 
@@ -8,13 +8,10 @@ import type { Bounds } from './tile-math.ts';
 
 /** A circle as a closed ring of [lon, lat] positions, for drawing. */
 export function circleRing(center: LatLon, radius: number, steps = 48): [number, number][] {
-  const rad = Math.PI / 180;
   const ring: [number, number][] = [];
   for (let i = 0; i <= steps; i++) {
     const angle = (i / steps) * 2 * Math.PI;
-    const dLat = (radius * Math.cos(angle)) / EARTH_RADIUS_M / rad;
-    const dLon = (radius * Math.sin(angle)) / (EARTH_RADIUS_M * Math.cos(center.lat * rad)) / rad;
-    ring.push([center.lon + dLon, center.lat + dLat]);
+    ring.push(toPosition(offsetMeters(center, radius * Math.cos(angle), radius * Math.sin(angle))));
   }
   return ring;
 }
@@ -44,6 +41,17 @@ export function toWebMercator({ lat, lon }: LatLon): [number, number] {
 export function mapCentre(map: MapLibreMap): LatLon {
   const centre = map.getCenter();
   return { lat: centre.lat, lon: centre.lng };
+}
+
+/** What the map's view shows, edge to edge. */
+export function mapBounds(map: MapLibreMap): Bounds {
+  const bounds = map.getBounds();
+  return {
+    west: bounds.getWest(),
+    south: bounds.getSouth(),
+    east: bounds.getEast(),
+    north: bounds.getNorth(),
+  };
 }
 
 export function toPosition(point: LatLon): [number, number] {

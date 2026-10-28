@@ -5,6 +5,7 @@
   import type { Map as MapLibreMap } from 'maplibre-gl';
   import { onMount } from 'svelte';
 
+  import { mapBounds } from '../map/geometry.ts';
   import { useOverlay } from '../map/overlay.svelte.ts';
   import { themeColor } from '../ui/theme.ts';
   import { mgrsGrid } from './mgrs-grid.ts';
@@ -19,14 +20,7 @@
   let grid: FeatureCollection = $state.raw({ type: 'FeatureCollection', features: [] });
 
   function update(): void {
-    const bounds = map.getBounds();
-    grid = mgrsGrid({
-      west: bounds.getWest(),
-      south: bounds.getSouth(),
-      east: bounds.getEast(),
-      north: bounds.getNorth(),
-      zoom: map.getZoom(),
-    });
+    grid = mgrsGrid({ ...mapBounds(map), zoom: map.getZoom() });
   }
 
   onMount(() => {

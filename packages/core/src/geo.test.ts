@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { areaSquareMeters, bearingDegrees, distanceMeters, pathMeters } from './geo.ts';
+import {
+  areaSquareMeters,
+  bearingDegrees,
+  distanceMeters,
+  offsetMeters,
+  pathMeters,
+} from './geo.ts';
 
 const VALENCIA = { lat: 39.4699, lon: -0.3763 };
 const MADRID = { lat: 40.4168, lon: -3.7038 };
@@ -44,5 +50,12 @@ describe('geometry on the Earth', () => {
     expect(areaSquareMeters(square) / side ** 2).toBeCloseTo(1, 2);
     expect(areaSquareMeters([...square].reverse())).toBeCloseTo(areaSquareMeters(square), 6);
     expect(areaSquareMeters(square.slice(0, 2))).toBe(0);
+  });
+
+  it('places a point some metres north and east of another', () => {
+    const away = offsetMeters(VALENCIA, 300, -400);
+    expect(distanceMeters(VALENCIA, away)).toBeCloseTo(500, 0);
+    expect(bearingDegrees(VALENCIA, away)).toBeCloseTo(306.87, 1);
+    expect(offsetMeters(VALENCIA, 0, 0)).toEqual(VALENCIA);
   });
 });
