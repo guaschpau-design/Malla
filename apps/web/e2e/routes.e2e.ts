@@ -1,6 +1,15 @@
 // Routes: drawn or read from a file, handed to a member as a task, followed to their end.
 
-import { createGroup, device, expect, tapMap, tapMapUntil, test, twoMembers } from './helpers.ts';
+import {
+  createGroup,
+  device,
+  expect,
+  mapIdle,
+  tapMap,
+  tapMapUntil,
+  test,
+  twoMembers,
+} from './helpers.ts';
 
 const START = { latitude: 39.4699, longitude: -0.3763 };
 const VIEW = `/#map=15/${String(START.latitude)}/${String(START.longitude)}`;
@@ -89,13 +98,17 @@ test('a route read from a file is thinned, followed to its end and its task done
   const form = page.getByRole('dialog', { name: 'Nueva ruta' });
   await expect(form.getByLabel('Etiqueta (opcional)')).toHaveValue('Ronda importada');
   await form.getByRole('button', { name: 'Guardar' }).click();
+  // Closed once the route is stored, which the reload below must not cut short.
+  await expect(form).toBeHidden();
 
   // A task along it for this device, then following it from the task. The map framed the route
   // read; it goes back to where it was.
+  await mapIdle(page);
   await page.goto(VIEW);
   await page.reload();
+  await expect(page).toHaveURL(new RegExp(`${VIEW.replaceAll('.', '\\.')}$`));
   const route = page.getByRole('region', { name: 'Ronda importada' });
-  await tapMapUntil(page, { dx: 0, dy: -60 }, () => expect(route).toBeVisible());
+  await tapMapUntil(page, { dx: 0, dy: -25 }, () => expect(route).toBeVisible());
   await route.getByRole('button', { name: 'Tarea en esta ruta' }).click();
   const tasks = page.getByRole('region', { name: 'Tareas' });
   await tasks.getByLabel('Qué hay que hacer').fill('Revisar la ronda');
