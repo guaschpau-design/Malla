@@ -57,3 +57,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0050](0050-post-certificates-from-the-server.md)    | Command posts get their certificate from the server                       | Accepted                                   |
 | [0051](0051-satellite-mosaic-licence.md)             | Name the satellite mosaic's licence, and let a build change the mosaic    | Accepted                                   |
 | [0052](0052-authorship-is-not-proven.md)             | Members are trusted: protocol version 1 does not prove who wrote an event | Accepted                                   |
+| [0055](0055-forget-outlived-positions.md)            | Forget the positions the trails have outlived                             | Accepted                                   |

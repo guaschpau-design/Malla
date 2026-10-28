@@ -1,15 +1,24 @@
 import type { NodeId, PositionEvent, TeselEvent } from '@tesel/protocol';
 import { describe, expect, it } from 'vitest';
 
-import { reduce, stateOf } from '../reducer.ts';
+import {
+  EMPTY_STATE,
+  isOutlived,
+  outlivedEvents,
+  reduce,
+  reduceAll,
+  stateOf,
+  type GroupState,
+} from '../reducer.ts';
 import { TRAIL_POINTS } from './trails.ts';
 
 const ANA = 'a1b2c3d4' as NodeId;
+const BEA = '0f1e2d3c' as NodeId;
 const T0 = 1_761_350_400;
 
-const position = (seq: number, lat = 39.47 + seq / 10_000): PositionEvent => ({
+const position = (seq: number, lat = 39.47 + seq / 10_000, origin = ANA): PositionEvent => ({
   type: 'position',
-  origin: ANA,
+  origin,
   seq,
   time: T0 + 10 * seq,
   lat,
@@ -19,9 +28,9 @@ const position = (seq: number, lat = 39.47 + seq / 10_000): PositionEvent => ({
   speed: null,
 });
 
-const hidden = (seq: number): TeselEvent => ({
+const hidden = (seq: number, origin = ANA): TeselEvent => ({
   type: 'position-hidden',
-  origin: ANA,
+  origin,
   seq,
   time: T0 + 10 * seq,
 });
@@ -50,3 +59,63 @@ describe('trails', () => {
     expect(seqsOf([hidden(3), position(4), position(2), position(1)])).toEqual([4]);
   });
 });
+
+describe('outlived positions', () => {
+  it('are those older than a full trail, and those up to the last hiding', () => {
+    const full = stateOf(Array.from({ length: TRAIL_POINTS + 1 }, (_, i) => position(i + 2)));
+    expect(isOutlived(full, position(1))).toBe(true);
+    expect(isOutlived(full, position(2))).toBe(true);
+    expect(isOutlived(full, position(3))).toBe(false);
+    const hiding = stateOf([position(1), hidden(5), position(6)]);
+    expect(isOutlived(hiding, position(4))).toBe(true);
+    expect(isOutlived(hiding, position(7))).toBe(false);
+    expect(isOutlived(EMPTY_STATE, position(1))).toBe(false);
+  });
+
+  it('can be forgotten without changing the state, whatever arrives later and in any order', () => {
+    const random = seededRandom(7);
+    const events = [ANA, BEA].flatMap((origin) =>
+      Array.from({ length: 2 * TRAIL_POINTS }, (_, i) =>
+        random() < 0.01 ? hidden(i + 1, origin) : position(i + 1, 39.47, origin),
+      ),
+    );
+    const shuffled = [...events].sort(() => random() - 0.5);
+
+    // A device that forgets what it can after every batch, and drops what it has outlived.
+    let state: GroupState = EMPTY_STATE;
+    const kept = new Map<string, TeselEvent>();
+    const forgotten: TeselEvent[] = [];
+    for (let start = 0; start < shuffled.length;) {
+      const size = 1 + Math.floor(random() * 40);
+      const batch = shuffled
+        .slice(start, (start += size))
+        .filter((event) => !isOutlived(state, event));
+      const next = reduceAll(state, batch);
+      for (const event of batch) kept.set(`${event.origin}:${String(event.seq)}`, event);
+      for (const event of outlivedEvents(state, next, batch)) {
+        kept.delete(`${event.origin}:${String(event.seq)}`);
+        forgotten.push(event);
+      }
+      state = next;
+    }
+
+    expect(forgotten.length).toBeGreaterThan(TRAIL_POINTS / 2);
+    expect(kept.size).toBeLessThanOrEqual(events.length - forgotten.length);
+    expect(state).toEqual(stateOf(events));
+    expect(stateOf(kept.values())).toEqual(stateOf(events));
+    // A copy of a forgotten position, arriving again, is known and changes nothing.
+    for (const event of forgotten) {
+      expect(isOutlived(state, event)).toBe(true);
+      expect(reduce(state, event)).toBe(state);
+    }
+  });
+});
+
+/** A repeatable sequence of numbers in [0, 1), so a failing case can be replayed. */
+function seededRandom(seed: number): () => number {
+  let value = seed;
+  return () => {
+    value = (value * 1_103_515_245 + 12_345) % 2 ** 31;
+    return value / 2 ** 31;
+  };
+}

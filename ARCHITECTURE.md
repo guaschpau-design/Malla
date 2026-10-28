@@ -111,6 +111,8 @@ The current picture is a pure function of the event log, computed by the reducer
 
 Events can arrive late, twice or out of order — through LoRa, a bridge and the server at once. The reducer is idempotent and order-independent, so this never matters. This is the property the tests protect most. See [ADR-0003](docs/decisions/0003-event-log-last-writer-wins.md).
 
+Most of a long operation's events are positions that no trail shows any more. A device forgets them: once a member's trail has **outlived** a position (it is older than every point of a full trail, or not newer than the member's last hiding), no later event can bring it back, so the state of the events kept is the state of all of them. Copies of an outlived position that arrive later are taken as known. The log stays at each member's trail plus the journal, however long the operation ([ADR-0055](docs/decisions/0055-forget-outlived-positions.md)).
+
 ### 3.5 Adding an event type
 
 A new capability is a new event type (protocol §3.2 and §9: no version change). It touches one place in each layer, and the compiler or a test points at any that is missing:

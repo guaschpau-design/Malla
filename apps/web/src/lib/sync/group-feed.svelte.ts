@@ -3,6 +3,8 @@
 
 import {
   EMPTY_STATE,
+  isOutlived,
+  outlivedEvents,
   reduceAll,
   type GroupState,
   type LoraEvent,
@@ -36,6 +38,7 @@ import { SvelteSet } from 'svelte/reactivity';
 
 import {
   confirmStored,
+  forgetEvents,
   loadEvents,
   markAired,
   pendingEvents,
@@ -138,10 +141,13 @@ export class GroupFeed {
           });
   }
 
-  /** Loads the group's log, announces this member if needed and connects to the server. */
+  /**
+   * Loads the group's log, announces this member if needed and connects to the server. Loading
+   * forgets what the log holds and the state has outlived, as after any batch (ADR-0055).
+   */
   static async open(db: AppDb, group: StoredGroup, identity: LocalIdentity): Promise<GroupFeed> {
     const feed = new GroupFeed(db, group, identity);
-    feed.#apply(await loadEvents(db, group.id));
+    await feed.#apply(await loadEvents(db, group.id));
     if (!group.practice) {
       const pending = await pendingEvents(db, group.id);
       for (const { entry } of pending) {
@@ -222,9 +228,11 @@ export class GroupFeed {
     if (heard) this.#lora?.heard(heard);
     this.#hear('radio', [bytes]);
     const forward = this.#client !== null;
-    const [received] = await receiveEvents(this.#db, this.#group.id, [bytes], { forward });
+    const [received] = await receiveEvents(this.#db, this.#group.id, this.#current([bytes]), {
+      forward,
+    });
     if (received === undefined) return;
-    this.#apply([bytes]);
+    await this.#apply([bytes]);
     this.#push(received.entry, bytes);
   }
 
@@ -233,11 +241,16 @@ export class GroupFeed {
    * never sent anywhere, as a practice group has no server and no radio.
    */
   async receiveSimulated(bytes: Uint8Array): Promise<void> {
-    const received = await receiveEvents(this.#db, this.#group.id, [bytes], { forward: false });
-    if (received.length > 0) this.#apply([bytes]);
+    const received = await receiveEvents(this.#db, this.#group.id, this.#current([bytes]), {
+      forward: false,
+    });
+    if (received.length > 0) await this.#apply([bytes]);
   }
 
-  /** The group's whole log as a log file, sealed so that only the group can read it. */
+  /**
+   * The group's log as a log file, sealed so that only the group can read it: every event this
+   * device keeps, which is all but the positions its state has outlived (ADR-0055).
+   */
   async exportLog(): Promise<string> {
     const events = await loadEvents(this.#db, this.#group.id);
     const envelopes = events.map((bytes) => sealEnvelope(this.#keys, bytes));
@@ -256,8 +269,10 @@ export class GroupFeed {
     }
     const opened = file.value.envelopes.flatMap((env) => openEnvelope(this.#keys, env) ?? []);
     const forward = this.#client !== null;
-    const received = await receiveEvents(this.#db, this.#group.id, opened, { forward });
-    this.#apply(received.map(({ bytes }) => bytes));
+    const received = await receiveEvents(this.#db, this.#group.id, this.#current(opened), {
+      forward,
+    });
+    await this.#apply(received.map(({ bytes }) => bytes));
     for (const { entry, bytes } of received) this.#push(entry, bytes);
     return { kind: 'loaded', added: received.length, total: opened.length };
   }
@@ -373,7 +388,7 @@ export class GroupFeed {
     const header = { origin: this.#identity.nodeId, time: Math.floor(Date.now() / 1000) };
     const { entry, bytes } = await publishEvent(this.#db, this.#group.id, build, header);
     if (!this.#group.practice) this.#undelivered.add(eventRefKey(entry));
-    const [event] = this.#apply([bytes]);
+    const [event] = await this.#apply([bytes]);
     this.#push(entry, bytes);
     if (event) this.#lora?.offer({ event, bytes }, 'own');
   }
@@ -390,8 +405,10 @@ export class GroupFeed {
     const server = this.#group.server;
     this.#hear(server !== null && sameServer(relay, server) ? 'internet' : 'command-post', opened);
     const readTo = { relay, position: { cursor: last.cursor, store } };
-    const received = await receiveEvents(this.#db, this.#group.id, opened, { readTo });
-    this.#apply(received.map(({ bytes }) => bytes));
+    const received = await receiveEvents(this.#db, this.#group.id, this.#current(opened), {
+      readTo,
+    });
+    await this.#apply(received.map(({ bytes }) => bytes));
     for (const { bytes } of received) {
       // Types this version does not know are bridged too (protocol §3.1).
       const event = loraEventOf(bytes);
@@ -445,15 +462,37 @@ export class GroupFeed {
   }
 
   /**
-   * Adds events to the picture in one update, so the map redraws once per batch. Returns the ones
-   * decoded; events of types this version does not know are kept in the log only.
+   * Leaves out of a batch the positions the state has outlived (ADR-0055). They change nothing, and
+   * may be copies of positions this device has already forgotten, which must not count as new.
    */
-  #apply(batch: readonly Uint8Array[]): TeselEvent[] {
+  #current(batch: readonly Uint8Array[]): Uint8Array[] {
+    return batch.filter((bytes) => {
+      const event = decodeEvent(bytes);
+      return !(event.ok && isOutlived(this.state, event.value));
+    });
+  }
+
+  /**
+   * Adds events to the picture in one update, so the map redraws once per batch, then forgets what
+   * the new picture has outlived (ADR-0055). Returns the events decoded; those of types this
+   * version does not know are kept in the log only.
+   */
+  async #apply(batch: readonly Uint8Array[]): Promise<TeselEvent[]> {
     const events = batch.flatMap((bytes) => {
       const event = decodeEvent(bytes);
       return event.ok ? [event.value] : [];
     });
-    if (events.length > 0) this.state = reduceAll(this.state, events);
+    if (events.length === 0) return events;
+    const before = this.state;
+    this.state = reduceAll(before, events);
+    const outlived = outlivedEvents(before, this.state, events);
+    if (outlived.length > 0) {
+      for (const event of outlived) this.#undelivered.delete(eventRefKey(event));
+      // Housekeeping: if it fails, the events stay until the group opens again and forgets them.
+      await forgetEvents(this.#db, this.#group.id, outlived).catch((error: unknown) => {
+        console.warn('Forgetting outlived events failed', error);
+      });
+    }
     return events;
   }
 }

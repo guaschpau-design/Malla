@@ -5,7 +5,7 @@
 // only its newest TRAIL_POINTS positions; which ones those are does not depend on the order in
 // which events arrive, so every device draws the same trail.
 
-import type { NodeId, PositionEvent, PositionHiddenEvent } from '@tesel/protocol';
+import type { EventHeader, NodeId, PositionEvent, PositionHiddenEvent } from '@tesel/protocol';
 
 import { insertOrdered } from '../collections.ts';
 import { compareEvents, newerOf } from '../ordering.ts';
@@ -21,17 +21,57 @@ export interface Trail {
   readonly hidden: PositionHiddenEvent | null;
 }
 
+type Trails = ReadonlyMap<NodeId, Trail>;
+
 const EMPTY_TRAIL: Trail = { points: [], hidden: null };
 
 export const trails = defineSlice({
   handles: ['position', 'position-hidden'],
-  empty: new Map() as ReadonlyMap<NodeId, Trail>,
+  empty: new Map() as Trails,
   apply: (state, event) => {
     const trail = state.get(event.origin) ?? EMPTY_TRAIL;
     const next = event.type === 'position' ? withPosition(trail, event) : withHidden(trail, event);
     return next === trail ? state : new Map(state).set(event.origin, next);
   },
 });
+
+/**
+ * Whether a member's trail has outlived one of their positions: the position is not newer than
+ * their last hiding, or the trail is full and the position is older than all of it. Later events
+ * only move a trail forward, so no state that holds this trail's events can show that position
+ * again, and a device need not keep it (ADR-0055).
+ */
+export function hasOutlived(trails: Trails, position: EventHeader): boolean {
+  const trail = trails.get(position.origin);
+  if (trail === undefined) return false;
+  if (trail.hidden !== null && compareEvents(position, trail.hidden) <= 0) return true;
+  const oldest = trail.points[0];
+  return (
+    trail.points.length >= TRAIL_POINTS &&
+    oldest !== undefined &&
+    compareEvents(position, oldest) < 0
+  );
+}
+
+/**
+ * The positions that `after` has outlived among those that `before` showed in its trails and those
+ * just `added`: what a device can forget once it has applied `added` (ADR-0055).
+ */
+export function outlivedPositions(
+  before: Trails,
+  after: Trails,
+  added: Iterable<PositionEvent>,
+): PositionEvent[] {
+  const outlived: PositionEvent[] = [];
+  for (const [origin, trail] of before) {
+    if (after.get(origin) === trail) continue;
+    outlived.push(...trail.points.filter((point) => hasOutlived(after, point)));
+  }
+  for (const position of added) {
+    if (hasOutlived(after, position)) outlived.push(position);
+  }
+  return outlived;
+}
 
 function withPosition(trail: Trail, event: PositionEvent): Trail {
   if (trail.hidden !== null && compareEvents(event, trail.hidden) <= 0) return trail;
