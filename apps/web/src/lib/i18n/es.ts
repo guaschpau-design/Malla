@@ -436,7 +436,8 @@ export const es: Messages = {
   alertWarning: 'Aviso',
   alertCritical: 'Alerta crítica',
   sendAlert: 'Enviar como alerta',
-  sendAlertHint: 'Enviar como alerta: se queda en la pantalla de todos hasta que la confirmen.',
+  sendAlertHint: 'Se queda en la pantalla de todos hasta que la confirmen.',
+  sendAlertTypeFirst: 'Escribe antes el texto del aviso.',
   positionStateSharing: 'Compartiendo posición',
   positionStatePaused: 'Posición en pausa',
   positionStateHidden: 'Posición oculta',
@@ -448,6 +449,7 @@ export const es: Messages = {
     'La radio no responde. Comprueba que lleva el firmware MeshCore Companion Bluetooth v1.18 o posterior.',
   radioFailed: 'No se pudo conectar con la radio. Inténtalo de nuevo.',
   chatGroup: 'Grupo',
+  chatActions: 'Más opciones',
   chatMeshcore: 'MeshCore',
   meshcoreIntro:
     'Mensajes de personas cercanas que usan la app MeshCore con sus radios. Tesel los guarda aquí para que no se pierdan. Para responder, usa la app MeshCore.',
@@ -545,7 +547,6 @@ export const es: Messages = {
   triageBlack: 'Negro',
   reportsTab: 'Partes',
   reportNew: 'Nuevo parte',
-  reportShort: 'Parte',
   reportsNone:
     'Aún no hay partes. Un parte cuenta qué pasa, las víctimas, los peligros, el acceso y qué hace falta, y queda fijado aquí.',
   reportsTotal: 'Suma de los partes · {casualties}',

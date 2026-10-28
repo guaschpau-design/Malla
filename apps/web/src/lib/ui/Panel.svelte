@@ -1,7 +1,11 @@
 <!-- A side panel on wide screens and a sheet above the dock on phones, which leaves the SOS button
      in reach. Only one is open at a time. Opening it takes the keyboard's focus into it, Escape
      closes it, and closing gives the focus back to what had it before, such as the button that
-     opened it. -->
+     opened it.
+
+     A panel that lists what keeps coming, like the chat, fills the room there is: its content
+     then lays itself out in a column, with one part that scrolls. A panel can show controls of
+     its own (such as tabs) in place of its title, which then only names it for screen readers. -->
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
 
@@ -9,10 +13,14 @@
     title: string;
     closeLabel: string;
     onclose: () => void;
+    /** Shown in place of the title, beside the close button. */
+    header?: Snippet;
+    /** Takes all the height there is, rather than that of its content. */
+    fill?: boolean;
     children: Snippet;
   }
 
-  let { title, closeLabel, onclose, children }: Props = $props();
+  let { title, closeLabel, onclose, header, fill = false, children }: Props = $props();
 
   const titleId = `panel-${crypto.randomUUID()}`;
   let panel: HTMLElement;
@@ -35,7 +43,9 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <section
   class="panel"
-  aria-labelledby={titleId}
+  class:fill
+  aria-labelledby={header ? undefined : titleId}
+  aria-label={header ? title : undefined}
   tabindex="-1"
   bind:this={panel}
   onkeydown={(event: KeyboardEvent) => {
@@ -43,7 +53,11 @@
   }}
 >
   <header>
-    <h2 id={titleId}>{title}</h2>
+    {#if header}
+      {@render header()}
+    {:else}
+      <h2 id={titleId}>{title}</h2>
+    {/if}
     <button class="icon" onclick={onclose} aria-label={closeLabel}>✕</button>
   </header>
   {@render children()}
@@ -65,6 +79,17 @@
     box-shadow: var(--shadow-sheet);
   }
 
+  /* From just under the top bar down to the dock; the content scrolls inside, not the panel. */
+  .panel.fill {
+    top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    max-height: none;
+    overflow: hidden;
+    padding-top: 0.5rem;
+  }
+
   /* The panel takes the focus only to hand it on: the ring is for what can be used. */
   .panel:focus {
     outline: none;
@@ -80,10 +105,16 @@
       max-height: calc(100dvh - 6rem);
       border-radius: var(--radius-sheet);
     }
+
+    .panel.fill {
+      bottom: var(--dock-clearance);
+    }
   }
 
   header {
     display: flex;
+    flex: none;
+    gap: 0.5rem;
     align-items: center;
     justify-content: space-between;
   }

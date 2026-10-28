@@ -20,7 +20,7 @@ test('members of a group chat and see who shares their position', async ({ brows
   await berta.getByRole('button', { name: 'Chat' }).click();
   await expect(berta.getByText('¿Me recibís?')).toBeVisible();
   await expect(berta.getByRole('listitem').filter({ hasText: '¿Me recibís?' })).toContainText(
-    'Ana ·',
+    'Ana',
   );
   await berta.getByLabel('Mensaje').fill('Alto y claro');
   await berta.getByRole('button', { name: 'Enviar', exact: true }).click();

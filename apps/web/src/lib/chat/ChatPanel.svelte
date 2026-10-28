@@ -1,7 +1,8 @@
 <!-- The active group's chat, with alerts and situation reports in the same timeline, and the
-     reports pinned in a tab of their own, where new ones are written. Coordinators can send a
-     message as an alert, which stays on everyone's screen until they acknowledge it, and call the
-     roll. -->
+     reports pinned in a tab of their own, where new ones are written. It fills the panel, so as
+     many lines as possible are in view: one row writes, and what is used less (a new report and,
+     for coordinators, sending the text as an alert, which stays on everyone's screen until they
+     acknowledge it, and calling the roll) waits in the menu beside it. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
   import {
@@ -19,6 +20,7 @@
   import { aliasOf } from '../members/alias.ts';
   import { ALERT_LEVELS } from '../incidents/sos-kinds.ts';
   import type { StoredRadioText } from '../radio/radio-texts.ts';
+  import Menu from '../ui/Menu.svelte';
   import Panel from '../ui/Panel.svelte';
   import Pictogram from '../ui/Pictogram.svelte';
   import { Submission } from '../ui/submission.svelte.ts';
@@ -80,6 +82,11 @@
   const reports = $derived([...groupState.reports].reverse());
   const casualtiesTotal = $derived(casualtiesLine(addedUp(groupState.reports), t));
 
+  function newReport(): void {
+    composing = true;
+    ontab('reports');
+  }
+
   let text = $state('');
   let list: HTMLOListElement | undefined = $state();
   const entries = $derived(timeline(groupState));
@@ -129,51 +136,51 @@
   });
 </script>
 
-<Panel title={t('chat')} closeLabel={t('close')} {onclose}>
-  <div class="tabs" role="tablist">
-    <button
-      role="tab"
-      aria-selected={tab === 'group'}
-      onclick={() => {
-        ontab('group');
-      }}
-    >
-      {t('chatGroup')}
-    </button>
-    <button
-      role="tab"
-      aria-selected={tab === 'reports'}
-      onclick={() => {
-        ontab('reports');
-      }}
-    >
-      <Pictogram name="pushpin" size={16} />
-      {t('reportsTab')}
-      {#if reports.length > 0}<span class="count">{reports.length}</span>{/if}
-    </button>
-    {#if showRadioTab}
+<Panel title={t('chat')} closeLabel={t('close')} {onclose} fill>
+  {#snippet header()}
+    <div class="tabs" role="tablist">
       <button
         role="tab"
-        aria-selected={tab === 'meshcore'}
+        aria-selected={tab === 'group'}
         onclick={() => {
-          ontab('meshcore');
+          ontab('group');
         }}
       >
-        {t('chatMeshcore')}
-        {#if radioTexts.length > 0}<span class="count">{radioTexts.length}</span>{/if}
+        {t('chatGroup')}
       </button>
-    {/if}
-  </div>
+      <button
+        role="tab"
+        aria-selected={tab === 'reports'}
+        onclick={() => {
+          ontab('reports');
+        }}
+      >
+        <Pictogram name="pushpin" size={16} />
+        {t('reportsTab')}
+        {#if reports.length > 0}<span class="count">{reports.length}</span>{/if}
+      </button>
+      {#if showRadioTab}
+        <button
+          role="tab"
+          aria-selected={tab === 'meshcore'}
+          onclick={() => {
+            ontab('meshcore');
+          }}
+        >
+          {t('chatMeshcore')}
+          {#if radioTexts.length > 0}<span class="count">{radioTexts.length}</span>{/if}
+        </button>
+      {/if}
+    </div>
+  {/snippet}
 
   {#if tab === 'reports'}
     {#if composing}
-      <ReportForm {t} {locale} onsend={onreport} onback={() => (composing = false)} />
+      <div class="scroll">
+        <ReportForm {t} {locale} onsend={onreport} onback={() => (composing = false)} />
+      </div>
     {:else}
-      <div class="stack section">
-        <button class="primary new-report" onclick={() => (composing = true)}>
-          <Pictogram name="pushpin" size={18} />
-          {t('reportNew')}
-        </button>
+      <div class="scroll stack">
         {#if reports.length === 0}
           <p class="hint">{t('reportsNone')}</p>
         {:else}
@@ -182,55 +189,68 @@
           {/if}
           <ol class="reports">
             {#each reports as report (eventRefKey(report))}
-              <li><ReportCard {t} {locale} {groupState} {report} {onplace} /></li>
+              <li><ReportCard {t} {locale} {groupState} {report} open {onplace} /></li>
             {/each}
           </ol>
         {/if}
       </div>
+      <button class="primary new-report" onclick={() => (composing = true)}>
+        <Pictogram name="pushpin" size={18} />
+        {t('reportNew')}
+      </button>
     {/if}
   {:else if tab === 'meshcore' && showRadioTab}
-    <p class="hint section">{t('meshcoreIntro')}</p>
-    {#if radioTexts.length === 0}
-      <p class="hint">{t('noMeshcoreMessages')}</p>
-    {:else}
-      <ol class="messages section">
-        {#each radioTexts as message, index (index)}
-          <li>
-            <span class="meta">
-              {message.kind === 'direct'
-                ? t('meshcoreDirect')
-                : t('meshcoreChannel', { name: message.channel ?? t('meshcoreUnknownChannel') })}
-              {#if message.sender}· {message.sender}{/if}
-              · {formatTime(message.receivedAt, locale)}
-            </span>
-            <span class="text">{message.text}</span>
-          </li>
-        {/each}
-      </ol>
-    {/if}
+    <div class="scroll stack">
+      <p class="hint">{t('meshcoreIntro')}</p>
+      {#if radioTexts.length === 0}
+        <p class="hint">{t('noMeshcoreMessages')}</p>
+      {:else}
+        <ol class="messages">
+          {#each radioTexts as message, index (index)}
+            <li>
+              <span class="meta">
+                {message.kind === 'direct'
+                  ? t('meshcoreDirect')
+                  : t('meshcoreChannel', { name: message.channel ?? t('meshcoreUnknownChannel') })}
+                {#if message.sender}· {message.sender}{/if}
+              </span>
+              <span class="line">
+                <span class="text">{message.text}</span>
+                <span class="time">{formatTime(message.receivedAt, locale)}</span>
+              </span>
+            </li>
+          {/each}
+        </ol>
+      {/if}
+    </div>
   {:else}
     {#if entries.length === 0}
-      <p class="hint section">{t('noMessages')}</p>
+      <p class="hint scroll">{t('noMessages')}</p>
     {:else}
-      <ol class="messages section" bind:this={list}>
+      <ol class="messages scroll" bind:this={list}>
         {#each entries as entry (entry.key)}
           {#if entry.kind === 'report'}
             <li class="report">
-              <ReportCard {t} {locale} {groupState} report={entry.event} {onplace} />
+              <ReportCard {t} {locale} {groupState} report={entry.event} open={false} {onplace} />
             </li>
           {:else}
+            {@const own = entry.event.origin === self}
             <li
-              class:own={entry.event.origin === self}
+              class:own
+              class:follows={entry.kind === 'chat' && entry.follows}
               class="{entry.kind} {entry.kind === 'alert' ? `level-${entry.event.level}` : ''}"
             >
-              <span class="meta">
-                {#if entry.kind === 'alert'}{t(ALERT_LEVELS[entry.event.level])} ·{/if}
-                {aliasOf(groupState, entry.event.origin)} · {formatTime(
-                  entry.event.time * 1000,
-                  locale,
-                )}
+              {#if entry.kind === 'alert'}
+                <span class="meta">
+                  {t(ALERT_LEVELS[entry.event.level])} · {aliasOf(groupState, entry.event.origin)}
+                </span>
+              {:else if !own && !entry.follows}
+                <span class="meta">{aliasOf(groupState, entry.event.origin)}</span>
+              {/if}
+              <span class="line">
+                <span class="text">{entry.event.text}</span>
+                <span class="time">{formatTime(entry.event.time * 1000, locale)}</span>
               </span>
-              <span class="text">{entry.event.text}</span>
               {#if undelivered.has(eventRefKey(entry.event))}
                 <span class="pending">{t('notSentYet')}</span>
               {/if}
@@ -241,12 +261,68 @@
     {/if}
 
     <form
-      class="compose section"
+      class="compose"
       onsubmit={(event) => {
         event.preventDefault();
         void send('message');
       }}
     >
+      <Menu label={t('chatActions')} place="start">
+        {#snippet trigger(expanded: boolean, toggle: () => void)}
+          <button
+            type="button"
+            class="icon"
+            aria-haspopup="menu"
+            aria-expanded={expanded}
+            aria-label={t('chatActions')}
+            title={t('chatActions')}
+            onclick={toggle}
+          >
+            <Pictogram name="plus" size={22} />
+          </button>
+        {/snippet}
+        {#snippet items(close: () => void)}
+          <button
+            type="button"
+            role="menuitem"
+            onclick={() => {
+              close();
+              newReport();
+            }}
+          >
+            <Pictogram name="pushpin" size={20} />
+            {t('reportNew')}
+          </button>
+          {#if coordinator}
+            <button
+              type="button"
+              role="menuitem"
+              disabled={!fits.alert}
+              onclick={() => {
+                close();
+                void send('alert');
+              }}
+            >
+              <Pictogram name="warning" size={20} />
+              <span class="item">
+                {t('sendAlert')}
+                <small>{fits.alert ? t('sendAlertHint') : t('sendAlertTypeFirst')}</small>
+              </span>
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onclick={() => {
+                close();
+                onrollcall();
+              }}
+            >
+              <Pictogram name="person" size={20} />
+              {t('callRoll')}
+            </button>
+          {/if}
+        {/snippet}
+      </Menu>
       <div class="field">
         <input
           bind:value={text}
@@ -267,40 +343,17 @@
           </button>
         {/if}
       </div>
-      <button type="submit" class="primary" disabled={submission.busy || !fits.message}
-        >{t('send')}</button
-      >
-      {#if submission.failed}<p class="warning">{t('sendFailed')}</p>{/if}
       <button
-        type="button"
-        class="report-button"
-        onclick={() => {
-          composing = true;
-          ontab('reports');
-        }}
+        type="submit"
+        class="primary icon"
+        aria-label={t('send')}
+        title={t('send')}
+        disabled={submission.busy || !fits.message}
       >
-        <Pictogram name="pushpin" size={18} />
-        {t('reportShort')}
+        <Pictogram name="send" size={22} />
       </button>
-      {#if coordinator}
-        <div class="coordinator">
-          <button
-            type="button"
-            class="danger"
-            disabled={!fits.alert}
-            title={t('sendAlertHint')}
-            onclick={() => send('alert')}
-          >
-            <Pictogram name="warning" size={18} />
-            {t('sendAlert')}
-          </button>
-          <button type="button" onclick={onrollcall}>
-            <Pictogram name="person" size={18} />
-            {t('callRoll')}
-          </button>
-        </div>
-      {/if}
     </form>
+    {#if submission.failed}<p class="warning">{t('sendFailed')}</p>{/if}
     {#if size > CHAT_MAX_BYTES}<p class="warning">{t('messageTooLong')}</p>{/if}
     {#if dictation?.problem}
       <p class="warning">{t(DICTATION_PROBLEMS[dictation.problem])}</p>
@@ -309,14 +362,21 @@
 </Panel>
 
 <style>
+  /* The tabs head the panel, beside its close button. */
   .tabs {
     display: flex;
+    flex: 1;
     gap: 0.25rem;
-    margin-top: 0.75rem;
-    border-bottom: 1px solid var(--border);
+    min-width: 0;
+    overflow-x: auto;
   }
 
   .tabs button {
+    display: inline-flex;
+    flex: none;
+    gap: 0.35rem;
+    align-items: center;
+    padding-inline: 0.6rem;
     border: none;
     border-bottom: 3px solid transparent;
     border-radius: 0;
@@ -327,45 +387,44 @@
     border-bottom-color: var(--accent-line);
   }
 
-  .tabs button {
-    display: inline-flex;
-    gap: 0.35rem;
-    align-items: center;
-  }
-
-  .new-report,
-  .report-button {
-    display: inline-flex;
-    gap: 0.4rem;
-    align-items: center;
-    justify-self: start;
-  }
-
-  .reports {
-    display: grid;
-    gap: 0.5rem;
-    max-height: 50dvh;
-    margin: 0;
-    padding: 0;
-    overflow-y: auto;
-    list-style: none;
-  }
-
   .count {
-    margin-left: 0.35rem;
     padding: 0 0.4rem;
     font-size: var(--text-small);
     border: 1px solid currentcolor;
     border-radius: var(--radius-pill);
   }
 
-  .messages {
+  /* What scrolls takes the height left by the tabs and the row that writes. */
+  .scroll {
+    flex: 1;
+    align-content: start;
+    min-height: 0;
+    margin: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .new-report {
+    display: inline-flex;
+    flex: none;
+    gap: 0.4rem;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .reports {
     display: grid;
     gap: 0.5rem;
-    max-height: 45dvh;
     margin: 0;
     padding: 0;
-    overflow-y: auto;
+    list-style: none;
+  }
+
+  .messages {
+    display: grid;
+    align-content: start;
+    gap: 0.4rem;
+    padding: 0;
     list-style: none;
   }
 
@@ -373,10 +432,15 @@
     display: grid;
     justify-self: start;
     max-width: 85%;
-    padding: 0.45rem 0.7rem;
+    padding: 0.35rem 0.6rem;
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: var(--radius-card);
+  }
+
+  /* A line under the one before it, from the same person: close to it, and without the name. */
+  li.follows {
+    margin-top: -0.2rem;
   }
 
   li.own {
@@ -410,8 +474,28 @@
     border: none;
   }
 
-  .report-button {
-    grid-column: 1 / -1;
+  .meta {
+    color: var(--muted);
+    font-size: var(--text-small);
+  }
+
+  /* The text, and its time at the end of its last line. */
+  .line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.6rem;
+    align-items: baseline;
+  }
+
+  .text {
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+
+  .time {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: var(--text-small);
   }
 
   .pending {
@@ -420,26 +504,28 @@
     font-style: italic;
   }
 
-  .meta {
-    color: var(--muted);
-    font-size: var(--text-small);
-  }
-
-  .text {
-    overflow-wrap: anywhere;
-    white-space: pre-wrap;
-  }
-
-  /* The text and Send on one line; for coordinators, Send as alert and Call the roll below them,
-     across the panel. */
+  /* One row: the menu, the text with its microphone, and Send. */
   .compose {
     display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 0.5rem;
+    flex: none;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.4rem;
+    align-items: center;
   }
 
-  .compose .warning {
-    grid-column: 1 / -1;
+  .warning {
+    flex: none;
+    margin: 0;
+  }
+
+  /* An item with a word on what it does, or on what it needs first. */
+  .item {
+    display: grid;
+  }
+
+  .item small {
+    color: var(--muted);
+    font-size: var(--text-small);
   }
 
   /* The microphone inside the text box, at its end, where the thumb is. */
@@ -486,19 +572,5 @@
     .dictate[aria-pressed='true'] {
       animation: none;
     }
-  }
-
-  .coordinator {
-    display: grid;
-    grid-column: 1 / -1;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
-  }
-
-  .coordinator button {
-    display: inline-flex;
-    gap: 0.4rem;
-    align-items: center;
-    justify-content: center;
   }
 </style>

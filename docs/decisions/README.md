@@ -31,7 +31,7 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0023](0023-ign-base-maps.md)                        | Topographic and aerial base maps from Spain's IGN, read by the browser                      | Accepted, amended by 0034, 0037, 0041       |
 | [0024](0024-terrain-tiles-for-relief.md)             | Relief from the open Terrain Tiles, read by the browser                                     | Superseded by 0037                          |
 | [0025](0025-tasks.md)                                | Tasks as one event type, changed by anyone, last writer wins                                | Accepted, amended by [0059](0059-routes.md) |
-| [0026](0026-one-kind-of-alert.md)                    | The app sends one kind of alert                                                             | Accepted                                    |
+| [0026](0026-one-kind-of-alert.md)                    | The app sends one kind of alert                                                             | Accepted, amended by 0065                   |
 | [0027](0027-public-services-from-the-base-map.md)    | Public services from the base map                                                           | Accepted                                    |
 | [0028](0028-roll-call.md)                            | Roll call: one event, answered with an ACK by each member                                   | Accepted                                    |
 | [0029](0029-operation-area.md)                       | The operation area: an area style that offers its map                                       | Accepted                                    |
@@ -68,5 +68,6 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0060](0060-sweeps.md)                               | Sweeps: parallel lanes over a search area, one strip per team, sent as a recipe             | Accepted                                    |
 | [0061](0061-member-state.md)                         | What members tell about themselves: one event, one card                                     | Accepted                                    |
 | [0062](0062-teams.md)                                | Teams: one event per team, and a task for a team is each member's                           | Accepted                                    |
-| [0063](0063-situation-reports.md)                    | Situation reports: a fixed form in one radio message, pinned in the chat                    | Accepted                                    |
+| [0063](0063-situation-reports.md)                    | Situation reports: a fixed form in one radio message, pinned in the chat                    | Accepted, amended by 0065                   |
 | [0064](0064-check-in.md)                             | A safety check-in that asks only when it must                                               | Accepted                                    |
+| [0065](0065-room-for-what-is-read.md)                | Give the room to what is read; what is used now and then waits in a menu                    | Accepted                                    |

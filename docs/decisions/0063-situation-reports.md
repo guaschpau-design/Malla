@@ -1,6 +1,6 @@
 # 0063. Situation reports: a fixed form in one radio message, pinned in the chat
 
-- Status: Accepted
+- Status: Accepted, amended by [0065](0065-room-for-what-is-read.md) (the chat's menu)
 - Date: 2026-10-28
 
 ## Context

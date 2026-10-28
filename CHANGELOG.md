@@ -68,6 +68,7 @@ The first version: a shared map for a group, over the internet and over MeshCore
 - The app asks the browser to keep its storage from the first identity, and says when the device is out of room, offering to delete offline maps.
 - One place for messages to the user, at the top of the map under the incidents, so they never cover a button. A form that could not be sent keeps what was typed and says so; any action that fails says so too; a second window that holds the app's storage is explained, with a button to reload.
 - Alerts from coordinators: a chat message sent as an alert stays on every screen until acknowledged ([ADR-0026](docs/decisions/0026-one-kind-of-alert.md)).
+- A roomier chat: it fills the screen above the dock, writes in one row (a "+" menu for a new report and, for coordinators, the alert and the roll call; the text with its microphone; Send), runs one person's lines under one name, and shows each report as one line that opens with a tap ([ADR-0065](docs/decisions/0065-room-for-what-is-read.md)).
 - Roll call: a coordinator calls it from the chat; each member answers «Estoy bien» or «Necesito ayuda» (which opens the SOS), and the caller sees who has not answered yet. One new event, `ROLL_CALL`, answered with ACKs that LoRa never drops for another member's answer ([ADR-0028](docs/decisions/0028-roll-call.md), protocol §3.12).
 
 ### Transports

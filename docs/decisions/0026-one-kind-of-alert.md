@@ -1,6 +1,6 @@
 # 0026. The app sends one kind of alert
 
-- Status: Accepted
+- Status: Accepted, amended by [0065](0065-room-for-what-is-read.md) (the chat's menu)
 - Date: 2026-10-26
 
 ## Context
