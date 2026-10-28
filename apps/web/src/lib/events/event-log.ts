@@ -4,6 +4,7 @@
 
 import {
   encodeEvent,
+  eventRefKey,
   isKeepable,
   peekHeader,
   type EventHeader,
@@ -12,7 +13,7 @@ import {
   type TeselEvent,
 } from '@tesel/protocol';
 
-import type { AppDb, EventKey, OutboxEntry } from '../storage/app-db.ts';
+import type { AppDb, EventKey, GroupEventRef, OutboxEntry } from '../storage/app-db.ts';
 import { cursorKey, groupCursors } from '../sync/cursor-store.ts';
 import type { RelayPosition } from '../sync/relay-client.ts';
 
@@ -24,7 +25,7 @@ export class UnencodableEvent extends Error {}
 
 /** A received event that was new to the log. */
 export interface Received {
-  readonly entry: OutboxEntry;
+  readonly entry: GroupEventRef;
   readonly bytes: Uint8Array;
 }
 
@@ -52,8 +53,8 @@ export async function receiveEvents(
     const header = peekHeader(bytes);
     // A damaged copy must not take the place of the real event (protocol §3.1).
     if (!header.ok || !isKeepable(bytes)) continue;
-    const entry: OutboxEntry = { groupId, origin: header.value.origin, seq: header.value.seq };
-    const id = `${entry.origin}:${String(entry.seq)}`;
+    const entry: GroupEventRef = { groupId, origin: header.value.origin, seq: header.value.seq };
+    const id = eventRefKey(entry);
     if (!candidates.has(id)) candidates.set(id, { entry, bytes });
   }
   // Requests are issued together and served in order by the transaction: much faster than
@@ -77,7 +78,7 @@ export async function receiveEvents(
   return received;
 }
 
-function eventKeyOf(entry: OutboxEntry): EventKey {
+function eventKeyOf(entry: GroupEventRef): EventKey {
   return [entry.groupId, entry.origin, entry.seq];
 }
 
@@ -123,7 +124,10 @@ export async function publishEvent(
   return { entry, bytes: encoded.value };
 }
 
-/** Own events the server has not confirmed yet, with their bytes. */
+/**
+ * Events waiting for the server, with their bytes: this device's own and those it forwards. What
+ * concerns only its own events (what is still to deliver, what to put on the air) filters by origin.
+ */
 export async function pendingEvents(
   db: AppDb,
   groupId: string,
@@ -132,15 +136,15 @@ export async function pendingEvents(
   const entries = await tx.objectStore('outbox').index('byGroup').getAll(groupId);
   const pending = [];
   for (const entry of entries) {
-    const stored = await tx.objectStore('events').get([entry.groupId, entry.origin, entry.seq]);
+    const stored = await tx.objectStore('events').get(eventKeyOf(entry));
     if (stored !== undefined) pending.push({ entry, bytes: stored.bytes });
   }
   await tx.done;
   return pending;
 }
 
-export async function confirmStored(db: AppDb, entry: OutboxEntry): Promise<void> {
-  await db.delete('outbox', [entry.groupId, entry.origin, entry.seq]);
+export async function confirmStored(db: AppDb, entry: GroupEventRef): Promise<void> {
+  await db.delete('outbox', eventKeyOf(entry));
 }
 
 /**
@@ -163,10 +167,9 @@ export async function requeueOwnEvents(db: AppDb, groupId: string, origin: NodeI
 }
 
 /** Notes that an own event went out over LoRa while it still waits for the server. */
-export async function markAired(db: AppDb, entry: OutboxEntry): Promise<void> {
+export async function markAired(db: AppDb, entry: GroupEventRef): Promise<void> {
   const tx = db.transaction('outbox', 'readwrite');
-  const key: EventKey = [entry.groupId, entry.origin, entry.seq];
-  const current = await tx.store.get(key);
+  const current = await tx.store.get(eventKeyOf(entry));
   if (current !== undefined) await tx.store.put({ ...current, aired: true });
   await tx.done;
 }

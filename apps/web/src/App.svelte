@@ -64,7 +64,8 @@
   });
   /** Downloaded maps, once their database is open. */
   let offline: OfflineMaps | undefined = $state.raw();
-  let db: AppDb | undefined;
+  // What starting up opens is reactive, so that what waits for it runs whatever order it comes in.
+  let db: AppDb | undefined = $state.raw();
   let session: Session | undefined = $state();
   let preferences: Preferences | undefined = $state.raw();
   /** Why the app cannot start, while it cannot. */
@@ -74,7 +75,7 @@
     resolveLocale(preferences?.language.value ?? 'auto', navigator.languages),
   );
   const t = $derived(translator(locale));
-  let sharing: PositionSharing | undefined;
+  let sharing: PositionSharing | undefined = $state.raw();
   let feed: GroupFeed | undefined = $state.raw();
   let map: MapLibreMap | undefined = $state();
   /** The map opened on its wide view, not on one the address gave: it may frame the group. */

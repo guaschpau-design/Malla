@@ -11,17 +11,24 @@ import type { StoredRadioText } from '../radio/radio-texts.ts';
 import type { RelayPosition } from '../sync/relay-client.ts';
 import { IGNORE_VERSION_CHANGE, type VersionChange } from './version-change.ts';
 
-/** An event of a group as received or created: its encoded bytes, keyed by group and ref. */
-interface StoredEvent extends OutboxEntry {
-  readonly bytes: Uint8Array;
-}
-
-/** An own event the group's server has not confirmed storing yet (protocol §8). */
-export interface OutboxEntry {
+/** An event of a group, by the group and the event's reference: how the log and outbox key it. */
+export interface GroupEventRef {
   readonly groupId: string;
   readonly origin: NodeId;
   readonly seq: number;
-  /** Sent over LoRa already: a radio linked later need not send it again. */
+}
+
+/** An event of a group as received or created: its encoded bytes, keyed by group and ref. */
+interface StoredEvent extends GroupEventRef {
+  readonly bytes: Uint8Array;
+}
+
+/**
+ * An event waiting for the group's server to confirm it stored it (protocol §8): one of this
+ * device's own, or one of another member that this device heard by radio and forwards.
+ */
+export interface OutboxEntry extends GroupEventRef {
+  /** Own events only: sent over LoRa already, so a radio linked later need not send it again. */
   readonly aired?: true;
 }
 

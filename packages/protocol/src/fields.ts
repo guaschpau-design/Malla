@@ -11,16 +11,7 @@ import {
   ShapeKindCode,
   UNKNOWN_U16,
 } from './constants.ts';
-import type {
-  AlertLevel,
-  EventRef,
-  LatLon,
-  NodeId,
-  Role,
-  ShapeGeometry,
-  SosKind,
-  TaskStatus,
-} from './events.ts';
+import type { EventRef, LatLon, NodeId, ShapeGeometry } from './events.ts';
 import { readPoint, readPointList, writePoint, writePointList } from './geometry.ts';
 import { nodeIdFromBytes, nodeIdToBytes } from './node-id.ts';
 
@@ -40,22 +31,33 @@ export const TASK_TEXT_MAX_BYTES =
 export const ROLL_CALL_TEXT_MAX_BYTES = PAYLOAD_BUDGET; // §3.12
 
 // --- Enumerations ------------------------------------------------------------------------
-// §3.1: a reserved value decodes to its documented default rather than rejecting the event,
-// so that newer senders never make older receivers drop information.
+// Each value's code is written out in constants.ts (RoleCode and the like), never taken from an
+// order: reordering a list must not change the wire format.
 
-export const ROLES: readonly Role[] = ['member', 'coordinator']; // §3.3, default member
-export const SOS_KINDS: readonly SosKind[] = ['general', 'medical', 'trapped', 'fire', 'security']; // §3.8, default general
-export const ALERT_LEVELS: readonly AlertLevel[] = ['info', 'warning', 'critical']; // §3.9, default warning
-export const TASK_STATUSES: readonly TaskStatus[] = ['open', 'in-progress', 'done', 'cancelled']; // §3.11, default open
-
-export function enumCode<T>(values: readonly T[], value: T, field: string): number {
-  const code = values.indexOf(value);
-  if (code < 0) throw new ProtocolFailure('invalid-value', `unknown ${field}`);
-  return code;
+/** The code of an enumerated value; a value the protocol does not define is refused. */
+export function enumCode<T extends string>(
+  codes: Readonly<Record<T, number>>,
+  value: T,
+  field: string,
+): number {
+  if (!isValueOf(codes, value)) throw new ProtocolFailure('invalid-value', `unknown ${field}`);
+  return codes[value];
 }
 
-export function enumValue<T>(values: readonly T[], code: number, fallback: T): T {
-  return values[code] ?? fallback;
+/** The value of a code, or the field's default for a reserved code (§3.1). */
+export function enumValue<T extends string>(
+  codes: Readonly<Record<T, number>>,
+  code: number,
+  fallback: T,
+): T {
+  for (const value of Object.keys(codes)) {
+    if (isValueOf(codes, value) && codes[value] === code) return value;
+  }
+  return fallback;
+}
+
+function isValueOf<T extends string>(codes: Readonly<Record<T, number>>, key: string): key is T {
+  return Object.hasOwn(codes, key);
 }
 
 // --- References --------------------------------------------------------------------------

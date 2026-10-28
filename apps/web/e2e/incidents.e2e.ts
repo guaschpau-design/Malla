@@ -1,6 +1,6 @@
 // Day 4: map objects, SOS calls and alerts reach the whole group.
 
-import { expect, tapMap, tapMapUntil, test, twoMembers } from './helpers.ts';
+import { expect, openMore, tapMap, tapMapUntil, test, twoMembers } from './helpers.ts';
 
 const VIEW = '/#map=15/39.4699/-0.3763';
 
@@ -115,6 +115,15 @@ test('a roll call is answered by each member and followed by its caller', async 
 
   await expect(caller).toContainText('Responde 1 de 1');
   await expect(caller).toContainText('Han respondido todos.');
+
+  // Closed, the card stays closed through a measure, which hides the cards while it takes the map.
+  await caller.getByRole('button', { name: 'Cerrar' }).click();
+  await expect(caller).toBeHidden();
+  await openMore(ana, 'Medir distancias');
+  const measuring = ana.getByRole('region', { name: 'Medir distancias' });
+  await measuring.getByRole('button', { name: 'Cerrar' }).click();
+  await expect(measuring).toBeHidden();
+  await expect(caller).toBeHidden();
 });
 
 test('an area is drawn point by point and described before it is shared', async ({ browser }) => {
@@ -133,8 +142,10 @@ test('an area is drawn point by point and described before it is shared', async 
   await at(-80, 80);
   await ana.getByRole('button', { name: 'Deshacer' }).click();
   await ana.getByRole('button', { name: 'Terminar' }).click();
-  await ana.getByRole('radio', { name: 'Zona de peligro' }).check();
-  await ana.getByRole('button', { name: 'Guardar' }).click();
+  const form = ana.getByRole('dialog', { name: 'Nueva zona' });
+  await form.getByRole('radio', { name: 'Zona de peligro' }).check();
+  await form.getByRole('button', { name: 'Guardar' }).click();
+  await expect(form).toBeHidden();
 
   // The triangle left after undoing covers the point to the right of the centre.
   const details = ana.getByRole('region', { name: 'Zona de peligro' });

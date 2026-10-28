@@ -55,7 +55,12 @@ import { storageRefusals } from '../storage/storage-space.svelte.ts';
 import { defaultServerUrl } from '../config.ts';
 import type { TaskFields } from '../tasks/tasks.ts';
 import { loadPosition, savePosition } from './cursor-store.ts';
-import { RelayClient, type ReceivedEnvelope, type RelayStatus } from './relay-client.ts';
+import {
+  RelayClient,
+  type ReceivedEnvelope,
+  type RelayStatus,
+  type SocketLike,
+} from './relay-client.ts';
 import { loraEventOf, peekType } from './lora-events.ts';
 import { relaysFor } from './relays.ts';
 
@@ -107,7 +112,12 @@ export class GroupFeed {
   readonly #retry = () => this.#client?.retryNow();
   #lora: LoraSink | null = null;
 
-  private constructor(db: AppDb, group: StoredGroup, identity: LocalIdentity) {
+  private constructor(
+    db: AppDb,
+    group: StoredGroup,
+    identity: LocalIdentity,
+    createSocket: ((url: string) => SocketLike) | undefined,
+  ) {
     this.#db = db;
     this.#group = group;
     this.#identity = identity;
@@ -119,6 +129,7 @@ export class GroupFeed {
         : new RelayClient({
             relays: () => relaysFor(db, server, defaultServerUrl()),
             group: this.#keys.groupId,
+            ...(createSocket ? { createSocket } : {}),
             handlers: {
               position: (relay) => loadPosition(db, group.id, relay),
               onEnvelopes: (batch, relay, store) => this.#receive(batch, relay, store),
@@ -143,14 +154,19 @@ export class GroupFeed {
 
   /**
    * Loads the group's log, announces this member if needed and connects to the server. Loading
-   * forgets what the log holds and the state has outlived, as after any batch (ADR-0055).
+   * forgets what the log holds and the state has outlived, as after any batch (ADR-0055). Tests
+   * pass `createSocket` to stand in for the relay.
    */
-  static async open(db: AppDb, group: StoredGroup, identity: LocalIdentity): Promise<GroupFeed> {
-    const feed = new GroupFeed(db, group, identity);
+  static async open(
+    db: AppDb,
+    group: StoredGroup,
+    identity: LocalIdentity,
+    createSocket?: (url: string) => SocketLike,
+  ): Promise<GroupFeed> {
+    const feed = new GroupFeed(db, group, identity, createSocket);
     await feed.#apply(await loadEvents(db, group.id));
     if (!group.practice) {
-      const pending = await pendingEvents(db, group.id);
-      for (const { entry } of pending) {
+      for (const { entry } of await feed.#ownPending()) {
         if (entry.aired !== true) feed.#undelivered.add(eventRefKey(entry));
       }
     }
@@ -199,10 +215,21 @@ export class GroupFeed {
       const bytes = encodeEvent(event);
       if (bytes.ok) sink.offer({ event, bytes: bytes.value }, 'own');
     }
-    for (const { entry, bytes } of await pendingEvents(this.#db, this.#group.id)) {
+    for (const { entry, bytes } of await this.#ownPending()) {
       const event = loraEventOf(bytes);
       if (entry.aired !== true && event !== null) sink.offer({ event, bytes }, 'own');
     }
+  }
+
+  /**
+   * This device's own events still waiting for the server. The outbox also holds other members'
+   * events this device heard by radio and forwards: those are not its to deliver or to put on the
+   * air as its own.
+   */
+  async #ownPending(): Promise<{ entry: OutboxEntry; bytes: Uint8Array }[]> {
+    const self = this.#identity.nodeId;
+    const pending = await pendingEvents(this.#db, this.#group.id);
+    return pending.filter(({ entry }) => entry.origin === self);
   }
 
   /**

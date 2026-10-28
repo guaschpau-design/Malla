@@ -1,5 +1,5 @@
 <!-- A modal card for decisions that must be taken before going on (first launch, joining, a
-     confirmation). -->
+     confirmation, describing what was drawn). -->
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
 
@@ -39,6 +39,9 @@
 <style>
   dialog {
     width: min(26rem, calc(100vw - 2rem));
+    /* A long one, such as the list of symbols, scrolls inside rather than off the screen. */
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
     padding: 1.25rem;
     color: var(--fg);
     background: var(--surface);

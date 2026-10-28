@@ -5,17 +5,19 @@ import {
   deriveGroupKeys,
   encodeEvent,
   encodeLogFile,
+  eventRefKey,
   sealEnvelope,
   type NodeId,
   type TeselEvent,
 } from '@tesel/protocol';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadEvents, receiveEvents } from '../events/event-log.ts';
 import { createGroup } from '../groups/group.ts';
 import { createLocalIdentity } from '../identity/identity.ts';
 import { openAppDb } from '../storage/app-db.ts';
-import { GroupFeed } from './group-feed.svelte.ts';
+import { GroupFeed, type LoraSink } from './group-feed.svelte.ts';
+import type { SocketLike } from './relay-client.ts';
 
 const MEMBERS = ['0a0a0a0a', '0b0b0b0b', '0c0c0c0c'] as NodeId[];
 const T0 = 1_761_350_400;
@@ -91,5 +93,51 @@ describe('a group feed', () => {
     const feed = await GroupFeed.open(db, group, identity);
     expect(await loadEvents(db, group.id)).toHaveLength(KEPT);
     expect(feed.state.chat).toHaveLength(MEMBERS.length);
+  });
+
+  describe('with a server', () => {
+    beforeEach(() => {
+      // The server is never reached: what the device knows of it comes from nowhere.
+      vi.stubGlobal('fetch', () => Promise.reject(new TypeError('offline')));
+      // The feed listens for the browser coming back online and into view.
+      const events = { addEventListener: () => undefined, removeEventListener: () => undefined };
+      vi.stubGlobal('window', events);
+      vi.stubGlobal('document', events);
+    });
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    /** A relay that never answers. */
+    const silentRelay = (): SocketLike => ({
+      onopen: null,
+      onmessage: null,
+      onclose: null,
+      send: () => undefined,
+      close: () => undefined,
+    });
+
+    it('forwards another member’s radio event without taking it for its own after a restart', async () => {
+      const { db, identity } = await setUp();
+      const group = createGroup('Rescate', 'https://relay.example/', Date.now());
+      const first = await GroupFeed.open(db, group, identity, silentRelay);
+      const other = '0d0d0d0d' as NodeId;
+      const [heard] = bytesOf([{ type: 'chat', origin: other, seq: 1, time: T0, text: 'Os oigo' }]);
+      if (heard === undefined) throw new Error('no event');
+      await first.receiveFromRadio(heard);
+      first.close();
+
+      const reopened = await GroupFeed.open(db, group, identity, silentRelay);
+      // Its own announcement is still undelivered; the other member's chat is not its to deliver.
+      expect([...reopened.undelivered]).not.toContain(eventRefKey({ origin: other, seq: 1 }));
+      const offered: string[] = [];
+      const sink: LoraSink = {
+        offer: (packet, source) => offered.push(`${packet.event.origin}:${source}`),
+        heard: () => undefined,
+      };
+      await reopened.attachRadio(sink);
+      expect(offered).not.toContain(`${other}:own`);
+      reopened.close();
+    });
   });
 });

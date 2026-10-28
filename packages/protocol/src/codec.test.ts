@@ -34,6 +34,65 @@ describe('event codec', () => {
     expect(toHex(encodeOrFail(event))).toBe('0104a1b2c3d4010000000013fc68486f6c61');
   });
 
+  // Each enumerated field pinned by one vector: its codes are written out in constants.ts, and a
+  // change to them would change these bytes.
+  it('matches the member-info test vector computed independently from the spec', () => {
+    // RFC 8032's first Ed25519 public key; its node ID is the first 4 bytes of its SHA-256.
+    const publicKey = hex('d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a');
+    const event: TeselEvent = {
+      type: 'member-info',
+      origin: '21fe31df' as NodeId,
+      seq: 1,
+      time: T0,
+      role: 'coordinator',
+      publicKey,
+      alias: 'Ana',
+    };
+    expect(toHex(encodeOrFail(event))).toBe(
+      '010121fe31df010000000013fc6801d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a416e61',
+    );
+  });
+
+  it('matches the SOS, alert and task test vectors computed independently from the spec', () => {
+    const sos: TeselEvent = {
+      type: 'sos',
+      origin: ALICE,
+      seq: 2,
+      time: T0,
+      kind: 'fire',
+      lat: 41.3874,
+      lon: 2.1686,
+      accuracy: 25,
+      text: 'Humo',
+    };
+    expect(toHex(encodeOrFail(sos))).toBe(
+      '0108a1b2c3d4020000000013fc68035037ab18f0e64a01190048756d6f',
+    );
+    const alert: TeselEvent = {
+      type: 'alert',
+      origin: ALICE,
+      seq: 3,
+      time: T0,
+      level: 'critical',
+      text: 'Evacuad',
+    };
+    expect(toHex(encodeOrFail(alert))).toBe('010aa1b2c3d4030000000013fc680245766163756164');
+    const task: TeselEvent = {
+      type: 'task',
+      origin: ALICE,
+      seq: 5,
+      time: T0,
+      task: { origin: ALICE, seq: 4 },
+      status: 'in-progress',
+      assignee: BOB,
+      place: { lat: 41.3874, lon: 2.1686 },
+      text: 'Buscar',
+    };
+    expect(toHex(encodeOrFail(task))).toBe(
+      '010ca1b2c3d4050000000013fc68a1b2c3d404000000010f1e2d3c015037ab18f0e64a01427573636172',
+    );
+  });
+
   it('matches the position test vector computed independently from the spec', () => {
     const event: TeselEvent = {
       type: 'position',

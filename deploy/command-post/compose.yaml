@@ -17,9 +17,12 @@ services:
     # The image's own health check asks /healthz; update.sh waits for it before keeping a new
     # version. Docker restarts the server when it exits, not when it is unhealthy.
     restart: unless-stopped
+    # Every server setting written in .env reaches the server (apps/server/README.md lists them,
+    # with their defaults); the rest of .env, for the installer and Caddy, the server ignores.
+    env_file: .env
     environment:
+      # Without it this would be a server of its own, not a post: refuse to start instead.
       TESEL_UPSTREAM: ${TESEL_UPSTREAM:?set TESEL_UPSTREAM in .env}
-      TESEL_RETENTION_DAYS: ${TESEL_RETENTION_DAYS:-30}
     volumes:
       - tesel-data:/data
     read_only: true

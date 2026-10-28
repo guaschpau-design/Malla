@@ -1,10 +1,11 @@
-<!-- Describes a drawn object (label and symbol or style) before it is shared with the group. -->
+<!-- Describes a drawn object (label and symbol or style) before it is shared with the group: a
+     step of the drawing that must end, saved or cancelled, before anything else is done. -->
 <script lang="ts">
   import { MARKER_LABEL_MAX_BYTES, SHAPE_LABEL_MAX_BYTES, utf8ByteLength } from '@tesel/protocol';
 
   import { UnencodableEvent } from '../events/event-log.ts';
   import type { Translate } from '../i18n/index.ts';
-  import Panel from '../ui/Panel.svelte';
+  import Dialog from '../ui/Dialog.svelte';
   import { Submission } from '../ui/submission.svelte.ts';
   import { areaStyles, SYMBOLS } from './catalog.ts';
   import { DRAFT_TITLES, type DraftKind } from './draft.ts';
@@ -31,9 +32,9 @@
   const tooLong = $derived(utf8ByteLength(label.trim()) > maxBytes);
 </script>
 
-<Panel title={t(DRAFT_TITLES[kind])} closeLabel={t('close')} onclose={oncancel}>
+<Dialog title={t(DRAFT_TITLES[kind])} {oncancel}>
   <form
-    class="stack section"
+    class="stack"
     onsubmit={(event) => {
       event.preventDefault();
       void submission.run(() => onsave(code, label.trim()));
@@ -78,7 +79,7 @@
       <button type="button" onclick={oncancel}>{t('cancel')}</button>
     </div>
   </form>
-</Panel>
+</Dialog>
 
 <style>
   fieldset {

@@ -109,20 +109,24 @@
   {:else if tool?.kind === 'measure'}
     <Measuring {t} {locale} {map} {taps} from={tool.from} onclose={onclosetool} />
   {/if}
-  {#if group && !tapping}
-    <IncidentBanners
-      {t}
-      {locale}
-      groupState={group.feed.state}
-      self={group.self}
-      canCancelOthers={group.role === 'coordinator'}
-      undelivered={group.feed.undelivered}
-      onacknowledge={acknowledge}
-      oncancel={cancelSos}
-      onshow={show}
-      {onneedhelp}
-    />
-  {/if}
+  <!-- While a drawing or a measure takes the taps, the cards in "aside" step out of the way. They
+       stay mounted, so what they hold lasts: the cards a member closed, a download under way. -->
+  <div class="aside" hidden={tapping}>
+    {#if group}
+      <IncidentBanners
+        {t}
+        {locale}
+        groupState={group.feed.state}
+        self={group.self}
+        canCancelOthers={group.role === 'coordinator'}
+        undelivered={group.feed.undelivered}
+        onacknowledge={acknowledge}
+        oncancel={cancelSos}
+        onshow={show}
+        {onneedhelp}
+      />
+    {/if}
+  </div>
   {#if group}
     <DangerZoneAlert {t} groupState={group.feed.state} {location} />
   {/if}
@@ -138,14 +142,16 @@
       />
     {/key}
   {/if}
-  {#if weather && !tapping}
-    <WeatherCard {t} {locale} {weather} {location} />
-  {/if}
-  {#if group && !tapping}
-    {#key group.feed}
-      <OperationAreaOffer {t} {locale} groupState={group.feed.state} {offline} />
-    {/key}
-  {/if}
+  <div class="aside" hidden={tapping}>
+    {#if weather}
+      <WeatherCard {t} {locale} {weather} {location} />
+    {/if}
+    {#if group}
+      {#key group.feed}
+        <OperationAreaOffer {t} {locale} groupState={group.feed.state} {offline} />
+      {/key}
+    {/if}
+  </div>
   <Notices {t} />
 </div>
 
@@ -167,5 +173,14 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     pointer-events: none;
+  }
+
+  /* Its cards take their places in the stack, as if the box were not there. */
+  .aside {
+    display: contents;
+  }
+
+  .aside[hidden] {
+    display: none;
   }
 </style>

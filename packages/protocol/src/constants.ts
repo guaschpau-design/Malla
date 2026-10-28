@@ -1,5 +1,7 @@
 // Every numeric constant of the wire format. Section numbers refer to docs/protocol.md.
 
+import type { AlertLevel, Role, SosKind, TaskStatus } from './events.ts';
+
 /** §3.1 Protocol version carried in every event header. */
 export const PROTOCOL_VERSION = 1;
 
@@ -57,6 +59,36 @@ export const SHAPE_LABEL_MAX_BYTES = 32;
 
 /** §3.7 Shape kind codes. */
 export const ShapeKindCode = { POLYLINE: 1, POLYGON: 2, CIRCLE: 3 } as const;
+
+// The codes of the enumerated fields. §3.1: a reserved code decodes to the field's default (named
+// in each), so that newer senders never make older receivers drop information.
+
+/** §3.3 MEMBER_INFO.role, and an invitation's role (§6). Default: member. */
+export const RoleCode = { member: 0, coordinator: 1 } as const satisfies Record<Role, number>;
+
+/** §3.8 SOS.kind. Default: general. */
+export const SosKindCode = {
+  general: 0,
+  medical: 1,
+  trapped: 2,
+  fire: 3,
+  security: 4,
+} as const satisfies Record<SosKind, number>;
+
+/** §3.9 ALERT.level. Default: warning. */
+export const AlertLevelCode = {
+  info: 0,
+  warning: 1,
+  critical: 2,
+} as const satisfies Record<AlertLevel, number>;
+
+/** §3.11 TASK.status. Default: open. */
+export const TaskStatusCode = {
+  open: 0,
+  'in-progress': 1,
+  done: 2,
+  cancelled: 3,
+} as const satisfies Record<TaskStatus, number>;
 
 /** §5 Group secret size; also the MeshCore channel key size. */
 export const GROUP_SECRET_SIZE = 16;

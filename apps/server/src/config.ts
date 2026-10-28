@@ -33,13 +33,18 @@ export interface ServerConfig {
   readonly trustedProxies: readonly string[];
 }
 
+/**
+ * Reads the settings. A setting left out and one set to nothing mean the same, its default: a
+ * deployment can then pass every setting through, set or not. Lists say `none` (`off` for the
+ * weather) to be empty.
+ */
 export function readConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
   return {
-    host: env['TESEL_HOST'] ?? '0.0.0.0',
+    host: setting(env, 'TESEL_HOST') ?? '0.0.0.0',
     port: integer(env, 'TESEL_PORT', 8080, 1, 65535),
-    databasePath: env['TESEL_DB'] ?? 'data/tesel.db',
+    databasePath: setting(env, 'TESEL_DB') ?? 'data/tesel.db',
     retentionDays: integer(env, 'TESEL_RETENTION_DAYS', 30, 1, 3650),
-    webRoot: env['TESEL_WEB_ROOT'] || null,
+    webRoot: setting(env, 'TESEL_WEB_ROOT') ?? null,
     upstream: serverUrl(env, 'TESEL_UPSTREAM'),
     commandPost: serverUrl(env, 'TESEL_COMMAND_POST'),
     weatherCountries: countries(env, 'TESEL_WEATHER', 'ES,PT'),
@@ -81,16 +86,22 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
   };
 }
 
-/** A comma-separated list; empty for none. */
-function list(env: NodeJS.ProcessEnv, name: string, fallback: string): string[] {
-  const text = env[name] ?? fallback;
-  return text === '' ? [] : text.split(',').map((item) => item.trim());
+/** A setting's text, or undefined when it is left out or set to nothing. */
+function setting(env: NodeJS.ProcessEnv, name: string): string | undefined {
+  const text = env[name];
+  return text === undefined || text === '' ? undefined : text;
 }
 
-/** A comma-separated list of country codes with a warnings feed; "off" or empty for none. */
+/** A comma-separated list; `none` for an empty one. */
+function list(env: NodeJS.ProcessEnv, name: string, fallback: string): string[] {
+  const text = setting(env, name) ?? fallback;
+  return text === 'none' ? [] : text.split(',').map((item) => item.trim());
+}
+
+/** A comma-separated list of country codes with a warnings feed; `off` for none. */
 function countries(env: NodeJS.ProcessEnv, name: string, fallback: string): string[] {
-  const text = env[name] ?? fallback;
-  if (text === '' || text === 'off') return [];
+  const text = setting(env, name) ?? fallback;
+  if (text === 'off') return [];
   const codes = text.split(',').map((code) => code.trim().toUpperCase());
   const unknown = codes.filter((code) => !Object.hasOwn(FEED_URLS, code));
   if (unknown.length > 0) {
@@ -101,8 +112,8 @@ function countries(env: NodeJS.ProcessEnv, name: string, fallback: string): stri
 }
 
 function serverUrl(env: NodeJS.ProcessEnv, name: string): string | null {
-  const text = env[name];
-  if (text === undefined || text === '') return null;
+  const text = setting(env, name);
+  if (text === undefined) return null;
   if (!isSecureUrl(text)) throw new Error(`${name} must be an https URL, got "${text}"`);
   return serverBaseUrl(text);
 }
@@ -114,8 +125,8 @@ function integer(
   min: number,
   max: number,
 ): number {
-  const text = env[name];
-  if (text === undefined || text === '') return fallback;
+  const text = setting(env, name);
+  if (text === undefined) return fallback;
   const value = Number(text);
   if (!Number.isInteger(value) || value < min || value > max) {
     throw new Error(`${name} must be an integer from ${min} to ${max}, got "${text}"`);

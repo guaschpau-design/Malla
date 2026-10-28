@@ -17,10 +17,9 @@ services:
     # version. Docker restarts the server when it exits, not when it is unhealthy: an unhealthy
     # server makes the next update run fail, which alerts the operator.
     restart: unless-stopped
-    environment:
-      TESEL_RETENTION_DAYS: ${TESEL_RETENTION_DAYS:-30}
-      # Name shared by this server's command posts, announced to apps (protocol §8.3).
-      TESEL_COMMAND_POST: ${TESEL_COMMAND_POST:-}
+    # Every server setting written in .env reaches the server (apps/server/README.md lists them,
+    # with their defaults); the rest of .env, for the installer and Caddy, the server ignores.
+    env_file: .env
     volumes:
       - tesel-data:/data
     # Locked down: read-only system, no Linux capabilities, no privilege escalation. The server

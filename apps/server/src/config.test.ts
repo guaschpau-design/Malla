@@ -21,6 +21,30 @@ describe('configuration', () => {
     });
   });
 
+  it('takes a setting set to nothing as left out, so a deployment can pass every one through', () => {
+    const empty = Object.fromEntries(
+      [
+        'TESEL_HOST',
+        'TESEL_PORT',
+        'TESEL_DB',
+        'TESEL_RETENTION_DAYS',
+        'TESEL_WEB_ROOT',
+        'TESEL_UPSTREAM',
+        'TESEL_COMMAND_POST',
+        'TESEL_WEATHER',
+        'TESEL_WEATHER_MAX_AGE_MINUTES',
+        'TESEL_MAX_CONNECTIONS',
+        'TESEL_MAX_CONNECTIONS_PER_IP',
+        'TESEL_NEW_GROUPS_PER_IP_PER_HOUR',
+        'TESEL_PUSHES_PER_SECOND',
+        'TESEL_MIN_FREE_DISK_MB',
+        'TESEL_TRUSTED_PROXIES',
+      ].map((name) => [name, '']),
+    );
+    expect(readConfig(empty)).toEqual(readConfig({}));
+    expect(readConfig({ TESEL_TRUSTED_PROXIES: 'none' }).trustedProxies).toEqual([]);
+  });
+
   it('reads the countries whose weather warnings it gathers', () => {
     expect(readConfig({ TESEL_WEATHER: 'es' }).weatherCountries).toEqual(['ES']);
     expect(readConfig({ TESEL_WEATHER: 'off' }).weatherCountries).toEqual([]);
@@ -44,7 +68,7 @@ describe('configuration', () => {
       TESEL_NEW_GROUPS_PER_IP_PER_HOUR: '3',
       TESEL_PUSHES_PER_SECOND: '40',
       TESEL_MIN_FREE_DISK_MB: '0',
-      TESEL_TRUSTED_PROXIES: '',
+      TESEL_TRUSTED_PROXIES: 'none',
     });
     expect(config.limits).toEqual({
       ...DEFAULT_LIMITS,

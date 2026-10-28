@@ -7,15 +7,18 @@ import { ByteReader, ByteWriter, ProtocolFailure } from './bytes.ts';
 import {
   ALIAS_MAX_BYTES,
   ALIAS_MIN_BYTES,
+  AlertLevelCode,
   EventTypeCode,
   PUBLIC_KEY_SIZE,
+  RoleCode,
   SHAPE_LABEL_MAX_BYTES,
+  SosKindCode,
+  TaskStatusCode,
   UNKNOWN_U16,
 } from './constants.ts';
 import { nodeIdFromPublicKey } from './crypto.ts';
 import type { EventHeader, EventType, MemberInfoEvent, TeselEvent } from './events.ts';
 import {
-  ALERT_LEVELS,
   ALERT_TEXT_MAX_BYTES,
   CHAT_MAX_BYTES,
   enumCode,
@@ -26,11 +29,8 @@ import {
   readMeasurement,
   readPlace,
   readRef,
-  ROLES,
   shapeKindCode,
-  SOS_KINDS,
   SOS_TEXT_MAX_BYTES,
-  TASK_STATUSES,
   ROLL_CALL_TEXT_MAX_BYTES,
   TASK_TEXT_MAX_BYTES,
   writeAssignee,
@@ -58,11 +58,11 @@ export const PAYLOADS: { readonly [K in EventType]: PayloadCodec<EventOfType<K>>
     code: EventTypeCode.MEMBER_INFO,
     write(writer, event) {
       checkMemberKey(event);
-      writer.u8(enumCode(ROLES, event.role, 'role')).raw(event.publicKey);
+      writer.u8(enumCode(RoleCode, event.role, 'role')).raw(event.publicKey);
       writeTextRest(writer, event.alias, ALIAS_MIN_BYTES, ALIAS_MAX_BYTES, 'alias');
     },
     read(reader, header) {
-      const role = enumValue(ROLES, reader.u8(), 'member');
+      const role = enumValue(RoleCode, reader.u8(), 'member');
       const publicKey = reader.raw(PUBLIC_KEY_SIZE);
       const alias = reader.textRest(ALIAS_MIN_BYTES, ALIAS_MAX_BYTES, 'alias');
       const event: MemberInfoEvent = { ...header, type: 'member-info', role, publicKey, alias };
@@ -156,13 +156,13 @@ export const PAYLOADS: { readonly [K in EventType]: PayloadCodec<EventOfType<K>>
   sos: {
     code: EventTypeCode.SOS,
     write(writer, event) {
-      writer.u8(enumCode(SOS_KINDS, event.kind, 'SOS kind'));
+      writer.u8(enumCode(SosKindCode, event.kind, 'SOS kind'));
       writePoint(writer, event);
       writeMeasurement(writer, event.accuracy, 1);
       writeTextRest(writer, event.text, 0, SOS_TEXT_MAX_BYTES, 'SOS text');
     },
     read(reader, header) {
-      const kind = enumValue(SOS_KINDS, reader.u8(), 'general');
+      const kind = enumValue(SosKindCode, reader.u8(), 'general');
       const point = readPoint(reader);
       const accuracy = readMeasurement(reader, 1);
       const text = reader.textRest(0, SOS_TEXT_MAX_BYTES, 'SOS text');
@@ -181,11 +181,11 @@ export const PAYLOADS: { readonly [K in EventType]: PayloadCodec<EventOfType<K>>
   alert: {
     code: EventTypeCode.ALERT,
     write(writer, event) {
-      writer.u8(enumCode(ALERT_LEVELS, event.level, 'alert level'));
+      writer.u8(enumCode(AlertLevelCode, event.level, 'alert level'));
       writeTextRest(writer, event.text, 1, ALERT_TEXT_MAX_BYTES, 'alert text');
     },
     read(reader, header) {
-      const level = enumValue(ALERT_LEVELS, reader.u8(), 'warning');
+      const level = enumValue(AlertLevelCode, reader.u8(), 'warning');
       const text = reader.textRest(1, ALERT_TEXT_MAX_BYTES, 'alert text');
       return { ...header, type: 'alert', level, text };
     },
@@ -203,14 +203,14 @@ export const PAYLOADS: { readonly [K in EventType]: PayloadCodec<EventOfType<K>>
     code: EventTypeCode.TASK,
     write(writer, event) {
       writeRef(writer, event.task);
-      writer.u8(enumCode(TASK_STATUSES, event.status, 'task status'));
+      writer.u8(enumCode(TaskStatusCode, event.status, 'task status'));
       writeAssignee(writer, event.assignee);
       writePlace(writer, event.place);
       writeTextRest(writer, event.text, 1, TASK_TEXT_MAX_BYTES, 'task text');
     },
     read(reader, header) {
       const task = readRef(reader);
-      const status = enumValue(TASK_STATUSES, reader.u8(), 'open');
+      const status = enumValue(TaskStatusCode, reader.u8(), 'open');
       const assignee = readAssignee(reader);
       const place = readPlace(reader);
       const text = reader.textRest(1, TASK_TEXT_MAX_BYTES, 'task text');
