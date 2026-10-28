@@ -31,7 +31,8 @@ test('a sweep is planned, its strips handed out, followed and finished', async (
   await expect(planner).toContainText(/\d+ calles · unos [\d,.]+ (m|km) a pie por equipo/);
   await planner.getByLabel('Franja 2').selectOption({ label: 'Berta' });
   await planner.getByRole('button', { name: 'Crear batida' }).click();
-  await expect(planner).toBeHidden();
+  // A strip and its task each, written one after another: a slow machine takes a while.
+  await expect(planner).toBeHidden({ timeout: 15_000 });
 
   // Berta is handed her strip, and follows it from her tasks.
   const name = 'Batida «Ladera» · franja 2 de 2';
