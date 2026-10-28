@@ -225,6 +225,7 @@ export const en = {
   navigationArrived: 'You have arrived.',
   navigationTargetGone: 'The destination is no longer on the map.',
   navigationStop: 'Stop',
+  mapName: 'Map',
   mapPoint: 'Map point',
   positionAt: 'Last position: {time}',
   memberNoPosition: 'Not sharing their position.',

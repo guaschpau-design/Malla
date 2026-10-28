@@ -17,6 +17,7 @@
   import ConnectionsPanel from './lib/links/ConnectionsPanel.svelte';
   import LinkButton from './lib/links/LinkButton.svelte';
   import { linkOf, networkStatus, radioLinkOf } from './lib/links/links.ts';
+  import { mapLibreLocale } from './lib/map/maplibre-locale.ts';
   import MapView from './lib/map/MapView.svelte';
   import type { MapTheme } from './lib/map/style.ts';
   import { registerContourProtocol } from './lib/map/contours.ts';
@@ -275,6 +276,7 @@
           theme,
           lang: locale,
         }}
+        locale={mapLibreLocale(t)}
         onready={onMapReady}
       />
     {/if}

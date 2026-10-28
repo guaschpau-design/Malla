@@ -8,11 +8,14 @@
   import { onMount } from 'svelte';
 
   import { mapAssetsUrl } from '../config.ts';
+  import type { MapLibreLocale } from './maplibre-locale.ts';
   import { buildStyle, type StyleChoice } from './style.ts';
 
   interface Props {
     /** What the map looks like: base map, relief, theme and the language of its names. */
     choice: StyleChoice;
+    /** MapLibre's own words in the app's language. */
+    locale: MapLibreLocale;
     /**
      * Called once with the map, and whether it opened on its wide view of Spain and Portugal
      * rather than on a view the address gave (#map=…).
@@ -20,7 +23,7 @@
     onready: (map: MapLibreMap, openedWide: boolean) => void;
   }
 
-  let { choice, onready }: Props = $props();
+  let { choice, locale, onready }: Props = $props();
 
   let container: HTMLDivElement;
   let map: MapLibreMap | undefined = $state();
@@ -42,6 +45,7 @@
       container,
       style: buildStyle(choice, mapAssetsUrl()),
       ...INITIAL_VIEW,
+      locale,
       // The credits are shown by MapCredits and in the layers panel, the scale by MapScale.
       attributionControl: false,
       // Keeps the view in the URL (#map=zoom/lat/lon), so a reload or a shared link keeps it.
@@ -56,6 +60,12 @@
     return () => {
       instance.remove();
     };
+  });
+
+  // MapLibre reads its words once, as the map is made: a later change of language reaches the one
+  // it shows, the map's name, here.
+  $effect(() => {
+    map?.getCanvas().setAttribute('aria-label', locale['Map.Title']);
   });
 
   // Restyle when any of the choice changes.

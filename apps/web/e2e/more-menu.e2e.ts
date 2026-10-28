@@ -33,9 +33,13 @@ test('the app goes full screen at the first tap, until switched off', async ({ b
 
 test('the language is chosen in the "More" menu and remembered', async ({ browser }) => {
   const page = await device(browser, 'Ana');
+  // The map itself is named in the app's language, though MapLibre's own word is English.
+  await expect(page.getByRole('region', { name: 'Mapa', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Más' }).click();
   await page.getByRole('menuitem', { name: /Idioma/ }).click();
   await expect(page.getByRole('menuitem', { name: /Language/ })).toContainText('English');
+  await expect(page.getByRole('region', { name: 'Map', exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('button', { name: 'More' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Map', exact: true })).toBeVisible();
 });
