@@ -4,12 +4,12 @@
      dock: past its height it scrolls. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
-  import type { EventRef, LatLon } from '@tesel/protocol';
+  import type { EventRef, LatLon, TaskEvent } from '@tesel/protocol';
   import type { Map as MapLibreMap } from 'maplibre-gl';
 
   import type { Locale, Translate } from '../i18n/index.ts';
   import IncidentBanners from '../incidents/IncidentBanners.svelte';
-  import { mapCentre, showPoint } from '../map/geometry.ts';
+  import { mapCentre, showPoint, showPoints } from '../map/geometry.ts';
   import type { MapTaps } from '../map/taps.ts';
   import Measuring from '../measure/Measuring.svelte';
   import Navigation from '../navigation/Navigation.svelte';
@@ -17,10 +17,12 @@
   import DrawBar from '../objects/DrawBar.svelte';
   import type { Drawing } from '../objects/drawing.svelte.ts';
   import DrawLayer from '../objects/DrawLayer.svelte';
+  import type { ImportedRoute } from '../objects/route-import.ts';
   import type { OfflineMaps } from '../offline/offline-maps.ts';
   import OperationAreaOffer from '../offline/OperationAreaOffer.svelte';
   import { deviceLocation } from '../position/device-location.svelte.ts';
   import Practice from '../practice/Practice.svelte';
+  import { fieldsOf } from '../tasks/tasks.ts';
   import Notices from '../ui/Notices.svelte';
   import { attempt } from '../ui/submission.svelte.ts';
   import WeatherCard from '../weather/WeatherCard.svelte';
@@ -89,12 +91,18 @@
     />
     <DrawBar
       {t}
+      {locale}
       draft={drawing.draft}
+      imported={drawing.imported}
       onundo={() => {
         drawing.undo();
       }}
       onfinish={() => {
         drawing.finish();
+      }}
+      onimport={(route: ImportedRoute) => {
+        drawing.load(route);
+        showPoints(map, route.points);
       }}
       oncancel={() => {
         drawing.stop();
@@ -126,7 +134,18 @@
   {#if group}
     <DangerZoneAlert {t} groupState={group.feed.state} />
   {/if}
-  <Navigation {t} {locale} {map} objects={slices.objects} positions={slices.positions} />
+  <Navigation
+    {t}
+    {locale}
+    {map}
+    objects={slices.objects}
+    positions={slices.positions}
+    tasks={slices.tasks}
+    self={group?.self ?? null}
+    onfinishtask={async (task: TaskEvent) => {
+      await group?.feed.writeTask(task.task, { ...fieldsOf(task), status: 'done' });
+    }}
+  />
   {#if group?.practice}
     {#key group.feed}
       <Practice

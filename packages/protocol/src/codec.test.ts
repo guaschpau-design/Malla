@@ -85,7 +85,7 @@ describe('event codec', () => {
       task: { origin: ALICE, seq: 4 },
       status: 'in-progress',
       assignee: BOB,
-      place: { lat: 41.3874, lon: 2.1686 },
+      place: { kind: 'point', at: { lat: 41.3874, lon: 2.1686 } },
       text: 'Buscar',
     };
     expect(toHex(encodeOrFail(task))).toBe(
@@ -486,8 +486,17 @@ describe('tasks', () => {
     expect(decoded.ok && decoded.value.type === 'task' && decoded.value.status).toBe('open');
   });
 
+  it('writes an object place as kind 2 and the object reference', () => {
+    const place = { kind: 'object', object: { origin: BOB, seq: 3 } } as const;
+    const bytes = encodeOrFail({ ...task, text: 'x', place });
+    expect(toHex(bytes.slice(PLACE, PLACE + 9))).toBe('020f1e2d3c03000000');
+    const decoded = decodeEvent(bytes);
+    expect(decoded.ok && decoded.value.type === 'task' && decoded.value.place).toEqual(place);
+  });
+
   it('reads a reserved place kind as none, whatever its point holds', () => {
-    const bytes = encodeOrFail({ ...task, text: 'x', place: { lat: 41, lon: 2 } });
+    const place = { kind: 'point', at: { lat: 41, lon: 2 } } as const;
+    const bytes = encodeOrFail({ ...task, text: 'x', place });
     bytes[PLACE] = 7;
     const decoded = decodeEvent(bytes);
     expect(decoded.ok && decoded.value.type === 'task' && decoded.value.place).toBeNull();

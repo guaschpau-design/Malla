@@ -139,7 +139,7 @@ const EVENTS: readonly TeselEvent[] = [
     task: { origin: BOB, seq: 10 },
     status: 'open',
     assignee: ALICE,
-    place: { lat: 39.47, lon: -0.38 },
+    place: { kind: 'point', at: { lat: 39.47, lon: -0.38 } },
     text: 'Revisar el almacén',
   },
   {
@@ -150,7 +150,7 @@ const EVENTS: readonly TeselEvent[] = [
     task: { origin: BOB, seq: 10 },
     status: 'done',
     assignee: ALICE,
-    place: { lat: 39.47, lon: -0.38 },
+    place: { kind: 'point', at: { lat: 39.47, lon: -0.38 } },
     text: 'Revisar el almacén',
   },
   {

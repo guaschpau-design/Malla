@@ -4,7 +4,7 @@ import { offsetMeters } from '@tesel/core';
 import type { LatLon } from '@tesel/protocol';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 
-import type { Bounds } from './tiles/math.ts';
+import { boundsAround, type Bounds } from './tiles/math.ts';
 
 /** A circle as a closed ring of [lon, lat] positions, for drawing. */
 export function circleRing(center: LatLon, radius: number, steps = 48): [number, number][] {
@@ -43,6 +43,18 @@ const SHOW_ZOOM = 15;
 /** Flies to a point, closer if the map is further out than a street's detail. */
 export function showPoint(map: MapLibreMap, at: LatLon): void {
   map.flyTo({ center: [at.lon, at.lat], zoom: Math.max(map.getZoom(), SHOW_ZOOM) });
+}
+
+/** Room around points shown together, in CSS pixels, so none sits under a card or the dock. */
+const SHOW_PADDING_PX = 80;
+
+/** Frames some points, not closer than a street's detail. */
+export function showPoints(map: MapLibreMap, points: readonly LatLon[]): void {
+  const { west, south, east, north } = boundsAround(points);
+  map.fitBounds([toPosition({ lat: south, lon: west }), toPosition({ lat: north, lon: east })], {
+    padding: SHOW_PADDING_PX,
+    maxZoom: SHOW_ZOOM,
+  });
 }
 
 /** The point at the middle of the map's view. */

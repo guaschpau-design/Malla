@@ -54,7 +54,8 @@ The first version: a shared map for a group, over the internet and over MeshCore
 
 - Live positions with three privacy modes: sharing, paused and hidden.
 - Group chat, with dictation: a microphone in the text box writes what is said, in Spanish, with the phone's speech recognition, to be checked and sent ([ADR-0040](docs/decisions/0040-dictated-messages.md)).
-- Markers and areas with a symbol catalogue, editable by any member. Lines and circles from other clients are shown (protocol §3.7).
+- Markers and areas with a symbol catalogue, editable by any member. Circles from other clients are shown (protocol §3.7).
+- Routes: drawn point by point, up to 25, or read from a GPX, KML or GeoJSON file of up to 5 MB and thinned to 25 points, saying how far at most the route strays from the file's. "Follow route" guides to its start and then point by point to its end, with the distance left and a warning on straying more than 50 m from it. A task can be put on a route, or on any object, and follows it; at the end of the route, one tap marks this device's task there done (protocol §3.11, [ADR-0059](docs/decisions/0059-routes.md)).
 - SOS calls with kind, position and acknowledgements; cancellation by the sender or a coordinator. An SOS never waits for the GPS: without a fix it goes at once, says the place is not known yet, and the position follows as soon as there is one (protocol §3.8, [ADR-0043](docs/decisions/0043-radio-delivery.md)).
 - The alarm: another member's SOS, a critical alert and a roll call vibrate and sound a short tone, and, while the app is in the background, show a notification that brings it back. The tone and the notifications are switches in "More" ([ADR-0047](docs/decisions/0047-alarms-and-notices.md)).
 - What has not reached anyone yet is marked: own chat messages and SOS calls waiting for a server or the radio say so.

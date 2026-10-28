@@ -17,6 +17,8 @@ import { ROLE_LABELS } from '../groups/role-label.ts';
 import { aliasOf } from '../members/alias.ts';
 import { ALERT_LEVELS, SOS_KINDS } from '../incidents/sos-kinds.ts';
 import { objectKind } from '../objects/catalog.ts';
+import { objectAnchor } from '../objects/object-anchor.ts';
+import { placePoint } from '../tasks/tasks.ts';
 
 export interface DiaryLine {
   /** The event's reference key. */
@@ -25,7 +27,7 @@ export interface DiaryLine {
   readonly time: number;
   readonly author: string;
   readonly text: string;
-  /** Where it happened, when it happened somewhere: a marker, a circle, an SOS. */
+  /** Where it happened, when it happened somewhere: an object, an SOS, a task's place. */
   readonly at: LatLon | null;
 }
 
@@ -47,7 +49,7 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
         time: event.time,
         author: aliasOf(state, event.origin),
         text,
-        at: placeOf(event),
+        at: placeOf(event, objects),
       },
     ];
   });
@@ -136,10 +138,13 @@ function withText(sentence: string, text: string): string {
   return text ? `${sentence} «${text}»` : sentence;
 }
 
-function placeOf(event: JournalEvent): LatLon | null {
-  if (event.type === 'marker') return { lat: event.lat, lon: event.lon };
+/** Where an event happened; a task at an object, where the object was then. */
+function placeOf(
+  event: JournalEvent,
+  objects: ReadonlyMap<string, MarkerEvent | ShapeEvent>,
+): LatLon | null {
+  if (event.type === 'marker' || event.type === 'shape') return objectAnchor(event);
   if (event.type === 'sos') return sosPlace(event);
-  if (event.type === 'shape' && event.geometry.kind === 'circle') return event.geometry.center;
-  if (event.type === 'task') return event.place;
+  if (event.type === 'task') return placePoint(event.place, objects);
   return null;
 }

@@ -3,6 +3,7 @@
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
   import {
+    eventRefKey,
     TASK_TEXT_MAX_BYTES,
     utf8ByteLength,
     type EventRef,
@@ -14,6 +15,7 @@
   import { formatCoordinate, type CoordinateFormat } from '../coordinates/coordinates.ts';
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import { aliasOf } from '../members/alias.ts';
+  import { objectKind } from '../objects/catalog.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import { confirmations } from '../ui/confirmations.svelte.ts';
   import { Submission } from '../ui/submission.svelte.ts';
@@ -64,6 +66,17 @@
   let place = $state.raw(initial.place);
   const submission = new Submission();
 
+  /** The place in words: its coordinates, or the object it follows. */
+  const placeText = $derived.by(() => {
+    if (place === null) return null;
+    if (place.kind === 'point') {
+      return formatCoordinate(place.at, format.value) ?? formatCoordinate(place.at, 'decimal');
+    }
+    const object = groupState.objects.get(eventRefKey(place.object));
+    if (object === undefined || object.type === 'object-delete') return t('taskPlaceGone');
+    const kind = t(objectKind(object));
+    return object.label ? `${kind} «${object.label}»` : kind;
+  });
   const size = $derived(utf8ByteLength(text.trim()));
   const tooLong = $derived(size > TASK_TEXT_MAX_BYTES);
   /** This device first, then everyone else the group knows, by alias. */
@@ -152,15 +165,9 @@
       </div>
     </fieldset>
   {/if}
-  {#if place}
-    {@const at = place}
+  {#if placeText}
     <div class="place">
-      <span
-        >{t('taskPlace')}:
-        <span class="coordinates"
-          >{formatCoordinate(at, format.value) ?? formatCoordinate(at, 'decimal')}</span
-        ></span
-      >
+      <span>{t('taskPlace')}: <span class="where">{placeText}</span></span>
       <button type="button" onclick={() => (place = null)}>{t('taskRemovePlace')}</button>
     </div>
   {:else}
@@ -225,7 +232,7 @@
     font-size: var(--text-secondary);
   }
 
-  .coordinates {
+  .where {
     font-variant-numeric: tabular-nums;
   }
 

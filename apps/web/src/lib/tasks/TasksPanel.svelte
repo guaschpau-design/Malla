@@ -2,10 +2,11 @@
      Tapping a task opens it to change who, where or what. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
-  import type { EventRef, LatLon, NodeId } from '@tesel/protocol';
+  import { eventRefKey, type EventRef, type NodeId, type TaskPlace } from '@tesel/protocol';
 
   import type { CoordinateFormat } from '../coordinates/coordinates.ts';
   import type { MessageKey, Translate } from '../i18n/index.ts';
+  import { objectDestination } from '../navigation/target.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import ActionButton from '../ui/ActionButton.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -13,7 +14,14 @@
   import { attempt } from '../ui/submission.svelte.ts';
   import { editTask, newTask, stopEditingTask } from './task-editor.ts';
   import TaskForm from './TaskForm.svelte';
-  import { advance, taskList, type TaskEditing, type TaskFields, type TaskRow } from './tasks.ts';
+  import {
+    advance,
+    placePoint,
+    taskList,
+    type TaskEditing,
+    type TaskFields,
+    type TaskRow,
+  } from './tasks.ts';
 
   interface Props {
     t: Translate;
@@ -23,14 +31,20 @@
     /** The task being edited, or null for the list. */
     editing: TaskEditing | null;
     onsave: (task: EventRef | null, fields: TaskFields) => Promise<void>;
-    /** Opens the panel of a task's place, shown on the map. */
-    onpoint: (at: LatLon) => void;
+    /** Shows a task's place on the map, with its panel. */
+    onplace: (place: TaskPlace) => void;
     onclose: () => void;
   }
 
-  let { t, groupState, self, format, editing, onsave, onpoint, onclose }: Props = $props();
+  let { t, groupState, self, format, editing, onsave, onplace, onclose }: Props = $props();
 
   const list = $derived(taskList(groupState, self));
+
+  /** Whether a task's place is a route of the map, whose own panel offers to follow it. */
+  function isRoute(place: TaskPlace): boolean {
+    if (place.kind !== 'object') return false;
+    return objectDestination(groupState.objects.get(eventRefKey(place.object)))?.kind === 'route';
+  }
 
   const NEXT: Readonly<Record<TaskFields['status'], MessageKey>> = {
     open: 'taskStart',
@@ -55,17 +69,17 @@
       </span>
     </button>
     <span class="actions">
-      {#if row.fields.place}
-        {@const at = row.fields.place}
+      {#if row.fields.place && placePoint(row.fields.place, groupState.objects)}
+        {@const place = row.fields.place}
         <button
           class="icon"
           aria-label={t('taskShowPlace')}
           title={t('taskShowPlace')}
           onclick={() => {
-            onpoint(at);
+            onplace(place);
           }}
         >
-          <Pictogram name="pin" size={18} />
+          <Pictogram name={isRoute(place) ? 'route' : 'pin'} size={18} />
         </button>
       {/if}
       <button

@@ -13,17 +13,19 @@
     map: MapLibreMap;
     taps: MapTaps;
     tasks: GroupState['tasks'];
+    /** Tasks at an object are drawn where it is. */
+    objects: GroupState['objects'];
     visible: boolean;
     onselect: (key: string) => void;
   }
 
-  let { map, taps, tasks, visible, onselect }: Props = $props();
+  let { map, taps, tasks, objects, visible, onselect }: Props = $props();
 
   const SOURCE = 'tesel-tasks';
 
   useOverlay(() => map, {
     level: 'tasks',
-    data: { [SOURCE]: () => taskFeatures({ tasks }) },
+    data: { [SOURCE]: () => taskFeatures({ tasks, objects }) },
     visible: () => visible,
     layers: () => {
       const ink = themeColor('map-text');

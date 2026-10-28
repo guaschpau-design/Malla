@@ -19,6 +19,12 @@ Todo funciona en el dispositivo con los eventos que ya existen: no cambia el for
 
 Hecha el 26 de octubre de 2026.
 
+## Rutas
+
+Una ruta se dibuja punto a punto con «Añadir» → «Ruta», hasta 25 puntos, o se importa de un archivo GPX, KML o GeoJSON de hasta 5 MB, que se simplifica a 25 puntos diciendo cuánto se aparta como mucho. «Seguir ruta» guía hasta su inicio y luego punto a punto hasta el final, con lo que queda y un aviso si te sales más de 50 m. Una tarea puede ir sobre una ruta, o sobre cualquier objeto del mapa, y lo sigue; al final de la ruta, la tarea se marca como hecha con un toque. `TASK.place` admite un objeto además de un punto (protocolo §3.11, ADR-0059).
+
+Hecha el 28 de octubre de 2026.
+
 ## Fase 2 — Más sencilla, mejor mapa y tareas
 
 Principio: que la app sea versátil y cada equipo la use a su manera, sin menús dentro de menús. Casi todo empieza donde se toca el mapa.
@@ -36,13 +42,19 @@ Las tareas usan un tipo de evento nuevo, `TASK` (protocolo §3.11, ADR-0025); el
 
 Hecha el 26 de octubre de 2026.
 
+## Rutas
+
+Una ruta se dibuja punto a punto con «Añadir» → «Ruta», hasta 25 puntos, o se importa de un archivo GPX, KML o GeoJSON de hasta 5 MB, que se simplifica a 25 puntos diciendo cuánto se aparta como mucho. «Seguir ruta» guía hasta su inicio y luego punto a punto hasta el final, con lo que queda y un aviso si te sales más de 50 m. Una tarea puede ir sobre una ruta, o sobre cualquier objeto del mapa, y lo sigue; al final de la ruta, la tarea se marca como hecha con un toque. `TASK.place` admite un objeto además de un punto (protocolo §3.11, ADR-0059).
+
+Hecha el 28 de octubre de 2026.
+
 ## Después, por orden
 
 Lo previsto en el briefing más lo aprendido de ATAK. Cada fase se detalla al empezarla.
 
-1. Rutas por calles y caminos de OpenStreetMap: con internet, calculadas por el servidor; sin conexión, con la red de caminos de cada zona descargada.
-2. Partes rápidos (situación, heridos, daños) con formularios fijos que caben por radio.
-3. Rutas planificadas, con puntos de paso.
+1. Batidas: quien coordina reparte una zona de búsqueda en calles paralelas, una franja por equipo, cada una como tarea; la zona queda revisada cuando acaban todas.
+2. Rutas por calles y caminos de OpenStreetMap: con internet, calculadas por el servidor; sin conexión, con la red de caminos de cada zona descargada.
+3. Partes rápidos (situación, heridos, daños) con formularios fijos que caben por radio.
 4. Fotos adjuntas (solo por internet; la radio no da para imágenes).
 5. Exportar el mapa (objetos y recorridos) a KML y GeoJSON para otras herramientas.
 6. Mapa náutico, e imagen de satélite fuera de España.

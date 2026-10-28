@@ -1,34 +1,32 @@
-<!-- While navigating: where the target is from here, with an arrow that points to it on the map. -->
+<!-- While navigating: the card with where to, an arrow that points the way on the map, what the
+     guidance says and the button to stop. PointGuide and RouteGuide fill it. -->
 <script lang="ts">
-  import type { LatLon } from '@tesel/protocol';
   import type { Map as MapLibreMap } from 'maplibre-gl';
-  import { onMount } from 'svelte';
+  import { onMount, type Snippet } from 'svelte';
 
-  import { formatBearing, formatDistance } from '../format.ts';
-  import type { Locale, Translate } from '../i18n/index.ts';
-  import type { DeviceFix } from '../position/device-location.svelte.ts';
+  import type { Translate } from '../i18n/index.ts';
   import MapCard from '../ui/MapCard.svelte';
   import Pictogram from '../ui/Pictogram.svelte';
-  import ClimbLine from '../terrain/ClimbLine.svelte';
-  import { terrain } from '../terrain/terrain.svelte.ts';
-  import { legBetween } from './leg.ts';
 
   interface Props {
     t: Translate;
-    locale: Locale;
     map: MapLibreMap;
-    name: string;
-    /** Where the target is now; null once it has left the map. */
-    target: LatLon | null;
-    fix: DeviceFix | null;
+    title: string;
+    /** The way to go, in degrees clockwise from true north; null hides the arrow. */
+    bearing: number | null;
+    /** A colour of meaning for the card's edge, as MapCard takes it. */
+    edge?: string | undefined;
+    /** What the guidance says. */
+    children: Snippet;
+    /** Buttons beside the one to stop. */
+    actions?: Snippet;
     onstop: () => void;
   }
 
-  let { t, locale, map, name, target, fix, onstop }: Props = $props();
+  let { t, map, title, bearing, edge, children, actions, onstop }: Props = $props();
 
   /** The map may be turned; the arrow points the way on the map as it is shown. */
   let mapBearing = $state(0);
-  const leg = $derived(fix && target && legBetween(fix.at, target, fix.accuracy));
 
   onMount(() => {
     const turned = () => {
@@ -42,34 +40,21 @@
   });
 </script>
 
-<MapCard label={t('navigatingTo', { name })}>
+<MapCard label={title} {edge}>
   <div class="navigation">
-    {#if leg && !leg.arrived}
-      <span class="arrow" style:rotate="{leg.bearing - mapBearing}deg">
+    {#if bearing !== null}
+      <span class="arrow" style:rotate="{bearing - mapBearing}deg">
         <Pictogram name="heading" size={28} />
       </span>
     {/if}
     <div class="what">
-      <p class="name">{t('navigatingTo', { name })}</p>
-      <p class="hint">
-        {#if target === null}
-          {t('navigationTargetGone')}
-        {:else if leg === null}
-          {t('navigationWaitingFix')}
-        {:else if leg.arrived}
-          {t('navigationArrived')}
-        {:else}
-          <strong>{formatDistance(leg.metres, locale)}</strong> · {formatBearing(
-            leg.bearing,
-            locale,
-          )}
-        {/if}
-      </p>
-      {#if terrain.reader && fix && target && leg && !leg.arrived}
-        <div class="hint"><ClimbLine {t} from={fix.at} to={target} terrain={terrain.reader} /></div>
-      {/if}
+      <p class="name">{title}</p>
+      <div class="hint">{@render children()}</div>
     </div>
-    <button onclick={onstop}>{t('navigationStop')}</button>
+    <div class="actions">
+      {@render actions?.()}
+      <button onclick={onstop}>{t('navigationStop')}</button>
+    </div>
   </div>
 </MapCard>
 
@@ -101,5 +86,12 @@
 
   .hint {
     font-variant-numeric: tabular-nums;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: flex-end;
   }
 </style>

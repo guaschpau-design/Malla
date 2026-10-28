@@ -33,4 +33,16 @@ describe('drawing', () => {
     for (let n = 0; n < MAX_SHAPE_POINTS; n++) area.add(at(n));
     expect(area.describing).toBe(true);
   });
+
+  it('takes a route read from a file, to look over before describing it', () => {
+    const drawing = new Drawing();
+    drawing.start('route');
+    const route = { name: 'Senda', points: [at(1), at(2), at(3)], read: 300, deviation: 4 };
+    drawing.load(route);
+    expect(drawing.draft).toEqual({ kind: 'route', points: route.points });
+    expect(drawing.placingPoints).toBe(true);
+    expect(drawing.imported).toBe(route);
+    drawing.stop();
+    expect(drawing.imported).toBeNull();
+  });
 });

@@ -1,7 +1,14 @@
-<!-- Describes a drawn object (label and symbol or style) before it is shared with the group: a
-     step of the drawing that must end, saved or cancelled, before anything else is done. -->
+<!-- Describes a drawn object (label, and symbol or style; a route is always a route) before it is
+     shared with the group: a step of the drawing that must end, saved or cancelled, before
+     anything else is done. -->
 <script lang="ts">
-  import { MARKER_LABEL_MAX_BYTES, SHAPE_LABEL_MAX_BYTES, utf8ByteLength } from '@tesel/protocol';
+  import {
+    MARKER_LABEL_MAX_BYTES,
+    SHAPE_LABEL_MAX_BYTES,
+    ShapeStyleCode,
+    utf8ByteLength,
+  } from '@tesel/protocol';
+  import { untrack } from 'svelte';
 
   import { UnencodableEvent } from '../events/event-log.ts';
   import type { Translate } from '../i18n/index.ts';
@@ -14,6 +21,8 @@
   interface Props {
     t: Translate;
     kind: DraftKind;
+    /** The label to start from, such as a route's name in the file it came from. */
+    label: string;
     /** This device coordinates: its areas can mark the operation area. */
     coordinator: boolean;
     /** Saves the object; rejects if it does not fit in a radio message. */
@@ -21,13 +30,13 @@
     oncancel: () => void;
   }
 
-  let { t, kind, coordinator, onsave, oncancel }: Props = $props();
+  let { t, kind, label: initialLabel, coordinator, onsave, oncancel }: Props = $props();
 
   const isMarker = $derived(kind === 'marker');
   const maxBytes = $derived(isMarker ? MARKER_LABEL_MAX_BYTES : SHAPE_LABEL_MAX_BYTES);
 
-  let code = $state(0);
-  let label = $state('');
+  let code = $state(untrack(() => (kind === 'route' ? ShapeStyleCode.ROUTE : 0)));
+  let label = $state(untrack(() => initialLabel));
   const submission = new Submission();
   const tooLong = $derived(utf8ByteLength(label.trim()) > maxBytes);
 </script>
@@ -40,28 +49,30 @@
       void submission.run(() => onsave(code, label.trim()));
     }}
   >
-    <fieldset>
-      <legend>{isMarker ? t('symbol') : t('shapeType')}</legend>
-      <div class="choices">
-        {#if isMarker}
-          {#each SYMBOLS as symbol (symbol.code)}
-            <label class="choice">
-              <input type="radio" name="code" value={symbol.code} bind:group={code} />
-              <SymbolIcon code={symbol.code} size={30} />
-              <span>{t(symbol.label)}</span>
-            </label>
-          {/each}
-        {:else}
-          {#each areaStyles(coordinator) as style (style.code)}
-            <label class="choice">
-              <input type="radio" name="code" value={style.code} bind:group={code} />
-              <span class="swatch" style:--swatch="var(--tone-{style.tone})"></span>
-              <span>{t(style.label)}</span>
-            </label>
-          {/each}
-        {/if}
-      </div>
-    </fieldset>
+    {#if kind !== 'route'}
+      <fieldset>
+        <legend>{isMarker ? t('symbol') : t('shapeType')}</legend>
+        <div class="choices">
+          {#if isMarker}
+            {#each SYMBOLS as symbol (symbol.code)}
+              <label class="choice">
+                <input type="radio" name="code" value={symbol.code} bind:group={code} />
+                <SymbolIcon code={symbol.code} size={30} />
+                <span>{t(symbol.label)}</span>
+              </label>
+            {/each}
+          {:else}
+            {#each areaStyles(coordinator) as style (style.code)}
+              <label class="choice">
+                <input type="radio" name="code" value={style.code} bind:group={code} />
+                <span class="swatch" style:--swatch="var(--tone-{style.tone})"></span>
+                <span>{t(style.label)}</span>
+              </label>
+            {/each}
+          {/if}
+        </div>
+      </fieldset>
+    {/if}
     <label>
       {t('objectLabel')}
       <input bind:value={label} autocomplete="off" />

@@ -18,12 +18,13 @@
     map: MapLibreMap;
     taps: MapTaps;
     tasks: GroupState['tasks'];
+    objects: GroupState['objects'];
     members: GroupState['members'];
     self: NodeId;
     visible: boolean;
   }
 
-  let { t, map, taps, tasks, members, self, visible }: Props = $props();
+  let { t, map, taps, tasks, objects, members, self, visible }: Props = $props();
 
   const mine = $derived(assignedTo({ tasks }, self));
   // What was already assigned when the group opened is not news.
@@ -40,4 +41,4 @@
   });
 </script>
 
-<TaskLayer {map} {taps} {tasks} {visible} onselect={editTask} />
+<TaskLayer {map} {taps} {tasks} {objects} {visible} onselect={editTask} />

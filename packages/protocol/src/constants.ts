@@ -62,8 +62,10 @@ export const SYMBOL_SIZE = 2;
 export const KIND_SIZE = 1;
 export const ACCURACY_SIZE = 2;
 
-/** §3.11 TASK.place: none, or a point; reserved values read as none. */
-export const PlaceCode = { NONE: 0, POINT: 1 } as const;
+/** §3.11 TASK.place: none, a point or a map object; reserved values read as none. */
+export const PlaceCode = { NONE: 0, POINT: 1, OBJECT: 2 } as const;
+/** §3.11 What follows TASK.place: a point, or an object's reference, which is as long. */
+export const PLACE_SIZE = 8;
 
 /** §3.3 Alias length in bytes. */
 export const ALIAS_MIN_BYTES = 1;

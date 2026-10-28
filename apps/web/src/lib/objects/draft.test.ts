@@ -22,6 +22,13 @@ describe('drawing drafts', () => {
     expect(isComplete(addPoint(addPoint(startDraft('area'), A), B))).toBe(false);
   });
 
+  it('needs two points for a route and makes a line of them', () => {
+    const route = addPoint(startDraft('route'), A);
+    expect(isComplete(route)).toBe(false);
+    expect(draftGeometry(route)).toBeNull();
+    expect(draftGeometry(addPoint(route, B))).toEqual({ kind: 'polyline', points: [A, B] });
+  });
+
   it('builds polygons from the tapped points and lets the last one be undone', () => {
     let draft = startDraft('area');
     for (const point of [A, B, C]) draft = addPoint(draft, point);

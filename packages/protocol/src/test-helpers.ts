@@ -150,7 +150,7 @@ export const SAMPLE_EVENTS: readonly TeselEvent[] = [
     task: { origin: BOB, seq: 6 },
     status: 'open',
     assignee: ALICE,
-    place: { lat: 41.3851, lon: 2.1734 },
+    place: { kind: 'point', at: { lat: 41.3851, lon: 2.1734 } },
     text: 'Revisar el almacén',
   },
   {
@@ -161,7 +161,7 @@ export const SAMPLE_EVENTS: readonly TeselEvent[] = [
     task: { origin: BOB, seq: 6 },
     status: 'done',
     assignee: null,
-    place: null,
+    place: { kind: 'object', object: { origin: ALICE, seq: 6 } },
     text: 'Revisar el almacén',
   },
   { type: 'roll-call', origin: CAROL, seq: 2, time: T0 + 15, text: '' },

@@ -20,6 +20,52 @@ export function offsetMeters(from: LatLon, north: number, east: number): LatLon 
   };
 }
 
+/** How far `point` is east and north of `origin`, in metres: the reverse of `offsetMeters`. */
+export function eastNorthMeters(origin: LatLon, point: LatLon): PlaneOffset {
+  return {
+    east: (point.lon - origin.lon) * RAD * EARTH_RADIUS_M * Math.cos(origin.lat * RAD),
+    north: (point.lat - origin.lat) * RAD * EARTH_RADIUS_M,
+  };
+}
+
+/** Metres east and north of a point, on a plane fitted there. */
+export interface PlaneOffset {
+  readonly east: number;
+  readonly north: number;
+}
+
+/** Where a segment passes closest to a point. */
+export interface SegmentPoint {
+  /** The point of the segment nearest to the one given. */
+  readonly at: LatLon;
+  /** How far along the segment that is: 0 at its start, 1 at its end. */
+  readonly along: number;
+  /** Metres from the point given. */
+  readonly meters: number;
+}
+
+/**
+ * The point of the segment from `start` to `end` nearest to `point`, on a plane fitted at
+ * `point`: exact enough for segments a few tens of kilometres long.
+ */
+export function nearestOnSegment(point: LatLon, start: LatLon, end: LatLon): SegmentPoint {
+  const a = eastNorthMeters(point, start);
+  const b = eastNorthMeters(point, end);
+  const east = b.east - a.east;
+  const north = b.north - a.north;
+  const lengthSquared = east ** 2 + north ** 2;
+  const along =
+    lengthSquared === 0
+      ? 0
+      : Math.min(1, Math.max(0, -(a.east * east + a.north * north) / lengthSquared));
+  const nearest = { east: a.east + along * east, north: a.north + along * north };
+  return {
+    at: offsetMeters(point, nearest.north, nearest.east),
+    along,
+    meters: Math.hypot(nearest.east, nearest.north),
+  };
+}
+
 /** Great-circle distance (haversine), in metres. */
 export function distanceMeters(a: LatLon, b: LatLon): number {
   const dLat = (b.lat - a.lat) * RAD;
@@ -58,16 +104,13 @@ export function pathMeters(points: readonly LatLon[]): number {
 export function areaSquareMeters(ring: readonly LatLon[]): number {
   if (ring.length < 3) return 0;
   const centreLat = ring.reduce((sum, point) => sum + point.lat, 0) / ring.length;
-  const origin = ring[0] ?? { lat: 0, lon: 0 };
-  // Metres east and north of the first point.
-  const plane = ring.map((point) => ({
-    x: (point.lon - origin.lon) * EARTH_RADIUS_M * RAD * Math.cos(centreLat * RAD),
-    y: (point.lat - origin.lat) * EARTH_RADIUS_M * RAD,
-  }));
+  // Metres east and north of a point at the ring's mean latitude.
+  const origin = { lat: centreLat, lon: ring[0]?.lon ?? 0 };
+  const plane = ring.map((point) => eastNorthMeters(origin, point));
   let twice = 0;
   for (const [index, point] of plane.entries()) {
     const next = plane[(index + 1) % plane.length] ?? point;
-    twice += point.x * next.y - next.x * point.y;
+    twice += point.east * next.north - next.east * point.north;
   }
   return Math.abs(twice) / 2;
 }

@@ -116,6 +116,11 @@ export interface AckEvent extends EventHeader {
 
 export type TaskStatus = 'open' | 'in-progress' | 'done' | 'cancelled';
 
+/** §3.11 Where a task is: a point, or a map object, which it follows wherever it is. */
+export type TaskPlace =
+  | { readonly kind: 'point'; readonly at: LatLon }
+  | { readonly kind: 'object'; readonly object: ObjectRef };
+
 /** §3.11 Creates or replaces a task. */
 export interface TaskEvent extends EventHeader {
   readonly type: 'task';
@@ -125,7 +130,7 @@ export interface TaskEvent extends EventHeader {
   /** Who should do it, or null for anyone. */
   readonly assignee: NodeId | null;
   /** Where, or null for nowhere in particular. */
-  readonly place: LatLon | null;
+  readonly place: TaskPlace | null;
   readonly text: string;
 }
 

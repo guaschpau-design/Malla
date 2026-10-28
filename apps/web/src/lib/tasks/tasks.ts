@@ -8,15 +8,17 @@ import {
   type LatLon,
   type NodeId,
   type TaskEvent,
+  type TaskPlace,
   type TaskStatus,
 } from '@tesel/protocol';
 
 import { aliasOf } from '../members/alias.ts';
+import { objectAnchor } from '../objects/object-anchor.ts';
 
 /** What the tasks panel edits: a new task, at a place or nowhere in particular, or an existing one. */
 export type TaskEditing =
-  /** A new task, at a place of the map or nowhere in particular. */
-  | { readonly kind: 'new'; readonly place: LatLon | null }
+  /** A new task, at a point or an object of the map, or nowhere in particular. */
+  | { readonly kind: 'new'; readonly place: TaskPlace | null }
   /** An existing task, by its reference's key. */
   | { readonly kind: 'existing'; readonly key: string };
 
@@ -24,7 +26,7 @@ export type TaskEditing =
 export interface TaskFields {
   readonly status: TaskStatus;
   readonly assignee: NodeId | null;
-  readonly place: LatLon | null;
+  readonly place: TaskPlace | null;
   readonly text: string;
 }
 
@@ -103,6 +105,28 @@ export function advance(fields: TaskFields, self: NodeId): TaskFields {
     case 'cancelled':
       return { ...fields, status: 'open' };
   }
+}
+
+/** Where a task's place is on the map now: none if it has none, or its object is gone. */
+export function placePoint(place: TaskPlace | null, objects: GroupState['objects']): LatLon | null {
+  if (place === null) return null;
+  if (place.kind === 'point') return place.at;
+  const object = objects.get(eventRefKey(place.object));
+  return object === undefined || object.type === 'object-delete' ? null : objectAnchor(object);
+}
+
+/** A task of this device still to do along a route, given the route's key. */
+export function routeTaskOf(
+  tasks: GroupState['tasks'],
+  routeKey: string,
+  self: NodeId,
+): TaskEvent | null {
+  for (const task of tasks.values()) {
+    const { place } = task;
+    if (task.assignee !== self || !isPending(task.status) || place?.kind !== 'object') continue;
+    if (eventRefKey(place.object) === routeKey) return task;
+  }
+  return null;
 }
 
 /** Pending tasks of this device, by key: compared before and after to notice new ones. */

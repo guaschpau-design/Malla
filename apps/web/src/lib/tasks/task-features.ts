@@ -1,10 +1,12 @@
-// Pending tasks that have a place, as GeoJSON for the map.
+// Pending tasks that have a place, as GeoJSON for the map: a task at an object is drawn where the
+// object is (objects/object-anchor.ts).
 
 import type { GroupState } from '@tesel/core';
 import type { Feature, FeatureCollection, Point } from 'geojson';
 
+import { toPosition } from '../map/geometry.ts';
 import { shorten } from '../text.ts';
-import { isPending } from './tasks.ts';
+import { isPending, placePoint } from './tasks.ts';
 
 /** Longer texts are cut on the map; the whole text is in the tasks panel. */
 const LABEL_LENGTH = 28;
@@ -17,14 +19,15 @@ export interface TaskProperties {
 }
 
 export function taskFeatures(
-  state: Pick<GroupState, 'tasks'>,
+  state: Pick<GroupState, 'tasks' | 'objects'>,
 ): FeatureCollection<Point, TaskProperties> {
   const features: Feature<Point, TaskProperties>[] = [];
   for (const [key, task] of state.tasks) {
-    if (task.place === null || !isPending(task.status)) continue;
+    const at = placePoint(task.place, state.objects);
+    if (at === null || !isPending(task.status)) continue;
     features.push({
       type: 'Feature',
-      geometry: { type: 'Point', coordinates: [task.place.lon, task.place.lat] },
+      geometry: { type: 'Point', coordinates: toPosition(at) },
       properties: {
         key,
         label: shorten(task.text, LABEL_LENGTH),

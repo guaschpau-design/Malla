@@ -64,7 +64,7 @@
       : null}
     ontask={group
       ? () => {
-          newTask(at);
+          newTask({ kind: 'point', at });
         }
       : null}
     onclose={closePanel}

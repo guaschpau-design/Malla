@@ -183,10 +183,11 @@ Creates or replaces a task: a short text and, optionally, who should do it and w
 | 8     | `task`     | Task reference, see below                                                        |
 | 1     | `status`   | `0` open, `1` in progress, `2` done, `3` cancelled; reserved values read as open |
 | 4     | `assignee` | Node ID of the member who should do it; `00000000` means anyone                  |
-| 1     | `place`    | `0` none, `1` point; reserved values read as none                                |
-| 4     | `lat`      | Coordinate of the point; `0` when `place` is none                                |
-| 4     | `lon`      | Coordinate of the point; `0` when `place` is none                                |
+| 1     | `place`    | `0` none, `1` point, `2` object; reserved values read as none                    |
+| 8     | `where`    | See below; zeros when `place` is none                                            |
 | 1–129 | `text`     | text-rest                                                                        |
+
+`where` holds, for a point, its `lat` and `lon` (4 bytes each, as coordinates); for an object, the object's reference (§3.10). A task at an object follows it: it is wherever the object is now, and has no place once the object is deleted. A route (a polyline with the Route style, §4.2) as the place of a task is the way to go.
 
 Tasks follow the same rules as objects (§3.10), with `task` in place of `object`:
 

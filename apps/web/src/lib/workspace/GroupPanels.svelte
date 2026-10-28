@@ -1,6 +1,6 @@
 <!-- The panels about the active group: an object, a member, the diary, the chat and the tasks. -->
 <script lang="ts">
-  import type { EventRef, LatLon, NodeId, Role } from '@tesel/protocol';
+  import type { EventRef, NodeId, Role, TaskPlace } from '@tesel/protocol';
 
   import ChatPanel from '../chat/ChatPanel.svelte';
   import DiaryPanel from '../diary/DiaryPanel.svelte';
@@ -24,11 +24,11 @@
     self: NodeId;
     role: Role;
     preferences: Preferences;
-    /** Opens the panel of a point of the map, shown on the map. */
-    onpoint: (at: LatLon) => void;
+    /** Shows a task's place on the map, with its panel. */
+    onplace: (place: TaskPlace) => void;
   }
 
-  let { t, locale, feed, self, role, preferences, onpoint }: Props = $props();
+  let { t, locale, feed, self, role, preferences, onplace }: Props = $props();
 </script>
 
 {#if panels.open?.name === 'object'}
@@ -100,7 +100,7 @@
     {self}
     format={preferences.coordinateFormat}
     onsave={(task: EventRef | null, fields: TaskFields) => feed.writeTask(task, fields)}
-    {onpoint}
+    {onplace}
     onclose={closePanel}
   />
 {/if}

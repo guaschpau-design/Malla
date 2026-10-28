@@ -9,13 +9,14 @@ import {
   KIND_SIZE,
   MAX_EVENT_SIZE,
   NODE_ID_SIZE,
+  PLACE_SIZE,
   PlaceCode,
   POINT_SIZE,
   ShapeKindCode,
   SYMBOL_SIZE,
   UNKNOWN_U16,
 } from './constants.ts';
-import type { EventRef, LatLon, NodeId, ShapeGeometry } from './events.ts';
+import type { EventRef, NodeId, ShapeGeometry, TaskPlace } from './events.ts';
 import { readPoint, readPointList, writePoint, writePointList } from './geometry.ts';
 import { nodeIdFromBytes, nodeIdToBytes } from './node-id.ts';
 
@@ -28,7 +29,7 @@ export const MARKER_LABEL_MAX_BYTES = PAYLOAD_BUDGET - EVENT_REF_SIZE - SYMBOL_S
 export const SOS_TEXT_MAX_BYTES = PAYLOAD_BUDGET - KIND_SIZE - POINT_SIZE - ACCURACY_SIZE; // §3.8
 export const ALERT_TEXT_MAX_BYTES = PAYLOAD_BUDGET - KIND_SIZE; // §3.9
 export const TASK_TEXT_MAX_BYTES =
-  PAYLOAD_BUDGET - EVENT_REF_SIZE - KIND_SIZE - NODE_ID_SIZE - KIND_SIZE - POINT_SIZE; // §3.11
+  PAYLOAD_BUDGET - EVENT_REF_SIZE - KIND_SIZE - NODE_ID_SIZE - KIND_SIZE - PLACE_SIZE; // §3.11
 export const ROLL_CALL_TEXT_MAX_BYTES = PAYLOAD_BUDGET; // §3.12
 
 // --- Enumerations ------------------------------------------------------------------------
@@ -96,21 +97,35 @@ export function readAssignee(reader: ByteReader): NodeId | null {
   return id === ANYONE_ID ? null : id;
 }
 
-/** Writes the place kind and its point, zeros for none. */
-export function writePlace(writer: ByteWriter, place: LatLon | null): void {
-  if (place === null) writer.u8(PlaceCode.NONE).raw(new Uint8Array(POINT_SIZE));
-  else {
-    writer.u8(PlaceCode.POINT);
-    writePoint(writer, place);
+/** Writes the place kind and its point or object reference, zeros for none. */
+export function writePlace(writer: ByteWriter, place: TaskPlace | null): void {
+  if (place === null) {
+    writer.u8(PlaceCode.NONE).raw(new Uint8Array(PLACE_SIZE));
+    return;
+  }
+  switch (place.kind) {
+    case 'point':
+      writer.u8(PlaceCode.POINT);
+      writePoint(writer, place.at);
+      return;
+    case 'object':
+      writer.u8(PlaceCode.OBJECT);
+      writeRef(writer, place.object);
+      return;
   }
 }
 
-/** Reads the place; a reserved kind reads as none and its point is skipped. */
-export function readPlace(reader: ByteReader): LatLon | null {
-  const code = reader.u8();
-  if (code === PlaceCode.POINT) return readPoint(reader);
-  reader.raw(POINT_SIZE);
-  return null;
+/** Reads the place; a reserved kind reads as none and what follows it is skipped. */
+export function readPlace(reader: ByteReader): TaskPlace | null {
+  switch (reader.u8()) {
+    case PlaceCode.POINT:
+      return { kind: 'point', at: readPoint(reader) };
+    case PlaceCode.OBJECT:
+      return { kind: 'object', object: readRef(reader) };
+    default:
+      reader.raw(PLACE_SIZE);
+      return null;
+  }
 }
 
 // --- Text --------------------------------------------------------------------------------

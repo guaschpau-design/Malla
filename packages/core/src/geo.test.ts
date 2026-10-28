@@ -4,6 +4,8 @@ import {
   areaSquareMeters,
   bearingDegrees,
   distanceMeters,
+  eastNorthMeters,
+  nearestOnSegment,
   offsetMeters,
   pathMeters,
 } from './geo.ts';
@@ -57,5 +59,27 @@ describe('geometry on the Earth', () => {
     expect(distanceMeters(VALENCIA, away)).toBeCloseTo(500, 0);
     expect(bearingDegrees(VALENCIA, away)).toBeCloseTo(306.87, 1);
     expect(offsetMeters(VALENCIA, 0, 0)).toEqual(VALENCIA);
+  });
+
+  it('tells how far a point is east and north of another', () => {
+    const away = offsetMeters(VALENCIA, 300, -400);
+    const offset = eastNorthMeters(VALENCIA, away);
+    expect(offset.north).toBeCloseTo(300, 6);
+    expect(offset.east).toBeCloseTo(-400, 6);
+  });
+
+  it('finds where a segment passes closest to a point', () => {
+    const start = offsetMeters(VALENCIA, 0, -100);
+    const end = offsetMeters(VALENCIA, 0, 300);
+    const beside = nearestOnSegment(offsetMeters(VALENCIA, 40, 0), start, end);
+    expect(beside.meters).toBeCloseTo(40, 0);
+    expect(beside.along).toBeCloseTo(0.25, 2);
+    expect(distanceMeters(beside.at, VALENCIA)).toBeLessThan(0.5);
+    // Beyond an end, the end itself.
+    const past = nearestOnSegment(offsetMeters(VALENCIA, 0, 500), start, end);
+    expect(past.along).toBe(1);
+    expect(past.meters).toBeCloseTo(200, 0);
+    // A segment of one point is that point.
+    expect(nearestOnSegment(VALENCIA, start, start).meters).toBeCloseTo(100, 0);
   });
 });

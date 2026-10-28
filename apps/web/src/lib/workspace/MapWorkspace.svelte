@@ -7,7 +7,7 @@
 -->
 <script lang="ts">
   import { EMPTY_STATE } from '@tesel/core';
-  import type { LatLon, NodeId } from '@tesel/protocol';
+  import { eventRefKey, type LatLon, type NodeId, type TaskPlace } from '@tesel/protocol';
   import type { Map as MapLibreMap } from 'maplibre-gl';
 
   import { onMount, untrack } from 'svelte';
@@ -46,7 +46,7 @@
   import RadarLayer from '../radar/RadarLayer.svelte';
   import type { Preferences } from '../settings/preferences.ts';
   import MapTasks from '../tasks/MapTasks.svelte';
-  import { myPendingCount } from '../tasks/tasks.ts';
+  import { myPendingCount, placePoint } from '../tasks/tasks.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import { deviceClock } from '../sync/device-clock.svelte.ts';
   import { useStandingNotice } from '../ui/notices.svelte.ts';
@@ -159,6 +159,18 @@
     showPoint(map, at);
   }
 
+  /** A task's place: a point shows as any point; an object, with its own panel. */
+  function showPlace(place: TaskPlace): void {
+    if (place.kind === 'point') {
+      find(place.at);
+      return;
+    }
+    const at = placePoint(place, slices.objects);
+    if (at === null) return;
+    openPanel({ name: 'object', key: eventRefKey(place.object) });
+    showPoint(map, at);
+  }
+
   onMount(() => taps.listen(map));
 
   // Until the user chooses a view, the map follows who appears: this device, the members.
@@ -235,6 +247,7 @@
       {map}
       {taps}
       tasks={slices.tasks}
+      objects={slices.objects}
       members={slices.members}
       {self}
       visible={shown.tasks}
@@ -263,6 +276,7 @@
     <ObjectForm
       {t}
       kind={drawing.draft.kind}
+      label={drawing.imported?.name ?? ''}
       coordinator={role === 'coordinator'}
       onsave={saveDraft}
       oncancel={() => {
@@ -271,7 +285,7 @@
     />
   {/if}
 
-  <GroupPanels {t} {locale} {feed} {self} {role} {preferences} onpoint={find} />
+  <GroupPanels {t} {locale} {feed} {self} {role} {preferences} onplace={showPlace} />
 
   {#key feed}
     <SosCall {t} {group} open={sosOpen} onclose={() => (sosOpen = false)} />

@@ -18,8 +18,12 @@ export {
   areaSquareMeters,
   bearingDegrees,
   distanceMeters,
+  eastNorthMeters,
+  nearestOnSegment,
   offsetMeters,
   pathMeters,
+  type PlaneOffset,
+  type SegmentPoint,
 } from './geo.ts';
 export {
   LIMITS,

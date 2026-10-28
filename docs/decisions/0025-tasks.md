@@ -1,6 +1,6 @@
 # 0025. Tasks as one event type, changed by anyone, last writer wins
 
-- Status: Accepted
+- Status: Accepted, amended by [0059](0059-routes.md) (a task's place may be an object, which the task follows)
 - Date: 2026-10-26
 
 ## Context

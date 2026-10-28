@@ -2,14 +2,14 @@
 // map ("Task here"), or a task tapped on the map. The tasks panel carries what it edits
 // (ui/panels.svelte.ts).
 
-import type { LatLon } from '@tesel/protocol';
+import type { TaskPlace } from '@tesel/protocol';
 
 import { openPanel } from '../ui/panels.svelte.ts';
 
 /** The tasks panel with its list. */
 export const TASK_LIST = { name: 'tasks', editing: null } as const;
 
-export function newTask(place: LatLon | null): void {
+export function newTask(place: TaskPlace | null): void {
   openPanel({ name: 'tasks', editing: { kind: 'new', place } });
 }
 
