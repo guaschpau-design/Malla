@@ -10,7 +10,7 @@ import type { EventType, PositionEvent, TeselEvent } from '@tesel/protocol';
 import { acks } from './state/acks.ts';
 import { journal } from './state/journal.ts';
 import { members, memberStates } from './state/members.ts';
-import { alerts, chat } from './state/messages.ts';
+import { alerts, chat, reports } from './state/messages.ts';
 import { objects } from './state/objects.ts';
 import { positions } from './state/positions.ts';
 import { rollCall } from './state/roll-call.ts';
@@ -35,6 +35,7 @@ const SLICES = {
   sos,
   sosCancels,
   alerts,
+  reports,
   acks,
   tasks,
   teams,

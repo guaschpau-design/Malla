@@ -8,7 +8,7 @@ import {
   type LatLon,
   type NodeId,
   type TaskEvent,
-  type TaskPlace,
+  type Place,
   type TaskStatus,
 } from '@tesel/protocol';
 
@@ -19,7 +19,7 @@ import { isFor } from '../teams/teams.ts';
 /** What the tasks panel edits: a new task, at a place or nowhere in particular, or an existing one. */
 export type TaskEditing =
   /** A new task, at a point or an object of the map, or nowhere in particular. */
-  | { readonly kind: 'new'; readonly place: TaskPlace | null }
+  | { readonly kind: 'new'; readonly place: Place | null }
   /** An existing task, by its reference's key. */
   | { readonly kind: 'existing'; readonly key: string };
 
@@ -27,7 +27,7 @@ export type TaskEditing =
 export interface TaskFields {
   readonly status: TaskStatus;
   readonly assignee: NodeId | null;
-  readonly place: TaskPlace | null;
+  readonly place: Place | null;
   readonly text: string;
 }
 
@@ -117,7 +117,7 @@ export function advance(fields: TaskFields, self: NodeId): TaskFields {
 }
 
 /** Where a task's place is on the map now: none if it has none, or its object is gone. */
-export function placePoint(place: TaskPlace | null, objects: GroupState['objects']): LatLon | null {
+export function placePoint(place: Place | null, objects: GroupState['objects']): LatLon | null {
   if (place === null) return null;
   if (place.kind === 'point') return place.at;
   const object = objects.get(eventRefKey(place.object));

@@ -199,4 +199,17 @@ export const SAMPLE_EVENTS: readonly TeselEvent[] = [
     members: [ALICE, BOB],
     name: 'Equipo Norte',
   },
+  {
+    type: 'report',
+    origin: BOB,
+    seq: 13,
+    time: T0 + 20,
+    place: { kind: 'point', at: { lat: 39.4705, lon: -0.377 } },
+    incident: 'fire',
+    hazards: ['fire', 'smoke'],
+    access: 'difficult',
+    casualties: { red: 1, yellow: 2, green: null, black: 0 },
+    resources: ['ambulance', 'firefighters'],
+    note: 'Nave industrial, dos plantas',
+  },
 ];

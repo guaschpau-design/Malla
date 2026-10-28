@@ -11,12 +11,13 @@ import {
   NODE_ID_SIZE,
   PLACE_SIZE,
   PlaceCode,
+  REPORT_FIXED_SIZE,
   POINT_SIZE,
   ShapeKindCode,
   SYMBOL_SIZE,
   UNKNOWN_U16,
 } from './constants.ts';
-import type { EventRef, NodeId, ShapeGeometry, TaskPlace } from './events.ts';
+import type { EventRef, NodeId, ShapeGeometry, Place } from './events.ts';
 import { readPoint, readPointList, writePoint, writePointList } from './geometry.ts';
 import { nodeIdFromBytes, nodeIdToBytes } from './node-id.ts';
 
@@ -31,6 +32,7 @@ export const ALERT_TEXT_MAX_BYTES = PAYLOAD_BUDGET - KIND_SIZE; // §3.9
 export const TASK_TEXT_MAX_BYTES =
   PAYLOAD_BUDGET - EVENT_REF_SIZE - KIND_SIZE - NODE_ID_SIZE - KIND_SIZE - PLACE_SIZE; // §3.11
 export const ROLL_CALL_TEXT_MAX_BYTES = PAYLOAD_BUDGET; // §3.12
+export const REPORT_NOTE_MAX_BYTES = PAYLOAD_BUDGET - REPORT_FIXED_SIZE; // §3.16
 
 // --- Enumerations ------------------------------------------------------------------------
 // Each value's code is written out in constants.ts (RoleCode and the like), never taken from an
@@ -98,7 +100,7 @@ export function readAssignee(reader: ByteReader): NodeId | null {
 }
 
 /** Writes the place kind and its point or object reference, zeros for none. */
-export function writePlace(writer: ByteWriter, place: TaskPlace | null): void {
+export function writePlace(writer: ByteWriter, place: Place | null): void {
   if (place === null) {
     writer.u8(PlaceCode.NONE).raw(new Uint8Array(PLACE_SIZE));
     return;
@@ -116,7 +118,7 @@ export function writePlace(writer: ByteWriter, place: TaskPlace | null): void {
 }
 
 /** Reads the place; a reserved kind reads as none and what follows it is skipped. */
-export function readPlace(reader: ByteReader): TaskPlace | null {
+export function readPlace(reader: ByteReader): Place | null {
   switch (reader.u8()) {
     case PlaceCode.POINT:
       return { kind: 'point', at: readPoint(reader) };
@@ -130,21 +132,25 @@ export function readPlace(reader: ByteReader): TaskPlace | null {
 
 // --- Sets of flags (§3.14) ----------------------------------------------------------------
 
-/** Writes a set as a u32 of bits, each value at its bit. */
+/** Writes a set as a u16 or u32 of bits, each value at its bit. */
 export function writeFlags<T extends string>(
   writer: ByteWriter,
   bits: Readonly<Record<T, number>>,
   values: readonly T[],
+  size: 2 | 4,
 ): void {
-  writer.u32(values.reduce((flags, value) => (flags | (1 << bits[value])) >>> 0, 0));
+  const flags = values.reduce((all, value) => (all | (1 << bits[value])) >>> 0, 0);
+  if (size === 2) writer.u16(flags);
+  else writer.u32(flags);
 }
 
-/** Reads a u32 of bits as the set of values whose bits are on, in the order of their bits. */
+/** Reads a u16 or u32 of bits as the set of values whose bits are on, in the order of their bits. */
 export function readFlags<T extends string>(
   reader: ByteReader,
   bits: Readonly<Record<T, number>>,
+  size: 2 | 4,
 ): T[] {
-  const flags = reader.u32();
+  const flags = size === 2 ? reader.u16() : reader.u32();
   return (Object.keys(bits) as T[])
     .filter((value) => (flags & (1 << bits[value])) !== 0)
     .sort((a, b) => bits[a] - bits[b]);

@@ -64,6 +64,7 @@ The payload follows, up to 151 bytes.
 | `0x0E` | `SWEEP`           | §3.13                                                  |
 | `0x0F` | `MEMBER_STATE`    | §3.14                                                  |
 | `0x10` | `TEAM`            | §3.15                                                  |
+| `0x11` | `REPORT`          | §3.16                                                  |
 
 Codes are never reused. New capabilities are added as new types; existing layouts never change within version 1.
 
@@ -267,6 +268,21 @@ Creates or replaces a team: a name, a colour and the members in it. Teams are ho
 - To change a team, any member sends a new `TEAM` with the same `team` and every field filled in; the newest by `(time, origin, seq)` is the team's current state.
 - A member is in one team at a time. A device that moves a member sends both teams; should two teams list the same member, the newest of them counts.
 - With the longest name, a team holds up to 28 members.
+
+### 3.16 `REPORT`
+
+A situation report from the scene, in the order emergency services use (METHANE): where, what happened, the dangers, the way in, the casualties and the help needed. Reports are kept like chat lines, in `(time, origin, seq)` order; a newer report from the same scene does not replace an older one.
+
+| Size  | Field        | Notes                                                                                                                                                                   |
+| ----- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | `kind`       | `0` situation; reserved values read as situation                                                                                                                        |
+| 1 + 8 | `place`      | As `TASK.place` (§3.11): none, a point or an object                                                                                                                     |
+| 1     | `incident`   | `0` other, `1` fire, `2` flood, `3` traffic accident, `4` collapse, `5` missing person, `6` rescue, `7` hazardous materials, `8` medical; reserved values read as other |
+| 2     | `hazards`    | `u16` of bits, from the lowest: fire, smoke, gas, electricity, water, collapse, chemicals, traffic, violence; other bits are ignored                                    |
+| 1     | `access`     | `0` unknown, `1` clear, `2` difficult, `3` blocked; reserved values read as unknown                                                                                     |
+| 4     | `casualties` | One `u8` each for the triage categories red, yellow, green and black: how many, 0–254; `255` unknown                                                                    |
+| 2     | `resources`  | `u16` of bits, from the lowest: ambulance, firefighters, police, rescue, helicopter, machinery, more people, supplies, shelter; other bits are ignored                  |
+| 0–131 | `note`       | text-rest                                                                                                                                                               |
 
 ## 4. Symbol and style codes
 

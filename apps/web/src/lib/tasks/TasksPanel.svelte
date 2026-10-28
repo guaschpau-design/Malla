@@ -2,7 +2,7 @@
      Tapping a task opens it to change who, where or what. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
-  import { eventRefKey, type EventRef, type NodeId, type TaskPlace } from '@tesel/protocol';
+  import { eventRefKey, type EventRef, type NodeId, type Place } from '@tesel/protocol';
 
   import type { CoordinateFormat } from '../coordinates/coordinates.ts';
   import type { MessageKey, Translate } from '../i18n/index.ts';
@@ -32,7 +32,7 @@
     editing: TaskEditing | null;
     onsave: (task: EventRef | null, fields: TaskFields) => Promise<void>;
     /** Shows a task's place on the map, with its panel. */
-    onplace: (place: TaskPlace) => void;
+    onplace: (place: Place) => void;
     onclose: () => void;
   }
 
@@ -41,7 +41,7 @@
   const list = $derived(taskList(groupState, self));
 
   /** Whether a task's place is a route of the map, whose own panel offers to follow it. */
-  function isRoute(place: TaskPlace): boolean {
+  function isRoute(place: Place): boolean {
     if (place.kind !== 'object') return false;
     const object = groupState.objects.get(eventRefKey(place.object));
     return objectDestination(object, groupState.objects)?.kind === 'route';

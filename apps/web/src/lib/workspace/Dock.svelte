@@ -9,6 +9,7 @@
   import type { Preferences } from '../settings/preferences.ts';
   import DockButton from '../ui/DockButton.svelte';
   import { TASK_LIST } from '../tasks/task-editor.ts';
+  import { CHAT } from '../chat/chat-tabs.ts';
   import { isOpen, togglePanel } from '../ui/panels.svelte.ts';
   import MoreMenu from './MoreMenu.svelte';
 
@@ -72,7 +73,7 @@
           label={t('chat')}
           expanded={isOpen('chat')}
           onclick={() => {
-            togglePanel('chat');
+            togglePanel(CHAT);
           }}
         />
         <DockButton

@@ -6,11 +6,12 @@
 
 import type { LatLon, NodeId } from '@tesel/protocol';
 
+import type { ChatTab } from '../chat/chat-tabs.ts';
 import type { TaskEditing } from '../tasks/tasks.ts';
 
 /** Panels that show the same thing whenever they open. */
 export type PlainPanelName =
-  'offline' | 'groups' | 'chat' | 'connections' | 'layers' | 'me' | 'find' | 'diary';
+  'offline' | 'groups' | 'connections' | 'layers' | 'me' | 'find' | 'diary';
 
 export type Panel =
   | { readonly name: PlainPanelName }
@@ -19,6 +20,8 @@ export type Panel =
   | { readonly name: 'member'; readonly member: NodeId }
   /** A point of the map, and what to call it: a service's name, or "map point". */
   | { readonly name: 'point'; readonly at: LatLon; readonly title: string }
+  /** The chat, on one of its tabs. */
+  | { readonly name: 'chat'; readonly tab: ChatTab }
   /** The task list, or the task being edited. */
   | { readonly name: 'tasks'; readonly editing: TaskEditing | null };
 

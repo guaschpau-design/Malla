@@ -1,5 +1,7 @@
-<!-- The active group's chat, with alerts in the same timeline. Coordinators can send a message as
-     an alert, which stays on everyone's screen until they acknowledge it, and call the roll. -->
+<!-- The active group's chat, with alerts and situation reports in the same timeline, and the
+     reports pinned in a tab of their own, where new ones are written. Coordinators can send a
+     message as an alert, which stays on everyone's screen until they acknowledge it, and call the
+     roll. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
   import {
@@ -8,6 +10,7 @@
     eventRefKey,
     utf8ByteLength,
     type NodeId,
+    type Place,
   } from '@tesel/protocol';
   import { onDestroy, tick } from 'svelte';
 
@@ -20,6 +23,11 @@
   import Pictogram from '../ui/Pictogram.svelte';
   import { Submission } from '../ui/submission.svelte.ts';
   import { Dictation, speechRecognizer, type DictationProblem } from './dictation.svelte.ts';
+  import ReportCard from '../reports/ReportCard.svelte';
+  import ReportForm from '../reports/ReportForm.svelte';
+  import { addedUp, casualtiesLine } from '../reports/report-summary.ts';
+  import type { ReportFields } from '../sync/group-feed.svelte.ts';
+  import type { ChatTab } from './chat-tabs.ts';
   import { timeline } from './timeline.ts';
 
   interface Props {
@@ -35,6 +43,12 @@
     /** Sends the text as a critical alert. */
     onalert: (text: string) => Promise<void>;
     onrollcall: () => void;
+    onreport: (report: ReportFields) => Promise<void>;
+    /** Shows a report's place on the map. */
+    onplace: (place: Place) => void;
+    /** The tab shown, and how another one is shown. */
+    tab: ChatTab;
+    ontab: (tab: ChatTab) => void;
     /** Text messages of other MeshCore apps heard by the radio; shown in their own tab. */
     radioTexts: readonly StoredRadioText[];
     showRadioTab: boolean;
@@ -51,12 +65,20 @@
     onsend,
     onalert,
     onrollcall,
+    onreport,
+    onplace,
+    tab,
+    ontab,
     radioTexts,
     showRadioTab,
     onclose,
   }: Props = $props();
 
-  let tab: 'group' | 'meshcore' = $state('group');
+  /** Writing a new report, in the reports tab. */
+  let composing = $state(false);
+  /** Newest first. */
+  const reports = $derived([...groupState.reports].reverse());
+  const casualtiesTotal = $derived(casualtiesLine(addedUp(groupState.reports), t));
 
   let text = $state('');
   let list: HTMLOListElement | undefined = $state();
@@ -108,19 +130,65 @@
 </script>
 
 <Panel title={t('chat')} closeLabel={t('close')} {onclose}>
-  {#if showRadioTab}
-    <div class="tabs" role="tablist">
-      <button role="tab" aria-selected={tab === 'group'} onclick={() => (tab = 'group')}>
-        {t('chatGroup')}
-      </button>
-      <button role="tab" aria-selected={tab === 'meshcore'} onclick={() => (tab = 'meshcore')}>
+  <div class="tabs" role="tablist">
+    <button
+      role="tab"
+      aria-selected={tab === 'group'}
+      onclick={() => {
+        ontab('group');
+      }}
+    >
+      {t('chatGroup')}
+    </button>
+    <button
+      role="tab"
+      aria-selected={tab === 'reports'}
+      onclick={() => {
+        ontab('reports');
+      }}
+    >
+      <Pictogram name="pushpin" size={16} />
+      {t('reportsTab')}
+      {#if reports.length > 0}<span class="count">{reports.length}</span>{/if}
+    </button>
+    {#if showRadioTab}
+      <button
+        role="tab"
+        aria-selected={tab === 'meshcore'}
+        onclick={() => {
+          ontab('meshcore');
+        }}
+      >
         {t('chatMeshcore')}
         {#if radioTexts.length > 0}<span class="count">{radioTexts.length}</span>{/if}
       </button>
-    </div>
-  {/if}
+    {/if}
+  </div>
 
-  {#if tab === 'meshcore' && showRadioTab}
+  {#if tab === 'reports'}
+    {#if composing}
+      <ReportForm {t} {locale} onsend={onreport} onback={() => (composing = false)} />
+    {:else}
+      <div class="stack section">
+        <button class="primary new-report" onclick={() => (composing = true)}>
+          <Pictogram name="pushpin" size={18} />
+          {t('reportNew')}
+        </button>
+        {#if reports.length === 0}
+          <p class="hint">{t('reportsNone')}</p>
+        {:else}
+          {#if casualtiesTotal}
+            <p class="hint">{t('reportsTotal', { casualties: casualtiesTotal })}</p>
+          {/if}
+          <ol class="reports">
+            {#each reports as report (eventRefKey(report))}
+              <li><ReportCard {t} {locale} {groupState} {report} {onplace} /></li>
+            {/each}
+          </ol>
+        {/if}
+      </div>
+    {/if}
+  {:else if tab === 'meshcore' && showRadioTab}
     <p class="hint section">{t('meshcoreIntro')}</p>
     {#if radioTexts.length === 0}
       <p class="hint">{t('noMeshcoreMessages')}</p>
@@ -146,22 +214,28 @@
     {:else}
       <ol class="messages section" bind:this={list}>
         {#each entries as entry (entry.key)}
-          <li
-            class:own={entry.event.origin === self}
-            class="{entry.kind} {entry.kind === 'alert' ? `level-${entry.event.level}` : ''}"
-          >
-            <span class="meta">
-              {#if entry.kind === 'alert'}{t(ALERT_LEVELS[entry.event.level])} ·{/if}
-              {aliasOf(groupState, entry.event.origin)} · {formatTime(
-                entry.event.time * 1000,
-                locale,
-              )}
-            </span>
-            <span class="text">{entry.event.text}</span>
-            {#if undelivered.has(eventRefKey(entry.event))}
-              <span class="pending">{t('notSentYet')}</span>
-            {/if}
-          </li>
+          {#if entry.kind === 'report'}
+            <li class="report">
+              <ReportCard {t} {locale} {groupState} report={entry.event} {onplace} />
+            </li>
+          {:else}
+            <li
+              class:own={entry.event.origin === self}
+              class="{entry.kind} {entry.kind === 'alert' ? `level-${entry.event.level}` : ''}"
+            >
+              <span class="meta">
+                {#if entry.kind === 'alert'}{t(ALERT_LEVELS[entry.event.level])} ·{/if}
+                {aliasOf(groupState, entry.event.origin)} · {formatTime(
+                  entry.event.time * 1000,
+                  locale,
+                )}
+              </span>
+              <span class="text">{entry.event.text}</span>
+              {#if undelivered.has(eventRefKey(entry.event))}
+                <span class="pending">{t('notSentYet')}</span>
+              {/if}
+            </li>
+          {/if}
         {/each}
       </ol>
     {/if}
@@ -197,6 +271,17 @@
         >{t('send')}</button
       >
       {#if submission.failed}<p class="warning">{t('sendFailed')}</p>{/if}
+      <button
+        type="button"
+        class="report-button"
+        onclick={() => {
+          composing = true;
+          ontab('reports');
+        }}
+      >
+        <Pictogram name="pushpin" size={18} />
+        {t('reportShort')}
+      </button>
       {#if coordinator}
         <div class="coordinator">
           <button
@@ -240,6 +325,30 @@
   .tabs button[aria-selected='true'] {
     font-weight: 600;
     border-bottom-color: var(--accent-line);
+  }
+
+  .tabs button {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+  }
+
+  .new-report,
+  .report-button {
+    display: inline-flex;
+    gap: 0.4rem;
+    align-items: center;
+    justify-self: start;
+  }
+
+  .reports {
+    display: grid;
+    gap: 0.5rem;
+    max-height: 50dvh;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
   }
 
   .count {
@@ -288,6 +397,21 @@
 
   li.alert.level-critical {
     border-left-color: var(--danger);
+  }
+
+  /* A report is its own card, across the panel. */
+  li.report,
+  .reports li {
+    display: block;
+    justify-self: stretch;
+    max-width: none;
+    padding: 0;
+    background: none;
+    border: none;
+  }
+
+  .report-button {
+    grid-column: 1 / -1;
   }
 
   .pending {

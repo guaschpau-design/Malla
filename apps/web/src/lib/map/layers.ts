@@ -5,7 +5,15 @@ import type { MessageKey } from '../i18n/index.ts';
 import type { GlyphName } from '../ui/glyphs.ts';
 
 /** Layers shown unless the user hides them; the hidden ones are a preference. */
-export const MAP_LAYERS = ['members', 'trails', 'objects', 'tasks', 'services', 'weather'] as const;
+export const MAP_LAYERS = [
+  'members',
+  'trails',
+  'objects',
+  'tasks',
+  'reports',
+  'services',
+  'weather',
+] as const;
 export type MapLayer = (typeof MAP_LAYERS)[number];
 
 /** Layers off unless the user turns them on, each a preference of its own. */
@@ -20,6 +28,7 @@ export const LAYER_SWITCHES: Readonly<Record<LayerSwitch, { label: MessageKey; i
     trails: { label: 'layerTrails', icon: 'trail' },
     objects: { label: 'layerObjects', icon: 'pin' },
     tasks: { label: 'layerTasks', icon: 'task' },
+    reports: { label: 'layerReports', icon: 'pushpin' },
     weather: { label: 'layerWeather', icon: 'cloud' },
     services: { label: 'layerServices', icon: 'cross' },
     relief: { label: 'layerRelief', icon: 'relief' },
@@ -36,7 +45,7 @@ export const LAYER_SECTIONS: readonly {
   readonly title: MessageKey;
   readonly switches: readonly LayerSwitch[];
 }[] = [
-  { title: 'layersTeam', switches: ['members', 'trails', 'objects', 'tasks'] },
+  { title: 'layersTeam', switches: ['members', 'trails', 'objects', 'tasks', 'reports'] },
   { title: 'layersSurroundings', switches: ['weather', 'services', 'relief', 'cadastre'] },
   { title: 'layersOrientation', switches: ['radar', 'grid'] },
 ];

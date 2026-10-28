@@ -10,7 +10,7 @@ afterEach(() => {
 
 describe('panels', () => {
   it('keeps one open at a time, with what it shows', () => {
-    openPanel('chat');
+    openPanel({ name: 'chat', tab: 'group' });
     openPanel({ name: 'point', at: AT, title: 'Punto del mapa' });
     expect(isOpen('chat')).toBe(false);
     expect(panels.open).toEqual({ name: 'point', at: AT, title: 'Punto del mapa' });

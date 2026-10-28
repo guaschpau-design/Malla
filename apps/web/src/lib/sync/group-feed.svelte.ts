@@ -26,6 +26,7 @@ import {
   type LatLon,
   type MemberStateEvent,
   type ObjectRef,
+  type ReportEvent,
   type ShapeEvent,
   type ShapeGeometry,
   type SosKind,
@@ -361,6 +362,11 @@ export class GroupFeed {
     await this.#publish((header) => ({ ...header, type: 'member-state', ...state }));
   }
 
+  /** Sends a situation report (protocol §3.16). */
+  async sendReport(report: ReportFields): Promise<void> {
+    await this.#publish((header) => ({ ...header, type: 'report', ...report }));
+  }
+
   /** Creates or changes a team (protocol §3.15). */
   async writeTeam(team: TeamFields): Promise<void> {
     await this.#publish((header) => ({ ...header, type: 'team', ...team }));
@@ -513,6 +519,9 @@ export class GroupFeed {
     return events;
   }
 }
+
+/** What REPORT holds besides its header (protocol §3.16). */
+export type ReportFields = Omit<ReportEvent, keyof EventHeader | 'type'>;
 
 /** What TEAM holds besides its header (protocol §3.15). */
 export type TeamFields = Pick<TeamEvent, 'team' | 'colour' | 'dissolved' | 'members' | 'name'>;

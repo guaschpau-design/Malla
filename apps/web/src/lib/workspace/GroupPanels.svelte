@@ -1,8 +1,9 @@
 <!-- The panels about the active group: an object, a member, the diary, the chat and the tasks. -->
 <script lang="ts">
-  import type { EventRef, NodeId, Role, TaskPlace } from '@tesel/protocol';
+  import type { EventRef, NodeId, Role, Place } from '@tesel/protocol';
 
   import ChatPanel from '../chat/ChatPanel.svelte';
+  import type { ChatTab } from '../chat/chat-tabs.ts';
   import DiaryPanel from '../diary/DiaryPanel.svelte';
   import MemberDetails from '../members/MemberDetails.svelte';
   import type { Locale, Translate } from '../i18n/index.ts';
@@ -11,11 +12,11 @@
   import { removeSweep } from '../objects/sweep-actions.ts';
   import { radio } from '../radio/radio.svelte.ts';
   import type { Preferences } from '../settings/preferences.ts';
-  import type { GroupFeed } from '../sync/group-feed.svelte.ts';
+  import type { GroupFeed, ReportFields } from '../sync/group-feed.svelte.ts';
   import { newTask } from '../tasks/task-editor.ts';
   import TasksPanel from '../tasks/TasksPanel.svelte';
   import type { TaskFields } from '../tasks/tasks.ts';
-  import { closePanel, isOpen, panels } from '../ui/panels.svelte.ts';
+  import { closePanel, isOpen, openPanel, panels } from '../ui/panels.svelte.ts';
   import { attempt } from '../ui/submission.svelte.ts';
 
   interface Props {
@@ -26,7 +27,7 @@
     role: Role;
     preferences: Preferences;
     /** Shows a task's place on the map, with its panel. */
-    onplace: (place: TaskPlace) => void;
+    onplace: (place: Place) => void;
     /** Starts planning the sweep of a search area, by its key. */
     onplansweep: (area: string) => void;
   }
@@ -80,7 +81,7 @@
   <DiaryPanel {t} {locale} {feed} format={preferences.coordinateFormat} onclose={closePanel} />
 {/if}
 
-{#if isOpen('chat')}
+{#if panels.open?.name === 'chat'}
   <ChatPanel
     {t}
     {locale}
@@ -90,6 +91,12 @@
     coordinator={role === 'coordinator'}
     onsend={(text: string) => feed.sendChat(text)}
     onalert={(text: string) => feed.sendAlert(text)}
+    tab={panels.open.tab}
+    ontab={(tab: ChatTab) => {
+      openPanel({ name: 'chat', tab });
+    }}
+    onreport={(report: ReportFields) => feed.sendReport(report)}
+    {onplace}
     onrollcall={() => {
       // Closing the chat shows who answers, in the banner on the map.
       closePanel();

@@ -1,4 +1,4 @@
-// The payload of every event type (docs/protocol.md §3.3–§3.15), each written next to the code
+// The payload of every event type (docs/protocol.md §3.3–§3.16), each written next to the code
 // that reads it, so that the two halves of a layout cannot drift apart. Adding an event type
 // means adding its entry here: the record is keyed by every `EventType`, so the compiler refuses
 // a type without a layout.
@@ -13,11 +13,16 @@ import {
   EquipmentBit,
   EventTypeCode,
   FULL_TURN_DEGREES,
-  NODE_ID_SIZE,
   HALF_TURN_DEGREES,
+  HazardBit,
+  IncidentTypeCode,
+  NODE_ID_SIZE,
   ProfileCode,
   PUBLIC_KEY_SIZE,
+  REPORT_KIND_SITUATION,
+  ResourceBit,
   RoleCode,
+  SceneAccessCode,
   SHAPE_LABEL_MAX_BYTES,
   SosKindCode,
   SPEED_SCALE,
@@ -25,6 +30,7 @@ import {
   TEAM_NAME_MAX_BYTES,
   TeamColourCode,
   UNKNOWN_BATTERY,
+  UNKNOWN_COUNT,
   UNKNOWN_U16,
 } from './constants.ts';
 import { nodeIdFromPublicKey } from './crypto.ts';
@@ -36,6 +42,7 @@ import {
   enumCode,
   enumValue,
   MARKER_LABEL_MAX_BYTES,
+  REPORT_NOTE_MAX_BYTES,
   readAssignee,
   readFlags,
   readGeometry,
@@ -269,6 +276,47 @@ export const PAYLOADS: { readonly [K in EventType]: PayloadCodec<EventOfType<K>>
       return sweep;
     },
   },
+  // §3.16
+  report: {
+    code: EventTypeCode.REPORT,
+    write(writer, event) {
+      writer.u8(REPORT_KIND_SITUATION);
+      writePlace(writer, event.place);
+      writer.u8(enumCode(IncidentTypeCode, event.incident, 'incident type'));
+      writeFlags(writer, HazardBit, event.hazards, 2);
+      writer.u8(enumCode(SceneAccessCode, event.access, 'scene access'));
+      for (const category of TRIAGE) writeCount(writer, event.casualties[category]);
+      writeFlags(writer, ResourceBit, event.resources, 2);
+      writeTextRest(writer, event.note, 0, REPORT_NOTE_MAX_BYTES, 'report note');
+    },
+    read(reader, header) {
+      reader.u8(); // The kind: every kind reads as a situation report so far.
+      const place = readPlace(reader);
+      const incident = enumValue(IncidentTypeCode, reader.u8(), 'other');
+      const hazards = readFlags(reader, HazardBit, 2);
+      const access = enumValue(SceneAccessCode, reader.u8(), 'unknown');
+      const [red, yellow, green, black] = TRIAGE.map(() => readCount(reader));
+      const casualties = {
+        red: red ?? null,
+        yellow: yellow ?? null,
+        green: green ?? null,
+        black: black ?? null,
+      };
+      const resources = readFlags(reader, ResourceBit, 2);
+      const note = reader.textRest(0, REPORT_NOTE_MAX_BYTES, 'report note');
+      return {
+        ...header,
+        type: 'report',
+        place,
+        incident,
+        hazards,
+        access,
+        casualties,
+        resources,
+        note,
+      };
+    },
+  },
   // §3.15
   team: {
     code: EventTypeCode.TEAM,
@@ -304,7 +352,7 @@ export const PAYLOADS: { readonly [K in EventType]: PayloadCodec<EventOfType<K>>
       writer.u8(enumCode(ProfileCode, event.profile, 'profile'));
       writer.u8(enumCode(DutyStatusCode, event.status, 'duty status'));
       writer.u8(battery ?? UNKNOWN_BATTERY);
-      writeFlags(writer, EquipmentBit, event.equipment);
+      writeFlags(writer, EquipmentBit, event.equipment, 4);
     },
     read: (reader, header) => ({
       ...header,
@@ -312,10 +360,26 @@ export const PAYLOADS: { readonly [K in EventType]: PayloadCodec<EventOfType<K>>
       profile: enumValue(ProfileCode, reader.u8(), 'unspecified'),
       status: enumValue(DutyStatusCode, reader.u8(), 'active'),
       battery: readBattery(reader.u8()),
-      equipment: readFlags(reader, EquipmentBit),
+      equipment: readFlags(reader, EquipmentBit, 4),
     }),
   },
 };
+
+/** §3.16 The triage categories, in the order of their counts. */
+const TRIAGE = ['red', 'yellow', 'green', 'black'] as const;
+
+/** §3.16 A count of casualties, up to 254; unknown as 255. */
+function writeCount(writer: ByteWriter, count: number | null): void {
+  if (count !== null && !(Number.isInteger(count) && count >= 0 && count < UNKNOWN_COUNT)) {
+    throw new ProtocolFailure('invalid-value', 'casualty counts go from 0 to 254');
+  }
+  writer.u8(count ?? UNKNOWN_COUNT);
+}
+
+function readCount(reader: ByteReader): number | null {
+  const count = reader.u8();
+  return count === UNKNOWN_COUNT ? null : count;
+}
 
 /** §3.14 A battery level as a percent, or null when unknown or out of range. */
 function readBattery(code: number): number | null {

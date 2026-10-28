@@ -4,8 +4,12 @@ import type {
   AlertLevel,
   DutyStatus,
   Equipment,
+  Hazard,
+  IncidentType,
   Profile,
+  Resource,
   Role,
+  SceneAccess,
   SosKind,
   TaskStatus,
   TeamColour,
@@ -53,6 +57,7 @@ export const EventTypeCode = {
   SWEEP: 0x0e,
   MEMBER_STATE: 0x0f,
   TEAM: 0x10,
+  REPORT: 0x11,
 } as const;
 
 /** §3.13 A sweep's lanes run in a direction below this, in degrees: the other half are the same. */
@@ -186,6 +191,64 @@ export const EquipmentBit = {
   drone: 11,
   weapon: 12,
 } as const satisfies Record<Equipment, number>;
+
+/** §3.16 REPORT.incident. Default: other. */
+export const IncidentTypeCode = {
+  other: 0,
+  fire: 1,
+  flood: 2,
+  'traffic-accident': 3,
+  collapse: 4,
+  'missing-person': 5,
+  rescue: 6,
+  'hazardous-materials': 7,
+  medical: 8,
+} as const satisfies Record<IncidentType, number>;
+
+/** §3.16 REPORT.hazards: the bit of each, from the lowest. Other bits are ignored. */
+export const HazardBit = {
+  fire: 0,
+  smoke: 1,
+  gas: 2,
+  electricity: 3,
+  water: 4,
+  collapse: 5,
+  chemicals: 6,
+  traffic: 7,
+  violence: 8,
+} as const satisfies Record<Hazard, number>;
+
+/** §3.16 REPORT.access. Default: unknown. */
+export const SceneAccessCode = {
+  unknown: 0,
+  clear: 1,
+  difficult: 2,
+  blocked: 3,
+} as const satisfies Record<SceneAccess, number>;
+
+/** §3.16 REPORT.resources: the bit of each, from the lowest. Other bits are ignored. */
+export const ResourceBit = {
+  ambulance: 0,
+  firefighters: 1,
+  police: 2,
+  rescue: 3,
+  helicopter: 4,
+  machinery: 5,
+  people: 6,
+  supplies: 7,
+  shelter: 8,
+} as const satisfies Record<Resource, number>;
+
+/**
+ * §3.16 What comes before a report's note: kind, place kind and its 8 bytes, incident, hazards
+ * (u16), access, four counts and resources (u16).
+ */
+export const REPORT_FIXED_SIZE = 1 + 1 + PLACE_SIZE + 1 + 2 + 1 + 4 + 2;
+
+/** §3.16 REPORT kind: only a situation report so far. Default: situation. */
+export const REPORT_KIND_SITUATION = 0;
+/** §3.16 A count of casualties that is unknown. */
+export const UNKNOWN_COUNT = 0xff;
 
 /** §3.15 TEAM.colour. Default: blue. */
 export const TeamColourCode = {

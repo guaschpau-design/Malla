@@ -447,6 +447,41 @@ describe('reserved values and unknown types', () => {
   });
 });
 
+describe('reports', () => {
+  const report: TeselEvent = {
+    type: 'report',
+    origin: ALICE,
+    seq: 10,
+    time: T0,
+    place: null,
+    incident: 'collapse',
+    hazards: ['gas', 'collapse'],
+    access: 'blocked',
+    casualties: { red: 2, yellow: null, green: 5, black: 0 },
+    resources: ['rescue', 'machinery'],
+    note: 'Bloque B',
+  };
+
+  it('matches the test vector computed from the spec', () => {
+    // Kind 0, no place, incident 4, hazards bits 2 and 5 (0x0024), access 3, counts 2, 255, 5, 0,
+    // resources bits 3 and 5 (0x0028).
+    expect(toHex(encodeOrFail(report))).toBe(
+      '0111a1b2c3d40a0000000013fc68' +
+        '00000000000000000000' +
+        '04240003' +
+        '02ff0500' +
+        '2800' +
+        '426c6f7175652042',
+    );
+  });
+
+  it('refuses a count of casualties above 254, and fits the longest note', () => {
+    const casualties = { red: 255, yellow: 0, green: 0, black: 0 };
+    expect(encodeEvent({ ...report, casualties }).ok).toBe(false);
+    expect(encodeOrFail({ ...report, note: 'x'.repeat(131) }).length).toBe(MAX_EVENT_SIZE);
+  });
+});
+
 describe('teams', () => {
   const team: TeselEvent = {
     type: 'team',

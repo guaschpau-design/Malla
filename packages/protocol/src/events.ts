@@ -116,8 +116,8 @@ export interface AckEvent extends EventHeader {
 
 export type TaskStatus = 'open' | 'in-progress' | 'done' | 'cancelled';
 
-/** §3.11 Where a task is: a point, or a map object, which it follows wherever it is. */
-export type TaskPlace =
+/** §3.11 Where a task or a report is: a point, or a map object, which it follows wherever it is. */
+export type Place =
   | { readonly kind: 'point'; readonly at: LatLon }
   | { readonly kind: 'object'; readonly object: ObjectRef };
 
@@ -130,7 +130,7 @@ export interface TaskEvent extends EventHeader {
   /** Who should do it: a member, a team (§3.15), or null for anyone. */
   readonly assignee: NodeId | null;
   /** Where, or null for nowhere in particular. */
-  readonly place: TaskPlace | null;
+  readonly place: Place | null;
   readonly text: string;
 }
 
@@ -174,6 +174,67 @@ export interface MemberStateEvent extends EventHeader {
   readonly battery: number | null;
   /** In the order of their codes (§3.14), each once. */
   readonly equipment: readonly Equipment[];
+}
+
+/** §3.16 What a situation report is about. */
+export type IncidentType =
+  | 'other'
+  | 'fire'
+  | 'flood'
+  | 'traffic-accident'
+  | 'collapse'
+  | 'missing-person'
+  | 'rescue'
+  | 'hazardous-materials'
+  | 'medical';
+
+/** §3.16 Dangers on the scene. */
+export type Hazard =
+  | 'fire'
+  | 'smoke'
+  | 'gas'
+  | 'electricity'
+  | 'water'
+  | 'collapse'
+  | 'chemicals'
+  | 'traffic'
+  | 'violence';
+
+/** §3.16 How the scene can be reached. */
+export type SceneAccess = 'unknown' | 'clear' | 'difficult' | 'blocked';
+
+/** §3.16 Help the scene needs. */
+export type Resource =
+  | 'ambulance'
+  | 'firefighters'
+  | 'police'
+  | 'rescue'
+  | 'helicopter'
+  | 'machinery'
+  | 'people'
+  | 'supplies'
+  | 'shelter';
+
+/** §3.16 How many casualties of each triage category; null where unknown. */
+export interface Casualties {
+  readonly red: number | null;
+  readonly yellow: number | null;
+  readonly green: number | null;
+  readonly black: number | null;
+}
+
+/** §3.16 A situation report, in the order of METHANE: where, what, dangers, access, casualties, help. */
+export interface ReportEvent extends EventHeader {
+  readonly type: 'report';
+  readonly place: Place | null;
+  readonly incident: IncidentType;
+  /** In the order of their codes, each once. */
+  readonly hazards: readonly Hazard[];
+  readonly access: SceneAccess;
+  readonly casualties: Casualties;
+  /** In the order of their codes, each once. */
+  readonly resources: readonly Resource[];
+  readonly note: string;
 }
 
 /** §3.15 The colour a team is shown in. */
@@ -235,6 +296,7 @@ export type TeselEvent =
   | RollCallEvent
   | SweepEvent
   | MemberStateEvent
-  | TeamEvent;
+  | TeamEvent
+  | ReportEvent;
 
 export type EventType = TeselEvent['type'];

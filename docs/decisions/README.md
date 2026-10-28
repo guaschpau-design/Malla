@@ -68,3 +68,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0060](0060-sweeps.md)                               | Sweeps: parallel lanes over a search area, one strip per team, sent as a recipe             | Accepted                                    |
 | [0061](0061-member-state.md)                         | What members tell about themselves: one event, one card                                     | Accepted                                    |
 | [0062](0062-teams.md)                                | Teams: one event per team, and a task for a team is each member's                           | Accepted                                    |
+| [0063](0063-situation-reports.md)                    | Situation reports: a fixed form in one radio message, pinned in the chat                    | Accepted                                    |

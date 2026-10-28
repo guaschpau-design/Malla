@@ -21,6 +21,7 @@ const JOURNAL_TYPES = [
   'sweep',
   'member-state',
   'team',
+  'report',
 ] as const;
 
 export type JournalEvent = EventOfType<(typeof JOURNAL_TYPES)[number]>;

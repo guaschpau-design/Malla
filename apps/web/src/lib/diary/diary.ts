@@ -22,6 +22,7 @@ import { DUTY_STATUSES } from '../members/member-catalog.ts';
 import { ALERT_LEVELS, SOS_KINDS } from '../incidents/sos-kinds.ts';
 import { objectAnchor } from '../objects/object-anchor.ts';
 import { objectName } from '../objects/object-names.ts';
+import { reportLine } from '../reports/report-summary.ts';
 import { placePoint } from '../tasks/tasks.ts';
 
 export interface DiaryLine {
@@ -118,6 +119,8 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
           ? null
           : t('diaryStatus', { status: t(DUTY_STATUSES[event.status].label) });
       }
+      case 'report':
+        return t('diaryReport', { text: reportLine(event, t) });
       case 'team': {
         const known = teams.has(event.team);
         teams.add(event.team);
@@ -169,6 +172,6 @@ function placeOf(
     return objectAnchor(event, objects);
   }
   if (event.type === 'sos') return sosPlace(event);
-  if (event.type === 'task') return placePoint(event.place, objects);
+  if (event.type === 'task' || event.type === 'report') return placePoint(event.place, objects);
   return null;
 }

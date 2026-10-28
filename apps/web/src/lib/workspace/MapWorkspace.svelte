@@ -7,7 +7,7 @@
 -->
 <script lang="ts">
   import { EMPTY_STATE } from '@tesel/core';
-  import { eventRefKey, type LatLon, type NodeId, type TaskPlace } from '@tesel/protocol';
+  import { eventRefKey, type LatLon, type NodeId, type Place } from '@tesel/protocol';
   import type { Map as MapLibreMap } from 'maplibre-gl';
 
   import { onMount, untrack } from 'svelte';
@@ -43,6 +43,7 @@
   import SelfLayer from '../position/SelfLayer.svelte';
   import IncidentAlarm from '../incidents/IncidentAlarm.svelte';
   import { radio } from '../radio/radio.svelte.ts';
+  import ReportLayer from '../reports/ReportLayer.svelte';
   import type { TappedService } from '../services/services.ts';
   import ServicesLayer from '../services/ServicesLayer.svelte';
   import RadarLayer from '../radar/RadarLayer.svelte';
@@ -167,7 +168,7 @@
   }
 
   /** A task's place: a point shows as any point; an object, with its own panel. */
-  function showPlace(place: TaskPlace): void {
+  function showPlace(place: Place): void {
     if (place.kind === 'point') {
       find(place.at);
       return;
@@ -269,6 +270,14 @@
       visible={shown.tasks}
     />
   {/key}
+  <ReportLayer
+    {t}
+    {map}
+    {taps}
+    reports={slices.reports}
+    objects={slices.objects}
+    visible={shown.reports}
+  />
   <MemberLayer
     {map}
     {taps}

@@ -3,7 +3,7 @@
      coordinates plan one or remove it; a strip of a sweep, how far it is swept. -->
 <script lang="ts">
   import { areaSquareMeters, lanesLength, pathMeters, type GroupState } from '@tesel/core';
-  import { eventRefKey, ShapeStyleCode, type TaskPlace } from '@tesel/protocol';
+  import { eventRefKey, ShapeStyleCode, type Place } from '@tesel/protocol';
 
   import CoordinateBlock from '../coordinates/CoordinateBlock.svelte';
   import type { CoordinateFormat } from '../coordinates/coordinates.ts';
@@ -34,7 +34,7 @@
     /** Guide this device there, or along it; the name says where to. */
     onnavigate: (name: string) => void;
     /** Starts a task at the object. */
-    ontask: (place: TaskPlace) => void;
+    ontask: (place: Place) => void;
     /** Starts planning a sweep of this area. */
     onplansweep: () => void;
     /** Removes the sweep of this area: its strips, by key, and what is left of their tasks. */
