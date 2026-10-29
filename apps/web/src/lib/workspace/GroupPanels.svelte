@@ -15,7 +15,7 @@
   import type { GroupFeed, ReportFields } from '../sync/group-feed.svelte.ts';
   import { newTask } from '../tasks/task-editor.ts';
   import TasksPanel from '../tasks/TasksPanel.svelte';
-  import type { TaskFields } from '../tasks/tasks.ts';
+  import type { TaskEditing, TaskFields } from '../tasks/tasks.ts';
   import { closePanel, isOpen, openPanel, panels } from '../ui/panels.svelte.ts';
   import { attempt } from '../ui/submission.svelte.ts';
 
@@ -30,9 +30,12 @@
     onplace: (place: Place) => void;
     /** Starts planning the sweep of a search area, by its key. */
     onplansweep: (area: string) => void;
+    /** Starts picking on the map the place of the task being edited. */
+    onpicktaskplace: (editing: TaskEditing) => void;
   }
 
-  let { t, locale, feed, self, role, preferences, onplace, onplansweep }: Props = $props();
+  let { t, locale, feed, self, role, preferences, onplace, onplansweep, onpicktaskplace }: Props =
+    $props();
 </script>
 
 {#if panels.open?.name === 'object'}
@@ -116,6 +119,7 @@
     {self}
     format={preferences.coordinateFormat}
     onsave={(task: EventRef | null, fields: TaskFields) => feed.writeTask(task, fields)}
+    onpickplace={onpicktaskplace}
     {onplace}
     onclose={closePanel}
   />

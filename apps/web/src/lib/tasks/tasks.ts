@@ -16,12 +16,17 @@ import { aliasOf, nameOf } from '../members/alias.ts';
 import { objectAnchor } from '../objects/object-anchor.ts';
 import { isFor } from '../teams/teams.ts';
 
-/** What the tasks panel edits: a new task, at a place or nowhere in particular, or an existing one. */
+/**
+ * What the tasks panel edits: a new task, at a place or nowhere in particular, or an existing one;
+ * with what the form held, if it was left to pick the task's place on the map.
+ */
 export type TaskEditing =
   /** A new task, at a point or an object of the map, or nowhere in particular. */
-  | { readonly kind: 'new'; readonly place: Place | null }
-  /** An existing task, by its reference's key. */
-  | { readonly kind: 'existing'; readonly key: string };
+  (
+    | { readonly kind: 'new'; readonly place: Place | null }
+    /** An existing task, by its reference's key. */
+    | { readonly kind: 'existing'; readonly key: string }
+  ) & { readonly draft?: TaskFields };
 
 /** What a task holds besides its reference: what the form edits and the feed sends. */
 export interface TaskFields {

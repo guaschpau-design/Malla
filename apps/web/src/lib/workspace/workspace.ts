@@ -4,6 +4,7 @@
 import type { NodeId, Role } from '@tesel/protocol';
 
 import type { PositionSharing } from '../position/position-sharing.svelte.ts';
+import type { TaskEditing } from '../tasks/tasks.ts';
 import type { Situation } from '../practice/situations.ts';
 import type { GroupFeed } from '../sync/group-feed.svelte.ts';
 
@@ -25,4 +26,7 @@ export interface WorkspaceGroup {
  * sweep of a search area, by its key.
  */
 export type MapTool =
-  { readonly kind: 'measure' } | { readonly kind: 'sweep'; readonly area: string };
+  | { readonly kind: 'measure' }
+  | { readonly kind: 'sweep'; readonly area: string }
+  /** Picking the place of the task being edited, which the tasks panel opens on again. */
+  | { readonly kind: 'task-place'; readonly editing: TaskEditing };

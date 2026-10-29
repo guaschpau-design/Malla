@@ -21,9 +21,7 @@
 
 <ToolCard
   label={t('measure')}
-  undoLabel={t('undo')}
-  canUndo={points.length > 0}
-  {onundo}
+  undo={{ label: t('undo'), disabled: points.length === 0, run: onundo }}
   closeLabel={t('close')}
   {onclose}
 >

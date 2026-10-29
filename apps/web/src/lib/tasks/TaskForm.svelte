@@ -1,5 +1,6 @@
 <!-- Adds a task or changes one: only the text is needed, typed or picked from the common ones in
-     a drop-down; who and the place are optional. -->
+     a drop-down; who and the place are optional. The place is picked on the map: the form steps
+     aside meanwhile and comes back as it was left. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
   import {
@@ -18,6 +19,7 @@
   import { objectName } from '../objects/object-names.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import { confirmations } from '../ui/confirmations.svelte.ts';
+  import Pictogram from '../ui/Pictogram.svelte';
   import { Submission } from '../ui/submission.svelte.ts';
   import type { TaskEditing } from './tasks.ts';
   import { TASK_PRESETS } from './task-presets.ts';
@@ -31,11 +33,13 @@
     format: Preference<CoordinateFormat>;
     /** Sends the task; `task` is null for a new one. Rejects if it could not be saved. */
     onsave: (task: EventRef | null, fields: TaskFields) => Promise<void>;
+    /** Leaves the form to pick the task's place on the map, with what it holds so far. */
+    onpickplace: (draft: TaskFields) => void;
     /** Back to the list. */
     onback: () => void;
   }
 
-  let { t, groupState, self, editing, format, onsave, onback }: Props = $props();
+  let { t, groupState, self, editing, format, onsave, onpickplace, onback }: Props = $props();
 
   const STATUSES: readonly { status: TaskStatus; label: MessageKey }[] = [
     { status: 'open', label: 'taskOpen' },
@@ -48,22 +52,23 @@
   const existing = untrack(() =>
     editing.kind === 'existing' ? groupState.tasks.get(editing.key) : undefined,
   );
-  const initial: TaskFields = untrack(() =>
-    existing
-      ? fieldsOf(existing)
-      : {
-          status: 'open',
-          assignee: null,
-          place: editing.kind === 'new' ? editing.place : null,
-          text: '',
-        },
-  );
+  const initial: TaskFields = untrack(() => {
+    if (existing) return fieldsOf(existing);
+    return {
+      status: 'open',
+      assignee: null,
+      place: editing.kind === 'new' ? editing.place : null,
+      text: '',
+    };
+  });
+  /** What the form holds: as it was left to pick a place, or the task as it starts. */
+  const start: TaskFields = untrack(() => editing.draft ?? initial);
 
-  let text = $state(initial.text);
-  let status = $state(initial.status);
+  let text = $state(start.text);
+  let status = $state(start.status);
   /** The assignee's node ID, or '' for anyone. */
-  let assignee: string = $state(initial.assignee ?? '');
-  let place = $state.raw(initial.place);
+  let assignee: string = $state(start.assignee ?? '');
+  let place = $state.raw(start.place);
   const submission = new Submission();
 
   /** The place in words: its coordinates, or the object it follows. */
@@ -155,14 +160,25 @@
       </div>
     </fieldset>
   {/if}
-  {#if placeText}
-    <div class="place">
-      <span>{t('taskPlace')}: <span class="where">{placeText}</span></span>
-      <button type="button" onclick={() => (place = null)}>{t('taskRemovePlace')}</button>
-    </div>
-  {:else}
-    <p class="hint">{t('taskNoPlace')}</p>
-  {/if}
+  <div class="place">
+    <span>{t('taskPlace')}: <span class="where">{placeText ?? t('taskNoPlace')}</span></span>
+    <span class="row">
+      <button
+        type="button"
+        onclick={() => {
+          onpickplace(fields());
+        }}
+      >
+        <Pictogram name="pin" size={18} />
+        {placeText ? t('taskChangePlace') : t('taskPickPlace')}
+      </button>
+      {#if placeText}
+        <button type="button" class="ghost" onclick={() => (place = null)}
+          >{t('taskRemovePlace')}</button
+        >
+      {/if}
+    </span>
+  </div>
   {#if submission.failed}<p class="warning">{t('taskNotSent')}</p>{/if}
   <div class="row">
     <button type="submit" class="primary" disabled={submission.busy || size === 0 || tooLong}

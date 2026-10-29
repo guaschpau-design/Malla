@@ -1,6 +1,6 @@
 // Phase 2.4: a task handed from one member to another, started and finished.
 
-import { expect, test, twoMembers } from './helpers.ts';
+import { expect, tapMap, test, twoMembers } from './helpers.ts';
 
 const VIEW = '/#map=15/39.4699/-0.3763';
 
@@ -14,7 +14,7 @@ test('a task at a point reaches its assignee, who starts and finishes it', async
   const anaTasks = ana.getByRole('region', { name: 'Tareas' });
   await anaTasks.getByLabel('Qué hay que hacer').fill('Revisar el almacén');
   await anaTasks.getByLabel('Para').selectOption({ label: 'Berta' });
-  await expect(anaTasks.getByText(/^En el mapa:/)).toBeVisible();
+  await expect(anaTasks.getByText(/^Lugar:/)).toBeVisible();
   await anaTasks.getByRole('button', { name: 'Guardar' }).click();
   await expect(anaTasks.getByText('Para Berta')).toBeVisible();
 
@@ -41,7 +41,22 @@ test('a common task, for anyone, is taken by whoever starts it', async ({ browse
   await anaTasks.getByRole('button', { name: 'Nueva tarea' }).click();
   await anaTasks.getByLabel('Tarea habitual').selectOption({ label: 'Llevar material' });
   await expect(anaTasks.getByLabel('Qué hay que hacer')).toHaveValue('Llevar material');
+  // Its place is picked on the map, and the form comes back as it was left.
+  await expect(anaTasks.getByText('Lugar: ninguno')).toBeVisible();
+  await anaTasks.getByRole('button', { name: 'Elegir en el mapa' }).click();
+  await expect(anaTasks).toBeHidden();
+  await expect(ana.getByText('Toca el mapa donde es la tarea.')).toBeVisible();
+  await tapMap(ana);
+  await expect(anaTasks.getByLabel('Qué hay que hacer')).toHaveValue('Llevar material');
+  await expect(anaTasks.getByText('Lugar: ninguno')).toBeHidden();
+  await expect(anaTasks.getByRole('button', { name: 'Cambiar' })).toBeVisible();
   await anaTasks.getByRole('button', { name: 'Guardar' }).click();
+  await expect(
+    anaTasks
+      .getByRole('listitem')
+      .filter({ hasText: 'Llevar material' })
+      .getByRole('button', { name: 'Ver en el mapa' }),
+  ).toBeVisible();
   await expect(anaTasks.getByText('Para cualquiera')).toBeVisible();
 
   await berta.getByRole('button', { name: 'Tareas' }).click();

@@ -27,6 +27,7 @@
   import OperationAreaOffer from '../offline/OperationAreaOffer.svelte';
   import { deviceLocation } from '../position/device-location.svelte.ts';
   import Practice from '../practice/Practice.svelte';
+  import TaskPlacePicker from '../tasks/TaskPlacePicker.svelte';
   import { fieldsOf } from '../tasks/tasks.ts';
   import Notices from '../ui/Notices.svelte';
   import { attempt } from '../ui/submission.svelte.ts';
@@ -118,6 +119,8 @@
     />
   {:else if tool?.kind === 'measure'}
     <Measuring {t} {locale} {map} {taps} onclose={onclosetool} />
+  {:else if tool?.kind === 'task-place'}
+    <TaskPlacePicker {t} {taps} editing={tool.editing} onclose={onclosetool} />
   {:else if tool?.kind === 'sweep' && group}
     {@const { feed } = group}
     <SweepPlanner

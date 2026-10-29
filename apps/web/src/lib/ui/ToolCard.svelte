@@ -11,9 +11,9 @@
   interface Props {
     /** What the card is about, as screen readers name it. */
     label: string;
-    undoLabel: string;
-    canUndo: boolean;
-    onundo: () => void;
+    /** Takes back the last tap; none for a tool of one tap. */
+    undo?:
+      { readonly label: string; readonly disabled: boolean; readonly run: () => void } | undefined;
     closeLabel: string;
     onclose: () => void;
     /** The button that ends the tool with what it made; none for a tool that only shows. */
@@ -25,22 +25,23 @@
     children: Snippet;
   }
 
-  let { label, undoLabel, canUndo, onundo, closeLabel, onclose, finish, tools, children }: Props =
-    $props();
+  let { label, undo, closeLabel, onclose, finish, tools, children }: Props = $props();
 </script>
 
 <MapCard {label}>
   <div class="text">{@render children()}</div>
   <div class="controls">
-    <button
-      class="icon"
-      aria-label={undoLabel}
-      title={undoLabel}
-      disabled={!canUndo}
-      onclick={onundo}
-    >
-      <Pictogram name="undo" size={22} />
-    </button>
+    {#if undo}
+      <button
+        class="icon"
+        aria-label={undo.label}
+        title={undo.label}
+        disabled={undo.disabled}
+        onclick={undo.run}
+      >
+        <Pictogram name="undo" size={22} />
+      </button>
+    {/if}
     {@render tools?.()}
     <button class="icon" aria-label={closeLabel} title={closeLabel} onclick={onclose}>✕</button>
     {#if finish}

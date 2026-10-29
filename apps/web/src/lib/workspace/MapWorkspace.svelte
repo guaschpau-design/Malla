@@ -49,7 +49,7 @@
   import RadarLayer from '../radar/RadarLayer.svelte';
   import type { Preferences } from '../settings/preferences.ts';
   import MapTasks from '../tasks/MapTasks.svelte';
-  import { myPendingCount, placePoint } from '../tasks/tasks.ts';
+  import { myPendingCount, placePoint, type TaskEditing } from '../tasks/tasks.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import { deviceClock } from '../sync/device-clock.svelte.ts';
   import { useStandingNotice } from '../ui/notices.svelte.ts';
@@ -322,6 +322,9 @@
     onplace={showPlace}
     onplansweep={(area: string) => {
       startTool({ kind: 'sweep', area });
+    }}
+    onpicktaskplace={(editing: TaskEditing) => {
+      startTool({ kind: 'task-place', editing });
     }}
   />
 

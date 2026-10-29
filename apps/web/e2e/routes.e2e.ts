@@ -35,7 +35,7 @@ test('a route drawn on the map is handed as a task and followed', async ({ brows
   await expect(route).toContainText(/Ruta\s·\s\d+\sm/);
   await route.getByRole('button', { name: 'Tarea en esta ruta' }).click();
   const anaTasks = ana.getByRole('region', { name: 'Tareas' });
-  await expect(anaTasks.getByText('En el mapa: Ruta «Ronda norte»')).toBeVisible();
+  await expect(anaTasks.getByText('Lugar: Ruta «Ronda norte»')).toBeVisible();
   await anaTasks.getByLabel('Qué hay que hacer').fill('Recorrer la ronda');
   await anaTasks.getByLabel('Para').selectOption({ label: 'Berta' });
   await anaTasks.getByRole('button', { name: 'Guardar' }).click();

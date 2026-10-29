@@ -58,9 +58,7 @@
 
 <ToolCard
   label={title}
-  undoLabel={t('undo')}
-  canUndo={draft.points.length > 0}
-  {onundo}
+  undo={{ label: t('undo'), disabled: draft.points.length === 0, run: onundo }}
   closeLabel={t('cancel')}
   onclose={oncancel}
   finish={draft.kind === 'marker'

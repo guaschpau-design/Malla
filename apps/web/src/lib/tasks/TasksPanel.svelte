@@ -31,12 +31,15 @@
     /** The task being edited, or null for the list. */
     editing: TaskEditing | null;
     onsave: (task: EventRef | null, fields: TaskFields) => Promise<void>;
+    /** Leaves the panel to pick on the map the place of the task being edited. */
+    onpickplace: (editing: TaskEditing) => void;
     /** Shows a task's place on the map, with its panel. */
     onplace: (place: Place) => void;
     onclose: () => void;
   }
 
-  let { t, groupState, self, format, editing, onsave, onplace, onclose }: Props = $props();
+  let { t, groupState, self, format, editing, onsave, onpickplace, onplace, onclose }: Props =
+    $props();
 
   const list = $derived(taskList(groupState, self));
 
@@ -98,7 +101,19 @@
 <Panel title={t('tasks')} closeLabel={t('close')} {onclose}>
   {#if editing}
     {#key editing}
-      <TaskForm {t} {groupState} {self} {editing} {format} {onsave} onback={stopEditingTask} />
+      {@const edited = editing}
+      <TaskForm
+        {t}
+        {groupState}
+        {self}
+        {editing}
+        {format}
+        {onsave}
+        onpickplace={(draft: TaskFields) => {
+          onpickplace({ ...edited, draft });
+        }}
+        onback={stopEditingTask}
+      />
     {/key}
   {:else}
     <div class="stack section">
