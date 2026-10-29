@@ -9,7 +9,7 @@ async function invitationLink(page: Page, role: 'miembro' | 'coordinador'): Prom
   await page.getByRole('radio', { name: role }).click();
   await expect(page.getByRole('img', { name: 'Código QR de la invitación' })).toBeVisible();
   const link = await page.getByLabel('Enlace de invitación').inputValue();
-  await page.getByRole('button', { name: 'Volver' }).click();
+  await page.getByRole('button', { name: 'Listo' }).click();
   return link;
 }
 

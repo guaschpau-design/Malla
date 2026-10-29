@@ -5,7 +5,7 @@
   import { areaSquareMeters, lanesLength, pathMeters, type GroupState } from '@tesel/core';
   import { eventRefKey, ShapeStyleCode, type Place } from '@tesel/protocol';
 
-  import CoordinateBlock from '../coordinates/CoordinateBlock.svelte';
+  import CoordinateLine from '../coordinates/CoordinateLine.svelte';
   import type { CoordinateFormat } from '../coordinates/coordinates.ts';
   import { formatArea, formatDistance, formatTime } from '../format.ts';
   import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
@@ -174,7 +174,7 @@
         {kindName}{#if measure}&nbsp;· {measure}{/if}
       </p>
       {#if at}
-        <CoordinateBlock {t} {at} {format} />
+        <CoordinateLine {t} {at} {format} />
         <FromHere {t} {locale} {at} />
       {/if}
       {#if object.type === 'sweep'}

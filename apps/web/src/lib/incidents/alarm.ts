@@ -1,6 +1,6 @@
-// Making sure an SOS, a critical alert or a roll call is noticed: the phone vibrates (not on the
-// iPhone, whose browsers have no vibration), a tone sounds, and, while the app is not on screen,
-// the system shows a notification the user can tap to come back.
+// Making sure an SOS is noticed: the phone vibrates (not on the iPhone, whose browsers have no
+// vibration), a tone sounds, and, while the app is not on screen, the system shows a notification
+// the user can tap to come back.
 
 /** What an alarm says when it shows as a system notification. */
 export interface AlarmMessage {

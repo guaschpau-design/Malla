@@ -8,21 +8,21 @@ const ANA = 'a1b2c3d4' as NodeId;
 const BERTA = 'b2c3d4e5' as NodeId;
 const T0 = 1_761_350_400;
 
+const report = {
+  place: null,
+  incident: 'fire',
+  hazards: [],
+  access: 'unknown',
+  casualties: { red: null, yellow: null, green: null, black: null },
+  resources: [],
+  note: 'parte',
+} as const;
+
 describe('chat timeline', () => {
-  it('interleaves alerts and reports with chat lines by time', () => {
-    const report = {
-      place: null,
-      incident: 'fire',
-      hazards: [],
-      access: 'unknown',
-      casualties: { red: null, yellow: null, green: null, black: null },
-      resources: [],
-      note: 'parte',
-    } as const;
+  it('interleaves reports with chat lines by time', () => {
     const state = stateOf([
       { type: 'chat', origin: ANA, seq: 3, time: T0 + 20, text: 'después' },
       { type: 'report', origin: ANA, seq: 4, time: T0 + 15, ...report },
-      { type: 'alert', origin: ANA, seq: 2, time: T0 + 10, level: 'warning', text: 'aviso' },
       { type: 'chat', origin: ANA, seq: 1, time: T0, text: 'antes' },
     ]);
     const said = timeline(state).map((entry) => [
@@ -31,7 +31,6 @@ describe('chat timeline', () => {
     ]);
     expect(said).toEqual([
       ['chat', 'antes'],
-      ['alert', 'aviso'],
       ['report', 'parte'],
       ['chat', 'después'],
     ]);
@@ -43,7 +42,7 @@ describe('chat timeline', () => {
       { type: 'chat', origin: ANA, seq: 2, time: T0 + 60, text: 'dos' },
       { type: 'chat', origin: BERTA, seq: 1, time: T0 + 70, text: 'tres' },
       { type: 'chat', origin: ANA, seq: 3, time: T0 + 80, text: 'cuatro' },
-      { type: 'alert', origin: ANA, seq: 4, time: T0 + 90, level: 'info', text: 'aviso' },
+      { type: 'report', origin: ANA, seq: 4, time: T0 + 90, ...report },
       { type: 'chat', origin: ANA, seq: 5, time: T0 + 100, text: 'cinco' },
       { type: 'chat', origin: ANA, seq: 6, time: T0 + 100 + RUN_GAP_SECONDS + 1, text: 'seis' },
     ]);

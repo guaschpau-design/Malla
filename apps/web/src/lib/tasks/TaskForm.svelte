@@ -36,10 +36,11 @@
     /** Leaves the form to pick the task's place on the map, with what it holds so far. */
     onpickplace: (draft: TaskFields) => void;
     /** Back to the list. */
-    onback: () => void;
+    /** Leaves the form: saved, or given up. */
+    onclose: () => void;
   }
 
-  let { t, groupState, self, editing, format, onsave, onpickplace, onback }: Props = $props();
+  let { t, groupState, self, editing, format, onsave, onpickplace, onclose }: Props = $props();
 
   const STATUSES: readonly { status: TaskStatus; label: MessageKey }[] = [
     { status: 'open', label: 'taskOpen' },
@@ -85,7 +86,7 @@
   const tooLong = $derived(size > TASK_TEXT_MAX_BYTES);
 
   async function save(fields: TaskFields): Promise<void> {
-    if (await submission.run(() => onsave(existing?.task ?? null, fields))) onback();
+    if (await submission.run(() => onsave(existing?.task ?? null, fields))) onclose();
   }
 
   function fields(): TaskFields {
@@ -184,7 +185,7 @@
     <button type="submit" class="primary" disabled={submission.busy || size === 0 || tooLong}
       >{t('save')}</button
     >
-    <button type="button" onclick={onback}>{t('back')}</button>
+    <button type="button" onclick={onclose}>{t('cancel')}</button>
     {#if existing}
       <button type="button" class="danger-text" disabled={submission.busy} onclick={cancelTask}>
         {t('taskCancel')}

@@ -1,9 +1,11 @@
-<!-- In the top bar: how this device reaches its group now, by medium — WiFi, 4G/5G, LoRa — with a
-     coloured dot. Opens the connections panel. -->
+<!-- In the top bar: how this device reaches its group now, a coloured dot and a sign for each
+     medium (WiFi, mobile data, LoRa), named in full where there is room. Opens the connections
+     panel. -->
 <script lang="ts">
   import type { Translate } from '../i18n/index.ts';
+  import Pictogram from '../ui/Pictogram.svelte';
   import StatusDot from '../ui/StatusDot.svelte';
-  import { channelName, LEVEL_TONES, type Link, type Network } from './links.ts';
+  import { channelName, LEVEL_TONES, networkSign, type Link, type Network } from './links.ts';
 
   interface Props {
     t: Translate;
@@ -17,6 +19,8 @@
 
   let { t, link, network, detail, expanded, onclick }: Props = $props();
 
+  /** The media in use, each with its sign; none while connecting or cut off. */
+  const signs = $derived(link.level === 'ok' ? link.channels : []);
   const label = $derived.by(() => {
     if (link.level === 'connecting') return t('linkConnecting');
     if (link.level === 'none') return t('linkNone');
@@ -32,7 +36,10 @@
   title={detail}
 >
   <StatusDot tone={LEVEL_TONES[link.level]} />
-  {label}
+  {#each signs as channel (channel)}
+    <Pictogram name={channel === 'radio' ? 'mast' : networkSign(channel, network)} size={18} />
+  {/each}
+  <span class="label" class:signed={signs.length > 0}>{label}</span>
 </button>
 
 <style>
@@ -51,5 +58,12 @@
     color: inherit;
     white-space: nowrap;
     border-color: var(--chrome-line);
+  }
+
+  /* On a phone the signs say it: the names are left to screen readers. */
+  @media (max-width: 30rem) {
+    .label.signed {
+      display: none;
+    }
   }
 </style>

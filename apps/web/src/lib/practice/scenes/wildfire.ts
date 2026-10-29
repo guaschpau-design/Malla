@@ -10,6 +10,7 @@ import { YOU, type Scenario } from '@tesel/scenario';
 import type { Translate } from '../../i18n/index.ts';
 import {
   CARMEN,
+  carmensWarning,
   introductions,
   JORDI,
   LUIS,
@@ -24,7 +25,6 @@ import {
   step,
   teammates,
   teams,
-  warningAndRollCall,
 } from './stage.ts';
 
 const AT_RISK = 'area-at-risk';
@@ -110,9 +110,7 @@ export function wildfire(t: Translate, centre: LatLon, user: Role): Scenario {
             step(45, JORDI, { type: 'chat', text: t('practiceAwaitingOrders') }),
           ]),
       ...martasSos(t, { kind: 'medical', text: 'practiceWildfireSos' }, LUIS),
-      ...(user === 'member'
-        ? warningAndRollCall(t, { level: 'critical', text: 'practiceWildfireWarning' })
-        : []),
+      ...(user === 'member' ? carmensWarning(t, 'practiceWildfireWarning') : []),
       step(360, JORDI, {
         type: 'report',
         incident: 'fire',

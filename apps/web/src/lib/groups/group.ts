@@ -35,6 +35,8 @@ export interface StoredGroup {
    * this device (lib/practice).
    */
   readonly practice?: Situation;
+  /** How many chat lines and reports of others this device has shown: the rest are new. */
+  readonly chatSeen?: number;
 }
 
 /** What joining through an invitation did. */

@@ -10,6 +10,7 @@ import { YOU, type Scenario } from '@tesel/scenario';
 import type { Translate } from '../../i18n/index.ts';
 import {
   CARMEN,
+  carmensWarning,
   introductions,
   JORDI,
   LUIS,
@@ -23,7 +24,6 @@ import {
   step,
   teammates,
   teams,
-  warningAndRollCall,
 } from './stage.ts';
 
 const FLOODED = 'flooded-area';
@@ -110,9 +110,7 @@ export function flood(t: Translate, centre: LatLon, user: Role): Scenario {
             step(45, JORDI, { type: 'chat', text: t('practiceAwaitingOrders') }),
           ]),
       ...martasSos(t, { kind: 'trapped', text: 'practiceFloodSos' }, JORDI),
-      ...(user === 'member'
-        ? warningAndRollCall(t, { level: 'critical', text: 'practiceFloodWarning' })
-        : []),
+      ...(user === 'member' ? carmensWarning(t, 'practiceFloodWarning') : []),
       step(360, LUIS, {
         type: 'report',
         incident: 'flood',

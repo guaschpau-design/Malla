@@ -43,7 +43,7 @@
   import { storageRefusals } from './lib/storage/storage-space.svelte.ts';
   import { GroupFeed } from './lib/sync/group-feed.svelte.ts';
   import { fullscreenAtFirstTap, fullscreenSupported } from './lib/ui/fullscreen.svelte.ts';
-  import { closePanel, isOpen, openPanel, togglePanel } from './lib/ui/panels.svelte.ts';
+  import { closePanel, isOpen, openPanel, panels, togglePanel } from './lib/ui/panels.svelte.ts';
   import { notices } from './lib/ui/notices.svelte.ts';
   import { attempt, useStorageFullNotice } from './lib/ui/submission.svelte.ts';
   import type { MapTheme } from './lib/ui/theme.ts';
@@ -285,7 +285,7 @@
       <button
         class="group"
         onclick={() => {
-          togglePanel('groups');
+          togglePanel({ name: 'groups', start: 'home' });
         }}
         aria-expanded={isOpen('groups')}
         aria-label="{t('groups')}: {groupLabel}"
@@ -316,6 +316,7 @@
         {map}
         {mapOpenedWide}
         group={workspaceGroup}
+        groupless={session?.identity !== undefined && session.activeGroup === undefined}
         {preferences}
         {offline}
         {weather}
@@ -331,7 +332,7 @@
     {/if}
 
     {#if preferences && isOpen('settings')}
-      <SettingsPanel {t} {preferences} {locale} onclose={closePanel} />
+      <SettingsPanel {t} {preferences} {locale} identity={session?.identity} onclose={closePanel} />
     {/if}
 
     {#if isOpen('connections')}
@@ -344,17 +345,20 @@
       />
     {/if}
 
-    {#if session && isOpen('groups')}
-      <GroupsPanel
-        {t}
-        {session}
-        activeFeed={feed}
-        oninvitation={received}
-        onleft={(group: StoredGroup) => {
-          attempt(() => radio.forgetGroup(group.secret), t('actionFailed'));
-        }}
-        onclose={closePanel}
-      />
+    {#if session && panels.open?.name === 'groups'}
+      {#key panels.open.start}
+        <GroupsPanel
+          {t}
+          {session}
+          activeFeed={feed}
+          oninvitation={received}
+          onleft={(group: StoredGroup) => {
+            attempt(() => radio.forgetGroup(group.secret), t('actionFailed'));
+          }}
+          start={panels.open.start}
+          onclose={closePanel}
+        />
+      {/key}
     {/if}
 
     {#if session && !session.identity}
@@ -399,8 +403,13 @@
     gap: 0.75rem;
     align-items: center;
     /* Clear of a notch at the top, or at a side when the phone is held sideways. */
-    padding: calc(0.5rem + env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) 0.5rem
+    padding: calc(0.3rem + env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) 0.3rem
       max(1rem, env(safe-area-inset-left));
+  }
+
+  /* A slim bar leaves the map the room: its two buttons are lower than the others. */
+  .bar :global(button) {
+    min-height: 2.25rem;
   }
 
   .brand {
@@ -440,7 +449,10 @@
   .group {
     min-width: 0;
     max-width: 45vw;
+    padding: 0.3rem 0.65rem;
     overflow: hidden;
+    font-size: var(--text-secondary);
+    font-weight: 600;
     color: inherit;
     text-overflow: ellipsis;
     white-space: nowrap;

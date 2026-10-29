@@ -9,6 +9,7 @@ import { YOU, type Scenario } from '@tesel/scenario';
 import type { Translate } from '../../i18n/index.ts';
 import {
   CARMEN,
+  carmensWarning,
   introductions,
   JORDI,
   LUIS,
@@ -22,7 +23,6 @@ import {
   step,
   teammates,
   teams,
-  warningAndRollCall,
   type Place,
 } from './stage.ts';
 
@@ -105,9 +105,7 @@ export function missingPerson(t: Translate, centre: LatLon, user: Role): Scenari
             step(45, JORDI, { type: 'chat', text: t('practiceAwaitingOrders') }),
           ]),
       ...martasSos(t, { kind: 'medical', text: 'practiceMissingSos' }, CARMEN),
-      ...(user === 'member'
-        ? warningAndRollCall(t, { level: 'info', text: 'practiceMissingWarning' })
-        : []),
+      ...(user === 'member' ? carmensWarning(t, 'practiceMissingWarning') : []),
       step(360, LUIS, {
         type: 'report',
         incident: 'missing-person',

@@ -42,7 +42,7 @@ test('a member is guided through a practice and given a task by its coordinator'
   await expect(page.getByRole('button', { name: 'Grupos: Sin grupo' })).toBeVisible();
 });
 
-test('a coordinator’s roll call is answered by the whole team', async ({ browser }) => {
+test('a coordinator talks to the team, which answers', async ({ browser }) => {
   const page = await device(browser, 'Ana', VALENCIA);
   await practise(page, { situation: 'Inundación', as: 'Coordinador' });
   const card = page.getByRole('region', { name: 'Práctica' });
@@ -50,13 +50,12 @@ test('a coordinator’s roll call is answered by the whole team', async ({ brows
   await expect(card).toContainText('Forma un equipo');
 
   await page.getByRole('button', { name: 'Chat' }).click();
+  const chat = page.getByRole('region', { name: 'Chat' });
   // The run starts once the streets around are read, which takes a moment on a busy machine.
-  await expect(page.getByText('El barranco se ha desbordado.')).toBeVisible({ timeout: 15_000 });
-  await page.getByRole('button', { name: 'Más acciones' }).click();
-  await page.getByRole('menuitem', { name: 'Pasar lista' }).click();
-  const rollCall = page.getByRole('region', { name: 'Pase de lista' });
-  await expect(rollCall).toContainText('Responden 0 de 4');
-  await expect(rollCall).toContainText('Han respondido todos.', { timeout: 20_000 });
+  await expect(chat.getByText('El barranco se ha desbordado.')).toBeVisible({ timeout: 15_000 });
+  await chat.getByLabel('Mensaje').fill('Todos al punto de encuentro');
+  await chat.getByRole('button', { name: 'Enviar', exact: true }).click();
+  await expect(chat.getByText('Recibido.')).toBeVisible({ timeout: 10_000 });
   await expect(card).toContainText('Paso 1 de 5');
 });
 

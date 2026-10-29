@@ -6,7 +6,8 @@
   import type { DutyStatus, Equipment, NodeId, Profile } from '@tesel/protocol';
   import { onMount } from 'svelte';
 
-  import CoordinateBlock from '../coordinates/CoordinateBlock.svelte';
+  import CoordinateFormatSelect from '../coordinates/CoordinateFormatSelect.svelte';
+  import CoordinateLine from '../coordinates/CoordinateLine.svelte';
   import { formatDistance } from '../format.ts';
   import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
   import { ownEquipment } from '../members/member-catalog.ts';
@@ -100,7 +101,7 @@
           {/if}
         {/if}
         {#if deviceLocation.fix}
-          <CoordinateBlock {t} at={deviceLocation.fix.at} format={preferences.coordinateFormat} />
+          <CoordinateLine {t} at={deviceLocation.fix.at} format={preferences.coordinateFormat} />
           {#if deviceLocation.fix.accuracy !== null}
             {@const quality = accuracyQuality(deviceLocation.fix.accuracy)}
             <p class="accuracy">
@@ -118,6 +119,7 @@
         {:else}
           <p class="hint">{t('navigationWaitingFix')}</p>
         {/if}
+        <CoordinateFormatSelect {t} format={preferences.coordinateFormat} />
       {/snippet}
     </MemberSheet>
   </div>

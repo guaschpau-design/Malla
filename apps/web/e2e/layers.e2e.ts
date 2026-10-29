@@ -2,8 +2,10 @@ import { device, expect, stored, test } from './helpers.ts';
 
 test('a hidden map layer stays hidden after the app restarts', async ({ browser }) => {
   const page = await device(browser, 'Ana');
+  // Trails are among the layers folded under "More layers".
   const openLayers = async () => {
     await page.getByRole('button', { name: 'Capas del mapa' }).click();
+    await page.getByText('Más capas', { exact: true }).click();
   };
   await openLayers();
   const trails = page.getByRole('switch', { name: 'Recorridos' });

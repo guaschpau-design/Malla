@@ -4,7 +4,7 @@
   import type { LatLon, SosKind } from '@tesel/protocol';
 
   import type { MessageKey, Translate } from '../i18n/index.ts';
-  import { radio } from '../radio/radio.svelte.ts';
+  import type { Delivery } from '../sync/group-feed.svelte.ts';
   import { notices } from '../ui/notices.svelte.ts';
   import type { WorkspaceGroup } from '../workspace/workspace.ts';
   import { callForHelp } from './call-for-help.ts';
@@ -29,14 +29,15 @@
   ): Promise<void> {
     await callForHelp(group.feed, kind, at === null ? null : { at, accuracy }, text);
     onclose();
-    notices.show(t(outcome()));
+    notices.show(t(OUTCOMES[group.feed.delivery]));
   }
 
   /** What became of the call: it is with the group, on its way by radio, or waiting. */
-  function outcome(): MessageKey {
-    if (group.practice || group.feed.status === 'synced') return 'sosSent';
-    return radio.linked ? 'sosByRadio' : 'sosWaiting';
-  }
+  const OUTCOMES: Readonly<Record<Delivery, MessageKey>> = {
+    group: 'sosSent',
+    radio: 'sosByRadio',
+    waiting: 'sosWaiting',
+  };
 </script>
 
 {#if open}

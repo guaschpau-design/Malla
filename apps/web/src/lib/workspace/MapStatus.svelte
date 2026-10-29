@@ -9,7 +9,8 @@
 
   import type { Locale, Translate } from '../i18n/index.ts';
   import { callForHelp } from '../incidents/call-for-help.ts';
-  import IncidentBanners from '../incidents/IncidentBanners.svelte';
+  import StartCard from '../groups/StartCard.svelte';
+  import SosBanners from '../incidents/SosBanners.svelte';
   import CheckInCard from '../me/CheckInCard.svelte';
   import { mapCentre, showPoint, showPoints } from '../map/geometry.ts';
   import type { MapTaps } from '../map/taps.ts';
@@ -28,6 +29,7 @@
   import { deviceLocation } from '../position/device-location.svelte.ts';
   import Practice from '../practice/Practice.svelte';
   import TaskPlacePicker from '../tasks/TaskPlacePicker.svelte';
+  import { noticeSent } from '../sync/sent-notice.ts';
   import { fieldsOf } from '../tasks/tasks.ts';
   import Notices from '../ui/Notices.svelte';
   import { attempt } from '../ui/submission.svelte.ts';
@@ -54,8 +56,8 @@
     onendpractice: () => void;
     /** This member is active: only then does the safety check-in ask (protocol §3.17). */
     dutyActive: boolean;
-    /** Answers a roll call with "I need help": opens the SOS dialog. */
-    onneedhelp: () => void;
+    /** This device is in no group: the ways to start are offered. */
+    groupless: boolean;
   }
 
   let {
@@ -72,8 +74,8 @@
     offline,
     onclosetool,
     dutyActive,
+    groupless,
     onendpractice,
-    onneedhelp,
   }: Props = $props();
 
   function acknowledge(target: EventRef): void {
@@ -148,7 +150,7 @@
        stay mounted, so what they hold lasts: the cards a member closed, a download under way. -->
   <div class="aside" hidden={drawingOrMeasuring}>
     {#if group}
-      <IncidentBanners
+      <SosBanners
         {t}
         {locale}
         groupState={group.feed.state}
@@ -160,8 +162,9 @@
         onshow={(at: LatLon) => {
           showPoint(map, at);
         }}
-        {onneedhelp}
       />
+    {:else if groupless}
+      <StartCard {t} />
     {/if}
   </div>
   {#if group}
@@ -189,7 +192,9 @@
     trails={slices.trails}
     self={group?.self ?? null}
     onfinishtask={async (task: TaskEvent) => {
-      await group?.feed.writeTask(task.task, { ...fieldsOf(task), status: 'done' });
+      if (group === null) return;
+      await group.feed.writeTask(task.task, { ...fieldsOf(task), status: 'done' });
+      noticeSent(t, group.feed);
     }}
   />
   {#if group?.practice}

@@ -1,6 +1,6 @@
 <!-- A point of the map, picked by a long press, found by its coordinates or tapped as a public
-     service: where it is, how far from here, what else is known of it, and what can be done
-     there. -->
+     service: how far it is from here, what else is known of it and what can be done there first,
+     then its coordinates, small, to copy. -->
 <script lang="ts">
   import type { LatLon } from '@tesel/protocol';
   import type { Snippet } from 'svelte';
@@ -11,7 +11,7 @@
   import type { Action } from '../ui/action.ts';
   import Actions from '../ui/Actions.svelte';
   import Panel from '../ui/Panel.svelte';
-  import CoordinateBlock from './CoordinateBlock.svelte';
+  import CoordinateLine from './CoordinateLine.svelte';
   import type { CoordinateFormat } from './coordinates.ts';
 
   interface Props {
@@ -43,9 +43,9 @@
 
 <Panel {title} closeLabel={t('close')} {onclose}>
   <div class="stack section">
-    <CoordinateBlock {t} {at} {format} />
     <FromHere {t} {locale} {at} />
-    {@render about?.()}
     <Actions {actions} moreLabel={t('moreActions')} />
+    {@render about?.()}
+    <CoordinateLine {t} {at} {format} />
   </div>
 </Panel>

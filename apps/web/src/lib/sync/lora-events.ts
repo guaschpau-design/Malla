@@ -47,17 +47,12 @@ export function peekType(bytes: Uint8Array): EventType | null {
 }
 
 /**
- * What a radio that has just connected learns of the group before anything is queued: the roll
- * call, the SOS calls and their cancellations, and the critical alerts. Acknowledgements of them
- * are urgent, and a cancelled SOS is no longer bridged.
+ * What a radio that has just connected learns of the group before anything is queued: the SOS
+ * calls and their cancellations. Acknowledgements of an SOS are urgent, and a cancelled SOS is no
+ * longer bridged.
  */
 export function standingEvents(state: GroupState): TeselEvent[] {
-  return [
-    ...(state.rollCall === null ? [] : [state.rollCall]),
-    ...state.sos.values(),
-    ...state.sosCancels.values(),
-    ...state.alerts.filter((alert) => alert.level === 'critical'),
-  ];
+  return [...state.sos.values(), ...state.sosCancels.values()];
 }
 
 /**

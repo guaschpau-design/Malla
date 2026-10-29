@@ -142,29 +142,6 @@ describe('practice run', () => {
     run.stop();
   });
 
-  it('answers the user’s roll call once, one teammate after another', async () => {
-    const { run, sent, own, wait } = practice();
-    run.start();
-    own.push({ ...userEvent(1), type: 'roll-call', text: '' });
-    // Seen within a second, answered 4 s later.
-    await wait(5);
-    expect(sent.filter((event) => event.type === 'ack')).toHaveLength(1);
-    await wait(3);
-    const acks = sent.filter((event) => event.type === 'ack');
-    expect(acks).toHaveLength(2);
-    expect(acks[0]).toMatchObject({ target: { origin: user.nodeId, seq: 1 } });
-    run.stop();
-  });
-
-  it('acknowledges the user’s alert', async () => {
-    const { run, sent, own, wait } = practice();
-    run.start();
-    own.push({ ...userEvent(1), type: 'alert', level: 'critical', text: 'Evacuad' });
-    await wait(8);
-    expect(sent.filter((event) => event.type === 'ack')).toHaveLength(2);
-    run.stop();
-  });
-
   it('sends the nearest teammate to the user’s SOS', async () => {
     const { run, sent, own, wait, lastPosition } = practice();
     run.start();
@@ -485,7 +462,7 @@ describe('practice run', () => {
     run.start();
     await wait(1);
     run.stop();
-    own.push({ ...userEvent(1), type: 'roll-call', text: '' });
+    own.push({ ...userEvent(1), type: 'chat', text: '¿Me oís?' });
     run.react(state());
     expect(vi.getTimerCount()).toBe(0);
   });

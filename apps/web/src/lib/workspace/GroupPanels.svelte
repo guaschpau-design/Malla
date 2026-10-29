@@ -1,9 +1,10 @@
-<!-- The panels about the active group: an object, a member, the diary, the chat and the tasks. -->
+<!-- The panels about the active group: an object, a member, the diary, the chat, a new report and
+     the tasks. -->
 <script lang="ts">
   import type { EventRef, NodeId, Role, Place } from '@tesel/protocol';
 
   import ChatPanel from '../chat/ChatPanel.svelte';
-  import type { ChatTab } from '../chat/chat-tabs.ts';
+  import { REPORTS, type ChatTab } from '../chat/chat-tabs.ts';
   import DiaryPanel from '../diary/DiaryPanel.svelte';
   import MemberDetails from '../members/MemberDetails.svelte';
   import type { Locale, Translate } from '../i18n/index.ts';
@@ -11,13 +12,15 @@
   import ObjectDetails from '../objects/ObjectDetails.svelte';
   import { removeSweep } from '../objects/sweep-actions.ts';
   import { radio } from '../radio/radio.svelte.ts';
+  import ReportForm from '../reports/ReportForm.svelte';
   import type { Preferences } from '../settings/preferences.ts';
   import type { GroupFeed, ReportFields } from '../sync/group-feed.svelte.ts';
+  import { noticeSent } from '../sync/sent-notice.ts';
   import { newTask } from '../tasks/task-editor.ts';
   import TasksPanel from '../tasks/TasksPanel.svelte';
   import type { TaskEditing, TaskFields } from '../tasks/tasks.ts';
   import { closePanel, isOpen, openPanel, panels } from '../ui/panels.svelte.ts';
-  import { attempt } from '../ui/submission.svelte.ts';
+  import Panel from '../ui/Panel.svelte';
 
   interface Props {
     t: Translate;
@@ -91,24 +94,35 @@
     groupState={feed.state}
     {self}
     undelivered={feed.undelivered}
-    coordinator={role === 'coordinator'}
     onsend={(text: string) => feed.sendChat(text)}
-    onalert={(text: string) => feed.sendAlert(text)}
     tab={panels.open.tab}
     ontab={(tab: ChatTab) => {
       openPanel({ name: 'chat', tab });
     }}
-    onreport={(report: ReportFields) => feed.sendReport(report)}
-    {onplace}
-    onrollcall={() => {
-      // Closing the chat shows who answers, in the banner on the map.
-      closePanel();
-      attempt(() => feed.callRoll(), t('actionFailed'));
+    onnewreport={() => {
+      openPanel('report');
     }}
+    {onplace}
     radioTexts={radio.texts}
     showRadioTab={radio.state !== 'disconnected' || radio.texts.length > 0}
     onclose={closePanel}
   />
+{/if}
+
+{#if isOpen('report')}
+  <Panel title={t('reportNew')} closeLabel={t('close')} onclose={closePanel}>
+    <ReportForm
+      {t}
+      {locale}
+      onsend={async (report: ReportFields) => {
+        await feed.sendReport(report);
+        noticeSent(t, feed);
+        // Sent, it is pinned with the others.
+        openPanel(REPORTS);
+      }}
+      oncancel={closePanel}
+    />
+  </Panel>
 {/if}
 
 {#if panels.open?.name === 'tasks'}
@@ -118,7 +132,10 @@
     groupState={feed.state}
     {self}
     format={preferences.coordinateFormat}
-    onsave={(task: EventRef | null, fields: TaskFields) => feed.writeTask(task, fields)}
+    onsave={async (task: EventRef | null, fields: TaskFields) => {
+      await feed.writeTask(task, fields);
+      noticeSent(t, feed);
+    }}
     onpickplace={onpicktaskplace}
     {onplace}
     onclose={closePanel}

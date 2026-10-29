@@ -11,10 +11,10 @@
   interface Props {
     t: Translate;
     onstart: (situation: Situation, role: Role) => Promise<void>;
-    onback: () => void;
+    oncancel: () => void;
   }
 
-  let { t, onstart, onback }: Props = $props();
+  let { t, onstart, oncancel }: Props = $props();
 
   let situation: Situation = $state('missing-person');
   let role: Role = $state('member');
@@ -65,7 +65,7 @@
   {#if submission.failed}<p class="warning">{t('actionFailed')}</p>{/if}
   <div class="row">
     <button type="submit" class="primary" disabled={submission.busy}>{t('practiceStart')}</button>
-    <button type="button" onclick={onback}>{t('back')}</button>
+    <button type="button" onclick={oncancel}>{t('cancel')}</button>
   </div>
 </form>
 

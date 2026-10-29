@@ -4,7 +4,6 @@
 
 import { distanceMeters, pathMeters } from '@tesel/core';
 import type {
-  AlertLevel,
   Casualties,
   DutyStatus,
   Equipment,
@@ -58,16 +57,10 @@ export type ScenarioPlace =
 
 /**
  * What a member does at a moment of the scenario. What later steps refer to (objects, SOS calls,
- * alerts, roll calls, teams, tasks) is named by `id`; members by their alias, or `YOU`.
+ * teams, tasks) is named by `id`; members by their alias, or `YOU`.
  */
 export type ScenarioAction =
   | { readonly type: 'chat'; readonly text: string }
-  | {
-      readonly type: 'alert';
-      readonly id?: string;
-      readonly level: AlertLevel;
-      readonly text: string;
-    }
   | {
       readonly type: 'marker';
       readonly id: string;
@@ -131,8 +124,7 @@ export type ScenarioAction =
       readonly heading: number;
       readonly strip: number;
       readonly strips: number;
-    }
-  | { readonly type: 'roll-call'; readonly id?: string };
+    };
 
 export interface ScenarioStep {
   /** Seconds from the start of the scenario. */

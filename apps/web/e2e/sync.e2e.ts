@@ -6,7 +6,10 @@ import { SERVER_URL } from './ports.ts';
 test('new groups propose the build’s own server', async ({ browser }) => {
   const ana = await device(browser, 'Ana');
   await ana.getByRole('button', { name: 'Grupos: Sin grupo' }).click();
-  await ana.getByRole('button', { name: 'Crear grupo' }).click();
+  await ana
+    .getByRole('region', { name: 'Grupos' })
+    .getByRole('button', { name: 'Crear grupo' })
+    .click();
   await expect(ana.getByLabel('Servidor')).toHaveValue(`${SERVER_URL}/`);
 });
 

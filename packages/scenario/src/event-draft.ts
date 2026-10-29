@@ -78,8 +78,6 @@ function eventDraft(action: PlannedAction, actor: Actor, named: Named, cast: Cas
       });
     case 'chat':
       return (header) => ({ ...header, type: 'chat', text: action.text });
-    case 'alert':
-      return (header) => ({ ...header, type: 'alert', level: action.level, text: action.text });
     case 'marker':
       return (header) => ({
         ...header,
@@ -180,15 +178,13 @@ function eventDraft(action: PlannedAction, actor: Actor, named: Named, cast: Cas
         strips: action.strips,
       });
     }
-    case 'roll-call':
-      return (header) => ({ ...header, type: 'roll-call', text: '' });
   }
 }
 
 /**
  * Performs a scenario's planned events in order, each sent by its member's device. What the
  * scenario names is remembered as it is sent, for the actions that refer to it: the references
- * of objects, SOS calls, alerts and roll calls, the IDs of teams and the latest of each task.
+ * of objects and SOS calls, the IDs of teams and the latest of each task.
  */
 export class ScenarioPerformer {
   readonly #cast: Cast;

@@ -1,6 +1,6 @@
 // Day 4: map objects, SOS calls and alerts reach the whole group.
 
-import { expect, openMore, tapMap, tapMapUntil, test, twoMembers } from './helpers.ts';
+import { expect, tapMap, tapMapUntil, test, twoMembers } from './helpers.ts';
 
 const VIEW = '/#map=15/39.4699/-0.3763';
 
@@ -80,52 +80,6 @@ test('an SOS sent with no link is kept, says it waits, and reaches the group onc
     timeout: 15_000,
   });
   await expect(own).not.toContainText('Aún no ha salido de este dispositivo');
-});
-
-test('a critical alert stays on screen until each member acknowledges it', async ({ browser }) => {
-  const { ana, berta } = await twoMembers(browser, VIEW);
-
-  await ana.getByRole('button', { name: 'Chat' }).click();
-  await ana.getByLabel('Mensaje').fill('Evacuad la zona norte');
-  await ana.getByRole('button', { name: 'Más acciones' }).click();
-  await ana.getByRole('menuitem', { name: /Enviar como alerta/ }).click();
-
-  const alert = berta.getByRole('region', { name: 'Alerta crítica' });
-  await expect(alert).toContainText('Evacuad la zona norte');
-  await alert.getByRole('button', { name: 'Recibido' }).click();
-  await expect(alert).toBeHidden();
-  await ana.getByRole('region', { name: 'Chat' }).getByRole('button', { name: 'Cerrar' }).click();
-  await expect(ana.getByRole('region', { name: 'Alerta crítica' })).toContainText(
-    'Recibido por Berta',
-  );
-});
-
-test('a roll call is answered by each member and followed by its caller', async ({ browser }) => {
-  const { ana, berta } = await twoMembers(browser, VIEW);
-
-  await ana.getByRole('button', { name: 'Chat' }).click();
-  await ana.getByRole('button', { name: 'Más acciones' }).click();
-  await ana.getByRole('menuitem', { name: 'Pasar lista' }).click();
-  const caller = ana.getByRole('region', { name: 'Pase de lista' });
-  await expect(caller).toContainText('Responden 0 de 1');
-  await expect(caller).toContainText('Faltan: Berta');
-
-  const call = berta.getByRole('region', { name: 'Pase de lista' });
-  await expect(call).toContainText('¿Estáis todos bien?');
-  await call.getByRole('button', { name: 'Estoy bien' }).click();
-  await expect(call).toBeHidden();
-
-  await expect(caller).toContainText('Responde 1 de 1');
-  await expect(caller).toContainText('Han respondido todos.');
-
-  // Closed, the card stays closed through a measure, which hides the cards while it takes the map.
-  await caller.getByRole('button', { name: 'Cerrar' }).click();
-  await expect(caller).toBeHidden();
-  await openMore(ana, 'Medir distancias');
-  const measuring = ana.getByRole('region', { name: 'Medir distancias' });
-  await measuring.getByRole('button', { name: 'Cerrar' }).click();
-  await expect(measuring).toBeHidden();
-  await expect(caller).toBeHidden();
 });
 
 test('an area is drawn point by point and described before it is shared', async ({ browser }) => {

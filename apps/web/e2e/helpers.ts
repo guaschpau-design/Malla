@@ -52,10 +52,12 @@ export async function device(
   return page;
 }
 
-/** Creates a group on the test server, from the groups panel, which stays open. */
+/** Creates a group on the test server, from the map's start card, in the groups panel that stays open. */
 export async function createGroup(page: Page, name: string): Promise<void> {
-  await page.getByRole('button', { name: 'Grupos: Sin grupo' }).click();
-  await page.getByRole('button', { name: 'Crear grupo' }).click();
+  await page
+    .getByRole('region', { name: 'Para empezar' })
+    .getByRole('button', { name: 'Crear grupo' })
+    .click();
   await page.getByLabel('Nombre del grupo').fill(name);
   await page.getByRole('button', { name: 'Crear', exact: true }).click();
 }
@@ -152,15 +154,17 @@ export async function tapMapUntil(
 }
 
 /**
- * Starts a practice from the groups panel, without a group: a situation, by its name, with the
+ * Starts a practice from the map's start card, without a group: a situation, by its name, with the
  * user as a member of the team (the practice's own choice) or as its coordinator.
  */
 export async function practise(
   page: Page,
   options: { readonly situation?: string; readonly as?: 'Miembro' | 'Coordinador' } = {},
 ): Promise<void> {
-  await page.getByRole('button', { name: 'Grupos: Sin grupo' }).click();
-  await page.getByRole('button', { name: 'Practicar con un grupo simulado' }).click();
+  await page
+    .getByRole('region', { name: 'Para empezar' })
+    .getByRole('button', { name: 'Practicar sin nadie' })
+    .click();
   if (options.situation) await page.getByRole('radio', { name: options.situation }).click();
   if (options.as) await page.getByRole('radio', { name: new RegExp(`^${options.as}`) }).click();
   await page.getByRole('button', { name: 'Empezar' }).click();

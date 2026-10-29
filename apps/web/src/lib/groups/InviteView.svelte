@@ -14,10 +14,10 @@
     t: Translate;
     group: StoredGroup;
     issuer: NodeId;
-    onback: () => void;
+    onclose: () => void;
   }
 
-  let { t, group, issuer, onback }: Props = $props();
+  let { t, group, issuer, onclose }: Props = $props();
 
   const ROLES: readonly Role[] = ['member', 'coordinator'];
   let role: Role = $state('member');
@@ -73,12 +73,12 @@
       {#if canShare}
         <button onclick={() => share(link.value)}>{t('share')}</button>
       {/if}
-      <button onclick={onback}>{t('back')}</button>
+      <button onclick={onclose}>{t('done')}</button>
     </div>
   {:else}
     <!-- The only way building fails: the app was not opened from a secure address (protocol §6). -->
     <p class="warning">{t('invitationNeedsHttps')}</p>
-    <div class="row"><button onclick={onback}>{t('back')}</button></div>
+    <div class="row"><button onclick={onclose}>{t('done')}</button></div>
   {/if}
 </div>
 

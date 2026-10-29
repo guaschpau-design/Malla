@@ -1,6 +1,7 @@
 <!-- The members of the active group, team by team, each with an initial, a name (and "coordinator"
      for those who coordinate) and two signs: whether their position is on the map, and whether
-     they have a LoRa radio linked or their news reaches this device by radio. Whoever coordinates creates and changes the teams. -->
+     they have a LoRa radio linked or their news reaches this device by radio. Whoever coordinates
+     can open each team to change it. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
   import type { NodeId, TeamEvent } from '@tesel/protocol';
@@ -11,8 +12,6 @@
   import { clockEvery } from '../ui/now.svelte.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import { ROLE_LABELS } from '../groups/role-label.ts';
-  import type { TeamFields } from '../sync/group-feed.svelte.ts';
-  import TeamForm from '../teams/TeamForm.svelte';
   import { TEAM_COLOURS } from '../teams/teams.ts';
   import { byTeam, memberRows, type MemberRow, type PositionStatus } from './member-list.ts';
 
@@ -21,13 +20,11 @@
     groupState: GroupState;
     heard: Heard;
     self: NodeId;
-    /** This device coordinates: it creates and changes teams. */
-    coordinator: boolean;
-    onsaveteam: (team: TeamFields) => Promise<void>;
-    ondissolveteam: (team: TeamEvent) => Promise<void>;
+    /** Opens a team to change it; none unless this device coordinates. */
+    onteam?: ((team: TeamEvent) => void) | undefined;
   }
 
-  let { t, groupState, heard, self, coordinator, onsaveteam, ondissolveteam }: Props = $props();
+  let { t, groupState, heard, self, onteam }: Props = $props();
 
   const POSITION_LABELS: Readonly<Record<PositionStatus, MessageKey>> = {
     live: 'positionLive',
@@ -39,8 +36,6 @@
   const now = clockEvery(30_000);
   const rows = $derived(memberRows(groupState, self, now.seconds, heard));
   const groups = $derived(byTeam(rows, groupState.teams));
-  /** The team being created or changed, if any. */
-  let editing: { readonly team: TeamEvent | null } | null = $state(null);
 </script>
 
 {#snippet member(row: MemberRow)}
@@ -82,8 +77,13 @@
           <span class="swatch" style:--swatch="var(--tone-{TEAM_COLOURS[team.colour].tone})"></span>
           {team.name}
           <span class="hint">· {group.rows.length}</span>
-          {#if coordinator}
-            <button class="edit" onclick={() => (editing = { team })}>{t('teamEdit')}</button>
+          {#if onteam}
+            <button
+              class="edit"
+              onclick={() => {
+                onteam(team);
+              }}>{t('teamEdit')}</button
+            >
           {/if}
         </h4>
       {:else if groups.length > 1}
@@ -96,21 +96,7 @@
       </ul>
     </section>
   {/each}
-  {#if coordinator}
-    <button class="new-team" onclick={() => (editing = { team: null })}>{t('teamNew')}</button>
-  {/if}
 </div>
-
-{#if editing}
-  <TeamForm
-    {t}
-    {groupState}
-    team={editing.team}
-    onsave={onsaveteam}
-    ondissolve={ondissolveteam}
-    onclose={() => (editing = null)}
-  />
-{/if}
 
 <style>
   .teams {
@@ -142,10 +128,6 @@
     margin-left: auto;
     padding: 0.2rem 0.6rem;
     font-size: var(--text-secondary);
-  }
-
-  .new-team {
-    justify-self: start;
   }
 
   .members {

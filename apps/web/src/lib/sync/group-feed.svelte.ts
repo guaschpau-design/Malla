@@ -46,6 +46,7 @@ import {
   requeueOwnEvents,
 } from '../events/event-log.ts';
 import type { StoredGroup } from '../groups/group.ts';
+import { setChatSeen } from '../groups/group-store.ts';
 import type { LocalIdentity } from '../identity/identity.ts';
 import { hear, NOTHING_HEARD, type Channel, type Heard } from '../links/heard.ts';
 import type { DeviceFix } from '../position/device-location.svelte.ts';
@@ -72,11 +73,19 @@ import { checkServerClock } from './server-clock.ts';
 /** `local-only` when the group has no server: events stay on this device (and LoRa, later). */
 export type FeedStatus = RelayStatus | 'local-only';
 
+/**
+ * Where what this device has just sent is: with the group (through the server, or in a practice,
+ * whose group is this device), on its way by radio, or waiting on the device for a way out.
+ */
+export type Delivery = 'group' | 'radio' | 'waiting';
+
 export class GroupFeed {
   state: GroupState = $state.raw(EMPTY_STATE);
   status: FeedStatus = $state('local-only');
   /** What this device has heard from each member, by channel, since the feed opened. */
   heard: Heard = $state.raw(NOTHING_HEARD);
+  /** How many chat lines and reports of others this device has shown (chat/unread.ts). */
+  chatSeen = $state(0);
   /**
    * Own events neither stored by a relay nor put on the air, by event reference key. A practice
    * delivers nothing, as nothing leaves the device, and so has none.
@@ -105,6 +114,7 @@ export class GroupFeed {
   ) {
     this.#db = db;
     this.#group = group;
+    this.chatSeen = group.chatSeen ?? 0;
     this.#identity = identity;
     this.#keys = deriveGroupKeys(group.secret);
     const server = group.server;
@@ -266,6 +276,18 @@ export class GroupFeed {
     }));
   }
 
+  get delivery(): Delivery {
+    if (this.#group.practice !== undefined || this.status === 'synced') return 'group';
+    return this.#lora === null ? 'waiting' : 'radio';
+  }
+
+  /** The chat has been shown up to `seen` lines and reports of others; kept for the next visit. */
+  async markChatSeen(seen: number): Promise<void> {
+    if (seen === this.chatSeen) return;
+    this.chatSeen = seen;
+    await setChatSeen(this.#db, this.#group.id, seen);
+  }
+
   /** Whether the group sees this device's position: it shared one and has not hidden it since. */
   get showsOwnPosition(): boolean {
     return this.state.positions.get(this.#identity.nodeId)?.type === 'position';
@@ -343,16 +365,6 @@ export class GroupFeed {
 
   async acknowledge(target: EventRef): Promise<void> {
     await this.#publish((header) => ({ ...header, type: 'ack', target }));
-  }
-
-  /** Sends a critical alert: the one kind the app sends (ADR-0026). */
-  async sendAlert(text: string): Promise<void> {
-    await this.#publish((header) => ({ ...header, type: 'alert', level: 'critical', text }));
-  }
-
-  /** Calls the roll with the usual question, which each receiver words in its language (§3.12). */
-  async callRoll(): Promise<void> {
-    await this.#publish((header) => ({ ...header, type: 'roll-call', text: '' }));
   }
 
   /**

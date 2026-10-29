@@ -1,7 +1,7 @@
 <!-- A card at the top of the map for what is going on now: an incident, drawing, measuring,
      navigating. The workspace stacks them (.map-card in app.css). Each card is a region named by
      what it is about, which screen readers can jump to; none speaks up by itself: alarms are
-     announced once, by incidents/IncidentAlarm.svelte. -->
+     announced once, by incidents/SosAlarm.svelte. -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
 

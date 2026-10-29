@@ -19,7 +19,7 @@ import type { MessageKey, Translate } from '../i18n/index.ts';
 import { ROLE_LABELS } from '../groups/role-label.ts';
 import { aliasOf, nameOf } from '../members/alias.ts';
 import { DUTY_STATUSES } from '../members/member-catalog.ts';
-import { ALERT_LEVELS, SOS_KINDS } from '../incidents/sos-kinds.ts';
+import { SOS_KINDS } from '../incidents/sos-kinds.ts';
 import { objectAnchor } from '../objects/object-anchor.ts';
 import { objectName } from '../objects/object-names.ts';
 import { reportLine } from '../reports/report-summary.ts';
@@ -46,10 +46,6 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
   const teams = new Set<NodeId>();
   /** Each member's status, as last told. */
   const statuses = new Map<NodeId, DutyStatus>();
-  // Answers can be stamped before their roll call by a device whose clock runs early.
-  const rollCalls = new Set(
-    state.journal.flatMap((event) => (event.type === 'roll-call' ? [eventRefKey(event)] : [])),
-  );
   return state.journal.flatMap((event) => {
     const text = describe(event);
     if (text === null) return [];
@@ -77,8 +73,6 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
         return t('diaryStoppedSharing');
       case 'chat':
         return t('diaryChat', { text: event.text });
-      case 'alert':
-        return t('diaryAlert', { level: t(ALERT_LEVELS[event.level]), text: event.text });
       case 'sos':
         return withText(t('diarySos', { kind: t(SOS_KINDS[event.kind]) }), event.text);
       case 'sos-cancel': {
@@ -89,14 +83,12 @@ export function diaryLines(state: GroupState, t: Translate): DiaryLine[] {
         // What was received, once it has arrived here too; until then the line waits.
         const target = eventRefKey(event.target);
         const sos = state.sos.get(target);
-        if (sos) return t('diaryAckSos', { name: aliasOf(state, sos.origin) });
-        const alert = state.alerts.find((item) => eventRefKey(item) === target);
-        if (alert) return t('diaryAckAlert', { name: aliasOf(state, alert.origin) });
-        if (rollCalls.has(target)) return t('diaryAnsweredRollCall');
-        return null;
+        return sos ? t('diaryAckSos', { name: aliasOf(state, sos.origin) }) : null;
       }
+      // The app neither sends nor shows alerts and roll calls (ADR-0070).
+      case 'alert':
       case 'roll-call':
-        return withText(t('diaryRollCall'), event.text);
+        return null;
       case 'marker':
       case 'shape':
       case 'sweep': {

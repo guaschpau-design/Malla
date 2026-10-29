@@ -25,11 +25,12 @@
   interface Props {
     t: Translate;
     locale: Locale;
+    /** Sends the report; rejects if it could not be. */
     onsend: (report: ReportFields) => Promise<void>;
-    onback: () => void;
+    oncancel: () => void;
   }
 
-  let { t, locale, onsend, onback }: Props = $props();
+  let { t, locale, onsend, oncancel }: Props = $props();
 
   let incident: IncidentType | null = $state(null);
   let casualties: Casualties = $state({ red: null, yellow: null, green: null, black: null });
@@ -64,7 +65,6 @@
         resources,
         note: note.trim(),
       });
-      onback();
     });
   }
 
@@ -78,7 +78,6 @@
     if (incident) send(incident);
   }}
 >
-  <h3>{t('reportNew')}</h3>
   <fieldset>
     <legend>{t('reportIncident')}</legend>
     <div class="chips" role="radiogroup" aria-label={t('reportIncident')}>
@@ -192,7 +191,7 @@
     <button type="submit" class="primary" disabled={incident === null || tooLong || submission.busy}
       >{t('reportSend')}</button
     >
-    <button type="button" onclick={onback}>{t('back')}</button>
+    <button type="button" onclick={oncancel}>{t('cancel')}</button>
   </div>
 </form>
 

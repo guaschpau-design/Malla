@@ -13,10 +13,11 @@
     t: Translate;
     session: Session;
     /** Back to the groups, once created or when giving up. */
-    onback: () => void;
+    /** Leaves the form: created, or given up. */
+    onclose: () => void;
   }
 
-  let { t, session, onback }: Props = $props();
+  let { t, session, onclose }: Props = $props();
 
   let newName = $state('');
   const groupName = $derived(normalizeGroupName(newName));
@@ -30,7 +31,7 @@
     if (groupName === null || server === undefined) return;
     const name = groupName;
     const chosen = server;
-    if (await submission.run(() => session.createGroup(name, chosen))) onback();
+    if (await submission.run(() => session.createGroup(name, chosen))) onclose();
   }
 </script>
 
@@ -72,7 +73,7 @@
     >
       {t('create')}
     </button>
-    <button type="button" onclick={onback}>{t('back')}</button>
+    <button type="button" onclick={onclose}>{t('cancel')}</button>
   </div>
 </form>
 

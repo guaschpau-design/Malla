@@ -51,19 +51,12 @@ describe('events as the radio sees them', () => {
     expect(calls.map(({ event }) => event.seq)).toEqual([2]);
   });
 
-  it('tells a radio the roll call, the SOS calls, their cancellations and critical alerts', () => {
+  it('tells a radio the SOS calls and their cancellations', () => {
     const state = stateOf([
       sos(1),
       { type: 'sos-cancel', origin: ME, seq: 2, time: T0, sos: { origin: ME, seq: 1 } },
-      { type: 'roll-call', origin: OTHER, seq: 1, time: T0, text: '' },
-      { type: 'alert', origin: OTHER, seq: 2, time: T0, level: 'critical', text: 'Riada' },
-      { type: 'alert', origin: OTHER, seq: 3, time: T0, level: 'info', text: 'Café' },
+      { type: 'chat', origin: OTHER, seq: 1, time: T0, text: 'hola' },
     ]);
-    expect(standingEvents(state).map((event) => event.type)).toEqual([
-      'roll-call',
-      'sos',
-      'sos-cancel',
-      'alert',
-    ]);
+    expect(standingEvents(state).map((event) => event.type)).toEqual(['sos', 'sos-cancel']);
   });
 });

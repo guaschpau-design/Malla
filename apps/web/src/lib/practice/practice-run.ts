@@ -2,9 +2,9 @@
 // each with an identity of its own, send its steps into the practice group when their moment
 // comes, and behave as people would about what happens in the group, whoever starts it: they
 // report where they are as they walk, take the tasks given to them or their team, one at a time,
-// walk to them and along them, and say when they are done; they answer roll calls and alerts, go
-// to whoever calls an SOS and stay until it is over, and answer what the user says and does. They
-// keep to the streets of the map (@tesel/scenario's WalkNetwork). Nothing leaves the device.
+// walk to them and along them, and say when they are done; they go to whoever calls an SOS and
+// stay until it is over, and answer what the user says and does. They keep to the streets of the
+// map (@tesel/scenario's WalkNetwork). Nothing leaves the device.
 
 import { EMPTY_STATE, openSosCalls, type GroupState } from '@tesel/core';
 import {
@@ -49,9 +49,6 @@ export interface PracticeOptions {
 
 /** Seconds between the position reports of each teammate. */
 const POSITION_EVERY_S = 10;
-/** The first answer to a roll call or an alert, and the time between one teammate's and the next. */
-const ANSWER_S = 4;
-const ANSWER_STAGGER_S = 3;
 /** How long a teammate takes to answer the user's SOS. */
 const SOS_ANSWER_S = 8;
 /** How long a teammate takes to take a task given to them. */
@@ -117,8 +114,6 @@ export class PracticeRun {
   /** Behaves about the group as it now is. */
   react(state: GroupState): void {
     this.#state = state;
-    this.#answerRollCall();
-    this.#answerAlerts();
     this.#goToSosCalls();
     this.#endAttendedSosCalls();
     this.#dropFinishedJobs();
@@ -171,21 +166,6 @@ export class PracticeRun {
     this.#after(POSITION_EVERY_S, () => {
       this.#reportPositions();
     });
-  }
-
-  /** Every teammate but whoever called it answers the newest roll call, one after another. */
-  #answerRollCall(): void {
-    const call = this.#state.rollCall;
-    if (call === null || !this.#first(`roll-call ${eventRefKey(call)}`)) return;
-    this.#inTurn(call.origin, (teammate) => this.#send(teammate, ack(call)));
-  }
-
-  /** Every teammate but whoever sent it acknowledges each alert, one after another. */
-  #answerAlerts(): void {
-    for (const alert of this.#state.alerts) {
-      if (!this.#first(`alert ${eventRefKey(alert)}`)) continue;
-      this.#inTurn(alert.origin, (teammate) => this.#send(teammate, ack(alert)));
-    }
   }
 
   /**
@@ -378,15 +358,6 @@ export class PracticeRun {
     return [...this.#teammates.values()]
       .filter((teammate) => !teammate.hurt)
       .sort((a, b) => a.distanceTo(at, now) - b.distanceTo(at, now))[0];
-  }
-
-  /** Every teammate but `except`, one after another, does something. */
-  #inTurn(except: NodeId, run: (teammate: Teammate) => Promise<unknown>): void {
-    [...this.#teammates.values()]
-      .filter((teammate) => teammate.node !== except)
-      .forEach((teammate, index) => {
-        this.#after(ANSWER_S + index * ANSWER_STAGGER_S, () => run(teammate));
-      });
   }
 
   /** True the first time it is asked about `key`. */

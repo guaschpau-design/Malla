@@ -5,7 +5,7 @@
   import { teamOf, type GroupState } from '@tesel/core';
   import type { NodeId } from '@tesel/protocol';
 
-  import CoordinateBlock from '../coordinates/CoordinateBlock.svelte';
+  import CoordinateLine from '../coordinates/CoordinateLine.svelte';
   import type { CoordinateFormat } from '../coordinates/coordinates.ts';
   import { formatAgo, formatTime } from '../format.ts';
   import { ROLE_LABELS } from '../groups/role-label.ts';
@@ -68,7 +68,7 @@
         {#if report?.type === 'position'}
           {@const at = { lat: report.lat, lon: report.lon }}
           <p class="hint">{t('positionAt', { time: formatTime(report.time * 1000, locale) })}</p>
-          <CoordinateBlock {t} {at} {format} />
+          <CoordinateLine {t} {at} {format} />
           <FromHere {t} {locale} {at} />
         {:else}
           <p class="hint">{t('memberNoPosition')}</p>

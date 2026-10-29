@@ -105,20 +105,22 @@
     font-size: var(--text-secondary);
   }
 
+  /* A grid of tiles, a pictogram over a short name, so every choice is in view at once. */
   .choices {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.35rem;
   }
 
   .choice {
     position: relative;
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    padding: 0.35rem 0.5rem;
-    font-size: var(--text-secondary);
+    display: grid;
+    gap: 0.25rem;
+    justify-items: center;
+    padding: 0.4rem 0.25rem;
+    font-size: var(--text-small);
     line-height: 1.2;
+    text-align: center;
     cursor: pointer;
     border: 1px solid var(--border);
     border-radius: var(--radius-control);

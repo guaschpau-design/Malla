@@ -11,10 +11,10 @@
     /** A pasted link was an invitation; the caller asks the user to confirm it. */
     oninvitation: (invitation: Invitation) => void;
     onscan: () => void;
-    onback: () => void;
+    oncancel: () => void;
   }
 
-  let { t, oninvitation, onscan, onback }: Props = $props();
+  let { t, oninvitation, onscan, oncancel }: Props = $props();
 
   const scanAvailable = canScanQr();
   let pasted = $state('');
@@ -52,7 +52,7 @@
     {#if pastedInvalid}<p class="warning">{t('notAnInvitation')}</p>{/if}
     <div class="row">
       <button type="submit" disabled={pasted.trim() === ''}>{t('join')}</button>
-      <button type="button" onclick={onback}>{t('back')}</button>
+      <button type="button" onclick={oncancel}>{t('cancel')}</button>
     </div>
   </form>
 </div>

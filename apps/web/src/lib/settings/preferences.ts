@@ -48,7 +48,7 @@ const PREFERENCES = {
   keepScreenOn: flag('keepScreenOn', false),
   /** The app over the whole screen, where a browser tab allows it: on, until switched off in More. */
   fullscreen: flag('fullscreen', true),
-  /** A tone for an SOS, a critical alert or a roll call: on, since they must not be missed. */
+  /** A tone for an SOS of someone else: on, since it must not be missed. */
   alarmSound: flag('alarmSound', true),
   /** System notifications for them while the app is not on screen: off until the user allows them. */
   notifications: flag('notifications', false),

@@ -16,6 +16,14 @@ export async function saveGroup(db: AppDb, group: StoredGroup): Promise<void> {
   await db.put('groups', group);
 }
 
+/** Records how much of a group's chat this device has shown, leaving the rest of it as it is. */
+export async function setChatSeen(db: AppDb, id: string, seen: number): Promise<void> {
+  const tx = db.transaction('groups', 'readwrite');
+  const group = await tx.store.get(id);
+  if (group) await tx.store.put({ ...group, chatSeen: seen });
+  await tx.done;
+}
+
 /** Forgets a group. If it was active, no group is active afterwards. */
 export async function deleteGroup(db: AppDb, id: string): Promise<void> {
   const tx = db.transaction(['groups', 'settings'], 'readwrite');

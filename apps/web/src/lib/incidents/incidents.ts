@@ -1,16 +1,7 @@
-// SOS calls, alerts and the roll call as the interface shows them: who, what, and who has
-// acknowledged or answered.
+// SOS calls as the interface shows them: who, what, where, and who has acknowledged them.
 
 import { openSosCalls, type GroupState } from '@tesel/core';
-import {
-  eventRefKey,
-  sosPlace,
-  type AlertEvent,
-  type LatLon,
-  type NodeId,
-  type RollCallEvent,
-  type SosEvent,
-} from '@tesel/protocol';
+import { sosPlace, type LatLon, type NodeId, type SosEvent } from '@tesel/protocol';
 
 import { aliasOf } from '../members/alias.ts';
 
@@ -46,13 +37,6 @@ export function whereSos(state: Pick<GroupState, 'positions'>, event: SosEvent):
     : { kind: 'unknown' };
 }
 
-export interface AlertView extends Acknowledgement {
-  readonly key: string;
-  readonly event: AlertEvent;
-  readonly author: string;
-  readonly mine: boolean;
-}
-
 /** SOS calls not cancelled yet, newest first. */
 export function activeSos(state: GroupState, self: NodeId): SosView[] {
   const views: SosView[] = [];
@@ -67,95 +51,6 @@ export function activeSos(state: GroupState, self: NodeId): SosView[] {
     });
   }
   return views.sort((a, b) => b.event.time - a.event.time);
-}
-
-/** Alerts sent at or after `since` (seconds), newest first. */
-export function recentAlerts(state: GroupState, self: NodeId, since: number): AlertView[] {
-  return state.alerts
-    .filter((event) => event.time >= since)
-    .map((event) => {
-      const key = eventRefKey(event);
-      return {
-        key,
-        event,
-        author: aliasOf(state, event.origin),
-        mine: event.origin === self,
-        ...acknowledgement(state, key, self),
-      };
-    })
-    .reverse();
-}
-
-/** A roll call is open for answers this long, in seconds; then it is history (§3.12). */
-export const ROLL_CALL_OPEN_S = 30 * 60;
-
-export interface RollCallView {
-  readonly key: string;
-  readonly event: RollCallEvent;
-  readonly caller: string;
-  /** This device called it. */
-  readonly mine: boolean;
-  readonly answeredBySelf: boolean;
-  /** Everyone the group knows but the caller, by alias: who said they are well, and who not yet. */
-  readonly answered: readonly string[];
-  readonly pending: readonly string[];
-}
-
-/** The current roll call while it is open at `now` (seconds), or null. */
-export function openRollCall(state: GroupState, self: NodeId, now: number): RollCallView | null {
-  const event = state.rollCall;
-  if (event === null || now - event.time > ROLL_CALL_OPEN_S) return null;
-  const key = eventRefKey(event);
-  const acks = state.acks.get(key);
-  const answered: string[] = [];
-  const pending: string[] = [];
-  for (const id of state.members.keys()) {
-    if (id === event.origin) continue;
-    (acks?.has(id) ? answered : pending).push(aliasOf(state, id));
-  }
-  const byName = (a: string, b: string) => a.localeCompare(b);
-  return {
-    key,
-    event,
-    caller: aliasOf(state, event.origin),
-    mine: event.origin === self,
-    answeredBySelf: acks?.has(self) ?? false,
-    answered: answered.sort(byName),
-    pending: pending.sort(byName),
-  };
-}
-
-/** Alerts are shown for an hour, or until dismissed on this device. */
-export const ALERT_SHOWN_S = 60 * 60;
-
-/**
- * The alerts to show at `now` (seconds): those of the last hour not dismissed on this device. A
- * critical alert this member has acknowledged needs nothing more of it and goes too.
- */
-export function alertsToShow(
-  state: GroupState,
-  self: NodeId,
-  now: number,
-  dismissed: ReadonlySet<string>,
-): AlertView[] {
-  return recentAlerts(state, self, now - ALERT_SHOWN_S).filter(
-    (alert) => !dismissed.has(alert.key) && !(alert.event.level === 'critical' && alert.bySelf),
-  );
-}
-
-/**
- * The roll call to show at `now` (seconds): the open one, while this member has to answer it or,
- * as its caller, follows the answers, until closed on this device.
- */
-export function rollCallToShow(
-  state: GroupState,
-  self: NodeId,
-  now: number,
-  dismissed: ReadonlySet<string>,
-): RollCallView | null {
-  const open = openRollCall(state, self, now);
-  if (open === null || dismissed.has(open.key)) return null;
-  return open.mine || !open.answeredBySelf ? open : null;
 }
 
 function acknowledgement(state: GroupState, key: string, self: NodeId): Acknowledgement {

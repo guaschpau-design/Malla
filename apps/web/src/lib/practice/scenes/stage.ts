@@ -1,7 +1,7 @@
 // What every practice situation shares: four simulated teammates who gather a little south-west of
 // the user, tell the team about themselves, mark the meeting point and, when the user is a member,
-// a coordinator among them who forms the teams, hands out the work, warns and calls the roll. One
-// of them, Marta, calls an SOS that another answers by going to her. Everything is placed around a
+// a coordinator among them who forms the teams, hands out the work and warns of changes. One of
+// them, Marta, calls an SOS that another answers by going to her. Everything is placed around a
 // point in metres, then kept to the streets by the practice run (@tesel/scenario's onFoot).
 
 import { offsetMeters } from '@tesel/core';
@@ -142,13 +142,7 @@ export function martasSos(
   ];
 }
 
-/** When the user is a member: Carmen warns everyone and, a while later, calls the roll. */
-export function warningAndRollCall(
-  t: Translate,
-  warning: { readonly level: 'info' | 'warning' | 'critical'; readonly text: MessageKey },
-): ScenarioStep[] {
-  return [
-    step(220, CARMEN, { type: 'alert', level: warning.level, text: t(warning.text) }),
-    step(300, CARMEN, { type: 'roll-call' }),
-  ];
+/** When the user is a member: Carmen tells everyone of a change, in the chat. */
+export function carmensWarning(t: Translate, text: MessageKey): ScenarioStep[] {
+  return [step(220, CARMEN, { type: 'chat', text: t(text) })];
 }

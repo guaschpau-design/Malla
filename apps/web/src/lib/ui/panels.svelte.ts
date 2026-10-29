@@ -11,10 +11,22 @@ import type { TaskEditing } from '../tasks/tasks.ts';
 
 /** Panels that show the same thing whenever they open. */
 export type PlainPanelName =
-  'offline' | 'groups' | 'connections' | 'settings' | 'layers' | 'me' | 'find' | 'diary';
+  | 'offline'
+  | 'connections'
+  | 'settings'
+  | 'layers'
+  | 'me'
+  | 'find'
+  | 'diary'
+  /** A new situation report. */
+  | 'report';
+
+/** Where the groups panel opens: its list, or straight on one of the ways to a group. */
+export type GroupsStart = 'home' | 'create' | 'join' | 'practice';
 
 export type Panel =
   | { readonly name: PlainPanelName }
+  | { readonly name: 'groups'; readonly start: GroupsStart }
   /** An object of the group, by its reference's key. */
   | { readonly name: 'object'; readonly key: string }
   | { readonly name: 'member'; readonly member: NodeId }

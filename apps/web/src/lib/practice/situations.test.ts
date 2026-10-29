@@ -41,14 +41,11 @@ describe.each(SITUATIONS)('the %s practice', (situation) => {
     expect(tasks.filter((task) => teams.some((team) => team.team === task.assignee))).toHaveLength(
       2,
     );
-    expect(sent.some((event) => event.type === 'roll-call')).toBe(true);
   });
 
   it('leaves the organising to a coordinator', async () => {
     const sent = await events(situation, 'coordinator');
-    expect(
-      sent.filter((event) => ['team', 'task', 'roll-call', 'alert'].includes(event.type)),
-    ).toEqual([]);
+    expect(sent.filter((event) => event.type === 'team' || event.type === 'task')).toEqual([]);
     expect(
       sent.find((event) => event.type === 'member-info' && event.role === 'coordinator'),
     ).toBeUndefined();

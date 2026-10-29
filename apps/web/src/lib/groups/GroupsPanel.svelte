@@ -1,15 +1,18 @@
 <!-- The groups: the one in use, the others, two big buttons to create or join one, and a practice
      with a simulated group. With a group in use, the others and the ways to a new one fold under
-     it: they are seldom needed during an operation. Creating, joining, inviting and scanning each
-     open in the panel and come back here. -->
+     it, and leaving it comes last, apart: both are seldom needed during an operation. Creating,
+     joining, inviting and scanning each open in the panel and come back here; the welcome card on
+     the map opens it straight on one of them (`start`). -->
 <script lang="ts">
   import type { Invitation, Role } from '@tesel/protocol';
 
-  import { guideUrl } from '../config.ts';
+  import { untrack } from 'svelte';
+
   import type { Translate } from '../i18n/index.ts';
   import PracticeSetup from '../practice/PracticeSetup.svelte';
   import type { Situation } from '../practice/situations.ts';
   import type { Session } from '../session.svelte.ts';
+  import type { GroupsStart } from '../ui/panels.svelte.ts';
   import type { GroupFeed } from '../sync/group-feed.svelte.ts';
   import { confirmations } from '../ui/confirmations.svelte.ts';
   import Fold from '../ui/Fold.svelte';
@@ -32,19 +35,15 @@
     oninvitation: (invitation: Invitation) => void;
     /** A group was left: its channel goes from the radio. */
     onleft: (group: StoredGroup) => void;
+    /** Where the panel opens: its list, or straight on creating, joining or practising. */
+    start: GroupsStart;
     onclose: () => void;
   }
 
-  let { t, session, activeFeed, oninvitation, onleft, onclose }: Props = $props();
+  let { t, session, activeFeed, oninvitation, onleft, start, onclose }: Props = $props();
 
-  type View =
-    | { kind: 'home' }
-    | { kind: 'create' }
-    | { kind: 'join' }
-    | { kind: 'scan' }
-    | { kind: 'practice' }
-    | { kind: 'invite'; group: StoredGroup };
-  let view: View = $state.raw({ kind: 'home' });
+  type View = { kind: GroupsStart | 'scan' } | { kind: 'invite'; group: StoredGroup };
+  let view: View = $state.raw(untrack(() => ({ kind: start })));
 
   const home = () => (view = { kind: 'home' });
   const others = $derived(session.groups.filter((group) => group.id !== session.activeGroupId));
@@ -104,15 +103,15 @@
 
 <Panel title={t('groups')} closeLabel={t('close')} {onclose}>
   {#if view.kind === 'create'}
-    <CreateGroupForm {t} {session} onback={home} />
+    <CreateGroupForm {t} {session} onclose={home} />
   {:else if view.kind === 'join'}
-    <JoinGroup {t} {oninvitation} onscan={() => (view = { kind: 'scan' })} onback={home} />
+    <JoinGroup {t} {oninvitation} onscan={() => (view = { kind: 'scan' })} oncancel={home} />
   {:else if view.kind === 'practice'}
-    <PracticeSetup {t} onstart={practise} onback={home} />
+    <PracticeSetup {t} onstart={practise} oncancel={home} />
   {:else if view.kind === 'scan'}
     <QrScanner {t} onresult={scanned} oncancel={home} />
   {:else if view.kind === 'invite' && session.identity}
-    <InviteView {t} group={view.group} issuer={session.identity.nodeId} onback={home} />
+    <InviteView {t} group={view.group} issuer={session.identity.nodeId} onclose={home} />
   {:else}
     <div class="stack section">
       {#if session.activeGroup && session.identity}
@@ -123,9 +122,6 @@
           feed={activeFeed}
           self={session.identity.nodeId}
           oninvite={() => (view = { kind: 'invite', group })}
-          onleave={() => {
-            void leave(group);
-          }}
         />
       {:else if session.groups.length === 0}
         <p class="hint">{t('noGroups')}</p>
@@ -144,11 +140,16 @@
         {@render elsewhere()}
       {/if}
 
-      {#if session.identity}
-        <p class="hint device">
-          {session.identity.alias} · {t('deviceId', { node: session.identity.nodeId })} ·
-          <a href={guideUrl(t('guidePath'))} target="_blank" rel="noopener">{t('guide')}</a>
-        </p>
+      {#if session.activeGroup}
+        {@const group = session.activeGroup}
+        <button
+          class="danger-text leave"
+          onclick={() => {
+            void leave(group);
+          }}
+        >
+          {group.practice ? t('endPractice') : t('leaveGroup')}
+        </button>
       {/if}
     </div>
   {/if}
@@ -193,8 +194,8 @@
     border-color: transparent;
   }
 
-  .device {
+  .leave {
+    justify-self: end;
     margin-top: 0.5rem;
-    font-size: var(--text-small);
   }
 </style>

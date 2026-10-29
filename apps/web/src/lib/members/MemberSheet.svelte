@@ -83,21 +83,7 @@
     </p>
   {/if}
   {#if edits}
-    {@const { onprofile, onstatus } = edits}
-    <label class="profile">
-      {t('profileLabel')}
-      <select
-        value={state.profile}
-        onchange={(event) => {
-          const chosen = PROFILES.find((item) => item.value === event.currentTarget.value);
-          if (chosen) onprofile(chosen.value);
-        }}
-      >
-        {#each PROFILES as item (item.value)}
-          <option value={item.value}>{t(item.label)}</option>
-        {/each}
-      </select>
-    </label>
+    {@const { onstatus } = edits}
     <div class="statuses" role="radiogroup" aria-label={t('dutyLabel')}>
       {#each Object.entries(DUTY_STATUSES) as [value, item] (value)}
         <button
@@ -130,6 +116,24 @@
   </div>
 
   <div class="folds">
+    {#if edits}
+      {@const { onprofile } = edits}
+      <!-- Told once, seldom changed: folded, unlike the status above. -->
+      <Fold title={t('profileLabel')} summary={t(profileLabel(state.profile))}>
+        <select
+          aria-label={t('profileLabel')}
+          value={state.profile}
+          onchange={(event) => {
+            const chosen = PROFILES.find((item) => item.value === event.currentTarget.value);
+            if (chosen) onprofile(chosen.value);
+          }}
+        >
+          {#each PROFILES as item (item.value)}
+            <option value={item.value}>{t(item.label)}</option>
+          {/each}
+        </select>
+      </Fold>
+    {/if}
     <Fold title={t('foldPosition')} summary={positionSummary}>
       {@render position()}
     </Fold>
@@ -226,16 +230,6 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 0.75rem;
-  }
-
-  .profile {
-    display: flex;
-    gap: 0.6rem;
-    align-items: center;
-  }
-
-  .profile select {
-    flex: 1;
   }
 
   .statuses {

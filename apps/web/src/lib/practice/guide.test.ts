@@ -67,9 +67,9 @@ describe('the practice guide', () => {
     expect(
       done(guideSteps('coordinator', false), [
         { type: 'check-in-timer', origin: ME, seq: 1, time: 1, minutes: 30 },
-        { type: 'roll-call', origin: ME, seq: 2, time: 2, text: '' },
+        { type: 'chat', origin: ME, seq: 2, time: 2, text: 'Vamos' },
         { ...task, origin: ME, seq: 3, task: { origin: ME, seq: 3 }, assignee: CARMEN },
       ]),
-    ).toEqual(['guideGiveTask', 'guideCallRoll', 'guideCheckIn']);
+    ).toEqual(['guideGiveTask', 'guideTalk', 'guideCheckIn']);
   });
 });

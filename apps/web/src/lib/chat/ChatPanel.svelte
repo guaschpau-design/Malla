@@ -1,12 +1,9 @@
-<!-- The active group's chat, with alerts and situation reports in the same timeline, and the
-     reports pinned in a tab of their own, where new ones are written. It fills the panel, so as
-     many lines as possible are in view: one row writes, and what is used less (a new report and,
-     for coordinators, sending the text as an alert, which stays on everyone's screen until they
-     acknowledge it, and calling the roll) waits in the menu beside it. -->
+<!-- The active group's chat, with situation reports in the same timeline, and the reports pinned
+     in a tab of their own, which also leads to writing a new one. It fills the panel, so as many
+     lines as possible are in view, and writes in one row. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
   import {
-    ALERT_TEXT_MAX_BYTES,
     CHAT_MAX_BYTES,
     eventRefKey,
     utf8ByteLength,
@@ -18,17 +15,13 @@
   import { formatTime } from '../format.ts';
   import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
   import { aliasOf } from '../members/alias.ts';
-  import { ALERT_LEVELS } from '../incidents/sos-kinds.ts';
   import type { StoredRadioText } from '../radio/radio-texts.ts';
-  import Menu from '../ui/Menu.svelte';
   import Panel from '../ui/Panel.svelte';
   import Pictogram from '../ui/Pictogram.svelte';
   import { Submission } from '../ui/submission.svelte.ts';
   import { Dictation, speechRecognizer, type DictationProblem } from './dictation.svelte.ts';
   import ReportCard from '../reports/ReportCard.svelte';
-  import ReportForm from '../reports/ReportForm.svelte';
   import { addedUp, casualtiesLine } from '../reports/report-summary.ts';
-  import type { ReportFields } from '../sync/group-feed.svelte.ts';
   import type { ChatTab } from './chat-tabs.ts';
   import { timeline } from './timeline.ts';
 
@@ -39,13 +32,9 @@
     self: NodeId;
     /** Own events that have reached no one yet, by event reference key: shown as pending. */
     undelivered: ReadonlySet<string>;
-    /** This device coordinates: it can send alerts and call the roll (a UI rule, ADR-0005). */
-    coordinator: boolean;
     onsend: (text: string) => Promise<void>;
-    /** Sends the text as a critical alert. */
-    onalert: (text: string) => Promise<void>;
-    onrollcall: () => void;
-    onreport: (report: ReportFields) => Promise<void>;
+    /** Opens the form of a new report. */
+    onnewreport: () => void;
     /** Shows a report's place on the map. */
     onplace: (place: Place) => void;
     /** The tab shown, and how another one is shown. */
@@ -63,11 +52,8 @@
     groupState,
     self,
     undelivered,
-    coordinator,
     onsend,
-    onalert,
-    onrollcall,
-    onreport,
+    onnewreport,
     onplace,
     tab,
     ontab,
@@ -76,8 +62,6 @@
     onclose,
   }: Props = $props();
 
-  /** Writing a new report, in the reports tab. */
-  let composing = $state(false);
   /** Newest first. */
   const reports = $derived([...groupState.reports].reverse());
   const casualtiesTotal = $derived(casualtiesLine(addedUp(groupState.reports), t));
@@ -102,19 +86,11 @@
     void tick().then(() => document.getElementById(`chat-tab-${next}`)?.focus());
   }
 
-  function newReport(): void {
-    composing = true;
-    ontab('reports');
-  }
-
   let text = $state('');
   let list: HTMLOListElement | undefined = $state();
   const entries = $derived(timeline(groupState));
   const size = $derived(utf8ByteLength(text.trim()));
-  const fits = $derived({
-    message: size > 0 && size <= CHAT_MAX_BYTES,
-    alert: size > 0 && size <= ALERT_TEXT_MAX_BYTES,
-  });
+  const fits = $derived(size > 0 && size <= CHAT_MAX_BYTES);
 
   /** Dictation, where the browser can recognise speech. */
   const Recognizer = speechRecognizer();
@@ -137,15 +113,15 @@
   const submission = new Submission();
 
   /**
-   * Sends the text typed or dictated, as a message or as an alert. The box is emptied at once,
-   * and gets the text back if it could not be sent.
+   * Sends the text typed or dictated. The box is emptied at once, and gets the text back if it
+   * could not be sent.
    */
-  async function send(as: 'message' | 'alert'): Promise<void> {
-    if (!fits[as]) return;
+  async function send(): Promise<void> {
+    if (!fits) return;
     dictation?.cancel();
     const message = text.trim();
     text = '';
-    const sent = await submission.run(() => (as === 'alert' ? onalert(message) : onsend(message)));
+    const sent = await submission.run(() => onsend(message));
     if (!sent && text === '') text = message;
   }
 
@@ -205,30 +181,24 @@
 
   <div id="chat-tabpanel" class="tabpanel" role="tabpanel" aria-labelledby="chat-tab-{tab}">
     {#if tab === 'reports'}
-      {#if composing}
-        <div class="scroll">
-          <ReportForm {t} {locale} onsend={onreport} onback={() => (composing = false)} />
-        </div>
-      {:else}
-        <div class="scroll stack">
-          {#if reports.length === 0}
-            <p class="hint">{t('reportsNone')}</p>
-          {:else}
-            {#if casualtiesTotal}
-              <p class="hint">{t('reportsTotal', { casualties: casualtiesTotal })}</p>
-            {/if}
-            <ol class="reports">
-              {#each reports as report (eventRefKey(report))}
-                <li><ReportCard {t} {locale} {groupState} {report} open {onplace} /></li>
-              {/each}
-            </ol>
+      <div class="scroll stack">
+        {#if reports.length === 0}
+          <p class="hint">{t('reportsNone')}</p>
+        {:else}
+          {#if casualtiesTotal}
+            <p class="hint">{t('reportsTotal', { casualties: casualtiesTotal })}</p>
           {/if}
-        </div>
-        <button class="primary new-report" onclick={() => (composing = true)}>
-          <Pictogram name="pushpin" size={18} />
-          {t('reportNew')}
-        </button>
-      {/if}
+          <ol class="reports">
+            {#each reports as report (eventRefKey(report))}
+              <li><ReportCard {t} {locale} {groupState} {report} open {onplace} /></li>
+            {/each}
+          </ol>
+        {/if}
+      </div>
+      <button class="primary new-report" onclick={onnewreport}>
+        <Pictogram name="pushpin" size={18} />
+        {t('reportNew')}
+      </button>
     {:else if tab === 'meshcore' && showRadioTab}
       <div class="scroll stack">
         <p class="hint">{t('meshcoreIntro')}</p>
@@ -267,16 +237,8 @@
               </li>
             {:else}
               {@const own = entry.event.origin === self}
-              <li
-                class:own
-                class:follows={entry.kind === 'chat' && entry.follows}
-                class="{entry.kind} {entry.kind === 'alert' ? `level-${entry.event.level}` : ''}"
-              >
-                {#if entry.kind === 'alert'}
-                  <span class="meta">
-                    {t(ALERT_LEVELS[entry.event.level])} · {aliasOf(groupState, entry.event.origin)}
-                  </span>
-                {:else if !own && !entry.follows}
+              <li class:own class:follows={entry.follows} class="chat">
+                {#if !own && !entry.follows}
                   <span class="meta">{aliasOf(groupState, entry.event.origin)}</span>
                 {/if}
                 <span class="line">
@@ -296,65 +258,9 @@
         class="compose"
         onsubmit={(event) => {
           event.preventDefault();
-          void send('message');
+          void send();
         }}
       >
-        <Menu label={t('moreActions')} place="start">
-          {#snippet trigger(expanded: boolean, toggle: () => void)}
-            <button
-              type="button"
-              class="icon"
-              aria-haspopup="menu"
-              aria-expanded={expanded}
-              aria-label={t('moreActions')}
-              title={t('moreActions')}
-              onclick={toggle}
-            >
-              <Pictogram name="plus" size={22} />
-            </button>
-          {/snippet}
-          {#snippet items(close: () => void)}
-            <button
-              type="button"
-              role="menuitem"
-              onclick={() => {
-                close();
-                newReport();
-              }}
-            >
-              <Pictogram name="pushpin" size={20} />
-              {t('reportNew')}
-            </button>
-            {#if coordinator}
-              <button
-                type="button"
-                role="menuitem"
-                disabled={!fits.alert}
-                onclick={() => {
-                  close();
-                  void send('alert');
-                }}
-              >
-                <Pictogram name="warning" size={20} />
-                <span class="item">
-                  {t('sendAlert')}
-                  <small>{fits.alert ? t('sendAlertHint') : t('sendAlertTypeFirst')}</small>
-                </span>
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                onclick={() => {
-                  close();
-                  onrollcall();
-                }}
-              >
-                <Pictogram name="person" size={20} />
-                {t('callRoll')}
-              </button>
-            {/if}
-          {/snippet}
-        </Menu>
         <div class="field">
           <input
             bind:value={text}
@@ -380,7 +286,7 @@
           class="primary icon"
           aria-label={t('send')}
           title={t('send')}
-          disabled={submission.busy || !fits.message}
+          disabled={submission.busy || !fits}
         >
           <Pictogram name="send" size={22} />
         </button>
@@ -487,20 +393,6 @@
   }
 
   /* Level classes are prefixed: a plain `.warning` is the app's error text (app.css). */
-  li.alert {
-    justify-self: stretch;
-    max-width: none;
-    border-left: 6px solid var(--info);
-  }
-
-  li.alert.level-warning {
-    border-left-color: var(--warning);
-  }
-
-  li.alert.level-critical {
-    border-left-color: var(--danger);
-  }
-
   /* A report is its own card, across the panel. */
   li.report,
   .reports li {
@@ -546,7 +438,7 @@
   .compose {
     display: grid;
     flex: none;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: 1fr auto;
     gap: 0.4rem;
     align-items: center;
   }
@@ -557,15 +449,6 @@
   }
 
   /* An item with a word on what it does, or on what it needs first. */
-  .item {
-    display: grid;
-  }
-
-  .item small {
-    color: var(--muted);
-    font-size: var(--text-small);
-  }
-
   /* The microphone inside the text box, at its end, where the thumb is. */
   .field {
     position: relative;

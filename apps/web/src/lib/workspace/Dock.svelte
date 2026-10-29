@@ -21,11 +21,14 @@
     onmeasure: () => void;
     /** Pending tasks assigned to this device. */
     tasksForMe: number;
+    /** Chat lines and reports of others not shown yet. */
+    chatUnread: number;
     /** Drawing or measuring: only the SOS button stays, the rest makes room for the map. */
     drawingOrMeasuring: boolean;
   }
 
-  let { t, sharing, onsos, ondraw, onmeasure, tasksForMe, drawingOrMeasuring }: Props = $props();
+  let { t, sharing, onsos, ondraw, onmeasure, tasksForMe, chatUnread, drawingOrMeasuring }: Props =
+    $props();
 
   /** With a group there is always a way of sharing the position in it. */
   const inGroup = $derived(sharing !== null);
@@ -54,10 +57,12 @@
         }}
       />
       {#if inGroup}
-        <AddMenu {t} onstart={ondraw} />
+        <AddMenu {t} {ondraw} />
         <DockButton
           icon="chat"
           label={t('chat')}
+          ariaLabel={chatUnread > 0 ? t('chatUnread', { count: chatUnread }) : t('chat')}
+          count={chatUnread}
           expanded={isOpen('chat')}
           onclick={() => {
             togglePanel(CHAT);

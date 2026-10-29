@@ -38,16 +38,23 @@ export const LAYER_SWITCHES: Readonly<Record<LayerSwitch, { label: MessageKey; i
   };
 
 /**
- * The switches by what they are about: the team's own, the surroundings, and the aids to find
- * one's way. Every switch is in exactly one section (a test checks it).
+ * The switches most used, always in view, and the rest, folded under "More layers". Every switch
+ * is in exactly one of the two (a test checks it).
  */
-export const LAYER_SECTIONS: readonly {
-  readonly title: MessageKey;
-  readonly switches: readonly LayerSwitch[];
-}[] = [
-  { title: 'layersTeam', switches: ['members', 'trails', 'objects', 'tasks', 'reports'] },
-  { title: 'layersSurroundings', switches: ['weather', 'services', 'relief', 'cadastre'] },
-  { title: 'layersOrientation', switches: ['radar', 'grid'] },
+export const LAYER_SWITCHES_SHOWN: readonly LayerSwitch[] = [
+  'members',
+  'objects',
+  'tasks',
+  'weather',
+  'services',
+];
+export const LAYER_SWITCHES_MORE: readonly LayerSwitch[] = [
+  'trails',
+  'reports',
+  'relief',
+  'cadastre',
+  'radar',
+  'grid',
 ];
 
 export function isFlag(name: LayerSwitch): name is MapFlag {

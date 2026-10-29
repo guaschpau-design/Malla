@@ -149,20 +149,25 @@ describe('the operation diary', () => {
     ]);
   });
 
-  it('tells who called the roll and who answered it, even if an answer is stamped earlier', () => {
+  it('leaves out alerts and roll calls, which the app neither sends nor shows', () => {
     const call = { type: 'roll-call', origin: ANA, seq: 20, time: T0 + 80, text: '' } as const;
+    const alert = {
+      type: 'alert',
+      origin: ANA,
+      seq: 21,
+      time: T0 + 81,
+      level: 'critical',
+      text: 'Evacuad',
+    } as const;
     const answer = {
       type: 'ack',
       origin: BERTA,
       seq: 20,
-      time: T0 + 79,
+      time: T0 + 82,
       target: { origin: ANA, seq: 20 },
     } as const;
-    const lines = diaryLines(stateOf([...EVENTS, call, answer]), translator('es'));
-    expect(lines.slice(-2).map((line) => `${line.author}: ${line.text}`)).toEqual([
-      'Berta: Responde al pase de lista: está bien.',
-      'Ana: Pasa lista.',
-    ]);
+    const before = diaryLines(stateOf(EVENTS), translator('es'));
+    expect(diaryLines(stateOf([...EVENTS, call, alert, answer]), translator('es'))).toEqual(before);
   });
 
   it('places what happened somewhere', () => {

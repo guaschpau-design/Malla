@@ -74,8 +74,8 @@ const SCENARIO: Scenario = {
         strips: 2,
       },
     },
-    { at: 7, by: 'Ana', action: { type: 'roll-call', id: 'roll' } },
-    { at: 8, by: 'Luis', action: { type: 'ack', of: 'roll' } },
+    { at: 7, by: 'Ana', action: { type: 'sos', id: 'help', kind: 'medical', text: '' } },
+    { at: 8, by: 'Luis', action: { type: 'ack', of: 'help' } },
   ],
 };
 
@@ -123,7 +123,7 @@ describe('performing a scenario', () => {
     expect(report).toMatchObject({ place: { kind: 'point', at: HERE }, incident: 'fire' });
   });
 
-  it('sweeps the area it names, and acknowledges the roll call it names', async () => {
+  it('sweeps the area it names, and acknowledges the SOS it names', async () => {
     const sent = await perform(SCENARIO);
     const area = sent.find((event) => event.type === 'shape');
     expect(sent.find((event) => event.type === 'sweep')).toMatchObject({
@@ -131,7 +131,7 @@ describe('performing a scenario', () => {
       strip: 0,
       strips: 2,
     });
-    const call = sent.find((event) => event.type === 'roll-call');
+    const call = sent.find((event) => event.type === 'sos');
     expect(sent.find((event) => event.type === 'ack')).toMatchObject({
       target: { origin: ANA, seq: call?.seq },
     });

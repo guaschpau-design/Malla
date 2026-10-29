@@ -1,7 +1,7 @@
 // The practice's guide: five things to do, shown one at a time on the practice's card, each ticked
 // off as soon as the user has done it, in any order. A member learns to see a teammate, talk, do a
-// task, answer an SOS and report; a coordinator, to form a team, hand out a task, call the roll,
-// answer an SOS and plan a sweep, or, with no area to search, turn on the check-in (ADR-0066).
+// task, answer an SOS and report; a coordinator, to form a team, hand out a task, talk, answer an
+// SOS and plan a sweep, or, with no area to search, turn on the check-in (ADR-0066).
 
 import type { GroupState } from '@tesel/core';
 import type { NodeId, Role } from '@tesel/protocol';
@@ -58,11 +58,6 @@ const GIVE_TASK: GuideStep = {
     ),
 };
 
-const CALL_ROLL: GuideStep = {
-  text: 'guideCallRoll',
-  done: (state, self) => state.rollCall?.origin === self,
-};
-
 const PLAN_SWEEP: GuideStep = {
   text: 'guidePlanSweep',
   done: (state, self) =>
@@ -78,5 +73,5 @@ const TURN_ON_CHECK_IN: GuideStep = {
 export function guideSteps(user: Role, search: boolean): readonly GuideStep[] {
   return user === 'member'
     ? [SEE_TEAMMATE, TALK, DO_TASK, ANSWER_SOS, REPORT]
-    : [FORM_TEAM, GIVE_TASK, CALL_ROLL, ANSWER_SOS, search ? PLAN_SWEEP : TURN_ON_CHECK_IN];
+    : [FORM_TEAM, GIVE_TASK, TALK, ANSWER_SOS, search ? PLAN_SWEEP : TURN_ON_CHECK_IN];
 }

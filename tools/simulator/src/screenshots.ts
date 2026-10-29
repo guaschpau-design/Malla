@@ -66,8 +66,10 @@ try {
 
   await welcome.getByLabel('Tu nombre en el grupo').fill('Ana');
   await welcome.getByRole('button', { name: 'Continuar' }).click();
-  await page.getByRole('button', { name: 'Grupos: Sin grupo' }).click();
-  await page.getByRole('button', { name: 'Crear grupo' }).click();
+  await page
+    .getByRole('region', { name: 'Para empezar' })
+    .getByRole('button', { name: 'Crear grupo' })
+    .click();
   await page.getByLabel('Nombre del grupo').fill('Equipo Turia');
   await page.getByRole('button', { name: 'Crear', exact: true }).click();
   await page.getByTitle('Conectado al servidor del grupo').waitFor();
@@ -75,7 +77,8 @@ try {
   const link = await page.getByLabel('Enlace de invitación').inputValue();
   await page.getByRole('button', { name: 'Cerrar' }).click();
   await page.getByRole('button', { name: /^Yo/ }).click();
-  await page.getByRole('radio', { name: /^Compartir/ }).click();
+  await page.getByText('Posición', { exact: true }).click();
+  await page.getByRole('switch', { name: 'Compartir mi posición' }).click();
   await page.getByRole('button', { name: 'Cerrar' }).click();
 
   const invitation = parseInvitationUrl(link);
@@ -120,7 +123,7 @@ async function showView(page: Page, hash: string): Promise<void> {
 async function openChat(page: Page): Promise<void> {
   const heading = page.getByRole('heading', { name: 'Chat' });
   for (let attempt = 0; attempt < 3 && (await heading.count()) === 0; attempt++) {
-    await page.getByRole('button', { name: 'Chat', exact: true }).click();
+    await page.getByRole('button', { name: /^Chat/ }).click();
     await page.waitForTimeout(800);
   }
 }

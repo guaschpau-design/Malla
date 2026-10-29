@@ -11,6 +11,7 @@ test('a member’s profile, status and equipment reach the others', async ({ bro
   // Berta says who she is, that she is resting and what she carries.
   await berta.getByRole('button', { name: /^Yo/ }).click();
   const me = berta.getByRole('region', { name: 'Yo' });
+  await me.getByText('Perfil', { exact: true }).click();
   await me.getByLabel('Perfil').selectOption({ label: 'Protección Civil' });
   await me.getByRole('radio', { name: 'En descanso' }).click();
   await expect(me.getByRole('radio', { name: 'En descanso' })).toBeChecked();

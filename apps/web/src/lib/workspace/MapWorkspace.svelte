@@ -41,15 +41,18 @@
   import { deviceLocation } from '../position/device-location.svelte.ts';
   import LocateButton from '../position/LocateButton.svelte';
   import SelfLayer from '../position/SelfLayer.svelte';
-  import IncidentAlarm from '../incidents/IncidentAlarm.svelte';
+  import SosAlarm from '../incidents/SosAlarm.svelte';
   import { radio } from '../radio/radio.svelte.ts';
   import ReportLayer from '../reports/ReportLayer.svelte';
   import type { TappedService } from '../services/services.ts';
   import ServicesLayer from '../services/ServicesLayer.svelte';
   import RadarLayer from '../radar/RadarLayer.svelte';
   import type { Preferences } from '../settings/preferences.ts';
+  import { storageRefusals } from '../storage/storage-space.svelte.ts';
+  import { noticeSent } from '../sync/sent-notice.ts';
   import MapTasks from '../tasks/MapTasks.svelte';
   import { myPendingCount, placePoint, type TaskEditing } from '../tasks/tasks.ts';
+  import { fromOthers } from '../chat/unread.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import { deviceClock } from '../sync/device-clock.svelte.ts';
   import { useStandingNotice } from '../ui/notices.svelte.ts';
@@ -72,6 +75,8 @@
     mapOpenedWide: boolean;
     /** The active group and this device's place in it, when there is an active group. */
     group: WorkspaceGroup | null;
+    /** This device is in no group: the ways to start are offered on the map. */
+    groupless: boolean;
     preferences: Preferences;
     /** Downloaded maps: the operation area is offered for download. */
     offline: OfflineMaps;
@@ -86,6 +91,7 @@
     map,
     mapOpenedWide,
     group,
+    groupless,
     preferences,
     offline,
     weather,
@@ -138,6 +144,21 @@
     return {
       text: deviceLocation.problem === 'denied' ? t('locationDenied') : t('locationUnavailable'),
     };
+  });
+
+  /** Chat lines and reports of others in the group, and how many of them are new here. */
+  const chatFromOthers = $derived(group ? fromOthers(group.feed.state, group.self) : 0);
+  const chatUnread = $derived(group ? Math.max(0, chatFromOthers - group.feed.chatSeen) : 0);
+
+  // While the chat is open, what arrives in it is seen.
+  $effect(() => {
+    if (group === null || !isOpen('chat')) return;
+    const { feed } = group;
+    const seen = chatFromOthers;
+    untrack(() => feed.markChatSeen(seen)).catch((error: unknown) => {
+      storageRefusals.note(error);
+      console.warn('Keeping what the chat has shown failed', error);
+    });
   });
 
   function startDrawing(kind: DraftKind): void {
@@ -210,6 +231,7 @@
     if (draft.kind === 'marker' && first) await group.feed.placeMarker(first, code, label);
     else if (geometry) await group.feed.drawShape(geometry, code, label);
     drawing.stop();
+    noticeSent(t, group.feed);
   }
 
   function select(key: string): void {
@@ -347,7 +369,7 @@
 <SelfLayer {map} />
 
 {#if group}
-  <IncidentAlarm
+  <SosAlarm
     {t}
     groupState={group.feed.state}
     self={group.self}
@@ -375,8 +397,8 @@
   {offline}
   onclosetool={() => (tool = null)}
   {onendpractice}
-  onneedhelp={() => (sosOpen = true)}
   dutyActive={preferences.dutyStatus.value === 'active'}
+  {groupless}
 />
 <MapControl {map}>
   <CompassButton {t} {map} />
@@ -407,5 +429,6 @@
     startTool({ kind: 'measure' });
   }}
   tasksForMe={group ? myPendingCount(group.feed.state, group.self) : 0}
+  {chatUnread}
   {drawingOrMeasuring}
 />

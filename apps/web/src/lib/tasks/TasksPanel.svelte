@@ -112,7 +112,7 @@
         onpickplace={(draft: TaskFields) => {
           onpickplace({ ...edited, draft });
         }}
-        onback={stopEditingTask}
+        onclose={stopEditingTask}
       />
     {/key}
   {:else}
@@ -126,7 +126,9 @@
           }}
         />
       </div>
-      {#if list.pending.length > 0}
+      {#if list.pending.length === 0}
+        <p class="hint">{t('tasksEmpty')}</p>
+      {:else}
         <ul class="cards">
           {#each list.pending as row (row.key)}{@render item(row)}{/each}
         </ul>
