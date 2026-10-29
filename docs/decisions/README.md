@@ -31,9 +31,9 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0023](0023-ign-base-maps.md)                        | Topographic and aerial base maps from Spain's IGN, read by the browser                      | Accepted, amended by 0034, 0037, 0041       |
 | [0024](0024-terrain-tiles-for-relief.md)             | Relief from the open Terrain Tiles, read by the browser                                     | Superseded by 0037                          |
 | [0025](0025-tasks.md)                                | Tasks as one event type, changed by anyone, last writer wins                                | Accepted, amended by [0059](0059-routes.md) |
-| [0026](0026-one-kind-of-alert.md)                    | The app sends one kind of alert                                                             | Accepted, amended by 0065                   |
+| [0026](0026-one-kind-of-alert.md)                    | The app sends one kind of alert                                                             | Superseded by 0070                          |
 | [0027](0027-public-services-from-the-base-map.md)    | Public services from the base map                                                           | Accepted                                    |
-| [0028](0028-roll-call.md)                            | Roll call: one event, answered with an ACK by each member                                   | Accepted                                    |
+| [0028](0028-roll-call.md)                            | Roll call: one event, answered with an ACK by each member                                   | Superseded by 0070                          |
 | [0029](0029-operation-area.md)                       | The operation area: an area style that offers its map                                       | Accepted                                    |
 | [0030](0030-weather-warnings.md)                     | Official weather warnings, gathered by the server from MeteoAlarm                           | Accepted, amended by 0038                   |
 | [0031](0031-practice-mode.md)                        | Practice mode: a simulated group played on the device                                       | Accepted, amended by 0066                   |
@@ -52,7 +52,7 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0044](0044-clocks-and-damaged-events.md)            | Keep each author's events in order, and say when a clock is wrong                           | Accepted                                    |
 | [0045](0045-server-keeps-every-distinct-envelope.md) | The server keeps every distinct envelope pushed under a key                                 | Accepted, amended by 0067                   |
 | [0046](0046-store-identity.md)                       | A server's store has an identity, and cursors belong to it                                  | Accepted                                    |
-| [0047](0047-alarms-and-notices.md)                   | Raise the alarm, and say what happened                                                      | Accepted                                    |
+| [0047](0047-alarms-and-notices.md)                   | Raise the alarm, and say what happened                                                      | Accepted, amended by 0070                   |
 | [0048](0048-how-the-app-shares-state.md)             | One rule for sharing state in the web app, and panels that carry what they show             | Accepted                                    |
 | [0049](0049-signed-images-and-checked-updates.md)    | Run only signed server images, and check every update                                       | Accepted, amended by 0068                   |
 | [0050](0050-post-certificates-from-the-server.md)    | Command posts get their certificate from the server                                         | Superseded by 0058                          |
@@ -68,10 +68,11 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0060](0060-sweeps.md)                               | Sweeps: parallel lanes over a search area, one strip per team, sent as a recipe             | Accepted                                    |
 | [0061](0061-member-state.md)                         | What members tell about themselves: one event, one card                                     | Accepted, amended by 0069                   |
 | [0062](0062-teams.md)                                | Teams: one event per team, and a task for a team is each member's                           | Accepted                                    |
-| [0063](0063-situation-reports.md)                    | Situation reports: a fixed form in one radio message, pinned in the chat                    | Accepted, amended by 0065                   |
+| [0063](0063-situation-reports.md)                    | Situation reports: a fixed form in one radio message, pinned in the chat                    | Accepted, amended by 0065, 0070             |
 | [0064](0064-check-in.md)                             | A safety check-in that asks only when it must                                               | Accepted                                    |
-| [0065](0065-room-for-what-is-read.md)                | Give the room to what is read; what is used now and then waits in a menu                    | Accepted                                    |
-| [0066](0066-practice-situations.md)                  | Practice situations, on foot along the streets, with a guide                                | Accepted                                    |
+| [0065](0065-room-for-what-is-read.md)                | Give the room to what is read; what is used now and then waits in a menu                    | Accepted, amended by 0070                   |
+| [0066](0066-practice-situations.md)                  | Practice situations, on foot along the streets, with a guide                                | Accepted, amended by 0070                   |
 | [0067](0067-envelope-nonce-from-the-event.md)        | Derive each envelope's nonce from its event                                                 | Accepted                                    |
 | [0068](0068-restorable-copies-and-going-back.md)     | Restore copies under a new identity, and go back across a change of schema                  | Accepted                                    |
 | [0069](0069-who-keeps-in-touch-without-coverage.md)  | Tell who keeps in touch without coverage                                                    | Accepted                                    |
+| [0070](0070-a-simpler-app.md)                        | A simpler app: one place to add, no alerts or roll calls, a way to start                    | Accepted                                    |

@@ -1,6 +1,6 @@
 # 0065. Give the room to what is read; what is used now and then waits in a menu
 
-- Status: Accepted
+- Status: Accepted, amended by [0070](0070-a-simpler-app.md) (one place to add, no chat menu)
 - Date: 2026-10-28
 
 ## Context

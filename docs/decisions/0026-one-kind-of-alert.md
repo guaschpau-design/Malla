@@ -1,6 +1,6 @@
 # 0026. The app sends one kind of alert
 
-- Status: Accepted, amended by [0065](0065-room-for-what-is-read.md) (the chat's menu)
+- Status: Superseded by [0070](0070-a-simpler-app.md)
 - Date: 2026-10-26
 
 ## Context

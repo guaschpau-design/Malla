@@ -1,6 +1,6 @@
 # 0066. Practice situations, on foot along the streets, with a guide
 
-- Status: Accepted
+- Status: Accepted, amended by [0070](0070-a-simpler-app.md) (no roll calls or alerts)
 - Date: 2026-10-28
 
 ## Context

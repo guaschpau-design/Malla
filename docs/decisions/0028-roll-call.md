@@ -1,6 +1,6 @@
 # 0028. Roll call: one event, answered with an ACK by each member
 
-- Status: Accepted
+- Status: Superseded by [0070](0070-a-simpler-app.md)
 - Date: 2026-10-26
 
 ## Context
