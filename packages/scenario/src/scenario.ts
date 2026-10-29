@@ -42,6 +42,15 @@ export interface ScenarioMember {
  */
 export const YOU = '@you';
 
+/** Whether a scenario names whoever plays it (`YOU`): in a team, or as whom a task is for. */
+export function namesYou(scenario: Scenario): boolean {
+  return scenario.steps.some(
+    ({ action }) =>
+      (action.type === 'team' && action.members.includes(YOU)) ||
+      (action.type === 'task' && action.assignee === YOU),
+  );
+}
+
 /** Where a task is: a point, or one of the scenario's objects by its `id`. */
 export type ScenarioPlace =
   | { readonly kind: 'point'; readonly at: LatLon }

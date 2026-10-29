@@ -1,9 +1,9 @@
 export { ScenarioPerformer, type Actor, type Cast, type EventDraft } from './event-draft.ts';
 export {
+  namesYou,
   plan,
   pointAlong,
   WALKING_SPEED,
-  whereAt,
   YOU,
   type PlannedAction,
   type PlannedEvent,
