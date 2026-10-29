@@ -41,7 +41,7 @@ export default defineConfig({
         name: 'Tesel',
         short_name: 'Tesel',
         description:
-          'Consciencia situacional para equipos: posiciones, mensajes, alertas e incidentes en un mapa común y en tiempo real, con una red de respaldo propia cuando caen la telefonía o la electricidad.',
+          'Consciencia situacional para equipos: posiciones, mensajes, tareas e incidentes en un mapa común y en tiempo real, con una red de respaldo propia cuando caen la telefonía o la electricidad.',
         lang: 'es',
         start_url: base,
         scope: base,
