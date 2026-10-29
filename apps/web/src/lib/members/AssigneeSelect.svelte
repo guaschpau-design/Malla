@@ -57,6 +57,5 @@
     display: block;
     width: 100%;
     margin-top: 0.25rem;
-    font: inherit;
   }
 </style>

@@ -221,12 +221,17 @@ label {
   font-size: var(--text-secondary);
 }
 
+/* Fields keep at least 16 px of text: with less, Safari on the iPhone zooms the page in on
+   tapping one and leaves it zoomed, cut off at the sides, as the map takes the pinch that would
+   zoom it back out. */
 input,
 select,
 textarea {
+  box-sizing: border-box;
   min-height: var(--control-size);
   padding: 0 0.6rem;
   font: inherit;
+  font-size: max(1rem, 16px);
   color: inherit;
   background: var(--bg);
   border: 1px solid var(--control-line);

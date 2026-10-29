@@ -255,7 +255,6 @@
 
   .spacing input {
     width: 4rem;
-    font: inherit;
   }
 
   .teams {

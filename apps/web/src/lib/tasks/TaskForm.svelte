@@ -197,7 +197,6 @@
   textarea,
   select {
     display: block;
-    font: inherit;
     width: 100%;
     margin-top: 0.25rem;
   }
@@ -236,6 +235,12 @@
     gap: 0.4rem 0.75rem;
     align-items: center;
     font-size: var(--text-secondary);
+  }
+
+  .place button {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
   }
 
   .where {

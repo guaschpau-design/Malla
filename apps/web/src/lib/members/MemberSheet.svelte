@@ -188,7 +188,6 @@
 
   .profile select {
     flex: 1;
-    font: inherit;
   }
 
   .statuses {
