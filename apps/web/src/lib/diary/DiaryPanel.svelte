@@ -135,7 +135,7 @@
   }
 
   .file:focus-within {
-    outline: 2px solid var(--accent-line);
+    outline: 2px solid var(--focus);
     outline-offset: 2px;
   }
 </style>

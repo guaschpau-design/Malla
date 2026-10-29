@@ -10,7 +10,7 @@
     sweepPath,
     type GroupState,
   } from '@tesel/core';
-  import type { NodeId } from '@tesel/protocol';
+  import { SWEEP_MAX_LANES, type NodeId } from '@tesel/protocol';
   import type { Map as MapLibreMap } from 'maplibre-gl';
   import { untrack } from 'svelte';
 
@@ -129,12 +129,13 @@
       <p class="title">{t('sweepPlanOf', { name: objectTitle(area, groupState.objects, t) })}</p>
       <fieldset>
         <legend>{t('sweepTerrain')}</legend>
-        <div class="row">
+        <div class="row" role="radiogroup" aria-label={t('sweepTerrain')}>
           {#each TERRAINS as terrain (terrain.spacing)}
             <button
               type="button"
               class="chip"
-              aria-pressed={spacing === terrain.spacing}
+              role="radio"
+              aria-checked={spacing === terrain.spacing}
               onclick={() => (spacing = terrain.spacing)}
             >
               {t(terrain.label)} · {terrain.spacing} m
@@ -174,7 +175,9 @@
           {t('sweepTurn')}
         </button>
       </div>
-      {#if valid}
+      {#if valid && laneCount === 0}
+        <p class="warning">{t('sweepTooWide', { lanes: SWEEP_MAX_LANES })}</p>
+      {:else if valid}
         <p class="hint">
           {t('sweepSummary', { count: laneCount, length: formatDistance(perTeam, locale) })}
         </p>
@@ -202,7 +205,7 @@
       </ul>
       {#if submission.failed}<p class="warning">{t('sendFailed')}</p>{/if}
       <div class="row">
-        <button class="primary" disabled={!valid || submission.busy} onclick={plan}
+        <button class="primary" disabled={laneCount === 0 || submission.busy} onclick={plan}
           >{t('sweepCreate')}</button
         >
         <button onclick={onclose}>{t('cancel')}</button>
@@ -234,7 +237,7 @@
     border-radius: var(--radius-pill);
   }
 
-  .chip[aria-pressed='true'] {
+  .chip[aria-checked='true'] {
     font-weight: 600;
     border-color: var(--accent-line);
     box-shadow: inset 0 0 0 1px var(--accent-line);

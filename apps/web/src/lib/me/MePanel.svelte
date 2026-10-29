@@ -17,7 +17,7 @@
   import { pendingFor } from '../tasks/tasks.ts';
   import Panel from '../ui/Panel.svelte';
   import StatusDot from '../ui/StatusDot.svelte';
-  import Switch from '../ui/Switch.svelte';
+  import SwitchRow from '../ui/SwitchRow.svelte';
   import type { StatusTone } from '../ui/status-tone.ts';
   import { deviceBattery } from './battery.svelte.ts';
 
@@ -74,25 +74,19 @@
       {#snippet position()}
         {#if sharing}
           {@const current = sharing}
-          <button
-            class="toggle"
-            role="switch"
-            aria-checked={current.mode === 'sharing'}
+          <SwitchRow
+            icon="locate"
+            label={t('shareMyPosition')}
+            on={current.mode === 'sharing'}
             onclick={() => void current.setMode(current.mode === 'sharing' ? 'paused' : 'sharing')}
-          >
-            {t('shareMyPosition')}
-            <Switch on={current.mode === 'sharing'} />
-          </button>
+          />
           {#if current.mode !== 'sharing'}
-            <button
-              class="toggle"
-              role="switch"
-              aria-checked={current.mode === 'hidden'}
+            <SwitchRow
+              icon="hidden"
+              label={t('hideLastPosition')}
+              on={current.mode === 'hidden'}
               onclick={() => void current.setMode(current.mode === 'hidden' ? 'paused' : 'hidden')}
-            >
-              {t('hideLastPosition')}
-              <Switch on={current.mode === 'hidden'} />
-            </button>
+            />
             <p class="hint">
               {current.mode === 'hidden' ? t('positionHiddenHint') : t('positionNotSharedHint')}
             </p>
@@ -123,15 +117,6 @@
 </Panel>
 
 <style>
-  .toggle {
-    display: flex;
-    gap: 0.75rem;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    text-align: left;
-  }
-
   .accuracy {
     display: flex;
     gap: 0.45rem;

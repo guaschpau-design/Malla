@@ -81,12 +81,13 @@
   <h3>{t('reportNew')}</h3>
   <fieldset>
     <legend>{t('reportIncident')}</legend>
-    <div class="chips">
+    <div class="chips" role="radiogroup" aria-label={t('reportIncident')}>
       {#each INCIDENTS as choice (choice.value)}
         <button
           type="button"
           class="chip"
-          aria-pressed={incident === choice.value}
+          role="radio"
+          aria-checked={incident === choice.value}
           onclick={() => (incident = choice.value)}>{t(choice.label)}</button
         >
       {/each}
@@ -220,7 +221,8 @@
     border-radius: var(--radius-pill);
   }
 
-  .chip[aria-pressed='true'] {
+  .chip[aria-pressed='true'],
+  .chip[aria-checked='true'] {
     font-weight: 600;
     border-color: var(--accent-line);
     box-shadow: inset 0 0 0 1px var(--accent-line);
@@ -267,5 +269,12 @@
 
   .black {
     --triage: var(--tone-ink);
+  }
+
+  /* Ink would vanish on a dark surface: grey still reads as the darkest of the four. */
+  @media (prefers-color-scheme: dark) {
+    .black {
+      --triage: var(--muted);
+    }
   }
 </style>

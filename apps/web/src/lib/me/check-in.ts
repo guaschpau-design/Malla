@@ -1,5 +1,9 @@
 // The safety check-in on this device (protocol §3.17): after a while without the member moving or
 // touching it, the device asks whether they are well; with no answer in time, it calls for help.
+// Time with the app off screen does not count: a browser cannot tell what the member did meanwhile.
+
+import { distanceMeters } from '@tesel/core';
+import type { LatLon } from '@tesel/protocol';
 
 /** After how many minutes without a tap or a move whoever coordinates has members asked. */
 export const CHECK_IN_MINUTES = 30;
@@ -8,7 +12,22 @@ export const CHECK_IN_MINUTES = 30;
 export const ANSWER_MS = 2 * 60_000;
 
 /** Moving this far, in metres, counts as being up and about. */
-export const MOVED_M = 25;
+const MOVED_M = 25;
+
+/** Where the device was, and how sure the browser was of it, in metres. */
+export interface Whereabouts {
+  readonly at: LatLon;
+  readonly accuracy: number | null;
+}
+
+/**
+ * Whether the device has moved from one place to another: more than MOVED_M, and more than the
+ * two fixes could be off together, so that a fix wandering in the same spot is not a move.
+ */
+export function hasMoved(from: Whereabouts, to: Whereabouts): boolean {
+  const uncertainty = (from.accuracy ?? 0) + (to.accuracy ?? 0);
+  return distanceMeters(from.at, to.at) >= Math.max(MOVED_M, uncertainty);
+}
 
 /** Nothing to say, asking, or help called for. */
 export type CheckInStep = 'quiet' | 'asking' | 'called';
@@ -18,6 +37,8 @@ export class CheckIn {
   #since: number;
   #asked = 0;
   #step: CheckInStep = 'quiet';
+  /** Whether the app is off screen. */
+  #away = false;
 
   constructor(now: number) {
     this.#since = now;
@@ -38,8 +59,20 @@ export class CheckIn {
     this.#step = 'quiet';
   }
 
+  /** The app went off screen: nothing is due until it is back. */
+  away(): void {
+    this.#away = true;
+  }
+
+  /** The app is on screen again: the member is there, and the wait starts again. */
+  back(now: number): void {
+    this.#away = false;
+    this.activity(now);
+  }
+
   /** What is due at `now`, after `limitMs` of quiet: to ask, to call for help, or nothing. */
   tick(now: number, limitMs: number): 'ask' | 'call' | null {
+    if (this.#away) return null;
     if (this.#step === 'quiet' && now - this.#since >= limitMs) {
       this.#step = 'asking';
       this.#asked = now;

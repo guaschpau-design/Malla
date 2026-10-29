@@ -38,6 +38,7 @@
 
 <style>
   dialog {
+    box-sizing: border-box;
     width: min(26rem, calc(100vw - 2rem));
     /* A long one, such as the list of symbols, scrolls inside rather than off the screen. */
     max-height: calc(100dvh - 2rem);

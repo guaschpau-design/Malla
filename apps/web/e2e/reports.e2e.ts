@@ -10,7 +10,7 @@ test('a situation report is sent from the chat and pinned for the group', async 
   const chat = berta.getByRole('region', { name: 'Chat' });
   await chat.getByRole('button', { name: 'Más acciones' }).click();
   await chat.getByRole('menuitem', { name: 'Nuevo parte' }).click();
-  await chat.getByRole('button', { name: 'Incendio' }).click();
+  await chat.getByRole('radio', { name: 'Incendio' }).click();
   await chat.getByRole('button', { name: 'Rojo: uno más' }).click();
   await chat.getByText('Peligros', { exact: true }).click();
   await chat.getByRole('button', { name: 'Humo' }).click();

@@ -60,8 +60,11 @@ export async function startPractice(
   return group;
 }
 
-/** Forgets a group and everything it left on this device, including its secret. */
+/**
+ * Forgets a group and everything it left on this device, including its secret: the group first,
+ * so that what is stored for it meanwhile is a leftover (`deleteLeftovers`).
+ */
 export async function leaveGroup(db: AppDb, id: string): Promise<void> {
-  await deleteGroupEvents(db, id);
   await deleteGroup(db, id);
+  await deleteGroupEvents(db, id);
 }

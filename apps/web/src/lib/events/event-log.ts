@@ -217,6 +217,28 @@ function seqRuns(
 }
 
 /** Forgets everything a group left on this device. */
+/**
+ * Forgets what groups no longer on this device left behind: events stored while one was being
+ * left, by a feed or a practice that had not stopped yet.
+ */
+export async function deleteLeftovers(db: AppDb, kept: readonly string[]): Promise<void> {
+  const found = new Set<string>();
+  const tx = db.transaction(['events', 'outbox', 'cursors']);
+  for (const name of ['events', 'outbox'] as const) {
+    const index = tx.objectStore(name).index('byGroup');
+    let cursor = await index.openKeyCursor(null, 'nextunique');
+    while (cursor) {
+      found.add(cursor.key);
+      cursor = await cursor.continue();
+    }
+  }
+  for (const [groupId] of await tx.objectStore('cursors').getAllKeys()) found.add(groupId);
+  await tx.done;
+  for (const groupId of found) {
+    if (!kept.includes(groupId)) await deleteGroupEvents(db, groupId);
+  }
+}
+
 export async function deleteGroupEvents(db: AppDb, groupId: string): Promise<void> {
   const tx = db.transaction(['events', 'outbox', 'cursors'], 'readwrite');
   for (const name of ['events', 'outbox'] as const) {

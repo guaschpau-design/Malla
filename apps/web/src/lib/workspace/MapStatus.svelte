@@ -8,6 +8,7 @@
   import type { Map as MapLibreMap } from 'maplibre-gl';
 
   import type { Locale, Translate } from '../i18n/index.ts';
+  import { callForHelp } from '../incidents/call-for-help.ts';
   import IncidentBanners from '../incidents/IncidentBanners.svelte';
   import CheckInCard from '../me/CheckInCard.svelte';
   import { mapCentre, showPoint, showPoints } from '../map/geometry.ts';
@@ -169,15 +170,7 @@
         <CheckInCard
           {t}
           minutes={checkIn.minutes}
-          onsos={() => {
-            const fix = deviceLocation.fix;
-            return feed.sendSos(
-              'general',
-              fix?.at ?? null,
-              fix?.accuracy ?? null,
-              t('checkInSosText'),
-            );
-          }}
+          onsos={() => callForHelp(feed, 'general', deviceLocation.fix, t('checkInSosText'))}
         />
       {/key}
     {/if}

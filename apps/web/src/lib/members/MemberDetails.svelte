@@ -14,7 +14,7 @@
   import FromHere from '../navigation/FromHere.svelte';
   import type { Preference } from '../settings/preference.svelte.ts';
   import { pendingFor } from '../tasks/tasks.ts';
-  import ActionButton from '../ui/ActionButton.svelte';
+  import Actions from '../ui/Actions.svelte';
   import Fold from '../ui/Fold.svelte';
   import { clockEvery } from '../ui/now.svelte.ts';
   import Panel from '../ui/Panel.svelte';
@@ -70,15 +70,6 @@
           <p class="hint">{t('positionAt', { time: formatTime(report.time * 1000, locale) })}</p>
           <CoordinateBlock {t} {at} {format} />
           <FromHere {t} {locale} {at} />
-          <div class="row">
-            <ActionButton
-              icon="heading"
-              label={t('guideMe')}
-              onclick={() => {
-                onnavigate(alias);
-              }}
-            />
-          </div>
         {:else}
           <p class="hint">{t('memberNoPosition')}</p>
         {/if}
@@ -101,5 +92,19 @@
         </Fold>
       {/snippet}
     </MemberSheet>
+    {#if report?.type === 'position'}
+      <Actions
+        actions={[
+          {
+            icon: 'heading',
+            label: t('guideMe'),
+            run: () => {
+              onnavigate(alias);
+            },
+          },
+        ]}
+        moreLabel={t('moreActions')}
+      />
+    {/if}
   </div>
 </Panel>

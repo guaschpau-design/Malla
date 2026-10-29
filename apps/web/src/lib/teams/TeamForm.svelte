@@ -179,7 +179,7 @@
   }
 
   .colour:has(input:focus-visible) {
-    outline: 2px solid var(--accent-line);
+    outline: 2px solid var(--focus);
     outline-offset: 4px;
   }
 
@@ -208,10 +208,5 @@
     display: flex;
     gap: 0.5rem;
     align-items: center;
-  }
-
-  .danger-text {
-    margin-left: auto;
-    color: var(--danger);
   }
 </style>

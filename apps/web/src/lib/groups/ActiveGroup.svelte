@@ -7,7 +7,7 @@
   import type { GroupFeed, TeamFields } from '../sync/group-feed.svelte.ts';
   import { dissolveTeam, saveTeam } from '../teams/team-actions.ts';
   import { CHECK_IN_MINUTES } from '../me/check-in.ts';
-  import Switch from '../ui/Switch.svelte';
+  import SwitchRow from '../ui/SwitchRow.svelte';
   import { attempt } from '../ui/submission.svelte.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import { canInvite, type StoredGroup } from './group.ts';
@@ -46,20 +46,15 @@
     />
     {#if group.role === 'coordinator'}
       {@const on = (current.state.checkIn?.minutes ?? 0) > 0}
-      <button
-        class="toggle"
-        role="switch"
-        aria-checked={on}
+      <SwitchRow
+        icon="person"
+        label={t('checkInSwitch')}
+        hint={t('checkInHint', { minutes: CHECK_IN_MINUTES })}
+        {on}
         onclick={() => {
           attempt(() => current.setCheckInTimer(on ? 0 : CHECK_IN_MINUTES), t('actionFailed'));
         }}
-      >
-        <span class="label">
-          {t('checkInSwitch')}
-          <small>{t('checkInHint', { minutes: CHECK_IN_MINUTES })}</small>
-        </span>
-        <Switch {on} />
-      </button>
+      />
     {/if}
   {/if}
   <div class="row">
@@ -69,31 +64,13 @@
         {t('invite')}
       </button>
     {/if}
-    <button class="leave" onclick={onleave}>
+    <button class="danger-text" onclick={onleave}>
       {group.practice ? t('endPractice') : t('leave')}
     </button>
   </div>
 </section>
 
 <style>
-  .toggle {
-    display: flex;
-    gap: 0.75rem;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    text-align: left;
-  }
-
-  .label {
-    display: grid;
-  }
-
-  .label small {
-    color: var(--muted);
-    font-size: var(--text-small);
-  }
-
   .group {
     display: grid;
     gap: 0.75rem;
@@ -119,10 +96,5 @@
     display: inline-flex;
     gap: 0.45rem;
     align-items: center;
-  }
-
-  .leave {
-    margin-left: auto;
-    color: var(--danger);
   }
 </style>

@@ -352,6 +352,10 @@
       sound: preferences.alarmSound.value,
       notifications: preferences.notifications.value,
     }}
+    oninterrupt={() => {
+      // The chat fills the screen, over the incidents' cards; other panels leave them in view.
+      if (isOpen('chat')) closePanel();
+    }}
   />
 {/if}
 <MapStatus

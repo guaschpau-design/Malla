@@ -38,6 +38,24 @@ describe('elevation tiles', () => {
     expect(first).toBe(tile.y % 2 === 0 ? 250.5 : null);
     expect(loads).toBe(1);
   });
+
+  it('tries a tile again once it could not be had, and keeps one it read', async () => {
+    const pixels: Pixels = { width: 1, height: 1, data: new Uint8ClampedArray([128, 10, 0, 255]) };
+    let online = false;
+    let loads = 0;
+    const reader = new ElevationReader(
+      () => {
+        loads++;
+        return online ? Promise.resolve(new ArrayBuffer(1)) : Promise.reject(new Error('offline'));
+      },
+      () => Promise.resolve(pixels),
+    );
+    expect(await reader.elevations([A])).toEqual([null]);
+    online = true;
+    expect(await reader.elevations([A])).toEqual([10]);
+    expect(await reader.elevations([A])).toEqual([10]);
+    expect(loads).toBe(2);
+  });
 });
 
 describe('climb along a way', () => {

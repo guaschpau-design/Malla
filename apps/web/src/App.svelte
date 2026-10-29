@@ -40,6 +40,7 @@
   import { ElevationReader } from './lib/terrain/elevation.ts';
   import { terrain } from './lib/terrain/terrain.svelte.ts';
   import { openAppDb, type AppDb } from './lib/storage/app-db.ts';
+  import { storageRefusals } from './lib/storage/storage-space.svelte.ts';
   import { GroupFeed } from './lib/sync/group-feed.svelte.ts';
   import { fullscreenAtFirstTap, fullscreenSupported } from './lib/ui/fullscreen.svelte.ts';
   import { closePanel, isOpen, openPanel, togglePanel } from './lib/ui/panels.svelte.ts';
@@ -166,13 +167,16 @@
     map = instance;
   }
 
+  /** Bumped to open the group again after opening it failed. */
+  let openings = $state(0);
+
   // One feed for the active group. It is reopened only when what it depends on changes, not
-  // whenever the list of groups is reloaded.
+  // whenever the list of groups is reloaded, or when the user tries again after it failed.
   const feedKey = $derived.by(() => {
     const group = session?.activeGroup;
     const identity = session?.identity;
     if (!group || !identity) return null;
-    return [group.id, group.server ?? '', group.role, identity.alias].join('|');
+    return [group.id, group.server ?? '', group.role, identity.alias, openings].join('|');
   });
 
   $effect(() => {
@@ -183,18 +187,30 @@
     const database = db;
     const positions = sharing;
     let opened: GroupFeed | undefined;
+    let failure: number | undefined;
     let cancelled = false;
-    void GroupFeed.open(database, group, identity).then((created) => {
-      if (cancelled) {
-        created.close();
-        return;
-      }
-      opened = created;
-      feed = created;
-      positions.attach(created);
-    });
+    GroupFeed.open(database, group, identity).then(
+      (created) => {
+        if (cancelled) {
+          created.close();
+          return;
+        }
+        opened = created;
+        feed = created;
+        positions.attach(created);
+      },
+      (error: unknown) => {
+        console.warn('The group could not be opened', error);
+        if (cancelled || storageRefusals.note(error)) return;
+        failure = notices.show(t('groupOpenFailed'), {
+          stays: true,
+          action: { label: t('tryAgain'), run: () => openings++ },
+        });
+      },
+    );
     return () => {
       cancelled = true;
+      if (failure !== undefined) notices.withdraw(failure);
       positions.detach();
       opened?.close();
       feed = undefined;

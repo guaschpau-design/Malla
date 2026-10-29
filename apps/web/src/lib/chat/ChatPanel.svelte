@@ -82,6 +82,26 @@
   const reports = $derived([...groupState.reports].reverse());
   const casualtiesTotal = $derived(casualtiesLine(addedUp(groupState.reports), t));
 
+  const tabs: readonly ChatTab[] = $derived(
+    showRadioTab ? ['group', 'reports', 'meshcore'] : ['group', 'reports'],
+  );
+
+  /** Arrow keys, Home and End move between the tabs, as in any tab list. */
+  function moveTab(event: KeyboardEvent): void {
+    const index = tabs.indexOf(tab);
+    const to = {
+      ArrowRight: (index + 1) % tabs.length,
+      ArrowLeft: (index - 1 + tabs.length) % tabs.length,
+      Home: 0,
+      End: tabs.length - 1,
+    }[event.key];
+    const next = to === undefined ? undefined : tabs[to];
+    if (next === undefined) return;
+    event.preventDefault();
+    ontab(next);
+    void tick().then(() => document.getElementById(`chat-tab-${next}`)?.focus());
+  }
+
   function newReport(): void {
     composing = true;
     ontab('reports');
@@ -129,239 +149,257 @@
     if (!sent && text === '') text = message;
   }
 
-  // Keep the newest entry in view.
+  /** How near the end, in pixels, the reader still counts as at the end. */
+  const END_SLACK_PX = 48;
+  const newestKey = $derived(entries.at(-1)?.key);
+  const newestOwn = $derived(entries.at(-1)?.event.origin === self);
+  /** Whether the reader is at the newest entry, not reading older ones. */
+  let atEnd = true;
+  /** The list last scrolled: one shown again, after another tab, opens at the newest entry. */
+  let scrolled: HTMLOListElement | undefined;
+
+  // A new entry is shown if the reader was at the end or wrote it; anything else that changes in
+  // the group leaves the reader where they are.
   $effect(() => {
-    if (entries.at(-1) === undefined) return;
-    void tick().then(() => list?.lastElementChild?.scrollIntoView({ block: 'end' }));
+    const element = list;
+    if (element === undefined || newestKey === undefined) return;
+    if (element === scrolled && !atEnd && !newestOwn) return;
+    scrolled = element;
+    void tick().then(() => element.lastElementChild?.scrollIntoView({ block: 'end' }));
   });
+
+  function onscroll(): void {
+    if (list === undefined) return;
+    atEnd = list.scrollHeight - list.scrollTop - list.clientHeight < END_SLACK_PX;
+  }
 </script>
 
 <Panel title={t('chat')} closeLabel={t('close')} {onclose} fill>
   {#snippet header()}
-    <div class="tabs" role="tablist">
-      <button
-        role="tab"
-        aria-selected={tab === 'group'}
-        onclick={() => {
-          ontab('group');
-        }}
-      >
-        {t('chatGroup')}
-      </button>
-      <button
-        role="tab"
-        aria-selected={tab === 'reports'}
-        onclick={() => {
-          ontab('reports');
-        }}
-      >
-        <Pictogram name="pushpin" size={16} />
-        {t('reportsTab')}
-        {#if reports.length > 0}<span class="count">{reports.length}</span>{/if}
-      </button>
-      {#if showRadioTab}
+    <div class="tabs" role="tablist" tabindex="-1" onkeydown={moveTab}>
+      {#each tabs as each (each)}
         <button
           role="tab"
-          aria-selected={tab === 'meshcore'}
+          id="chat-tab-{each}"
+          aria-selected={tab === each}
+          aria-controls="chat-tabpanel"
+          tabindex={tab === each ? 0 : -1}
           onclick={() => {
-            ontab('meshcore');
+            ontab(each);
           }}
         >
-          {t('chatMeshcore')}
-          {#if radioTexts.length > 0}<span class="count">{radioTexts.length}</span>{/if}
+          {#if each === 'group'}
+            {t('chatGroup')}
+          {:else if each === 'reports'}
+            <Pictogram name="pushpin" size={16} />
+            {t('reportsTab')}
+            {#if reports.length > 0}<span class="count">{reports.length}</span>{/if}
+          {:else}
+            {t('chatMeshcore')}
+            {#if radioTexts.length > 0}<span class="count">{radioTexts.length}</span>{/if}
+          {/if}
         </button>
-      {/if}
+      {/each}
     </div>
   {/snippet}
 
-  {#if tab === 'reports'}
-    {#if composing}
-      <div class="scroll">
-        <ReportForm {t} {locale} onsend={onreport} onback={() => (composing = false)} />
-      </div>
-    {:else}
-      <div class="scroll stack">
-        {#if reports.length === 0}
-          <p class="hint">{t('reportsNone')}</p>
-        {:else}
-          {#if casualtiesTotal}
-            <p class="hint">{t('reportsTotal', { casualties: casualtiesTotal })}</p>
+  <div id="chat-tabpanel" class="tabpanel" role="tabpanel" aria-labelledby="chat-tab-{tab}">
+    {#if tab === 'reports'}
+      {#if composing}
+        <div class="scroll">
+          <ReportForm {t} {locale} onsend={onreport} onback={() => (composing = false)} />
+        </div>
+      {:else}
+        <div class="scroll stack">
+          {#if reports.length === 0}
+            <p class="hint">{t('reportsNone')}</p>
+          {:else}
+            {#if casualtiesTotal}
+              <p class="hint">{t('reportsTotal', { casualties: casualtiesTotal })}</p>
+            {/if}
+            <ol class="reports">
+              {#each reports as report (eventRefKey(report))}
+                <li><ReportCard {t} {locale} {groupState} {report} open {onplace} /></li>
+              {/each}
+            </ol>
           {/if}
-          <ol class="reports">
-            {#each reports as report (eventRefKey(report))}
-              <li><ReportCard {t} {locale} {groupState} {report} open {onplace} /></li>
+        </div>
+        <button class="primary new-report" onclick={() => (composing = true)}>
+          <Pictogram name="pushpin" size={18} />
+          {t('reportNew')}
+        </button>
+      {/if}
+    {:else if tab === 'meshcore' && showRadioTab}
+      <div class="scroll stack">
+        <p class="hint">{t('meshcoreIntro')}</p>
+        {#if radioTexts.length === 0}
+          <p class="hint">{t('noMeshcoreMessages')}</p>
+        {:else}
+          <ol class="messages">
+            {#each radioTexts as message, index (index)}
+              <li>
+                <span class="meta">
+                  {message.kind === 'direct'
+                    ? t('meshcoreDirect')
+                    : t('meshcoreChannel', {
+                        name: message.channel ?? t('meshcoreUnknownChannel'),
+                      })}
+                  {#if message.sender}· {message.sender}{/if}
+                </span>
+                <span class="line">
+                  <span class="text">{message.text}</span>
+                  <span class="time">{formatTime(message.receivedAt, locale)}</span>
+                </span>
+              </li>
             {/each}
           </ol>
         {/if}
       </div>
-      <button class="primary new-report" onclick={() => (composing = true)}>
-        <Pictogram name="pushpin" size={18} />
-        {t('reportNew')}
-      </button>
-    {/if}
-  {:else if tab === 'meshcore' && showRadioTab}
-    <div class="scroll stack">
-      <p class="hint">{t('meshcoreIntro')}</p>
-      {#if radioTexts.length === 0}
-        <p class="hint">{t('noMeshcoreMessages')}</p>
+    {:else}
+      {#if entries.length === 0}
+        <p class="hint scroll">{t('noMessages')}</p>
       {:else}
-        <ol class="messages">
-          {#each radioTexts as message, index (index)}
-            <li>
-              <span class="meta">
-                {message.kind === 'direct'
-                  ? t('meshcoreDirect')
-                  : t('meshcoreChannel', { name: message.channel ?? t('meshcoreUnknownChannel') })}
-                {#if message.sender}· {message.sender}{/if}
-              </span>
-              <span class="line">
-                <span class="text">{message.text}</span>
-                <span class="time">{formatTime(message.receivedAt, locale)}</span>
-              </span>
-            </li>
+        <ol class="messages scroll" bind:this={list} {onscroll}>
+          {#each entries as entry (entry.key)}
+            {#if entry.kind === 'report'}
+              <li class="report">
+                <ReportCard {t} {locale} {groupState} report={entry.event} open={false} {onplace} />
+              </li>
+            {:else}
+              {@const own = entry.event.origin === self}
+              <li
+                class:own
+                class:follows={entry.kind === 'chat' && entry.follows}
+                class="{entry.kind} {entry.kind === 'alert' ? `level-${entry.event.level}` : ''}"
+              >
+                {#if entry.kind === 'alert'}
+                  <span class="meta">
+                    {t(ALERT_LEVELS[entry.event.level])} · {aliasOf(groupState, entry.event.origin)}
+                  </span>
+                {:else if !own && !entry.follows}
+                  <span class="meta">{aliasOf(groupState, entry.event.origin)}</span>
+                {/if}
+                <span class="line">
+                  <span class="text">{entry.event.text}</span>
+                  <span class="time">{formatTime(entry.event.time * 1000, locale)}</span>
+                </span>
+                {#if undelivered.has(eventRefKey(entry.event))}
+                  <span class="pending">{t('notSentYet')}</span>
+                {/if}
+              </li>
+            {/if}
           {/each}
         </ol>
       {/if}
-    </div>
-  {:else}
-    {#if entries.length === 0}
-      <p class="hint scroll">{t('noMessages')}</p>
-    {:else}
-      <ol class="messages scroll" bind:this={list}>
-        {#each entries as entry (entry.key)}
-          {#if entry.kind === 'report'}
-            <li class="report">
-              <ReportCard {t} {locale} {groupState} report={entry.event} open={false} {onplace} />
-            </li>
-          {:else}
-            {@const own = entry.event.origin === self}
-            <li
-              class:own
-              class:follows={entry.kind === 'chat' && entry.follows}
-              class="{entry.kind} {entry.kind === 'alert' ? `level-${entry.event.level}` : ''}"
-            >
-              {#if entry.kind === 'alert'}
-                <span class="meta">
-                  {t(ALERT_LEVELS[entry.event.level])} · {aliasOf(groupState, entry.event.origin)}
-                </span>
-              {:else if !own && !entry.follows}
-                <span class="meta">{aliasOf(groupState, entry.event.origin)}</span>
-              {/if}
-              <span class="line">
-                <span class="text">{entry.event.text}</span>
-                <span class="time">{formatTime(entry.event.time * 1000, locale)}</span>
-              </span>
-              {#if undelivered.has(eventRefKey(entry.event))}
-                <span class="pending">{t('notSentYet')}</span>
-              {/if}
-            </li>
-          {/if}
-        {/each}
-      </ol>
-    {/if}
 
-    <form
-      class="compose"
-      onsubmit={(event) => {
-        event.preventDefault();
-        void send('message');
-      }}
-    >
-      <Menu label={t('moreActions')} place="start">
-        {#snippet trigger(expanded: boolean, toggle: () => void)}
-          <button
-            type="button"
-            class="icon"
-            aria-haspopup="menu"
-            aria-expanded={expanded}
-            aria-label={t('moreActions')}
-            title={t('moreActions')}
-            onclick={toggle}
-          >
-            <Pictogram name="plus" size={22} />
-          </button>
-        {/snippet}
-        {#snippet items(close: () => void)}
-          <button
-            type="button"
-            role="menuitem"
-            onclick={() => {
-              close();
-              newReport();
-            }}
-          >
-            <Pictogram name="pushpin" size={20} />
-            {t('reportNew')}
-          </button>
-          {#if coordinator}
+      <form
+        class="compose"
+        onsubmit={(event) => {
+          event.preventDefault();
+          void send('message');
+        }}
+      >
+        <Menu label={t('moreActions')} place="start">
+          {#snippet trigger(expanded: boolean, toggle: () => void)}
             <button
               type="button"
-              role="menuitem"
-              disabled={!fits.alert}
-              onclick={() => {
-                close();
-                void send('alert');
-              }}
+              class="icon"
+              aria-haspopup="menu"
+              aria-expanded={expanded}
+              aria-label={t('moreActions')}
+              title={t('moreActions')}
+              onclick={toggle}
             >
-              <Pictogram name="warning" size={20} />
-              <span class="item">
-                {t('sendAlert')}
-                <small>{fits.alert ? t('sendAlertHint') : t('sendAlertTypeFirst')}</small>
-              </span>
+              <Pictogram name="plus" size={22} />
             </button>
+          {/snippet}
+          {#snippet items(close: () => void)}
             <button
               type="button"
               role="menuitem"
               onclick={() => {
                 close();
-                onrollcall();
+                newReport();
               }}
             >
-              <Pictogram name="person" size={20} />
-              {t('callRoll')}
+              <Pictogram name="pushpin" size={20} />
+              {t('reportNew')}
+            </button>
+            {#if coordinator}
+              <button
+                type="button"
+                role="menuitem"
+                disabled={!fits.alert}
+                onclick={() => {
+                  close();
+                  void send('alert');
+                }}
+              >
+                <Pictogram name="warning" size={20} />
+                <span class="item">
+                  {t('sendAlert')}
+                  <small>{fits.alert ? t('sendAlertHint') : t('sendAlertTypeFirst')}</small>
+                </span>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onclick={() => {
+                  close();
+                  onrollcall();
+                }}
+              >
+                <Pictogram name="person" size={20} />
+                {t('callRoll')}
+              </button>
+            {/if}
+          {/snippet}
+        </Menu>
+        <div class="field">
+          <input
+            bind:value={text}
+            aria-label={t('message')}
+            placeholder={dictation?.listening ? t('dictationListening') : t('message')}
+            autocomplete="off"
+          />
+          {#if dictation}
+            <button
+              type="button"
+              class="dictate"
+              aria-pressed={dictation.listening}
+              aria-label={dictation.listening ? t('dictationStop') : t('dictate')}
+              title={dictation.listening ? t('dictationStop') : t('dictate')}
+              onclick={toggleDictation}
+            >
+              <Pictogram name="mic" size={20} />
             </button>
           {/if}
-        {/snippet}
-      </Menu>
-      <div class="field">
-        <input
-          bind:value={text}
-          aria-label={t('message')}
-          placeholder={dictation?.listening ? t('dictationListening') : t('message')}
-          autocomplete="off"
-        />
-        {#if dictation}
-          <button
-            type="button"
-            class="dictate"
-            aria-pressed={dictation.listening}
-            aria-label={dictation.listening ? t('dictationStop') : t('dictate')}
-            title={dictation.listening ? t('dictationStop') : t('dictate')}
-            onclick={toggleDictation}
-          >
-            <Pictogram name="mic" size={20} />
-          </button>
-        {/if}
-      </div>
-      <button
-        type="submit"
-        class="primary icon"
-        aria-label={t('send')}
-        title={t('send')}
-        disabled={submission.busy || !fits.message}
-      >
-        <Pictogram name="send" size={22} />
-      </button>
-    </form>
-    {#if submission.failed}<p class="warning">{t('sendFailed')}</p>{/if}
-    {#if size > CHAT_MAX_BYTES}<p class="warning">{t('messageTooLong')}</p>{/if}
-    {#if dictation?.problem}
-      <p class="warning">{t(DICTATION_PROBLEMS[dictation.problem])}</p>
+        </div>
+        <button
+          type="submit"
+          class="primary icon"
+          aria-label={t('send')}
+          title={t('send')}
+          disabled={submission.busy || !fits.message}
+        >
+          <Pictogram name="send" size={22} />
+        </button>
+      </form>
+      {#if submission.failed}<p class="warning">{t('sendFailed')}</p>{/if}
+      {#if size > CHAT_MAX_BYTES}<p class="warning">{t('messageTooLong')}</p>{/if}
+      {#if dictation?.problem}
+        <p class="warning">{t(DICTATION_PROBLEMS[dictation.problem])}</p>
+      {/if}
     {/if}
-  {/if}
+  </div>
 </Panel>
 
 <style>
+  /* The tab's content lays out in the panel as if there were no wrapper. */
+  .tabpanel {
+    display: contents;
+  }
+
   /* The tabs head the panel, beside its close button. */
   .tabs {
     display: flex;

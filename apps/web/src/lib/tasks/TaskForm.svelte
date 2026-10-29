@@ -225,9 +225,4 @@
   .where {
     font-variant-numeric: tabular-nums;
   }
-
-  .danger-text {
-    margin-left: auto;
-    color: var(--danger);
-  }
 </style>

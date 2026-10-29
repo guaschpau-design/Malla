@@ -3,14 +3,12 @@
      and calls for help if the question goes unanswered. Time with the app off screen does not
      count: a browser cannot tell what the member did meanwhile. -->
 <script lang="ts">
-  import { distanceMeters } from '@tesel/core';
-  import type { LatLon } from '@tesel/protocol';
   import { onMount } from 'svelte';
 
   import type { Translate } from '../i18n/index.ts';
   import { deviceLocation } from '../position/device-location.svelte.ts';
   import MapCard from '../ui/MapCard.svelte';
-  import { CheckIn, MOVED_M, type CheckInStep } from './check-in.ts';
+  import { CheckIn, hasMoved, type CheckInStep, type Whereabouts } from './check-in.ts';
 
   interface Props {
     t: Translate;
@@ -48,14 +46,16 @@
   }
 
   onMount(() => {
-    let anchor: LatLon | null = null;
+    let anchor: Whereabouts | null = null;
     const release = deviceLocation.use((fix) => {
-      if (anchor !== null && distanceMeters(anchor, fix.at) < MOVED_M) return;
-      anchor = fix.at;
+      if (anchor !== null && !hasMoved(anchor, fix)) return;
+      anchor = fix;
       activity();
     });
     const visible = () => {
-      if (document.visibilityState === 'visible') activity();
+      if (document.visibilityState === 'visible') check.back(Date.now());
+      else check.away();
+      step = check.step;
     };
     window.addEventListener('pointerdown', activity);
     window.addEventListener('keydown', activity);

@@ -28,7 +28,10 @@ export function terrariumMetres(red: number, green: number, blue: number): numbe
 export class ElevationReader {
   readonly #tiles: ElevationTiles;
   readonly #decode: (bytes: ArrayBuffer) => Promise<Pixels>;
-  /** Decoded tiles, least recently used first; null for tiles that could not be had. */
+  /**
+   * Decoded tiles, least recently used first. A tile that could not be had is forgotten once that
+   * is known, so that it is tried again: it may be downloaded, or the network back, by then.
+   */
   readonly #cache = new Map<string, Promise<Pixels | null>>();
 
   constructor(
@@ -59,7 +62,11 @@ export class ElevationReader {
     const key = tileKey(tile);
     let pixels = this.#cache.get(key);
     if (pixels === undefined) {
-      pixels = this.#load(tile);
+      const loading = this.#load(tile);
+      pixels = loading;
+      void loading.then((loaded) => {
+        if (loaded === null && this.#cache.get(key) === loading) this.#cache.delete(key);
+      });
       if (this.#cache.size >= CACHE_TILES) {
         const [oldest] = this.#cache.keys();
         if (oldest !== undefined) this.#cache.delete(oldest);

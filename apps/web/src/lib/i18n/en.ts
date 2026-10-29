@@ -103,7 +103,7 @@ export const en = {
   roleCoordinator: 'coordinator',
   joinGroup: 'Join a group',
   otherGroups: 'Your other groups',
-  createOrJoin: 'Create one or join',
+  createOrJoin: 'Create one, join or practise',
   groups: 'Groups',
   noGroup: 'No group',
   guide: 'User guide',
@@ -355,6 +355,8 @@ export const en = {
     other: '{count} lanes · about {length} on foot per team',
   },
   sweepSpacingInvalid: 'Spacing goes from {min} to {max} m.',
+  sweepTooWide:
+    'The area is too wide: it would take more than {lanes} lanes. Space them further apart or split the area.',
   sweepCreate: 'Create sweep',
   sweepRemove: 'Remove sweep',
   confirmRemoveSweep:
@@ -408,6 +410,8 @@ export const en = {
     'It has not left this device yet: it goes out when there is a connection or a radio.',
   notSentYet: 'not sent yet',
   sendFailed: 'That could not be sent. Try again.',
+  groupOpenFailed: 'The group could not be opened.',
+  tryAgain: 'Try again',
   actionFailed: 'That did not work. Try again.',
   alarmSound: 'Alarm sound',
   notifications: 'Notifications',

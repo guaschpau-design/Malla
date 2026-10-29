@@ -158,6 +158,13 @@ button.danger {
   border-color: var(--danger-fill);
 }
 
+/* What undoes or removes something, beside the actions that do not: in red, set apart at the end
+   of its row. */
+button.danger-text {
+  margin-left: auto;
+  color: var(--danger);
+}
+
 button.ghost {
   border-color: transparent;
 }

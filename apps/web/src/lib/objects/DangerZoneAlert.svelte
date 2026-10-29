@@ -4,6 +4,7 @@
      nothing is shared that the user has not chosen to share. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
+  import { untrack } from 'svelte';
   import { SvelteSet } from 'svelte/reactivity';
 
   import type { Translate } from '../i18n/index.ts';
@@ -34,7 +35,8 @@
   let known = new Set<string>();
   $effect(() => {
     const now = new Set(inside.map((zone) => zone.key));
-    for (const key of dismissed) if (!now.has(key)) dismissed.delete(key);
+    // Read without tracking: deleting from the set it reads would run this effect again.
+    for (const key of untrack(() => [...dismissed])) if (!now.has(key)) dismissed.delete(key);
     const entered = inside.filter((zone) => !known.has(zone.key));
     if (entered.length > 0) {
       // Safari has no vibration API.

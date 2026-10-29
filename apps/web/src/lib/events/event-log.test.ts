@@ -8,6 +8,7 @@ import { loadPosition } from '../sync/cursor-store.ts';
 import {
   confirmStored,
   deleteGroupEvents,
+  deleteLeftovers,
   loadEvents,
   pendingEvents,
   publishEvent,
@@ -160,5 +161,20 @@ describe('event log', () => {
     await deleteGroupEvents(db, 'gone');
     expect(await loadEvents(db, 'gone')).toEqual([]);
     expect(await loadEvents(db, 'kept')).toHaveLength(1);
+  });
+
+  it('forgets what groups no longer on the device left behind, and nothing else', async () => {
+    const db = await freshDb();
+    await receiveEvents(db, 'gone', [chatBytes(OTHER, 1, 'a')], {
+      forward: true,
+      readTo: { server: 'https://tesel.example', position: { cursor: 3, store: null } },
+    });
+    await receiveEvents(db, 'kept', [chatBytes(OTHER, 2, 'b')], { forward: true });
+    await deleteLeftovers(db, ['kept']);
+    expect(await loadEvents(db, 'gone')).toEqual([]);
+    expect(await pendingEvents(db, 'gone')).toEqual([]);
+    expect(await db.getAllKeys('cursors')).toEqual([]);
+    expect(await loadEvents(db, 'kept')).toHaveLength(1);
+    expect(await pendingEvents(db, 'kept')).toHaveLength(1);
   });
 });

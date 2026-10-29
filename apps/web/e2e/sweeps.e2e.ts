@@ -25,7 +25,7 @@ test('a sweep is planned, its strips handed out, followed and finished', async (
   await tapMapUntil(ana, { dx: 0, dy: 20 }, () => expect(area).toBeVisible());
   await area.getByRole('button', { name: 'Planificar batida' }).click();
   const planner = ana.getByRole('region', { name: 'Planificar batida' });
-  await planner.getByRole('button', { name: 'Abierto · 25 m' }).click();
+  await planner.getByRole('radio', { name: 'Abierto · 25 m' }).click();
   await expect(planner.getByLabel('Separación (m)')).toHaveValue('25');
   await expect(planner.getByRole('group', { name: 'Equipos' })).toContainText('2');
   await expect(planner).toContainText(/\d+ calles · unos [\d,.]+ (m|km) a pie por equipo/);

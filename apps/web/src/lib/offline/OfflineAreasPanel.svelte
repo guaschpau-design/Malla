@@ -44,8 +44,9 @@
     { zoom: BASEMAP_MAX_ZOOM - 2, label: 'detailRegion' },
   ] as const;
 
-  let areas: OfflineArea[] = $state([]);
-  // Raw state: the value is stored in IndexedDB, which cannot clone Svelte's reactive proxies.
+  // Raw state: these values are stored in IndexedDB again (a download, a resumed one), which
+  // cannot clone Svelte's reactive proxies.
+  let areas: readonly OfflineArea[] = $state.raw([]);
   // The view as the panel opens; each move of the map updates it.
   let bounds: Bounds = $state.raw(untrack(() => mapBounds(map)));
   let maxZoom: number = $state(BASEMAP_MAX_ZOOM);

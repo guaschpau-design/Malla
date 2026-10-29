@@ -104,7 +104,7 @@ export const es: Messages = {
   roleCoordinator: 'coordinador',
   joinGroup: 'Unirme a un grupo',
   otherGroups: 'Tus otros grupos',
-  createOrJoin: 'Crear uno o unirte',
+  createOrJoin: 'Crear uno, unirte o practicar',
   groups: 'Grupos',
   noGroup: 'Sin grupo',
   guide: 'Guía de uso',
@@ -357,6 +357,8 @@ export const es: Messages = {
     other: '{count} calles · unos {length} a pie por equipo',
   },
   sweepSpacingInvalid: 'La separación va de {min} a {max} m.',
+  sweepTooWide:
+    'La zona es demasiado ancha: serían más de {lanes} pasadas. Sepáralas más o divide la zona.',
   sweepCreate: 'Crear batida',
   sweepRemove: 'Quitar batida',
   confirmRemoveSweep:
@@ -410,6 +412,8 @@ export const es: Messages = {
     'Aún no ha salido de este dispositivo: se enviará al recuperar conexión o con la radio.',
   notSentYet: 'pendiente de envío',
   sendFailed: 'No se ha podido enviar. Inténtalo de nuevo.',
+  groupOpenFailed: 'No se ha podido abrir el grupo.',
+  tryAgain: 'Reintentar',
   actionFailed: 'No se ha podido hacer. Inténtalo de nuevo.',
   alarmSound: 'Sonido de alarma',
   notifications: 'Notificaciones',

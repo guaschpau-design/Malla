@@ -63,7 +63,6 @@
 <button
   class="locate {mode}"
   onclick={press}
-  aria-pressed={mode === 'follow'}
   aria-label={t(ACTIONS[mode])}
   title={t(ACTIONS[mode])}
 >

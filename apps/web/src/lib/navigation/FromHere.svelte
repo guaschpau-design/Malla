@@ -1,7 +1,9 @@
-<!-- How far a point is from this device and which way, while the GPS knows where it is; and,
-     with the relief on, how much the way climbs. -->
+<!-- How far a point is from this device and which way, and, with the relief on, how much the way
+     climbs. While shown, it keeps the GPS on if the user has already let the app use it: it never
+     asks for the permission by itself, as opening a point is not asking to be located. -->
 <script lang="ts">
   import type { LatLon } from '@tesel/protocol';
+  import { onMount } from 'svelte';
 
   import { formatBearing, formatDistance } from '../format.ts';
   import type { Locale, Translate } from '../i18n/index.ts';
@@ -17,6 +19,21 @@
   }
 
   let { t, locale, at }: Props = $props();
+
+  onMount(() => {
+    let release: (() => void) | null = null;
+    let gone = false;
+    void navigator.permissions
+      .query({ name: 'geolocation' })
+      .then((status) => {
+        if (!gone && status.state === 'granted') release = deviceLocation.use();
+      })
+      .catch(() => undefined);
+    return () => {
+      gone = true;
+      release?.();
+    };
+  });
 
   const leg = $derived(deviceLocation.fix && legBetween(deviceLocation.fix.at, at));
 </script>

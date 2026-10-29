@@ -86,6 +86,31 @@ describe('sharing this device’s position', () => {
     });
   });
 
+  it('hides the position in a group it was shared with, once the user hid it elsewhere', async () => {
+    const db = await openAppDb(`position-sharing-${String(++databases)}`);
+    const ana = createLocalIdentity('Ana', 0);
+    const rescue = await GroupFeed.open(db, createGroup('Rescate', null, 0), ana);
+    const other = await GroupFeed.open(db, createGroup('Otro', null, 0), ana);
+    const gps = new FakeGps();
+    const sharing = new PositionSharing(
+      (await loadPreferences(db)).positionMode,
+      new DeviceLocation(gps),
+    );
+    sharing.attach(rescue);
+    await sharing.setMode('sharing');
+    gps.fix(39.47, -0.37);
+    await vi.waitFor(() => {
+      expect(rescue.showsOwnPosition).toBe(true);
+    });
+    sharing.attach(other);
+    await sharing.setMode('hidden');
+    expect(rescue.showsOwnPosition).toBe(true);
+    sharing.attach(rescue);
+    await vi.waitFor(() => {
+      expect(rescue.showsOwnPosition).toBe(false);
+    });
+  });
+
   it('remembers the choice, so sharing resumes when the app starts again', async () => {
     const first = await anaDevice();
     await first.sharing.setMode('sharing');

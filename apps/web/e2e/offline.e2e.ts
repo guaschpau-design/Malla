@@ -39,6 +39,45 @@ test('a downloaded area keeps working after going offline and reloading', async 
   });
 });
 
+test('an area whose download stopped is completed with «Reanudar»', async ({ page }) => {
+  await page.goto('/#map=13/39.47/-0.36');
+  await chooseAlias(page, 'Ana');
+  // An area left half-way, as a download stopped by losing the network leaves it.
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open('tesel-map');
+        open.onerror = () => {
+          reject(new Error('no map database'));
+        };
+        open.onsuccess = () => {
+          const tx = open.result.transaction('areas', 'readwrite');
+          tx.objectStore('areas').put({
+            id: 'stopped',
+            name: 'Cortada',
+            bounds: { west: -0.38, south: 39.465, east: -0.37, north: 39.472 },
+            minZoom: 0,
+            layers: [{ source: 'basemap', maxZoom: 13 }],
+            createdAt: Date.now(),
+            storedTiles: 0,
+            bytes: 0,
+            complete: false,
+          });
+          tx.oncomplete = () => {
+            open.result.close();
+            resolve();
+          };
+        };
+      }),
+  );
+  await openMore(page, 'Mapas sin conexión');
+  const panel = page.getByRole('region', { name: 'Mapas sin conexión' });
+  await expect(panel.getByText('Incompleta')).toBeVisible();
+  await panel.getByRole('button', { name: 'Reanudar' }).click();
+  await expect(panel.getByText('Incompleta')).toHaveCount(0);
+  await expect(panel.getByText('La descarga se ha detenido')).toHaveCount(0);
+});
+
 test('with no area downloaded, the map keeps an overview and the places seen', async ({
   page,
   context,

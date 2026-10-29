@@ -60,3 +60,48 @@ test('sharing resumes by itself after the app restarts', async ({ browser }) => 
       .getByRole('img', { name: 'comparte posición', exact: true }),
   ).toBeVisible();
 });
+
+test('the chat leaves a reader where they are, and steps aside for an SOS', async ({ browser }) => {
+  const { ana, berta } = await twoMembers(browser);
+  await ana.getByRole('button', { name: 'Chat' }).click();
+  const say = async (text: string) => {
+    await ana.getByLabel('Mensaje').fill(text);
+    await ana.getByRole('button', { name: 'Enviar', exact: true }).click();
+  };
+  for (let line = 1; line <= 20; line++) await say(`Línea ${String(line)}`);
+
+  await berta.getByRole('button', { name: 'Chat' }).click();
+  const chat = berta.getByRole('region', { name: 'Chat' });
+  const lines = chat.getByRole('listitem');
+  await expect(lines.filter({ hasText: 'Línea 20' })).toBeInViewport();
+  const list = chat.locator('ol.messages');
+  const scrollTop = () => list.evaluate((element) => element.scrollTop);
+
+  // Berta reads the first lines: what arrives meanwhile does not take her to the end.
+  await list.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  await say('Línea 21');
+  await expect(lines.filter({ hasText: 'Línea 21' })).toHaveCount(1);
+  expect(await scrollTop()).toBe(0);
+
+  // At the end, she stays there as lines arrive; another tab and back opens at the end.
+  await list.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await say('Línea 22');
+  await expect(lines.filter({ hasText: 'Línea 22' })).toBeInViewport();
+  await chat.getByRole('tab', { name: 'Partes' }).click();
+  await chat.getByRole('tab', { name: 'Grupo' }).click();
+  await expect(lines.filter({ hasText: 'Línea 22' })).toBeInViewport();
+
+  // An SOS closes the chat, which would cover it.
+  await ana.getByRole('button', { name: 'Cerrar' }).click();
+  await ana.getByRole('button', { name: 'SOS', exact: true }).click();
+  await ana
+    .getByRole('dialog', { name: 'Enviar un SOS' })
+    .getByRole('button', { name: 'Enviar SOS' })
+    .click();
+  await expect(berta.getByRole('region', { name: 'SOS' })).toBeVisible();
+  await expect(chat).toBeHidden();
+});

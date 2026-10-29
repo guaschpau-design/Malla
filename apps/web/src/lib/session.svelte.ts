@@ -3,6 +3,7 @@
 
 import type { Invitation, Role } from '@tesel/protocol';
 
+import { deleteLeftovers } from './events/event-log.ts';
 import type { JoinOutcome, StoredGroup } from './groups/group.ts';
 import { getActiveGroupId, listGroups, setActiveGroupId } from './groups/group-store.ts';
 import { joinGroup, leaveGroup, startGroup, startPractice } from './groups/membership.ts';
@@ -38,6 +39,10 @@ export class Session {
       if (group.practice) await leaveGroup(db, group.id);
     }
     await session.#refreshGroups();
+    await deleteLeftovers(
+      db,
+      session.groups.map((group) => group.id),
+    );
     return session;
   }
 

@@ -25,11 +25,20 @@ export class PositionSharing {
     return this.#mode.value;
   }
 
-  /** Starts serving a group's feed with the remembered mode. Publishes nothing by itself. */
+  /**
+   * Starts serving a group's feed with the remembered mode. Publishes nothing by itself, except
+   * to hide a position the group still sees, shared before the user hid it in another group.
+   */
   attach(feed: GroupFeed): void {
     this.detach();
     this.#feed = feed;
     if (this.mode === 'sharing') this.#startReporting();
+    if (this.mode === 'hidden' && feed.showsOwnPosition) {
+      feed.hidePosition().catch((error: unknown) => {
+        console.warn('Hiding the position failed', error);
+        storageRefusals.note(error);
+      });
+    }
   }
 
   /** Stops reporting, for instance when the active group changes. */
