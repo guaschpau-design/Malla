@@ -24,7 +24,7 @@ pnpm --filter @tesel/simulator start 'https://tesel.eu/app/join#…' --speed 10
 | `--speed`     | Times faster than real time; `instant` sends everything at once, dated as if it had already happened |
 | `--positions` | Seconds between position reports of each member (10 by default)                                      |
 
-The relay limits pushes to three per second per device and thirty per group (`apps/server/src/relay.ts`), so `instant` suits scenarios of a few hundred events. Larger loads go through a relay of the test's own, as the catch-up test does.
+The relay limits pushes to three per second per device and thirty per group (`apps/server/src/relay-limits.ts`), so `instant` suits scenarios of a few hundred events. Larger loads go through a relay of the test's own, as the catch-up test does.
 
 ## Writing a scenario
 

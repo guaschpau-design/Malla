@@ -14,20 +14,24 @@ export async function serveWeb(app: FastifyInstance, root: string): Promise<void
   await app.register(fastifyStatic, { root, wildcard: false, cacheControl: false });
 
   // Built assets carry a content hash in their name; everything else must be revalidated so a
-  // new release reaches phones at once. Routes that say how long to keep their answer keep it.
+  // new release reaches phones at once. Routes that say how long to keep their answer keep it,
+  // and what the handler below answers (redirects, the app's page, 404) is never an asset.
   app.addHook('onSend', async (request, reply) => {
     if (reply.hasHeader('Cache-Control')) return;
     reply.header(
       'Cache-Control',
-      request.url.startsWith(`${APP_PREFIX}assets/`)
+      request.url.startsWith(`${APP_PREFIX}assets/`) && reply.statusCode < 400
         ? 'public, max-age=31536000, immutable'
         : 'no-cache',
     );
   });
 
   app.setNotFoundHandler((request, reply) => {
+    reply.header('Cache-Control', 'no-cache');
     if (request.method === 'GET') {
-      const path = request.url.split('?')[0] ?? '';
+      // Leading slashes collapse into one: "//en" is "/en", and redirecting it to "//en/" would
+      // send the browser to another host.
+      const path = (request.url.split('?')[0] ?? '').replace(/^\/+/, '/');
       // "/app" and "/en" mean their folders; relative links only work with the slash.
       if (!path.endsWith('/') && hasIndex(root, path)) return reply.redirect(`${path}/`, 301);
       // Any other page under the app (the invitation path /app/join among them) is the app.

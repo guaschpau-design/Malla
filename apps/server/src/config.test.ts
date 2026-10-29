@@ -33,6 +33,7 @@ describe('configuration', () => {
         'TESEL_MAX_CONNECTIONS_PER_IP',
         'TESEL_NEW_GROUPS_PER_IP_PER_HOUR',
         'TESEL_PUSHES_PER_SECOND',
+        'TESEL_PUSHES_PER_IP_PER_SECOND',
         'TESEL_MIN_FREE_DISK_MB',
         'TESEL_TRUSTED_PROXIES',
       ].map((name) => [name, '']),
@@ -53,6 +54,7 @@ describe('configuration', () => {
       TESEL_MAX_CONNECTIONS_PER_IP: '5',
       TESEL_NEW_GROUPS_PER_IP_PER_HOUR: '3',
       TESEL_PUSHES_PER_SECOND: '40',
+      TESEL_PUSHES_PER_IP_PER_SECOND: '20',
       TESEL_MIN_FREE_DISK_MB: '0',
       TESEL_TRUSTED_PROXIES: 'none',
     });
@@ -62,10 +64,14 @@ describe('configuration', () => {
       maxConnectionsPerAddress: 5,
       newGroupsPerAddressPerHour: 3,
       serverPerSecond: 40,
+      addressPerSecond: 20,
     });
     expect(config.minFreeDiskMegabytes).toBe(0);
     expect(config.trustedProxies).toEqual([]);
     expect(() => readConfig({ TESEL_MAX_CONNECTIONS: '0' })).toThrow(/TESEL_MAX_CONNECTIONS/);
+    expect(() => readConfig({ TESEL_PUSHES_PER_IP_PER_SECOND: '0' })).toThrow(
+      /TESEL_PUSHES_PER_IP_PER_SECOND/,
+    );
   });
 
   it('rejects an invalid port or retention', () => {

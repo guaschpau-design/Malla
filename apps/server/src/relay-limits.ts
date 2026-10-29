@@ -1,6 +1,6 @@
 // The relay's limits, which keep one client, one address or one group from taking the server for
 // itself: open connections in all and per client address, groups the server does not know that
-// one address may open, and pushes per connection, per group and in all.
+// one address may open, and pushes per connection, per group, per address and in all.
 
 import { TokenBucket } from '@tesel/core';
 
@@ -8,11 +8,12 @@ import { KeyedBuckets } from './keyed-buckets.ts';
 
 export interface RelayLimits {
   /**
-   * Sustained pushes per second allowed to one connection, to a whole group and to the whole
-   * server. Each lets BURST_SECONDS' worth through at once.
+   * Sustained pushes per second allowed to one connection, to a whole group, to one client
+   * address and to the whole server. Each lets BURST_SECONDS' worth through at once.
    */
   readonly connectionPerSecond: number;
   readonly groupPerSecond: number;
+  readonly addressPerSecond: number;
   readonly serverPerSecond: number;
   /** Open connections at most, in all and from one client address. */
   readonly maxConnections: number;
@@ -26,6 +27,8 @@ export interface RelayLimits {
 export const DEFAULT_LIMITS: RelayLimits = {
   connectionPerSecond: 3,
   groupPerSecond: 30,
+  // Well below the server's: the connections one address may open could otherwise take it all.
+  addressPerSecond: 100,
   serverPerSecond: 500,
   maxConnections: 10_000,
   // Phones behind a carrier's NAT share one address.
@@ -42,6 +45,7 @@ const SECONDS_PER_HOUR = 3600;
 export class Limiter {
   readonly #limits: RelayLimits;
   readonly #groupBuckets: KeyedBuckets;
+  readonly #addressBuckets: KeyedBuckets;
   readonly #newGroupBuckets: KeyedBuckets;
   readonly #serverBucket: TokenBucket;
   readonly #connectionsByAddress = new Map<string, number>();
@@ -52,6 +56,10 @@ export class Limiter {
     this.#groupBuckets = new KeyedBuckets(
       limits.groupPerSecond * BURST_SECONDS,
       limits.groupPerSecond,
+    );
+    this.#addressBuckets = new KeyedBuckets(
+      limits.addressPerSecond * BURST_SECONDS,
+      limits.addressPerSecond,
     );
     this.#newGroupBuckets = new KeyedBuckets(
       limits.newGroupsPerAddressPerHour,
@@ -99,11 +107,15 @@ export class Limiter {
     return new TokenBucket(perSecond * BURST_SECONDS, perSecond, now);
   }
 
-  /** Takes a push from the connection's, the group's and the server's buckets, if all have one. */
-  allowsPush(connectionBucket: TokenBucket, group: string, now: number): boolean {
+  /**
+   * Takes a push from the connection's, the group's, the address's and the server's buckets, if
+   * all have one.
+   */
+  allowsPush(connectionBucket: TokenBucket, group: string, address: string, now: number): boolean {
     return (
       connectionBucket.take(now) &&
       this.#groupBuckets.take(group, now) &&
+      this.#addressBuckets.take(address, now) &&
       this.#serverBucket.take(now)
     );
   }

@@ -72,6 +72,13 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
         1,
         1_000_000,
       ),
+      addressPerSecond: integer(
+        env,
+        'TESEL_PUSHES_PER_IP_PER_SECOND',
+        DEFAULT_LIMITS.addressPerSecond,
+        1,
+        1_000_000,
+      ),
     },
     minFreeDiskMegabytes: integer(env, 'TESEL_MIN_FREE_DISK_MB', 500, 0, 1_000_000),
     trustedProxies: list(env, 'TESEL_TRUSTED_PROXIES', 'loopback,uniquelocal'),

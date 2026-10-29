@@ -9,7 +9,9 @@ import { testServer } from './test-server.ts';
 function site(): string {
   const root = mkdtempSync(join(tmpdir(), 'tesel-web-'));
   mkdirSync(join(root, 'app', 'assets'), { recursive: true });
+  mkdirSync(join(root, 'en'));
   writeFileSync(join(root, 'index.html'), '<h1>Tesel</h1>');
+  writeFileSync(join(root, 'en', 'index.html'), '<h1>Tesel</h1>');
   writeFileSync(join(root, 'app', 'index.html'), '<div id="app"></div>');
   writeFileSync(join(root, 'app', 'assets', 'main-abc123.js'), 'console.log(1)');
   return root;
@@ -46,10 +48,31 @@ describe('web serving', () => {
     await server.close();
   });
 
+  it('redirects a path that starts with several slashes within the site', async () => {
+    const server = await app();
+    for (const path of ['//en', '///en']) {
+      const redirect = await server.inject(path);
+      expect(redirect.statusCode).toBe(301);
+      expect(redirect.headers.location).toBe('/en/');
+    }
+    await server.close();
+  });
+
   it('lets browsers keep hashed assets for good', async () => {
     const server = await app();
     const asset = await server.inject('/app/assets/main-abc123.js');
     expect(asset.headers['cache-control']).toBe('public, max-age=31536000, immutable');
+    await server.close();
+  });
+
+  it('lets browsers keep only assets that exist', async () => {
+    const server = await app();
+    const missing = await server.inject('/app/assets/main-def456.js');
+    expect(missing.statusCode).toBe(404);
+    expect(missing.headers['cache-control']).toBe('no-cache');
+    const page = await server.inject('/app/assets/settings');
+    expect(page.body).toContain('id="app"');
+    expect(page.headers['cache-control']).toBe('no-cache');
     await server.close();
   });
 });

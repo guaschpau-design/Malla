@@ -19,6 +19,7 @@ A setting set to nothing counts as left out and takes its default. A list that s
 | `TESEL_MAX_CONNECTIONS_PER_IP`     | `256`                  | Open connections at most from one client address (phones behind a carrier's NAT share one)                                              |
 | `TESEL_NEW_GROUPS_PER_IP_PER_HOUR` | `120`                  | Groups the server does not know that one address may join in an hour                                                                    |
 | `TESEL_PUSHES_PER_SECOND`          | `500`                  | Pushes per second to the whole server, with ten seconds' worth at once; each connection gets 3 and each group 30                        |
+| `TESEL_PUSHES_PER_IP_PER_SECOND`   | `100`                  | Pushes per second from one client address, across its connections and groups, with ten seconds' worth at once                           |
 | `TESEL_MIN_FREE_DISK_MB`           | `500`                  | Pushes are answered `unavailable` while the database's disk has no more free                                                            |
 | `TESEL_TRUSTED_PROXIES`            | `loopback,uniquelocal` | Reverse proxies whose `X-Forwarded-For` names the client: addresses, ranges, or `loopback`, `linklocal`, `uniquelocal`; `none` for none |
 

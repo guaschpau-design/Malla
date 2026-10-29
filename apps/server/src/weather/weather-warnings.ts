@@ -1,8 +1,9 @@
 // Gathers the official weather warnings of some countries and keeps them ready to serve, as the
 // JSON text of docs/protocol.md §8.2. Warnings are read every 10 minutes; region outlines are
 // looked for once a day and downloaded only when MeteoAlarm publishes a new file, which is kept
-// on disk so a restart does not download it again. Warnings that expire after a gathering are
-// left out when serving, and a document gathered too long ago is not served at all.
+// on disk with the time of the last look, so a restart does not download it again. Warnings that
+// expire after a gathering are left out when serving, and a document gathered too long ago is not
+// served at all.
 
 import { writeFile } from 'node:fs/promises';
 
@@ -22,8 +23,11 @@ const WARNINGS_EVERY_MS = 10 * 60 * 1000;
 const REGIONS_EVERY_MS = 24 * 60 * 60 * 1000;
 /** Far more than a country's warnings feed takes. */
 const MAX_FEED_BYTES = 16 * 1024 * 1024;
-/** Room for MeteoAlarm's outlines of every region in Europe. */
-const MAX_OUTLINES_BYTES = 128 * 1024 * 1024;
+/**
+ * Room for MeteoAlarm's outlines of every region in Europe. Parsed, the file takes a few times
+ * its size in memory, and the server has 512 MB (deploy/vps/compose.yaml).
+ */
+const MAX_OUTLINES_BYTES = 40 * 1024 * 1024;
 /** The outlines of our countries only, rounded, as this server keeps them. */
 const MAX_STORED_REGIONS_BYTES = 32 * 1024 * 1024;
 
@@ -40,11 +44,16 @@ export interface WeatherWarningsOptions {
   readonly now?: () => number;
 }
 
-/** What the outlines file on disk holds: the outlines, the URL and the countries they are of. */
+/**
+ * What the outlines file on disk holds: the outlines, the URL and the countries they are of
+ * (none yet before the first download ends), and when outlines were last looked for.
+ */
 interface StoredRegions {
-  readonly source: string;
+  readonly source: string | null;
   readonly countries: readonly string[];
   readonly regions: readonly (readonly [string, Region])[];
+  /** Milliseconds since the epoch; missing in files written before it was kept. */
+  readonly checkedAt?: number;
 }
 
 /** The document as served: its JSON text, valid until the first of its warnings expires. */
@@ -123,6 +132,9 @@ export class WeatherWarningsService {
     if (url === null) throw new Error('MeteoAlarm lists no region outlines');
     this.#regionsCheckedAt = this.#now();
     if (url === this.#regionsSource) return;
+    // Kept before downloading: a server that runs out of memory on the way and restarts must not
+    // download again at once, and again, instead of serving.
+    await this.#storeRegions();
     this.#regions = regionsOf(await this.#getJson(url, MAX_OUTLINES_BYTES), this.#countries);
     this.#regionsSource = url;
     await this.#storeRegions();
@@ -171,17 +183,19 @@ export class WeatherWarningsService {
       if (stored.countries.join() !== this.#countries.join()) return;
       this.#regions = new Map(stored.regions);
       this.#regionsSource = stored.source;
+      this.#regionsCheckedAt = stored.checkedAt ?? -Infinity;
     } catch {
       // None yet, too large or unreadable: the outlines are downloaded again.
     }
   }
 
   async #storeRegions(): Promise<void> {
-    if (this.#regionsFile === null || this.#regionsSource === null) return;
+    if (this.#regionsFile === null) return;
     const stored: StoredRegions = {
       source: this.#regionsSource,
       countries: this.#countries,
       regions: [...this.#regions],
+      checkedAt: this.#regionsCheckedAt,
     };
     await writeFile(this.#regionsFile, JSON.stringify(stored));
   }

@@ -148,8 +148,8 @@ export class Relay {
   }
 
   #push(connection: Connection, group: Uint8Array, key: Uint8Array, env: Uint8Array): void {
-    const { socket } = connection;
-    if (!this.#limiter.allowsPush(connection.bucket, toBase64url(group), this.#now())) {
+    const { socket, bucket, address } = connection;
+    if (!this.#limiter.allowsPush(bucket, toBase64url(group), address, this.#now())) {
       send(socket, { t: 'error', code: 'rate-limited', key });
       return;
     }
@@ -167,9 +167,10 @@ export class Relay {
     }
     send(socket, { t: 'stored', key });
     if (!stored.isNew) return;
-    // Relayed to the group's live clients but its sender.
+    // Relayed to the group's live clients but its sender, encoded once for all of them.
+    const frame = encodeRelayMessage({ t: 'env', cursor: stored.cursor, key, env });
     for (const other of this.#rooms.get(toBase64url(group))?.live ?? []) {
-      if (other !== socket) send(other, { t: 'env', cursor: stored.cursor, key, env });
+      if (other !== socket) sendFrame(other, frame);
     }
   }
 
@@ -235,8 +236,13 @@ function envMessage(stored: StoredEnvelope): ServerMessage {
 
 /** Sends a message, and drops a client that has stopped reading. */
 function send(socket: WebSocket, message: ServerMessage): void {
+  sendFrame(socket, encodeRelayMessage(message));
+}
+
+/** Sends an encoded message, and drops a client that has stopped reading. */
+function sendFrame(socket: WebSocket, frame: string): void {
   if (socket.readyState !== WebSocket.OPEN) return;
-  socket.send(encodeRelayMessage(message));
+  socket.send(frame);
   if (socket.bufferedAmount > MAX_BUFFERED_BYTES) socket.terminate();
 }
 

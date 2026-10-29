@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { parseWeatherWarnings } from '@tesel/protocol';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { buildApp } from '../app.ts';
 import { EnvelopeStore } from '../envelope-store.ts';
@@ -74,6 +74,42 @@ describe('weather warnings service', () => {
     restarted.stop();
     await expect.poll(() => restarted.body()).not.toBeNull();
     expect(second.asked.filter((url) => url.includes('Geocodes'))).toHaveLength(0);
+  });
+
+  it('does not download the outlines again on a restart after a download that never ended', async () => {
+    const regionsFile = join(mkdtempSync(join(tmpdir(), 'tesel-weather-')), 'regions.json');
+    const first = meteoalarm();
+    let downloading = false;
+    const service = new WeatherWarningsService({
+      countries: ['ES'],
+      regionsFile,
+      maxAgeMinutes: MAX_AGE_MINUTES,
+      // A server that runs out of memory on the way never sees the download end.
+      getJson: (url) => {
+        if (!url.includes('Geocodes')) return first.getJson(url);
+        downloading = true;
+        return new Promise(() => undefined);
+      },
+      now,
+    });
+    void service.refresh();
+    await expect.poll(() => downloading).toBe(true);
+
+    const second = meteoalarm();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const restarted = new WeatherWarningsService({
+      countries: ['ES'],
+      regionsFile,
+      maxAgeMinutes: MAX_AGE_MINUTES,
+      getJson: second.getJson,
+      now,
+    });
+    restarted.start();
+    restarted.stop();
+    // Its first gathering has ended, well or not.
+    await expect.poll(() => restarted.body() !== null || warn.mock.calls.length > 0).toBe(true);
+    expect(second.asked.filter((url) => url.includes('Geocodes'))).toHaveLength(0);
+    warn.mockRestore();
   });
 
   it('keeps the last document when MeteoAlarm cannot be reached', async () => {

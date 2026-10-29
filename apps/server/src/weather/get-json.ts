@@ -12,15 +12,17 @@ export async function getJson(url: string, maxBytes: number): Promise<unknown> {
   if (response.body === null) throw new Error(`${url} answered with no document`);
   // Node's types leave the chunks untyped; fetch delivers them as bytes.
   const body = response.body as AsyncIterable<Uint8Array>;
-  const chunks: Uint8Array[] = [];
+  // Decoded as it arrives, so the bytes are not held as well as the text.
+  const decoder = new TextDecoder();
+  let text = '';
   let size = 0;
   // Leaving the loop early cancels the download.
   for await (const chunk of body) {
     size += chunk.byteLength;
     if (size > maxBytes) throw new Error(`${url} is larger than ${String(maxBytes)} bytes`);
-    chunks.push(chunk);
+    text += decoder.decode(chunk, { stream: true });
   }
-  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  return JSON.parse(text + decoder.decode());
 }
 
 /** Reads a JSON file; fails if it is longer than `maxBytes`. */

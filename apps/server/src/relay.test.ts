@@ -155,16 +155,20 @@ describe('relay', () => {
 
   it('sends a long backlog a page at a time to a slow reader, losing nothing stored meanwhile', async () => {
     const { store, join } = await start();
+    // Envelopes of the largest size, so the backlog is more than the system's socket buffers
+    // can take in for a reader that has stopped.
     const backlog = 60_000;
-    for (let n = 1; n <= backlog; n++) store.append(GROUP, key(n), env(n), 0);
+    for (let n = 1; n <= backlog; n++) store.append(GROUP, key(n), numbered(193, n), 0);
 
     const slow = await join();
     slow.pause();
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    const sockets = () => [...(app?.websocketServer.clients ?? [])];
+    // The socket buffers are full once the server holds something it cannot send yet.
+    await expect
+      .poll(() => sockets().some((socket) => socket.bufferedAmount > 0), { timeout: 10_000 })
+      .toBe(true);
     // Only about a page waits in the server's memory, not the whole backlog.
-    for (const socket of app?.websocketServer.clients ?? []) {
-      expect(socket.bufferedAmount).toBeLessThan(1024 * 1024);
-    }
+    for (const socket of sockets()) expect(socket.bufferedAmount).toBeLessThan(1024 * 1024);
     // The server keeps serving others meanwhile, and what they store reaches the slow reader.
     const alice = await join(backlog);
     await alice.next();
@@ -266,6 +270,20 @@ describe('relay limits', () => {
     await untilSynced(carol);
     carol.send({ t: 'push', key: key(3), env: env(3) });
     expect(await carol.next()).toEqual({ t: 'error', code: 'rate-limited', key: key(3) });
+  });
+
+  it('rate-limits one address across its connections and groups', async () => {
+    const { join } = await start({ limits: { ...DEFAULT_LIMITS, addressPerSecond: 0.2 } });
+    const alice = await join();
+    const stranger = await join(0, OTHER_GROUP);
+    await alice.next();
+    await stranger.next();
+    alice.send({ t: 'push', key: key(1), env: env(1) });
+    expect(await alice.next()).toEqual({ t: 'stored', key: key(1) });
+    stranger.send({ t: 'push', key: key(2), env: env(2) });
+    expect(await stranger.next()).toEqual({ t: 'stored', key: key(2) });
+    alice.send({ t: 'push', key: key(3), env: env(3) });
+    expect(await alice.next()).toEqual({ t: 'error', code: 'rate-limited', key: key(3) });
   });
 
   it('rate-limits pushes to the whole server', async () => {
