@@ -24,12 +24,17 @@ import type { OutboxEntry } from '../storage/app-db.ts';
 export interface LoraSink {
   offer(packet: LoraPacket, source: LoraSource): void;
   heard(event: LoraEvent): void;
+  observe(event: LoraEvent): void;
 }
 
-/** An encoded event as the radio sees it: decoded, or only its header if its type is unknown. */
+/**
+ * An encoded event as the radio sees it: decoded, or only its header if its type is unknown; null
+ * if it is damaged, as a damaged copy says nothing of the event it claims to be.
+ */
 export function loraEventOf(bytes: Uint8Array): LoraEvent | null {
   const event = decodeEvent(bytes);
   if (event.ok) return event.value;
+  if (event.error.code !== 'unknown-type') return null;
   const header = peekHeader(bytes);
   if (!header.ok) return null;
   const { origin, seq, time } = header.value;
@@ -42,10 +47,24 @@ export function peekType(bytes: Uint8Array): EventType | null {
 }
 
 /**
+ * What a radio that has just connected learns of the group before anything is queued: the roll
+ * call, the SOS calls and their cancellations, and the critical alerts. Acknowledgements of them
+ * are urgent, and a cancelled SOS is no longer bridged.
+ */
+export function standingEvents(state: GroupState): TeselEvent[] {
+  return [
+    ...(state.rollCall === null ? [] : [state.rollCall]),
+    ...state.sos.values(),
+    ...state.sosCancels.values(),
+    ...state.alerts.filter((alert) => alert.level === 'critical'),
+  ];
+}
+
+/**
  * What a radio that has just connected is given of this device's own (ADR-0043): its
  * announcement, as members who only hear the radio learn its alias from it; its SOS calls still
- * open, which repeat until answered; and its events still waiting for the server that have not
- * been on the air.
+ * open and not answered, which repeat until answered; and its events still waiting for the server
+ * that have not been on the air.
  */
 export function catchUpPackets(
   state: GroupState,
@@ -55,8 +74,9 @@ export function catchUpPackets(
   const due: TeselEvent[] = [];
   const announcement = state.members.get(self);
   if (announcement !== undefined) due.push(announcement);
-  for (const [, call] of openSosCalls(state)) {
-    if (call.origin === self) due.push(call);
+  for (const [key, call] of openSosCalls(state)) {
+    const answered = [...(state.acks.get(key)?.keys() ?? [])].some((member) => member !== self);
+    if (call.origin === self && !answered) due.push(call);
   }
   const packets = due.flatMap((event): LoraPacket[] => {
     const bytes = encodeEvent(event);

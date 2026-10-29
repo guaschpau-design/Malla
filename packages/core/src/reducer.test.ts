@@ -1,5 +1,6 @@
 import {
   EVENT_TYPES,
+  eventRefKey,
   type ChatEvent,
   type TeselEvent,
   type NodeId,
@@ -11,6 +12,7 @@ import { EMPTY_STATE, HANDLED_TYPES, reduce, stateOf } from './reducer.ts';
 
 const ALICE = 'a1b2c3d4' as NodeId;
 const BOB = '0f1e2d3c' as NodeId;
+const TEAM = '5eed0001' as NodeId;
 const T0 = 1_761_350_400;
 
 const chat = (origin: NodeId, seq: number, time: number, text: string): ChatEvent => ({
@@ -164,6 +166,77 @@ const EVENTS: readonly TeselEvent[] = [
     place: null,
     text: 'Revisar el almacén',
   },
+  { type: 'roll-call', origin: ALICE, seq: 15, time: T0 + 140, text: '' },
+  { type: 'roll-call', origin: ALICE, seq: 16, time: T0 + 141, text: '¿Todos en el punto B?' },
+  {
+    type: 'sweep',
+    origin: ALICE,
+    seq: 17,
+    time: T0 + 150,
+    object: { origin: ALICE, seq: 17 },
+    area: { origin: BOB, seq: 7 },
+    spacing: 25,
+    heading: 90,
+    strip: 0,
+    strips: 2,
+  },
+  {
+    type: 'member-state',
+    origin: BOB,
+    seq: 12,
+    time: T0 + 160,
+    profile: 'civil-protection',
+    status: 'active',
+    battery: 80,
+    equipment: ['first-aid'],
+  },
+  {
+    type: 'member-state',
+    origin: BOB,
+    seq: 13,
+    time: T0 + 170,
+    profile: 'civil-protection',
+    status: 'resting',
+    battery: 40,
+    equipment: ['first-aid', 'water'],
+  },
+  {
+    type: 'team',
+    origin: ALICE,
+    seq: 18,
+    time: T0 + 180,
+    team: TEAM,
+    colour: 'orange',
+    dissolved: false,
+    members: [ALICE],
+    name: 'Norte',
+  },
+  {
+    type: 'team',
+    origin: BOB,
+    seq: 14,
+    time: T0 + 181,
+    team: TEAM,
+    colour: 'orange',
+    dissolved: false,
+    members: [ALICE, BOB],
+    name: 'Equipo Norte',
+  },
+  {
+    type: 'report',
+    origin: BOB,
+    seq: 15,
+    time: T0 + 190,
+    place: { kind: 'point', at: { lat: 39.4705, lon: -0.377 } },
+    incident: 'fire',
+    hazards: ['smoke'],
+    access: 'difficult',
+    casualties: { red: 1, yellow: null, green: null, black: 0 },
+    resources: ['firefighters'],
+    note: '',
+  },
+  { type: 'check-in-timer', origin: ALICE, seq: 19, time: T0 + 200, minutes: 30 },
+  { type: 'check-in-timer', origin: BOB, seq: 16, time: T0 + 201, minutes: 0 },
 ];
 
 /** Every ordering of a few events, plus a few shuffles of all of them. */
@@ -238,6 +311,16 @@ describe('group state', () => {
     const acks = state.acks.get(`${BOB}:8`);
     expect([...(acks?.keys() ?? [])]).toEqual([ALICE]);
     expect(acks?.get(ALICE)?.seq).toBe(10);
+  });
+
+  it('keeps the newest roll call, member state, team and check-in, and every report', () => {
+    const state = stateOf(EVENTS);
+    expect(state.rollCall?.seq).toBe(16);
+    expect(state.memberStates.get(BOB)?.status).toBe('resting');
+    expect(state.teams.get(TEAM)?.members).toEqual([ALICE, BOB]);
+    expect(state.checkIn?.minutes).toBe(0);
+    expect(state.reports.map((report) => report.seq)).toEqual([15]);
+    expect(state.objects.get(eventRefKey({ origin: ALICE, seq: 17 }))?.type).toBe('sweep');
   });
 
   it('lists alerts in order', () => {

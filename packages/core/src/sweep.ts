@@ -3,7 +3,7 @@
 // same way. Lanes are worked out on a plane fitted at the area's first point, in metres: `u`
 // across the lanes and `v` along them.
 
-import type { LatLon } from '@tesel/protocol';
+import { SWEEP_MAX_LANES, type LatLon } from '@tesel/protocol';
 
 import { eastNorthMeters, offsetMeters } from './geo.ts';
 
@@ -30,13 +30,17 @@ interface PlanePoint {
   readonly v: number;
 }
 
-/** The lanes `spacing` metres apart that sweep a polygon in the direction `heading` (§3.13). */
+/**
+ * The lanes `spacing` metres apart that sweep a polygon in the direction `heading` (§3.13): none
+ * if it would take more than SWEEP_MAX_LANES.
+ */
 export function sweepLanes(area: readonly LatLon[], spacing: number, heading: number): SweepLanes {
   const origin = area[0] ?? { lat: 0, lon: 0 };
   const corners = area.map((point) => toPlane(origin, heading, point));
   const across = corners.map((corner) => corner.u);
   const min = Math.min(...across);
   const max = Math.max(...across);
+  if (max - min > SWEEP_MAX_LANES * spacing) return { origin, heading, lanes: [] };
   const positions: number[] = [];
   for (let u = min + spacing / 2; u < max; u = min + spacing * (positions.length + 0.5)) {
     positions.push(u);
@@ -67,16 +71,6 @@ export function sweepPath(sweep: SweepLanes): LatLon[] {
     const ordered = index % 2 === 0 ? ends : ends.reverse();
     return ordered.map((point) => fromPlane(sweep, point));
   });
-}
-
-/** Each stretch of each lane, as a line of two points, to draw them. */
-export function laneLines(sweep: SweepLanes): [LatLon, LatLon][] {
-  return sweep.lanes.flatMap((lane) =>
-    lane.spans.map(([from, to]): [LatLon, LatLon] => [
-      fromPlane(sweep, { u: lane.u, v: from }),
-      fromPlane(sweep, { u: lane.u, v: to }),
-    ]),
-  );
 }
 
 /** Metres to walk along the lanes, without the steps from one lane to the next. */

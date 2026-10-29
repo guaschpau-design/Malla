@@ -52,7 +52,7 @@ The event log and the outbox, the queue of events waiting for the server, are st
 | `apps/web/src/lib/sync/group-feed.svelte.ts` | Ties the log to the relay and the radio: stores what arrives, pushes the outbox, offers events to LoRa   |
 | `apps/web/src/lib/sync/lora-events.ts`       | What a radio is given when it connects (`catchUpPackets`)                                                |
 | `packages/core/src/lora-scheduler.ts`        | Decides what goes on the air and in what order, bridge rules included, so it can be tested with no radio |
-| `apps/web/src/lib/sync/log-file.ts`          | Saves a group's log to a file and loads one back (§6)                                                    |
+| `apps/web/src/lib/sync/log-file.ts`          | Saves a group's log to a file and loads one back (protocol §10)                                          |
 
 ## 3. Data model
 
@@ -104,6 +104,11 @@ An event has a fixed 14-byte header — protocol version, type, origin node ID, 
 | `ACK`                              | Acknowledges an event (used for SOS, alerts and roll calls) |
 | `TASK`                             | Creates or changes a task: what, who and where (ADR-0025)   |
 | `ROLL_CALL`                        | Asks every member to answer with an `ACK` (ADR-0028)        |
+| `SWEEP`                            | One strip of a search area's parallel lanes (ADR-0060)      |
+| `MEMBER_STATE`                     | What a member is doing and carries (ADR-0061)               |
+| `TEAM`                             | Creates or changes a team (ADR-0062)                        |
+| `REPORT`                           | A situation report in a fixed form (ADR-0063)               |
+| `CHECK_IN_TIMER`                   | Sets when the safety check-in asks (ADR-0064)               |
 
 `(origin, seq)` uniquely identifies an event. Sequence numbers are per device, start at 1, normally increase by one and are persisted, so a device never reuses one.
 
@@ -114,9 +119,12 @@ The current picture is a pure function of the event log, computed by the reducer
 - **Members:** latest `MEMBER_INFO` per origin.
 - **Positions:** latest `POSITION` or `POSITION_HIDDEN` per origin.
 - **Trails:** the newest positions of each origin, in order, for drawing where members have been. A `POSITION_HIDDEN` cuts the trail: positions up to it are dropped, so hiding also hides where one went.
-- **Map objects:** identified by the `(origin, seq)` of the event that created them. Later `MARKER`/`SHAPE` events for the same object replace it; `OBJECT_DELETE` removes it. Conflicts resolve by **last writer wins**, ordering by `(timestamp, origin, seq)`.
+- **Map objects:** identified by the `(origin, seq)` of the event that created them. Later `MARKER`/`SHAPE`/`SWEEP` events for the same object replace it; `OBJECT_DELETE` removes it. Conflicts resolve by **last writer wins**, ordering by `(timestamp, origin, seq)`.
+- **Member states:** latest `MEMBER_STATE` per origin.
 - **Tasks:** like map objects, identified by the `(origin, seq)` of the event that created them, and the last writer wins.
-- **Chat and alerts:** append-only, ordered by `(timestamp, origin, seq)` so every device shows the same order.
+- **Teams:** the newest `TEAM` per team.
+- **Chat, alerts and reports:** append-only, ordered by `(timestamp, origin, seq)` so every device shows the same order.
+- **Check-in:** the newest `CHECK_IN_TIMER`.
 - **SOS:** every `SOS` is kept; one is active until a `SOS_CANCEL` for it arrives, and the first cancellation (by the same order) says who cancelled it.
 - **Roll call:** the newest `ROLL_CALL`; its answers are the acknowledgements of it.
 - **Acknowledgements:** per acknowledged event, the first `ACK` of each member.
@@ -150,12 +158,12 @@ LoRa is slow and legally limited to 10 % airtime in the EU 869.4–869.65 MHz su
 
 1. Orders events by urgency, given for every event type in `packages/core/src/urgency.ts`: the SOS and its cancellation first, then alerts and roll calls, hiding a position, acknowledgements, chat and tasks, map objects, member information and, last, positions. `POSITION_HIDDEN` is never thinned or delayed, and it drops any position still queued: a user who stops sharing must disappear from the map promptly.
 2. Estimates each packet's airtime from the radio preset and keeps a rolling one-hour budget: 5 % of the hour for ordinary traffic, the legal 10 % for events as urgent as an alert or more (`SOS`, `SOS_CANCEL`, `ALERT`, `ROLL_CALL`, and an `ACK` of an SOS, a critical alert or a roll call).
-3. Thins own positions: at most one every 2 minutes, and only after moving 50 m or 10 minutes passing.
+3. Thins own positions: at most one every 2 minutes, and only after moving 50 m or 10 minutes passing. A position older than the member's newest position or hiding, sent or heard, is never sent.
 4. Repeats an own `SOS` with back-off (30 s, doubling to 5 minutes) until an `ACK` or a `SOS_CANCEL` arrives over any transport.
-5. Applies the protocol's ACK rule: an own `ACK` waits 2–30 s and is dropped if another member's `ACK` is heard first, except the answer to a roll call, which every member sends.
+5. Applies the protocol's ACK rule: an own `ACK` waits 2–30 s and is dropped if another member's `ACK` is heard first, except the answer to a roll call, which every member sends. A bridged `ACK` of the same event is dropped too: the sender heard the one on the air.
 6. Keeps at most 500 packets waiting; beyond that the least urgent go, bridged before own.
 
-When a radio links to a group, the group feed gives it what it missed while there was none (`catchUpPackets` in `apps/web/src/lib/sync/lora-events.ts`, [ADR-0043](docs/decisions/0043-radio-delivery.md)): the device's own latest `MEMBER_INFO`, so members who only hear the radio learn its alias; its own SOS calls still open; and its own events still in the outbox that have not been on the air. An own event sent by radio is marked as aired and stays in the outbox until a server stores it; for a group with no server, the radio send is the delivery.
+When a radio links to a group, the group feed gives it what it missed while there was none (`catchUpPackets` in `apps/web/src/lib/sync/lora-events.ts`, [ADR-0043](docs/decisions/0043-radio-delivery.md)): the device's own latest `MEMBER_INFO`, so members who only hear the radio learn its alias; its own SOS calls still open that nobody has answered; and its own events still in the outbox that have not been on the air. Before that, the scheduler learns the group's roll call, SOS calls, their cancellations and critical alerts (`standingEvents`), so that acknowledgements of them are urgent however long ago they were sent. A frame that does not decode and is not of an unknown type is damaged: it is neither kept nor taken as heard, so it cannot stand in for the real event. An own event sent by radio is marked as aired and stays in the outbox until a server stores it; for a group with no server, the radio send is the delivery.
 
 While connected, Tesel reads every message the radio holds. A frame heard on the channel of another of this device's groups goes to that group's log, and to its outbox if the group has a server. Text messages of other MeshCore apps are kept on the device and shown, read-only, in a MeshCore tab of the chat, so they are not lost.
 

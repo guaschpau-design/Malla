@@ -91,7 +91,7 @@ Announces who is behind a node ID. Sent on joining a group and when alias or rol
 | 2    | `heading`  | `u16`, degrees 0–359, `0xFFFF` unknown          |
 | 2    | `speed`    | `u16`, centimetres per second, `0xFFFF` unknown |
 
-Encoded size: 28 bytes.
+Encoded size: 28 bytes. An event whose `heading` is from 360 to `0xFFFE` is discarded.
 
 `POSITION_HIDDEN` has no payload. It means "I stopped sharing my position"; receivers MUST stop showing the origin's last position until a newer `POSITION` arrives. As with objects, the newer of the two is decided by `(time, seq)`.
 
@@ -234,7 +234,7 @@ Encoded size: 36 bytes. An event whose `spacing`, `heading` or `strip` is out of
 
 1. Place each corner of the area on a plane: `east = (lon − lon₀) · R · cos(lat₀)` and `north = (lat − lat₀) · R`, in metres, with the area's first point as `(lat₀, lon₀)`, angles in radians and R = 6 371 000 m.
 2. With h the heading, measure each corner along the lanes, `v = east · sin h + north · cos h`, and across them, `u = east · cos h − north · sin h`.
-3. Lanes run at `u = u_min + spacing · (i + ½)` for i = 0, 1, 2… while below `u_max`; if there is none, one runs at `(u_min + u_max) / 2`.
+3. Lanes run at `u = u_min + spacing · (i + ½)` for i = 0, 1, 2… while below `u_max`; if there is none, one runs at `(u_min + u_max) / 2`. If `u_max − u_min` is more than 1000 · `spacing`, there are no lanes at all: no device works out more than 1000.
 4. Each lane crosses the edges whose ends have `u` on either side of it (one end's `u` at most the lane's and the other's above it). Sorted by `v`, the crossings pair up: the lane is inside the area from the first to the second, from the third to the fourth, and so on.
 5. Of L lanes and `strips` strips, strip k holds lanes ⌊k · L / strips⌋ to ⌊(k + 1) · L / strips⌋ − 1.
 6. A strip is walked lane after lane in increasing `u`: its first lane in increasing `v`, the next in decreasing `v`, and so on.

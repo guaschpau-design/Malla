@@ -103,8 +103,16 @@ export class LoraScheduler {
   readonly #airtime = new AirtimeWindow(LIMITS.windowMs);
   #lastOwnPosition: { readonly at: LatLon; readonly time: number } | null = null;
   readonly #lastBridgedPosition = new Map<NodeId, number>();
+  /** Each member's newest position or hiding seen: older positions are no longer worth sending. */
+  readonly #newestLocation = new Map<NodeId, number>();
+  /** Counts group changes, so a packet in flight across one is not put back on the new group. */
+  #group = 0;
   /** The packet handed out by `next`, until the caller reports how sending it went. */
-  #inFlight: { readonly pending: Pending; readonly cost: number } | null = null;
+  #inFlight: {
+    readonly pending: Pending;
+    readonly cost: number;
+    readonly group: number;
+  } | null = null;
 
   constructor(options: { random: () => number; airtimeMs?: (bytes: number) => number }) {
     this.#random = options.random;
@@ -118,13 +126,9 @@ export class LoraScheduler {
     this.observe(event);
     if (this.#onAir.has(key) || this.#pending.has(key)) return;
     if (source === 'bridged' && this.#isHistory(event, now)) return;
-    if (event.type === 'position' || event.type === 'position-hidden') {
-      // Only the newest position of a member is worth sending, and none once it is hidden.
-      for (const [otherKey, other] of this.#pending) {
-        if (other.packet.event.type === 'position' && other.packet.event.origin === event.origin) {
-          this.#pending.delete(otherKey);
-        }
-      }
+    if (this.#superseded(event)) return;
+    for (const [otherKey, other] of this.#pending) {
+      if (this.#superseded(other.packet.event)) this.#pending.delete(otherKey);
     }
     if (event.type === 'sos' && source === 'own') this.#openSos.add(key);
     this.#pending.set(key, {
@@ -147,7 +151,8 @@ export class LoraScheduler {
     if (!this.#openSos.has(key)) this.#pending.delete(key);
     this.observe(event);
     if (event.type === 'ack' && !this.#rollCalls.has(eventRefKey(event.target))) {
-      // Another member acknowledged: our own ACK for the same event would only add noise.
+      // Another member acknowledged, and the sender heard it as we did: our own ACK for the same
+      // event, or one we bridge, would only add noise.
       const target = eventRefKey(event.target);
       for (const [pendingKey, pending] of this.#pending) {
         const queued = pending.packet.event;
@@ -167,6 +172,10 @@ export class LoraScheduler {
       this.#closeSos(eventRefKey(event.sos));
     }
     if (event.type === 'roll-call') this.#rollCalls.add(key);
+    if (event.type === 'position' || event.type === 'position-hidden') {
+      const newest = this.#newestLocation.get(event.origin) ?? -1;
+      if (event.seq > newest) this.#newestLocation.set(event.origin, event.seq);
+    }
     if (
       event.type === 'sos' ||
       event.type === 'roll-call' ||
@@ -179,9 +188,10 @@ export class LoraScheduler {
   /**
    * Forgets the traffic of the group the radio carried until now, when it changes to another
    * group's channel: nothing queued for one group may go out on another's. The airtime spent
-   * stays, since the budget belongs to the radio.
+   * stays, since the budget belongs to the radio, and so does that of a packet in flight.
    */
   changeGroup(): void {
+    this.#group += 1;
     this.#pending.clear();
     this.#onAir.clear();
     this.#openSos.clear();
@@ -190,7 +200,7 @@ export class LoraScheduler {
     this.#cancelledSos.clear();
     this.#lastOwnPosition = null;
     this.#lastBridgedPosition.clear();
-    this.#inFlight = null;
+    this.#newestLocation.clear();
   }
 
   /**
@@ -200,11 +210,12 @@ export class LoraScheduler {
   next(now: number): LoraPacket | null {
     if (this.#inFlight !== null) return null;
     this.#forgetOnAirBefore(now - LIMITS.windowMs);
-    // Bridged news that waited in the queue for the budget may have become history meanwhile.
+    // What waited in the queue for the budget may have become history, or been superseded by a
+    // newer position heard meanwhile.
     for (const [key, pending] of this.#pending) {
-      if (pending.source === 'bridged' && this.#isHistory(pending.packet.event, now)) {
-        this.#pending.delete(key);
-      }
+      const { event } = pending.packet;
+      const history = pending.source === 'bridged' && this.#isHistory(event, now);
+      if (history || this.#superseded(event)) this.#pending.delete(key);
     }
     const due = [...this.#pending.values()]
       .filter((pending) => pending.dueAt <= now && this.#eligible(pending, now))
@@ -216,7 +227,7 @@ export class LoraScheduler {
         this.#urgency(pending) <= URGENT ? LIMITS.urgentBudgetMs : LIMITS.normalBudgetMs;
       if (spent + cost > budget) continue;
       this.#pending.delete(pending.key);
-      this.#inFlight = { pending, cost };
+      this.#inFlight = { pending, cost, group: this.#group };
       return pending.packet;
     }
     return null;
@@ -227,7 +238,8 @@ export class LoraScheduler {
     const inFlight = this.#inFlight;
     if (inFlight === null) return;
     this.#inFlight = null;
-    this.#markSent(inFlight.pending, inFlight.cost, now);
+    this.#airtime.add(now, inFlight.cost);
+    if (inFlight.group === this.#group) this.#markSent(inFlight.pending, now);
   }
 
   /** The radio refused the packet from `next`: try it again a little later. */
@@ -236,8 +248,11 @@ export class LoraScheduler {
     if (inFlight === null) return;
     this.#inFlight = null;
     const { pending } = inFlight;
-    // Heard from someone else meanwhile, or superseded by a newer position: let it go.
-    if (this.#onAir.has(pending.key) || this.#pending.has(pending.key)) return;
+    if (inFlight.group !== this.#group || this.#pending.has(pending.key)) return;
+    // Heard from someone else meanwhile, or superseded by a newer position: let it go. An own SOS
+    // still open was on the air before, and keeps repeating until it is answered.
+    const open = this.#openSos.has(pending.key);
+    if (!open && (this.#onAir.has(pending.key) || this.#superseded(pending.packet.event))) return;
     this.#pending.set(pending.key, { ...pending, dueAt: now + LIMITS.retryMs });
   }
 
@@ -305,9 +320,8 @@ export class LoraScheduler {
     );
   }
 
-  #markSent(pending: Pending, cost: number, now: number): void {
+  #markSent(pending: Pending, now: number): void {
     const { event } = pending.packet;
-    this.#airtime.add(now, cost);
     this.#onAir.set(pending.key, now);
     if (event.type === 'position') {
       if (pending.source === 'own') this.#lastOwnPosition = { at: event, time: now };
@@ -319,6 +333,12 @@ export class LoraScheduler {
       const wait = Math.min(LIMITS.sosFirstRepeatMs * 2 ** (sends - 1), LIMITS.sosMaxRepeatMs);
       this.#pending.set(pending.key, { ...pending, dueAt: now + wait, sends });
     }
+  }
+
+  /** A position older than the member's newest position or hiding. */
+  #superseded(event: LoraEvent): boolean {
+    if (event.type !== 'position') return false;
+    return (this.#newestLocation.get(event.origin) ?? -1) > event.seq;
   }
 
   #closeSos(key: string): void {

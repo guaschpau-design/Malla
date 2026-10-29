@@ -15,7 +15,6 @@ export { openSosCalls } from './state/sos.ts';
 export { teamOf } from './state/teams.ts';
 export { simplifyLine, type Simplified } from './simplify.ts';
 export { TRAIL_POINTS } from './state/trails.ts';
-export { EU_NARROW, eventAirtimeMs, timeOnAirMs, type LoraPreset } from './airtime.ts';
 export {
   areaSquareMeters,
   bearingDegrees,
@@ -37,7 +36,6 @@ export {
 } from './lora-scheduler.ts';
 export {
   bestHeading,
-  laneLines,
   lanesLength,
   stripLanes,
   sweepLanes,
@@ -47,4 +45,4 @@ export {
   type SweepLanes,
 } from './sweep.ts';
 export { TokenBucket } from './token-bucket.ts';
-export { URGENCY, urgencyOf } from './urgency.ts';
+export { urgencyOf } from './urgency.ts';

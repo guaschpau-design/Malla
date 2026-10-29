@@ -135,6 +135,7 @@ describe('a group feed', () => {
       const sink: LoraSink = {
         offer: (packet, source) => offered.push(`${packet.event.origin}:${source}`),
         heard: () => undefined,
+        observe: () => undefined,
       };
       await reopened.attachRadio(sink);
       expect(offered).not.toContain(`${other}:own`);

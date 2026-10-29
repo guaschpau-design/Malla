@@ -271,6 +271,48 @@ describe('LoRa scheduler', () => {
     expect(drain(lora, LIMITS.retryMs)).toEqual(['position']);
   });
 
+  it('keeps repeating an own SOS after the radio refuses one repeat', () => {
+    const lora = scheduler();
+    lora.offer(sos(), 'own', 0);
+    expect(drain(lora, 0)).toEqual(['sos']);
+    expect(lora.next(30_000)?.event.type).toBe('sos');
+    lora.retry(30_000);
+    expect(drain(lora, 30_000 + LIMITS.retryMs)).toEqual(['sos']);
+  });
+
+  it('does not put back a refused position once a newer one or a hiding is queued', () => {
+    const lora = scheduler();
+    lora.offer(position(), 'own', 0);
+    expect(lora.next(0)?.event.type).toBe('position');
+    const newer = position({ lat: 39.48, lon: -0.3763 });
+    lora.offer(newer, 'own', 1);
+    lora.retry(2);
+    const sent: number[] = [];
+    for (let now = 2; now < 30 * 60_000; now += 5_000) {
+      const next = lora.next(now);
+      if (next === null) continue;
+      lora.sent(now);
+      sent.push(next.event.seq);
+    }
+    expect(sent).toEqual([newer.event.seq]);
+
+    const hiding = scheduler();
+    hiding.offer(position(), 'own', 0);
+    expect(hiding.next(0)?.event.type).toBe('position');
+    hiding.offer(packet({ type: 'position-hidden', origin: ME }), 'own', 1);
+    hiding.retry(2);
+    expect([...drain(hiding, 2), ...drain(hiding, 30 * 60_000)]).toEqual(['position-hidden']);
+  });
+
+  it('never sends a position older than one already sent or heard', () => {
+    const lora = scheduler();
+    const older = position(VALENCIA, OTHER);
+    const newer = position({ lat: 39.48, lon: -0.3763 }, OTHER);
+    lora.heard(newer.event, 0);
+    lora.offer(older, 'bridged', T0 * 1000);
+    expect(drain(lora, T0 * 1000 + LIMITS.bridgeDelayMs)).toEqual([]);
+  });
+
   it('hands out one packet at a time until told how sending went', () => {
     const lora = scheduler();
     lora.offer(chat(), 'own', 0);
@@ -289,6 +331,21 @@ describe('LoRa scheduler', () => {
     lora.changeGroup();
     expect(drain(lora, 60 * 60_000 - 1)).toEqual([]);
     expect(lora.spentMs(1)).toBe(1000);
+  });
+
+  it('charges a packet in flight when the group changes, but does not put it back', () => {
+    const lora = scheduler();
+    lora.offer(chat(), 'own', 0);
+    expect(lora.next(0)).not.toBeNull();
+    lora.changeGroup();
+    lora.sent(0);
+    expect(lora.spentMs(0)).toBe(1000);
+
+    lora.offer(chat(), 'own', 0);
+    expect(lora.next(0)).not.toBeNull();
+    lora.changeGroup();
+    lora.retry(0);
+    expect(drain(lora, LIMITS.retryMs)).toEqual([]);
   });
 
   it('carries events of types it does not know, after every known one', () => {

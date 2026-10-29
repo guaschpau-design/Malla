@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { distanceMeters, offsetMeters } from './geo.ts';
 import {
   bestHeading,
-  laneLines,
   lanesLength,
   stripLanes,
   sweepLanes,
@@ -30,6 +29,14 @@ describe('sweeping an area', () => {
 
   it('keeps one lane in an area narrower than the spacing', () => {
     expect(sweepLanes(FIELD, 500, 0).lanes.map((lane) => Math.round(lane.u))).toEqual([50]);
+  });
+
+  it('has no lanes at all where it would take more than a thousand', () => {
+    // 1 m apart across 400 m: 400 lanes; across a field 3 km wide: none, instead of 3 000.
+    expect(sweepLanes(FIELD, 1, 90).lanes).toHaveLength(400);
+    const wide = [CORNER, at(0, 3000), at(400, 3000), at(400, 0)];
+    expect(sweepLanes(wide, 1, 0).lanes).toEqual([]);
+    expect(sweepLanes(wide, 3, 0).lanes).toHaveLength(1000);
   });
 
   it('cuts a lane in two where it leaves a hollow area and comes back', () => {
@@ -64,7 +71,6 @@ describe('sweeping an area', () => {
     expect(distanceMeters(path[1] ?? CORNER, at(400, 12.5))).toBeLessThan(1);
     expect(distanceMeters(path[2] ?? CORNER, at(400, 37.5))).toBeLessThan(1);
     expect(distanceMeters(path[3] ?? CORNER, at(0, 37.5))).toBeLessThan(1);
-    expect(laneLines(sweepLanes(FIELD, 25, 0))).toHaveLength(4);
   });
 
   it('measures how much of the lanes a trail has swept', () => {

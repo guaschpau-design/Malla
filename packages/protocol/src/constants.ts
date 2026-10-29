@@ -101,6 +101,12 @@ export const SHAPE_LABEL_MAX_BYTES = 32;
  */
 export const SHAPE_MAX_POINTS = 25;
 
+/**
+ * §3.13 Most lanes a sweep may have: an area wider than this many times the spacing has none, so
+ * that no recipe can make a device work out lanes without end.
+ */
+export const SWEEP_MAX_LANES = 1000;
+
 /** §3.7 Shape kind codes. */
 export const ShapeKindCode = { POLYLINE: 1, POLYGON: 2, CIRCLE: 3 } as const;
 

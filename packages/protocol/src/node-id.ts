@@ -8,12 +8,6 @@ export function isNodeId(value: string): value is NodeId {
   return NODE_ID_PATTERN.test(value);
 }
 
-/** Parses a node ID from its hex form, returning null if it is malformed. */
-export function parseNodeId(value: string): NodeId | null {
-  const normalised = value.toLowerCase();
-  return isNodeId(normalised) ? normalised : null;
-}
-
 export function nodeIdToBytes(id: NodeId): Uint8Array {
   // The brand is only a compile-time promise; values built with `as` can still be malformed.
   if (!isNodeId(id))

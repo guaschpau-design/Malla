@@ -60,7 +60,13 @@ import {
   type SocketLike,
 } from './relay-client.ts';
 import { openLogFile, sealLogFile, type LogImport } from './log-file.ts';
-import { catchUpPackets, loraEventOf, peekType, type LoraSink } from './lora-events.ts';
+import {
+  catchUpPackets,
+  loraEventOf,
+  peekType,
+  standingEvents,
+  type LoraSink,
+} from './lora-events.ts';
 import { checkServerClock } from './server-clock.ts';
 
 /** `local-only` when the group has no server: events stay on this device (and LoRa, later). */
@@ -152,7 +158,11 @@ export class GroupFeed {
         }
       }
     }
-    await feed.#announceSelf();
+    // Opening does not depend on announcing: a device whose storage is full still shows the group.
+    await feed.#announceSelf().catch((error: unknown) => {
+      storageRefusals.note(error);
+      console.warn('Announcing this device to the group failed', error);
+    });
     if (feed.#client) {
       window.addEventListener('online', feed.#retry);
       document.addEventListener('visibilitychange', feed.#retry);
@@ -185,6 +195,7 @@ export class GroupFeed {
     this.#lora = this.#group.practice !== undefined ? null : sink;
     if (this.#lora === null) return;
     const pending = await pendingEvents(this.#db, this.#group.id);
+    for (const event of standingEvents(this.state)) this.#lora.observe(event);
     for (const packet of catchUpPackets(this.state, this.#identity.nodeId, pending)) {
       this.#lora.offer(packet, 'own');
     }
@@ -253,6 +264,11 @@ export class GroupFeed {
       heading,
       speed,
     }));
+  }
+
+  /** Whether the group sees this device's position: it shared one and has not hidden it since. */
+  get showsOwnPosition(): boolean {
+    return this.state.positions.get(this.#identity.nodeId)?.type === 'position';
   }
 
   async hidePosition(): Promise<void> {

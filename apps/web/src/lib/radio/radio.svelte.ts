@@ -79,6 +79,9 @@ export class RadioSession {
     heard: (event) => {
       this.#scheduler.heard(event, Date.now());
     },
+    observe: (event) => {
+      this.#scheduler.observe(event);
+    },
   };
 
   constructor(makeLink: () => Promise<RadioLink> = meshCoreLink, random = Math.random) {

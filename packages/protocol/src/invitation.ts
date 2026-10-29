@@ -110,7 +110,7 @@ export function parseInvitationUrl(url: string): Result<Invitation, ProtocolErro
 }
 
 /** True for `/join` and `/{base path}/join`: the path an invitation link opens. */
-export function isJoinPath(pathname: string): boolean {
+function isJoinPath(pathname: string): boolean {
   return pathname.endsWith(`/${JOIN_SEGMENT}`);
 }
 
