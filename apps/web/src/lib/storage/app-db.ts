@@ -34,6 +34,8 @@ export interface OutboxEntry extends GroupEventRef {
 
 export type SettingKey =
   | 'activeGroupId'
+  /** The group in use when a practice started, to go back to when it ends (groups/group-store.ts). */
+  | 'beforePractice'
   | 'positionMode'
   | 'profile'
   | 'dutyStatus'

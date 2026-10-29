@@ -43,4 +43,15 @@ describe('a practice in the session', () => {
     expect(ana.groups.map((group) => group.name)).toEqual(['Rescate']);
     expect(ana.activeGroupId).toBe(team.id);
   });
+
+  it('goes back to the group used before when the app is opened again during a practice', async () => {
+    const db = await openAppDb(`session-test-${String(dbCounter++)}`);
+    const ana = await Session.load(db);
+    await ana.createIdentity('Ana');
+    const team = await ana.createGroup('Rescate', null);
+    await ana.startPractice('Práctica', 'flood', 'member');
+    const reopened = await Session.load(db);
+    expect(reopened.groups.map((group) => group.name)).toEqual(['Rescate']);
+    expect(reopened.activeGroupId).toBe(team.id);
+  });
 });

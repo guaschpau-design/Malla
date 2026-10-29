@@ -34,3 +34,21 @@ export async function getActiveGroupId(db: AppDb): Promise<string | undefined> {
 export async function setActiveGroupId(db: AppDb, id: string): Promise<void> {
   await db.put('settings', id, 'activeGroupId');
 }
+
+/**
+ * Remembers the group in use as a practice starts, kept on the device so that the app finds it
+ * again even if it is closed during the practice.
+ */
+export async function rememberBeforePractice(db: AppDb, id: string | undefined): Promise<void> {
+  if (id === undefined) await db.delete('settings', 'beforePractice');
+  else await db.put('settings', id, 'beforePractice');
+}
+
+/** The group in use before the practice, forgotten once read: the practice is over. */
+export async function takeBeforePractice(db: AppDb): Promise<string | undefined> {
+  const tx = db.transaction('settings', 'readwrite');
+  const stored = await tx.store.get('beforePractice');
+  await tx.store.delete('beforePractice');
+  await tx.done;
+  return typeof stored === 'string' ? stored : undefined;
+}

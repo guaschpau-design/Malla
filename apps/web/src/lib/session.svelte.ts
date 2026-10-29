@@ -5,7 +5,14 @@ import type { Invitation, Role } from '@tesel/protocol';
 
 import { deleteLeftovers } from './events/event-log.ts';
 import type { JoinOutcome, StoredGroup } from './groups/group.ts';
-import { getActiveGroupId, listGroups, setActiveGroupId } from './groups/group-store.ts';
+import {
+  getActiveGroupId,
+  getGroup,
+  listGroups,
+  rememberBeforePractice,
+  setActiveGroupId,
+  takeBeforePractice,
+} from './groups/group-store.ts';
 import { joinGroup, leaveGroup, startGroup, startPractice } from './groups/membership.ts';
 import { createLocalIdentity, type LocalIdentity } from './identity/identity.ts';
 import type { Situation } from './practice/situations.ts';
@@ -24,8 +31,6 @@ export class Session {
   );
 
   readonly #db: AppDb;
-  /** The group that was active before a practice started, to go back to when it ends. */
-  #beforePractice: string | undefined;
 
   private constructor(db: AppDb) {
     this.#db = db;
@@ -34,10 +39,9 @@ export class Session {
   static async load(db: AppDb): Promise<Session> {
     const session = new Session(db);
     session.identity = await loadIdentity(db);
-    // A practice lasts while the app is open: one left from before is over.
-    for (const group of await listGroups(db)) {
-      if (group.practice) await leaveGroup(db, group.id);
-    }
+    // A practice lasts while the app is open: one left from before is over, and the group used
+    // before it is in use again.
+    await session.#endPractice();
     await session.#refreshGroups();
     await deleteLeftovers(
       db,
@@ -71,19 +75,25 @@ export class Session {
    */
   async startPractice(name: string, situation: Situation, role: Role): Promise<void> {
     await this.endPractice();
-    this.#beforePractice = this.activeGroupId;
+    await rememberBeforePractice(this.#db, this.activeGroupId);
     await startPractice(this.#db, name, { situation, role }, Date.now());
     await this.#refreshGroups();
   }
 
   /** Ends the practice, if there is one: its group is forgotten and the one before is active again. */
   async endPractice(): Promise<void> {
-    const practice = this.groups.find((group) => group.practice);
-    if (practice === undefined) return;
-    await leaveGroup(this.#db, practice.id);
-    if (this.#beforePractice !== undefined) await setActiveGroupId(this.#db, this.#beforePractice);
-    this.#beforePractice = undefined;
+    await this.#endPractice();
     await this.#refreshGroups();
+  }
+
+  async #endPractice(): Promise<void> {
+    const practices = (await listGroups(this.#db)).filter((group) => group.practice);
+    if (practices.length === 0) return;
+    for (const practice of practices) await leaveGroup(this.#db, practice.id);
+    const before = await takeBeforePractice(this.#db);
+    if (before !== undefined && (await getGroup(this.#db, before))) {
+      await setActiveGroupId(this.#db, before);
+    }
   }
 
   async join(invitation: Invitation): Promise<JoinOutcome> {
@@ -112,7 +122,7 @@ export class Session {
     for (const group of await listGroups(this.#db)) {
       if (group.practice === undefined || group.id === active) continue;
       await leaveGroup(this.#db, group.id);
-      this.#beforePractice = undefined;
+      await rememberBeforePractice(this.#db, undefined);
     }
     this.groups = await listGroups(this.#db);
     this.activeGroupId = active;

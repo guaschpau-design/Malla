@@ -120,10 +120,19 @@
 
   .head button,
   .guide button {
+    position: relative;
     min-height: 0;
     padding: 0.2rem 0.4rem;
     color: var(--muted);
     font-size: var(--text-small);
+  }
+
+  /* Small to look at, but as easy to hit as any button: the tap area reaches past the text. */
+  .head button::before,
+  .guide button::before {
+    position: absolute;
+    inset: -0.6rem -0.25rem;
+    content: '';
   }
 
   /* The step to take now, with the way to skip the guide under it. */

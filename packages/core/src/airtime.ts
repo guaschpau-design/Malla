@@ -13,7 +13,7 @@ export interface LoraPreset {
  * MeshCore's "EU/UK (Narrow)" preset: 869.618 MHz, 62.5 kHz, SF8. The coding rate and preamble
  * are taken at their most expensive plausible values so estimates err on the safe side.
  */
-export const EU_NARROW: LoraPreset = {
+const EU_NARROW: LoraPreset = {
   spreadingFactor: 8,
   bandwidthHz: 62_500,
   codingRate: 4,
