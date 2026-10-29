@@ -37,7 +37,8 @@
   const STREETS_RADIUS_M = 700;
 
   const info = $derived(SITUATION_INFO[situation]);
-  // One scenario and one run for the life of the component, where and in the language it started.
+  // One scenario and one run for the life of the component, where and in the language it started:
+  // the life of the practice, which ends when another group is used (session.svelte.ts).
   const scenario = untrack(() => SITUATION_INFO[situation].scenario(t, centre, role));
   let run: PracticeRun | null = $state.raw(null);
 
@@ -49,19 +50,17 @@
       walkwaysAround(centre, STREETS_RADIUS_M, (tile) =>
         findTile('basemap', tile, store, archives),
       ),
-    )
-      .catch(() => [])
-      .then((lines) => {
-        if (ended) return;
-        started = new PracticeRun(scenario, {
-          sink: (bytes) => feed.receiveSimulated(bytes),
-          self,
-          t,
-          network: WalkNetwork.from(lines),
-        });
-        started.start();
-        run = started;
+    ).then((lines) => {
+      if (ended) return;
+      started = new PracticeRun(scenario, {
+        sink: (bytes) => feed.receiveSimulated(bytes),
+        self,
+        t,
+        network: WalkNetwork.from(lines),
       });
+      started.start();
+      run = started;
+    });
     return () => {
       ended = true;
       started?.stop();

@@ -95,7 +95,7 @@ export class Session {
 
   async activate(id: string): Promise<void> {
     await setActiveGroupId(this.#db, id);
-    this.activeGroupId = id;
+    await this.#refreshGroups();
   }
 
   async leave(id: string): Promise<void> {
@@ -103,8 +103,18 @@ export class Session {
     await this.#refreshGroups();
   }
 
+  /**
+   * Reads the groups again. A practice lasts while its group is the one in use: once another is,
+   * the practice is over and forgotten, so that its teammates never start it over.
+   */
   async #refreshGroups(): Promise<void> {
+    const active = await getActiveGroupId(this.#db);
+    for (const group of await listGroups(this.#db)) {
+      if (group.practice === undefined || group.id === active) continue;
+      await leaveGroup(this.#db, group.id);
+      this.#beforePractice = undefined;
+    }
     this.groups = await listGroups(this.#db);
-    this.activeGroupId = await getActiveGroupId(this.#db);
+    this.activeGroupId = active;
   }
 }
