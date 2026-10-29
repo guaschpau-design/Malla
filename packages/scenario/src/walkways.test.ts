@@ -72,6 +72,35 @@ describe('walking the streets', () => {
   });
 });
 
+describe('the streets of a town', () => {
+  // 31 streets each way, 50 m apart, drawn with a point every 10 m as a map does, and three side
+  // streets in each block that stop 2 m short of the next street: some 10 000 segments.
+  const streets = Array.from({ length: 31 }, (_, offset) => {
+    const along = Array.from({ length: 151 }, (__, step) => step * 10);
+    return [
+      along.map((meters) => at(offset * 50, meters)),
+      along.map((meters) => at(meters, offset * 50)),
+    ];
+  }).flat();
+  const sideStreets = Array.from({ length: 30 * 30 * 3 }, (_, index) => {
+    const [block, side] = [Math.floor(index / 3), index % 3];
+    const [north, east] = [Math.floor(block / 30) * 50, (block % 30) * 50 + 12 + side * 12];
+    return [at(north + 20, east), at(north + 48, east)];
+  });
+  const lines = [...streets, ...sideStreets];
+
+  it('is put together, and searched, in a moment', () => {
+    const started = performance.now();
+    const town = WalkNetwork.from(lines);
+    const built = performance.now();
+    for (let walk = 0; walk < 20; walk += 1) town?.way(at(1, walk), at(1499, 1499 - walk));
+    const searched = performance.now();
+    expect(town?.length).toBeCloseTo(31 * 2 * 1500 + 30 * 30 * 3 * 30, -1);
+    expect(built - started).toBeLessThan(1000);
+    expect((searched - built) / 20).toBeLessThan(50);
+  });
+});
+
 describe('a scenario on foot', () => {
   const network = WalkNetwork.from(GRID);
   if (network === null) throw new Error('no network');

@@ -3,12 +3,13 @@
 // paths), joined where they meet, and searched for the shortest way between two points. Only its
 // largest connected part is kept: every point of it can be reached from every other.
 //
-// Work is done on a plane fitted at the network's first point, in metres: exact enough for the
-// kilometre or two around a practice.
+// Work is done on a plane fitted at the network's first point, in metres (plane.ts): exact enough
+// for the kilometre or two around a practice.
 
 import { eastNorthMeters, offsetMeters, simplifyLine } from '@tesel/core';
 import { SHAPE_MAX_POINTS, type LatLon } from '@tesel/protocol';
 
+import { nearestOnSegment, SegmentGrid, type Plane } from './plane.ts';
 import type { Scenario, ScenarioAction, ScenarioMember, ScenarioPlace } from './scenario.ts';
 
 /** Points of two lines this close are one: the same corner, drawn in two tiles of the map. */
@@ -18,11 +19,6 @@ const JOIN_M = 1.5;
  * street cut at a tile's edge, or a side street drawn up to the kerb of a main one.
  */
 const SPLICE_M = 4;
-
-interface Plane {
-  readonly east: number;
-  readonly north: number;
-}
 
 interface Edge {
   readonly a: number;
@@ -43,6 +39,8 @@ export class WalkNetwork {
   readonly #edges: readonly Edge[];
   /** The edges at each node. */
   readonly #at: readonly (readonly number[])[];
+  /** The edges by where they are, to find the one nearest to a point. */
+  readonly #grid = new SegmentGrid();
 
   private constructor(origin: LatLon, nodes: readonly Plane[], edges: readonly Edge[]) {
     this.#origin = origin;
@@ -52,6 +50,7 @@ export class WalkNetwork {
     edges.forEach((edge, index) => {
       at[edge.a]?.push(index);
       at[edge.b]?.push(index);
+      this.#grid.add(index, this.#node(edge.a), this.#node(edge.b));
     });
     this.#at = at;
   }
@@ -106,10 +105,13 @@ export class WalkNetwork {
     if (start.edge === end.edge) return [start.at, end.at].map((point) => this.#latLon(point));
     const startEdge = this.#edge(start.edge);
     const endEdge = this.#edge(end.edge);
-    const { cost, previous } = this.#shortestFrom([
-      [startEdge.a, start.along * startEdge.length],
-      [startEdge.b, (1 - start.along) * startEdge.length],
-    ]);
+    const { cost, previous } = this.#shortestFrom(
+      [
+        [startEdge.a, start.along * startEdge.length],
+        [startEdge.b, (1 - start.along) * startEdge.length],
+      ],
+      [endEdge.a, endEdge.b],
+    );
     // Into the last edge by whichever of its ends is reached for less, all the way to the point.
     const viaA = (cost[endEdge.a] ?? Infinity) + end.along * endEdge.length;
     const viaB = (cost[endEdge.b] ?? Infinity) + (1 - end.along) * endEdge.length;
@@ -123,8 +125,14 @@ export class WalkNetwork {
     return points.map((point) => this.#latLon(point));
   }
 
-  /** Dijkstra's search from several nodes at once, each with the cost of getting to it. */
-  #shortestFrom(sources: readonly (readonly [number, number])[]): {
+  /**
+   * Dijkstra's search from several nodes at once, each with the cost of getting to it, until the
+   * cheapest way to each of `targets` is known.
+   */
+  #shortestFrom(
+    sources: readonly (readonly [number, number])[],
+    targets: readonly number[],
+  ): {
     cost: number[];
     previous: number[];
   } {
@@ -137,9 +145,11 @@ export class WalkNetwork {
         queue.push(node, start);
       }
     }
-    for (let next = queue.pop(); next !== undefined; next = queue.pop()) {
+    const unsettled = new Set(targets);
+    for (let next = queue.pop(); next !== undefined && unsettled.size > 0; next = queue.pop()) {
       const [node, reached] = next;
       if (reached > (cost[node] ?? Infinity)) continue;
+      unsettled.delete(node);
       for (const index of this.#at[node] ?? []) {
         const edge = this.#edge(index);
         const other = edge.a === node ? edge.b : edge.a;
@@ -156,17 +166,13 @@ export class WalkNetwork {
 
   #meet(at: LatLon): Meeting {
     const point = eastNorthMeters(this.#origin, at);
-    let best: Meeting & { readonly meters: number } = {
-      edge: 0,
-      along: 0,
-      at: this.#node(this.#edge(0).a),
-      meters: Infinity,
+    const near = (index: number) => {
+      const edge = this.#edge(index);
+      return nearestOnSegment(point, this.#node(edge.a), this.#node(edge.b));
     };
-    this.#edges.forEach((edge, index) => {
-      const near = nearestOnSegment(point, this.#node(edge.a), this.#node(edge.b));
-      if (near.meters < best.meters) best = { edge: index, ...near };
-    });
-    return best;
+    // A network has at least one edge (see `from`), so there is always a nearest one.
+    const edge = this.#grid.nearest(point, (index) => near(index).meters);
+    return { edge, ...near(edge) };
   }
 
   #node(index: number): Plane {
@@ -220,6 +226,8 @@ class NetworkBuilder {
   readonly #edges: (Edge | null)[] = [];
   /** Nodes by the cell of a grid `JOIN_M` wide they fall in, to find a point's twin quickly. */
   readonly #cells = new Map<string, number[]>();
+  /** Edges by where they are, to find those a loose end comes close to. */
+  readonly #grid = new SegmentGrid();
 
   addSegment(from: Plane, to: Plane): void {
     this.#addEdge(this.#nodeAt(from), this.#nodeAt(to));
@@ -238,8 +246,9 @@ class NetworkBuilder {
       const point = this.#nodes[end];
       if (point === undefined) return;
       let best: { index: number; at: Plane; meters: number } | null = null;
-      for (const [index, edge] of this.#edges.entries()) {
-        if (edge === null || edge.a === end || edge.b === end) continue;
+      for (const index of this.#grid.near(point, SPLICE_M)) {
+        const edge = this.#edges[index];
+        if (edge === null || edge === undefined || edge.a === end || edge.b === end) continue;
         const [a, b] = [this.#nodes[edge.a], this.#nodes[edge.b]];
         if (a === undefined || b === undefined) continue;
         const near = nearestOnSegment(point, a, b);
@@ -283,7 +292,10 @@ class NetworkBuilder {
         }
       }
     });
-    const largest = sizes.indexOf(Math.max(...sizes));
+    const largest = sizes.reduce(
+      (best, size, label) => (size > (sizes[best] ?? 0) ? label : best),
+      0,
+    );
     const renumbered = this.#nodes.map(() => -1);
     const nodes: Plane[] = [];
     this.#nodes.forEach((node, index) => {
@@ -302,6 +314,7 @@ class NetworkBuilder {
   #addEdge(a: number, b: number): void {
     const [from, to] = [this.#nodes[a], this.#nodes[b]];
     if (a === b || from === undefined || to === undefined) return;
+    this.#grid.add(this.#edges.length, from, to);
     this.#edges.push({ a, b, length: Math.hypot(to.east - from.east, to.north - from.north) });
   }
 
@@ -324,29 +337,6 @@ class NetworkBuilder {
     this.#cells.set(key, [...(this.#cells.get(key) ?? []), index]);
     return index;
   }
-}
-
-/** The point of a segment nearest to another point, all on the plane. */
-function nearestOnSegment(
-  point: Plane,
-  a: Plane,
-  b: Plane,
-): { along: number; at: Plane; meters: number } {
-  const east = b.east - a.east;
-  const north = b.north - a.north;
-  const lengthSquared = east ** 2 + north ** 2;
-  const along =
-    lengthSquared === 0
-      ? 0
-      : Math.min(
-          1,
-          Math.max(
-            0,
-            ((point.east - a.east) * east + (point.north - a.north) * north) / lengthSquared,
-          ),
-        );
-  const at = { east: a.east + along * east, north: a.north + along * north };
-  return { along, at, meters: Math.hypot(point.east - at.east, point.north - at.north) };
 }
 
 /** A binary heap of nodes by cost, cheapest first. */
