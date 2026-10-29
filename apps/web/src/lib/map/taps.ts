@@ -68,10 +68,15 @@ export class MapTaps {
   };
 }
 
-/** The topmost feature of `layers` drawn under the tap, if any. */
+/**
+ * The topmost feature of `layers` drawn under the tap, if any. A layer switched off is left out at
+ * once, not only once the map has drawn it away.
+ */
 function topmostFeature(event: MapMouseEvent, layers: readonly string[]): MapGeoJSONFeature | null {
   const map = event.target;
-  const present = layers.filter((id) => map.getLayer(id) !== undefined);
+  const present = layers.filter(
+    (id) => map.getLayer(id) !== undefined && map.getLayoutProperty(id, 'visibility') !== 'none',
+  );
   if (present.length === 0) return null;
   const { x, y } = event.point;
   const box: [[number, number], [number, number]] = [

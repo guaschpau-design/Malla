@@ -51,4 +51,15 @@ describe('taps on the map', () => {
     map.tap(39.47, -0.37);
     expect(opened).toEqual(['member']);
   });
+
+  it('open nothing of a layer switched off, even before the map has drawn it away', () => {
+    const { map, taps, opened } = setUp();
+    taps.onFeature(['members'], () => opened.push('member'));
+    taps.onFeature(['tasks'], () => opened.push('task'));
+    map.drawn.set('members', { id: 'berta' });
+    map.drawn.set('tasks', { key: 't1' });
+    map.map.setLayoutProperty('members', 'visibility', 'none');
+    map.tap(39.47, -0.37);
+    expect(opened).toEqual(['task']);
+  });
 });

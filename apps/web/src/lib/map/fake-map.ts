@@ -125,6 +125,10 @@ export class FakeMap {
     this.layers.delete(id);
   }
 
+  getLayoutProperty(id: string, name: string): unknown {
+    return this.layers.get(id)?.layout?.[name];
+  }
+
   setLayoutProperty(id: string, name: string, value: unknown): void {
     const layer = this.layers.get(id);
     if (layer) layer.layout = { ...layer.layout, [name]: value };
