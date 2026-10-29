@@ -1,8 +1,9 @@
 import { offsetMeters, stateOf } from '@tesel/core';
 import type { NodeId, ShapeEvent, SweepEvent, TaskEvent, TeamEvent } from '@tesel/protocol';
+import { WalkNetwork } from '@tesel/scenario';
 import { describe, expect, it } from 'vitest';
 
-import { doersOf, errandPoints } from './errands.ts';
+import { doersOf, errandOf, wayThrough } from './errands.ts';
 
 const JORDI = 'a1a1a1a1' as NodeId;
 const LUIS = 'b2b2b2b2' as NodeId;
@@ -71,22 +72,32 @@ describe('errands of simulated teammates', () => {
   });
 
   it('goes round an area and back to where it started', () => {
-    const points = errandPoints(task(LUIS, { kind: 'object', object: AREA.object }), state.objects);
-    expect(points).toHaveLength(5);
-    expect(points.at(-1)).toEqual(points[0]);
+    const errand = errandOf(task(LUIS, { kind: 'object', object: AREA.object }), state.objects);
+    expect(errand.points).toHaveLength(5);
+    expect(errand.points.at(-1)).toEqual(errand.points[0]);
+    expect(errand.across).toBe(false);
   });
 
-  it('walks a strip of a sweep lane by lane', () => {
-    const points = errandPoints(
-      task(LUIS, { kind: 'object', object: STRIP.object }),
-      state.objects,
-    );
+  it('walks a strip of a sweep lane by lane, across whatever is there', () => {
+    const errand = errandOf(task(LUIS, { kind: 'object', object: STRIP.object }), state.objects);
     // Half of an area 100 m wide, in lanes 25 m apart: two lanes, each walked end to end.
-    expect(points.length).toBeGreaterThanOrEqual(4);
+    expect(errand.points.length).toBeGreaterThanOrEqual(4);
+    expect(errand.across).toBe(true);
   });
 
   it('goes to a point, and nowhere for a task without a place', () => {
-    expect(errandPoints(task(LUIS, { kind: 'point', at: HERE }), state.objects)).toEqual([HERE]);
-    expect(errandPoints(task(LUIS, null), state.objects)).toEqual([]);
+    expect(errandOf(task(LUIS, { kind: 'point', at: HERE }), state.objects).points).toEqual([HERE]);
+    expect(errandOf(task(LUIS, null), state.objects).points).toEqual([]);
+  });
+
+  it('keeps to the streets on the way, and to the lanes of a strip once there', () => {
+    // One street, east–west along the south edge of the area.
+    const network = WalkNetwork.from([[at(0, -50), at(0, 150)]]);
+    const lanes = [at(20, 10), at(80, 10), at(80, 30), at(20, 30)];
+    const swept = wayThrough(at(-30, 0), { points: lanes, across: true }, network);
+    expect(swept.slice(-4)).toEqual(lanes);
+    expect(swept[0]).toEqual(network?.snap(at(-30, 0)));
+    const walked = wayThrough(at(-30, 0), { points: lanes, across: false }, network);
+    expect(walked.every((point) => point.lat <= at(0.1, 0).lat)).toBe(true);
   });
 });

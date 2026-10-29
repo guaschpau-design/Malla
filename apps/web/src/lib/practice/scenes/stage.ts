@@ -35,7 +35,10 @@ const MARTA_SOS = 'marta-sos';
 /** A brisk walk, in metres per second: they are on a search, not a stroll. */
 const PACE = 1.4;
 
-/** Seconds a practice lasts at most: its run moves the members, not the plan. */
+/**
+ * The duration the scenarios give, in seconds, which only planned positions would use: in a
+ * practice the run moves the members itself, and plays until the practice ends.
+ */
 export const PRACTICE_SECONDS = 3600;
 
 /** A point `north` and `east` metres from where the practice takes place. */
@@ -124,7 +127,8 @@ export function teams(t: Translate): ScenarioStep[] {
 
 /**
  * Marta calls an SOS and a teammate answers it, saying they are on their way; the practice run
- * walks them to her and, once there, Marta's SOS ends.
+ * walks them to her and, once they have been with her a while and the user has acknowledged it
+ * too, Marta's SOS ends.
  */
 export function martasSos(
   t: Translate,

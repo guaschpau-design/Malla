@@ -1,10 +1,10 @@
 // A practice playing on this device (ADR-0031, ADR-0066). The simulated teammates of a scenario,
 // each with an identity of its own, send its steps into the practice group when their moment
 // comes, and behave as people would about what happens in the group, whoever starts it: they
-// report where they are as they walk, take the tasks given to them or their team, walk to them and
-// along them, and say when they are done; they answer roll calls and alerts, go to whoever calls
-// an SOS and stay until it is over, and answer what the user says and does. They keep to the
-// streets of the map (@tesel/scenario's WalkNetwork). Nothing leaves the device.
+// report where they are as they walk, take the tasks given to them or their team, one at a time,
+// walk to them and along them, and say when they are done; they answer roll calls and alerts, go
+// to whoever calls an SOS and stay until it is over, and answer what the user says and does. They
+// keep to the streets of the map (@tesel/scenario's WalkNetwork). Nothing leaves the device.
 
 import { EMPTY_STATE, openSosCalls, type GroupState } from '@tesel/core';
 import {
@@ -23,6 +23,7 @@ import {
   ScenarioPerformer,
   YOU,
   type EventDraft,
+  type PlannedAction,
   type PlannedEvent,
   type Scenario,
   type WalkNetwork,
@@ -31,8 +32,8 @@ import {
 import type { Translate } from '../i18n/index.ts';
 import { aliasOf } from '../members/alias.ts';
 import { areasToClear } from '../objects/sweeps.ts';
-import { doersOf, errandPoints, wayThrough } from './errands.ts';
-import { Teammate } from './teammate.ts';
+import { doersOf, errandOf, wayThrough, type Errand } from './errands.ts';
+import { Teammate, type Job } from './teammate.ts';
 
 /** Where the run hands each event, as if a teammate had sent it: the practice group's feed. */
 type PracticeSink = (bytes: Uint8Array) => Promise<void>;
@@ -74,6 +75,11 @@ export class PracticeRun {
   /** What has been seen to, by kind and event key, so that nothing is answered twice. */
   readonly #handled = new Set<string>();
   readonly #timers = new Set<ReturnType<typeof setTimeout>>();
+  /**
+   * Teammates' SOS calls, by key, that a helper has stayed with long enough: each ends once the
+   * user has acknowledged it too, so that answering it is always there to practise.
+   */
+  readonly #attended = new Map<string, { readonly helper: Teammate; readonly called: Teammate }>();
   #state: GroupState = EMPTY_STATE;
   #next = 0;
   #startMs = 0;
@@ -114,6 +120,7 @@ export class PracticeRun {
     this.#answerRollCall();
     this.#answerAlerts();
     this.#goToSosCalls();
+    this.#endAttendedSosCalls();
     this.#dropFinishedJobs();
     this.#takeTasks();
     this.#clearSweptAreas();
@@ -138,35 +145,28 @@ export class PracticeRun {
     }
   }
 
+  /** Sends planned events one after another: one that cannot be sent is told of and left out. */
   async #sendInOrder(events: readonly PlannedEvent[]): Promise<void> {
-    for (const event of events) {
-      const teammate = this.#byAlias.get(event.by);
-      if (teammate === undefined) throw new Error(`no teammate ${event.by} in the scenario`);
-      const { action } = event;
-      const now = Date.now();
-      // An SOS or a report goes from where the teammate is now, wherever their tasks took them;
-      // whoever calls an SOS stops there.
-      const placed =
-        action.type === 'sos' || action.type === 'report'
-          ? { ...event, action: { ...action, where: teammate.walker.at(now) } }
-          : event;
-      if (action.type === 'sos') teammate.injure(now);
-      await this.#performer.perform(placed, teammate.actor, (draft) => this.#send(teammate, draft));
-    }
+    for (const event of events) await this.#attempt(() => this.#perform(event));
+  }
+
+  async #perform(event: PlannedEvent): Promise<void> {
+    const teammate = this.#byAlias.get(event.by);
+    if (teammate === undefined) throw new Error(`no teammate ${event.by} in the scenario`);
+    const { action } = event;
+    // An SOS or a report goes from where the teammate is now, wherever their tasks took them.
+    const placed =
+      action.type === 'sos' || action.type === 'report'
+        ? { ...action, where: teammate.walker.at(Date.now()) }
+        : action;
+    await this.#act(teammate, placed);
   }
 
   #reportPositions(): void {
     const now = Date.now();
     for (const teammate of this.#teammates.values()) {
       const where = teammate.walker.at(now);
-      void this.#send(teammate, (header) => ({
-        ...header,
-        type: 'position',
-        ...where,
-        accuracy: Teammate.ACCURACY_M,
-        heading: null,
-        speed: null,
-      }));
+      void this.#attempt(() => this.#act(teammate, { type: 'position', where }));
     }
     this.#after(POSITION_EVERY_S, () => {
       this.#reportPositions();
@@ -190,8 +190,7 @@ export class PracticeRun {
 
   /**
    * Whoever acknowledges a teammate's SOS goes to them, and the nearest teammate acknowledges the
-   * user's and goes to the user: once there, the teammate stays a while and the SOS is over (the
-   * user ends their own).
+   * user's, if it is still open by then, and goes to the user, who ends it.
    */
   #goToSosCalls(): void {
     for (const [key, sos] of openSosCalls(this.#state)) {
@@ -201,7 +200,7 @@ export class PracticeRun {
         if (!this.#first(`sos ${key}`)) continue;
         this.#after(SOS_ANSWER_S, async () => {
           const helper = this.#nearestOnFoot(at);
-          if (helper === undefined) return;
+          if (helper === undefined || this.#state.sosCancels.has(key)) return;
           await this.#send(helper, ack(sos));
           await this.#say(helper, this.#options.t('practiceOnTheWay'));
           this.#help(helper, key, at, null);
@@ -216,87 +215,118 @@ export class PracticeRun {
     }
   }
 
-  /** Sends `helper` to an SOS and, if a teammate called it, ends it once they have been there a while. */
+  /** Sends `helper` to an SOS and, if a teammate called it, stays with them a while. */
   #help(helper: Teammate, sos: string, at: LatLon, called: Teammate | null): void {
     const now = Date.now();
-    const arrival = helper.go({ kind: 'help', sos }, this.#way(helper, [at], now), now);
+    const arrival = helper.go({ kind: 'help', sos }, this.#way(helper, place(at), now), now);
     if (called === null) return;
-    this.#after((arrival - now) / 1000 + STAY_WITH_S, async () => {
-      const call = this.#state.sos.get(sos);
-      if (call === undefined || this.#state.sosCancels.has(sos)) return;
-      await this.#say(helper, this.#options.t('practiceSosAttended', { name: called.alias }));
-      await this.#send(called, (header) => ({ ...header, type: 'sos-cancel', sos: call }));
+    this.#after((arrival - now) / 1000 + STAY_WITH_S, () => {
+      this.#attended.set(sos, { helper, called });
+      this.#endAttendedSosCalls();
     });
   }
 
-  /**
-   * Teammates leave what is over: a task taken from them or finished, an SOS ended. Whoever left a
-   * task to help goes back to it, if it is still theirs.
-   */
-  #dropFinishedJobs(): void {
-    const now = Date.now();
-    for (const teammate of this.#teammates.values()) {
-      const { job } = teammate;
-      if (job === null) continue;
-      if (job.kind === 'task' && !this.#stillDoing(this.#state.tasks.get(job.task), teammate)) {
-        teammate.rest(now);
-      }
-      if (job.kind === 'help' && this.#state.sosCancels.has(job.sos)) {
-        const resume = teammate.resume;
-        const task = resume === null ? undefined : this.#state.tasks.get(resume);
-        teammate.rest(now);
-        if (resume !== null && task !== undefined && this.#stillDoing(task, teammate)) {
-          const points = errandPoints(task, this.#state.objects);
-          teammate.go({ kind: 'task', task: resume }, this.#way(teammate, points, now), now);
-        }
-      }
-    }
-  }
-
-  #stillDoing(task: TaskEvent | undefined, teammate: Teammate): boolean {
-    return (
-      task?.status === 'in-progress' &&
-      doersOf(task, this.#state.teams, new Set(this.#teammates.keys())).includes(teammate.node)
-    );
-  }
-
-  /**
-   * Open tasks for teammates, or their teams, are taken by those free to do them: the first of
-   * them marks it taken, all walk to it and along it, and the first says when it is done.
-   */
-  #takeTasks(): void {
-    const simulated = new Set(this.#teammates.keys());
-    for (const [key, task] of this.#state.tasks) {
-      if (task.status !== 'open') continue;
-      const doers = doersOf(task, this.#state.teams, simulated)
-        .map((node) => this.#teammates.get(node))
-        .filter((teammate): teammate is Teammate => teammate?.free === true);
-      const [lead] = doers;
-      if (lead === undefined || !this.#first(`take ${eventRefKey(task)}`)) continue;
-      this.#after(TAKE_TASK_S, async () => {
-        const latest = this.#state.tasks.get(key);
-        if (latest === undefined || eventRefKey(latest) !== eventRefKey(task)) return;
-        await this.#send(lead, (header) => ({ ...task, ...header, status: 'in-progress' }));
-        this.#doTask(key, task, doers);
+  /** A teammate's SOS that a helper has stayed with, and the user has acknowledged, ends. */
+  #endAttendedSosCalls(): void {
+    for (const [key, { helper, called }] of this.#attended) {
+      const call = this.#state.sos.get(key);
+      const over = call === undefined || this.#state.sosCancels.has(key);
+      if (!over && this.#state.acks.get(key)?.has(this.#options.self) !== true) continue;
+      this.#attended.delete(key);
+      if (over) continue;
+      void this.#attempt(async () => {
+        await this.#say(helper, this.#options.t('practiceSosAttended', { name: called.alias }));
+        await this.#send(called, (header) => ({ ...header, type: 'sos-cancel', sos: call }));
       });
     }
   }
 
-  #doTask(key: string, task: TaskEvent, doers: readonly Teammate[]): void {
+  /**
+   * Teammates leave what is over: a task done, cancelled or no longer theirs, an SOS ended.
+   * Whoever called an SOS that has ended is well again, and whoever left a task to help goes back
+   * to it, if it is still theirs.
+   */
+  #dropFinishedJobs(): void {
     const now = Date.now();
-    const points = errandPoints(task, this.#state.objects);
-    const arrivals = doers.map((doer) =>
-      doer.go({ kind: 'task', task: key }, this.#way(doer, points, now), now),
+    for (const teammate of this.#teammates.values()) {
+      if (teammate.sos !== null && this.#state.sosCancels.has(teammate.sos)) teammate.recover();
+      const { job, resume } = teammate;
+      if (job?.kind === 'task' && !this.#isFor(job.task, teammate)) teammate.rest(now);
+      if (job?.kind === 'help' && this.#state.sosCancels.has(job.sos)) {
+        teammate.rest(now);
+        if (resume !== null && this.#isFor(resume, teammate)) this.#work(teammate, resume);
+      }
+    }
+  }
+
+  /** Whether a task, by its key, is still to do and for a teammate, or their team. */
+  #isFor(key: string, teammate: Teammate): boolean {
+    const task = this.#state.tasks.get(key);
+    return (
+      (task?.status === 'open' || task?.status === 'in-progress') &&
+      this.#doers(task).includes(teammate)
     );
+  }
+
+  /** The teammates a task is for: the one it names, or those in the team it names. */
+  #doers(task: TaskEvent): Teammate[] {
+    return doersOf(task, this.#state.teams, new Set(this.#teammates.keys())).flatMap(
+      (node) => this.#teammates.get(node) ?? [],
+    );
+  }
+
+  /**
+   * Tasks to do for teammates, or their teams, that none of them is on are taken by those free to
+   * do them, who are on it from then: a moment later, the first of them marks it taken if it is
+   * open, and all of them set off.
+   */
+  #takeTasks(): void {
+    const now = Date.now();
+    for (const [key, task] of this.#state.tasks) {
+      if (task.status !== 'open' && task.status !== 'in-progress') continue;
+      const doers = this.#doers(task);
+      const free = doers.filter((doer) => doer.free);
+      if (free.length === 0 || doers.some((doer) => doer.isOn(key))) continue;
+      const taking: Job = { kind: 'task', task: key };
+      for (const doer of free) doer.go(taking, [], now);
+      this.#after(TAKE_TASK_S, async () => {
+        // Those still on it: not hurt or gone to help meanwhile.
+        const ready = free.filter((doer) => doer.job === taking);
+        const latest = this.#state.tasks.get(key);
+        const [lead] = ready;
+        if (lead === undefined) return;
+        if (latest === undefined || eventRefKey(latest) !== eventRefKey(task)) {
+          // Changed meanwhile: it is taken afresh as it now is, if it is still theirs.
+          for (const doer of ready) doer.rest(Date.now());
+          return;
+        }
+        if (latest.status === 'open') {
+          await this.#send(lead, (header) => ({ ...latest, ...header, status: 'in-progress' }));
+        }
+        for (const doer of ready) this.#work(doer, key);
+      });
+    }
+  }
+
+  /**
+   * Sets a teammate off through a task and, once through it, has them say it is done, if they are
+   * still on it then and nobody has said so.
+   */
+  #work(teammate: Teammate, key: string): void {
+    const task = this.#state.tasks.get(key);
+    if (task === undefined) return;
+    const now = Date.now();
+    const errand = errandOf(task, this.#state.objects);
+    const job: Job = { kind: 'task', task: key };
+    const arrival = teammate.go(job, this.#way(teammate, errand, now), now);
     // Along a line, an area or a strip, the walk is the work; at one place, there is work there.
-    const workS = points.length > 1 ? 0 : WORK_AT_PLACE_S;
-    const [lead] = doers;
-    if (lead === undefined) return;
-    this.#after((Math.max(now, ...arrivals) - now) / 1000 + workS, async () => {
+    const workS = errand.points.length > 1 ? 0 : WORK_AT_PLACE_S;
+    this.#after((arrival - now) / 1000 + workS, async () => {
       const latest = this.#state.tasks.get(key);
-      if (latest === undefined || !this.#stillDoing(latest, lead)) return;
-      await this.#send(lead, (header) => ({ ...latest, ...header, status: 'done' }));
-      await this.#say(lead, this.#options.t('practiceTaskDone', { task: latest.text }));
+      if (teammate.job !== job || latest === undefined || !this.#isFor(key, teammate)) return;
+      if (!this.#first(`done ${eventRefKey(latest)}`)) return;
+      await this.#send(teammate, (header) => ({ ...latest, ...header, status: 'done' }));
+      await this.#say(teammate, this.#options.t('practiceTaskDone', { task: latest.text }));
     });
   }
 
@@ -305,16 +335,8 @@ export class PracticeRun {
     for (const teammate of this.#teammates.values()) {
       for (const area of areasToClear(this.#state, teammate.node)) {
         if (!this.#first(`clear ${eventRefKey(area.object)}`)) continue;
-        const { object, label, geometry } = area;
         const style = ShapeStyleCode.SEARCH_CLEARED;
-        void this.#send(teammate, (header) => ({
-          ...header,
-          type: 'shape',
-          object,
-          style,
-          label,
-          geometry,
-        }));
+        void this.#attempt(() => this.#send(teammate, (header) => ({ ...area, ...header, style })));
       }
     }
   }
@@ -345,9 +367,9 @@ export class PracticeRun {
     }
   }
 
-  /** The way a teammate takes from where they are now through `points`, along the streets. */
-  #way(teammate: Teammate, points: readonly LatLon[], now: number): LatLon[] {
-    return wayThrough(teammate.walker.at(now), points, this.#options.network);
+  /** The way a teammate takes from where they are now through an errand, along the streets. */
+  #way(teammate: Teammate, errand: Errand, now: number): LatLon[] {
+    return wayThrough(teammate.walker.at(now), errand, this.#options.network);
   }
 
   /** The teammate nearest to a place who is not hurt, whatever they are doing. */
@@ -375,25 +397,47 @@ export class PracticeRun {
   }
 
   async #say(teammate: Teammate, text: string): Promise<void> {
-    await this.#send(teammate, (header) => ({ ...header, type: 'chat', text }));
+    await this.#act(teammate, { type: 'chat', text });
   }
 
+  /** A teammate does one of a scenario's actions now, as its steps are done. */
+  async #act(teammate: Teammate, action: PlannedAction): Promise<void> {
+    const at = (Date.now() - this.#startMs) / 1000;
+    await this.#performer.perform({ at, by: teammate.alias, action }, teammate.actor, (draft) =>
+      this.#send(teammate, draft),
+    );
+  }
+
+  /** Sends a teammate's event; whoever calls an SOS is hurt, and stops, until it is over. */
   async #send(teammate: Teammate, draft: EventDraft): Promise<EventRef> {
     const header = teammate.nextHeader();
-    const bytes = encodeEvent(draft(header));
+    const event = draft(header);
+    if (event.type === 'sos') teammate.injure(eventRefKey(header), Date.now());
+    const bytes = encodeEvent(event);
     if (bytes.ok && !this.#stopped) await this.#options.sink(bytes.value);
     return { origin: header.origin, seq: header.seq };
   }
 
+  /** Runs `run` in `seconds`, unless the run has stopped by then. */
   #after(seconds: number, run: () => unknown): void {
+    if (this.#stopped) return;
     const timer = setTimeout(
       () => {
         this.#timers.delete(timer);
-        void run();
+        void this.#attempt(run);
       },
       Math.max(0, seconds * 1000),
     );
     this.#timers.add(timer);
+  }
+
+  /** Does something of the run's, telling of a failure rather than leaving it unhandled. */
+  async #attempt(run: () => unknown): Promise<void> {
+    try {
+      await run();
+    } catch (error) {
+      console.warn('A practice teammate could not act:', error);
+    }
   }
 }
 
@@ -401,4 +445,9 @@ export class PracticeRun {
 function ack(target: EventRef): EventDraft {
   const { origin, seq } = target;
   return (header) => ({ ...header, type: 'ack', target: { origin, seq } });
+}
+
+/** The errand of going to one place. */
+function place(at: LatLon): Errand {
+  return { points: [at], across: false };
 }

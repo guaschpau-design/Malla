@@ -1,6 +1,6 @@
 // One simulated teammate of a practice: who they are on the group, what they are doing (a task, or
 // going to whoever called an SOS) and where they are (walker.ts). Whoever calls an SOS is hurt and
-// stays where they are.
+// stays where they are until it is over.
 
 import { distanceMeters } from '@tesel/core';
 import type { EventHeader, Identity, LatLon, NodeId } from '@tesel/protocol';
@@ -14,9 +14,6 @@ export type Job =
   | { readonly kind: 'help'; readonly sos: string };
 
 export class Teammate {
-  /** Accuracy the teammates report with every position, in metres. */
-  static readonly ACCURACY_M = 6;
-
   readonly alias: string;
   readonly node: NodeId;
   /** The teammate coordinates the group (the user is then a member). */
@@ -27,7 +24,8 @@ export class Teammate {
   #job: Job | null = null;
   /** The task left to help someone, to go back to once that is over. */
   #resume: string | null = null;
-  #hurt = false;
+  /** The SOS the teammate called, by its key, while they are hurt. */
+  #sos: string | null = null;
 
   constructor(member: ScenarioMember, identity: Identity) {
     const start = member.route?.[0];
@@ -52,13 +50,23 @@ export class Teammate {
     return this.#resume;
   }
 
-  /** Free to take a task: not hurt and doing nothing else. */
-  get free(): boolean {
-    return !this.#hurt && this.#job === null;
+  /** The SOS the teammate called, by its key, while they are hurt; null when they are well. */
+  get sos(): string | null {
+    return this.#sos;
   }
 
   get hurt(): boolean {
-    return this.#hurt;
+    return this.#sos !== null;
+  }
+
+  /** Free to take a task: not hurt, and doing nothing else. */
+  get free(): boolean {
+    return !this.hurt && this.#job === null;
+  }
+
+  /** Whether the teammate is on a task, by its key: doing it, or meaning to go back to it. */
+  isOn(task: string): boolean {
+    return (this.#job?.kind === 'task' && this.#job.task === task) || this.#resume === task;
   }
 
   /** The header of the teammate's next event. */
@@ -78,18 +86,22 @@ export class Teammate {
     return this.walker.go(way, now);
   }
 
-  /** The job is over: the teammate stops where they are. */
+  /** The job is over, and with it any task left for it: the teammate stops where they are. */
   rest(now: number): void {
-    this.#job = null;
-    this.walker.stop(now);
-  }
-
-  /** The teammate has called an SOS: they stop and do nothing more. */
-  injure(now: number): void {
-    this.#hurt = true;
     this.#job = null;
     this.#resume = null;
     this.walker.stop(now);
+  }
+
+  /** The teammate has called an SOS, by its key: they stop and do nothing more until it is over. */
+  injure(sos: string, now: number): void {
+    this.#sos = sos;
+    this.rest(now);
+  }
+
+  /** The teammate's SOS is over: they are well again, and free. */
+  recover(): void {
+    this.#sos = null;
   }
 
   distanceTo(at: LatLon, now: number): number {
