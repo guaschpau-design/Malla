@@ -16,7 +16,7 @@ The project's server runs at `https://tesel.eu`, on an IONOS VPS in Spain. It an
 
 The server runs on any Debian or Ubuntu VPS with a domain pointing to it ([ADR-0013](../docs/decisions/0013-self-updating-vps.md)).
 
-1. Create an `A` record for the domain with the VPS's IPv4 address.
+1. Create an `A` record for the domain with the VPS's IPv4 address, and no `AAAA` record. The containers' network has no IPv6: Docker would hand every client that came over IPv6 to Caddy from one and the same address, and the server's limits per address would then count all of them as one.
 2. Log in to the VPS and run:
 
    ```sh
@@ -46,6 +46,7 @@ What [`vps/install.sh`](vps/install.sh) sets up:
 | Updates    | `tesel-update.timer`, every 15 minutes: [`vps/update.sh`](vps/update.sh) verifies, starts and checks the newest image, or goes back (below)                                |
 | Base map   | [`vps/maps.sh`](vps/maps.sh) extracts the area from the latest Protomaps build of OpenStreetMap, served at `/maps/basemap.pmtiles`; rebuilt monthly                        |
 | Backups    | `tesel-backup.timer`, nightly: [`vps/backup.sh`](vps/backup.sh) keeps 14 days of the database and of Caddy's data in `/opt/tesel/backups`                                  |
+| Database   | [`vps/database.sh`](vps/database.sh) copies the database while the server runs and restores a copy; the backups and the updates use it                                     |
 
 Running the script again applies changes to the files of this folder and is otherwise harmless.
 
@@ -65,13 +66,15 @@ A server installed while the project was called Teselia (in `/opt/teselia`) is m
 
 ### Updates
 
-CI builds the image on every run and starts it as servers do. After every green push to `main` it publishes `ghcr.io/guaschpau-design/tesel-server` for amd64 and arm64, signs it with cosign under the identity of its workflow on `main`, and only then moves the `latest` tag to it ([ADR-0049](../docs/decisions/0049-signed-images-and-checked-updates.md)).
+CI builds the image on every run and starts it as servers do. After every green push to `main` it publishes `ghcr.io/guaschpau-design/tesel-server` for amd64 and arm64, signs it with cosign under the identity of its workflow on `main`, and only then moves the `latest` tag to it, if no newer commit has reached `main` meanwhile ([ADR-0049](../docs/decisions/0049-signed-images-and-checked-updates.md), [ADR-0068](../docs/decisions/0068-restorable-copies-and-going-back.md)).
 
 Every 15 minutes [`vps/update.sh`](vps/update.sh) checks that signature for the image `TESEL_IMAGE_TAG` names (`latest` unless set in `.env`; a commit's SHA pins that version), pulls it by digest, starts it and waits for its health check. A version that does not become healthy is replaced at once by the previous one, kept on disk for this, and is not tried again. `.env` records the digests: `TESEL_IMAGE` (running), `TESEL_IMAGE_PREVIOUS` and `TESEL_IMAGE_REJECTED`. With nothing new the job only checks that the server is healthy, so an unhealthy server shows up as a failed update.
 
+A new version may upgrade the database's schema, which older versions cannot read. So before starting a new version the job copies the database into `/opt/tesel/rollback`, and an update fails, leaving the server as it was, when the disk has no room for the copy and `TESEL_MIN_FREE_DISK_MB` more. Going back to the previous version across a change of schema, at once or by hand (below), restores that copy: what the server stored since is lost from it, and apps, seeing the server's store change, push their own events again.
+
 ### Alerts
 
-Failures of the update, base map, backup and certificate jobs go to the journal. Set `TESEL_ALERT_URL` in `/opt/tesel/.env` to a ping URL of [healthchecks.io](https://healthchecks.io) or a compatible service to hear about them: each job pings it when it succeeds and pings it with `/fail` appended when it fails. Updates ping every 15 minutes, so a period of one hour also tells when the server stops reporting at all.
+Failures of the update, base map and backup jobs go to the journal. Set `TESEL_ALERT_URL` in `/opt/tesel/.env` to a ping URL of [healthchecks.io](https://healthchecks.io) or a compatible service to hear about them: each job pings it when it succeeds and pings it with `/fail` appended when it fails. Updates ping every 15 minutes, so a period of one hour also tells when the server stops reporting at all.
 
 ### Backups
 
@@ -80,7 +83,7 @@ Every night [`vps/backup.sh`](vps/backup.sh) writes into `/opt/tesel/backups`, r
 - `tesel-TIME.db`: a consistent copy of the database, taken while the server runs and checked for integrity;
 - `caddy-data-TIME.tar.gz`: Caddy's certificates and ACME account.
 
-Copies are kept `TESEL_BACKUP_DAYS` days (14 unless set in `.env`). The database holds sealed envelopes only, but a backup on the same VPS is lost with it. To keep a copy elsewhere, create `/opt/tesel/backup.env` (mode 0600) with a [restic](https://restic.readthedocs.io) repository, its password and the credentials of its storage, for example an S3-compatible bucket:
+A backup that would leave less than `TESEL_MIN_FREE_DISK_MB` (500 MB unless set in `.env`) free on the disk is not made, and the job fails, so the alerts tell. Copies are kept `TESEL_BACKUP_DAYS` days (14 unless set in `.env`). The database holds sealed envelopes only, but a backup on the same VPS is lost with it. To keep a copy elsewhere, create `/opt/tesel/backup.env` (mode 0600) with a [restic](https://restic.readthedocs.io) repository, its password and the credentials of its storage, for example an S3-compatible bucket:
 
 ```sh
 RESTIC_REPOSITORY=s3:https://s3.example.eu/tesel-backups
@@ -103,23 +106,16 @@ cd /opt/tesel && sudo docker run --rm --env-file backup.env restic/restic:0.19.1
 sudo /opt/tesel/update.sh /opt/tesel rollback
 ```
 
-It starts `TESEL_IMAGE_PREVIOUS` and rejects the running image, so the timer does not bring it back; the next image CI publishes is installed as usual. To stay on one version, set `TESEL_IMAGE_TAG` in `.env` to the commit's SHA (images are tagged with it) and run `sudo /opt/tesel/update.sh /opt/tesel`; remove the line to follow `latest` again.
+It starts `TESEL_IMAGE_PREVIOUS` and rejects the running image, so the timer does not bring it back; the next image CI publishes is installed as usual. If the running version changed the database's schema, the copy taken before it started is restored first, as above. To stay on one version, set `TESEL_IMAGE_TAG` in `.env` to the commit's SHA (images are tagged with it) and run `sudo /opt/tesel/update.sh /opt/tesel`; remove the line to follow `latest` again.
 
 ### Restoring from a backup
 
-Restoring replaces the database with an older copy. The server's store identity changes with it, and apps notice and resynchronise with the server on their own.
+Restoring replaces the database with an older copy. [`vps/database.sh`](vps/database.sh) stops the server, puts the copy in place and gives it a new store identity, so apps notice the change and resynchronise with the server on their own, pushing again what they have ([ADR-0046](../docs/decisions/0046-store-identity.md)). A copy restored without a new identity would mislead them into skipping envelopes.
 
 ```sh
-cd /opt/tesel
-backup=backups/tesel-20261027T030000Z.db   # the copy to restore
 sudo systemctl stop tesel-update.timer
-sudo docker compose stop tesel
-# The server's user (uid 1000 in the image) owns the database.
-sudo install -m 0600 -o 1000 -g 1000 "$backup" /tmp/tesel-restore.db
-sudo docker compose run --rm --no-deps --volume /tmp/tesel-restore.db:/restore.db:ro \
-  --entrypoint sh tesel -c 'cp /restore.db "$TESEL_DB" && rm -f "$TESEL_DB-wal" "$TESEL_DB-shm"'
-sudo rm /tmp/tesel-restore.db
-sudo docker compose up --detach
+sudo /opt/tesel/database.sh /opt/tesel restore /opt/tesel/backups/tesel-20261027T030000Z.db
+cd /opt/tesel && sudo docker compose up --detach
 sudo systemctl start tesel-update.timer
 ```
 

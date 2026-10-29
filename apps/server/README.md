@@ -24,7 +24,7 @@ A setting set to nothing counts as left out and takes its default. A list that s
 
 The server logs errors to standard error, never with group IDs, client addresses or secrets. Connections that do not join a group within 10 seconds are closed. The database records its schema version and is upgraded in place on start.
 
-Restoring the database from a backup: give it a new store identity before starting the server, so that clients do not trust their cursors for the old one ([ADR-0046](../../docs/decisions/0046-store-identity.md)):
+Restoring the database from a backup: give it a new store identity before starting the server, so that clients do not trust their cursors for the old one ([ADR-0046](../../docs/decisions/0046-store-identity.md)). On a VPS, `deploy/vps/database.sh` does it ([`deploy/README.md`](../../deploy/README.md)); elsewhere:
 
 ```sh
 node -e "const {DatabaseSync}=require('node:sqlite'); new DatabaseSync('data/tesel.db').exec('UPDATE store_info SET id = randomblob(16)')"

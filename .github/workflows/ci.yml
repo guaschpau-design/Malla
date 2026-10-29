@@ -79,8 +79,9 @@ jobs:
   # The server image, with the landing page and the web app (ADR-0049). Every run builds it for
   # amd64 and starts it locked down as on the VPS: it must report healthy and serve the page and
   # the app. After a green push to main it is then published for amd64 and arm64 (for servers on
-  # ARM machines), signed with cosign by this workflow's identity, and only
-  # then tagged "latest", the tag servers follow. Servers run only images signed so.
+  # ARM machines), signed with cosign by this workflow's identity, and only then tagged "latest",
+  # the tag servers follow, if its commit is still the newest on main. Servers run only images
+  # signed so.
   image:
     needs: [check, e2e]
     runs-on: ubuntu-latest
@@ -88,8 +89,8 @@ jobs:
       contents: read
       packages: write
       id-token: write
-    # A newer push to main cancels an older run, so an older image cannot become "latest" after
-    # a newer one. Pull requests have groups of their own.
+    # A newer push to main cancels an older run still in this job; an older run that reaches it
+    # after a newer one is kept from "latest" below. Pull requests have groups of their own.
     concurrency:
       group: image-${{ github.ref }}
       cancel-in-progress: true
@@ -153,10 +154,16 @@ jobs:
         with:
           # The version servers verify with (deploy/vps/install-cosign.sh).
           cosign-release: v3.1.4
-      - name: Sign, then tag as latest
+      - name: Sign, then tag as latest if still the newest
         if: env.PUBLISH == 'true'
         env:
           DIGEST: ${{ steps.publish.outputs.digest }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cosign sign --yes "$IMAGE@$DIGEST"
+          head="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)"
+          if [ "$head" != "$GITHUB_SHA" ]; then
+            echo "main is at $head now: $GITHUB_SHA is published, and latest stays as it is."
+            exit 0
+          fi
           docker buildx imagetools create --tag "$IMAGE:latest" "$IMAGE@$DIGEST"

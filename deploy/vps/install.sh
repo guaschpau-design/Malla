@@ -52,7 +52,6 @@ is_domain() { [[ "$1" =~ ^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; }
 # (TESEL_RETENTION_DAYS, TESEL_MAP_BBOX, TESEL_ALERT_URL...).
 setting() { sed -n "s/^$1=//p" "$INSTALL_DIR/.env" 2>/dev/null | tail -n 1; }
 set_setting() {
-  touch "$INSTALL_DIR/.env"
   sed -i "/^$1=/d" "$INSTALL_DIR/.env"
   echo "$1=$2" >> "$INSTALL_DIR/.env"
 }
@@ -184,12 +183,16 @@ fetch() { curl -fsSL "$REPO_RAW/$REF/deploy/$1" -o "$INSTALL_DIR/$(basename "$1"
 for file in vps/compose.yaml vps/Caddyfile vps/headers.caddy; do
   fetch "$file"
 done
-for script in vps/maps.sh vps/backup.sh vps/notify.sh vps/update.sh vps/install-cosign.sh; do
+for script in vps/maps.sh vps/backup.sh vps/database.sh vps/notify.sh vps/update.sh \
+  vps/install-cosign.sh; do
   fetch "$script"
   chmod 0755 "$INSTALL_DIR/$(basename "$script")"
 done
 "$INSTALL_DIR/install-cosign.sh"
 
+# Settings may hold secrets, such as TESEL_ALERT_URL: root only. Editing keeps the mode.
+touch "$INSTALL_DIR/.env"
+chmod 0600 "$INSTALL_DIR/.env"
 set_setting TESEL_DOMAIN "$DOMAIN"
 if [[ -n "$REDIRECT_FROM" ]] || ! grep -q '^TESEL_REDIRECT_FROM=' "$INSTALL_DIR/.env"; then
   set_setting TESEL_REDIRECT_FROM "$REDIRECT_FROM"

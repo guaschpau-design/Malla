@@ -1,6 +1,6 @@
 # 0049. Run only signed server images, and check every update
 
-- Status: Accepted
+- Status: Accepted, amended by [0068](0068-restorable-copies-and-going-back.md) (restored copies get a new identity, going back across a change of schema, `latest` only for the newest commit)
 - Date: 2026-10-27
 - Supersedes in part: [ADR-0013](0013-self-updating-vps.md), on how images reach the server, rolling back and backups
 

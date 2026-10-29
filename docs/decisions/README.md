@@ -54,7 +54,7 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0046](0046-store-identity.md)                       | A server's store has an identity, and cursors belong to it                                  | Accepted                                    |
 | [0047](0047-alarms-and-notices.md)                   | Raise the alarm, and say what happened                                                      | Accepted                                    |
 | [0048](0048-how-the-app-shares-state.md)             | One rule for sharing state in the web app, and panels that carry what they show             | Accepted                                    |
-| [0049](0049-signed-images-and-checked-updates.md)    | Run only signed server images, and check every update                                       | Accepted                                    |
+| [0049](0049-signed-images-and-checked-updates.md)    | Run only signed server images, and check every update                                       | Accepted, amended by 0068                   |
 | [0050](0050-post-certificates-from-the-server.md)    | Command posts get their certificate from the server                                         | Superseded by 0058                          |
 | [0051](0051-satellite-mosaic-licence.md)             | Name the satellite mosaic's licence, and let a build change the mosaic                      | Accepted                                    |
 | [0052](0052-authorship-is-not-proven.md)             | Members are trusted: protocol version 1 does not prove who wrote an event                   | Accepted                                    |
@@ -72,3 +72,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0064](0064-check-in.md)                             | A safety check-in that asks only when it must                                               | Accepted                                    |
 | [0065](0065-room-for-what-is-read.md)                | Give the room to what is read; what is used now and then waits in a menu                    | Accepted                                    |
 | [0066](0066-practice-situations.md)                  | Practice situations, on foot along the streets, with a guide                                | Accepted                                    |
+| [0068](0068-restorable-copies-and-going-back.md)     | Restore copies under a new identity, and go back across a change of schema                  | Accepted                                    |

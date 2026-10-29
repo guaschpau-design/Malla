@@ -13,6 +13,13 @@
 # in use are recorded in the project's .env: TESEL_IMAGE (running), TESEL_IMAGE_PREVIOUS and
 # TESEL_IMAGE_REJECTED.
 #
+# A new image may upgrade the database's schema, which older images cannot read. So before a new
+# image starts, a copy of the database is taken (database.sh copy) and kept, with its schema
+# version (TESEL_SCHEMA_PREVIOUS in .env), for as long as the server may go back to the image
+# that left it so. Going back across a change of schema restores that copy: what the server
+# stored since is lost from it, and clients, told so by the copy's new store identity, push
+# their own events again.
+#
 #   update.sh DIRECTORY             update (run by the installers and by a timer)
 #   update.sh DIRECTORY rollback    go back to TESEL_IMAGE_PREVIOUS and reject the current image
 
@@ -28,6 +35,10 @@ HEALTH_TIMEOUT=180
 DIR="${1:?usage: update.sh DIRECTORY [rollback]}"
 ACTION="${2:-update}"
 cd "$DIR"
+# Copies of the database for going back: as the running image left it while a new one is tried,
+# and as the previous image left it.
+COPY_CURRENT="$DIR/rollback/current.db"
+COPY_PREVIOUS="$DIR/rollback/previous.db"
 
 # The timer and an installer may run this at the same time; the second one waits.
 exec 9> .update.lock
@@ -72,6 +83,22 @@ verified_digest() {
   echo "$digest"
 }
 
+# Before going back to an older image: restores the copy of the database COPY, taken while it
+# had the schema SCHEMA, if the schema has changed since. The copy is used up either way.
+restore_older_schema() {
+  local copy="$1" schema="$2" now
+  if [[ -z "$schema" || ! -f "$copy" ]]; then
+    echo "No copy of the database from before the newer image: the database stays as it is." >&2
+    return
+  fi
+  now="$("$DIR/database.sh" "$DIR" schema)"
+  if ((now > schema)); then
+    echo "The newer image changed the database's schema: restoring the copy from before it."
+    "$DIR/database.sh" "$DIR" restore "$copy"
+  fi
+  rm -f "$copy"
+}
+
 current="$(setting TESEL_IMAGE)"
 
 case "$ACTION" in
@@ -80,8 +107,10 @@ case "$ACTION" in
     previous="$(setting TESEL_IMAGE_PREVIOUS)"
     [[ -n "$previous" ]] || { echo "There is no previous image to go back to." >&2; exit 1; }
     echo "Going back to $previous; $current is rejected."
+    restore_older_schema "$COPY_PREVIOUS" "$(setting TESEL_SCHEMA_PREVIOUS)"
     set_setting TESEL_IMAGE "$previous"
     set_setting TESEL_IMAGE_PREVIOUS ""
+    set_setting TESEL_SCHEMA_PREVIOUS ""
     set_setting TESEL_IMAGE_REJECTED "$current"
     start
     exit 0
@@ -107,9 +136,17 @@ fi
 
 echo "Updating to $candidate"
 docker pull --quiet "$candidate" >/dev/null
+if [[ -n "$current" ]]; then
+  "$DIR/database.sh" "$DIR" copy "$COPY_CURRENT"
+  schema="$("$DIR/database.sh" "$DIR" schema)"
+fi
 set_setting TESEL_IMAGE "$candidate"
 if start; then
   set_setting TESEL_IMAGE_PREVIOUS "$current"
+  if [[ -n "$current" ]]; then
+    mv "$COPY_CURRENT" "$COPY_PREVIOUS"
+    set_setting TESEL_SCHEMA_PREVIOUS "$schema"
+  fi
   remove_old_images
   echo "Running $candidate"
   exit 0
@@ -120,6 +157,7 @@ if [[ -z "$current" ]]; then
   exit 1
 fi
 echo "$candidate is not healthy: going back to $current." >&2
+restore_older_schema "$COPY_CURRENT" "$schema"
 set_setting TESEL_IMAGE "$current"
 set_setting TESEL_IMAGE_REJECTED "$candidate"
 start
