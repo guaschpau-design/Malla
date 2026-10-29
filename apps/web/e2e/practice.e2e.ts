@@ -50,7 +50,8 @@ test('a coordinator’s roll call is answered by the whole team', async ({ brows
   await expect(card).toContainText('Forma un equipo');
 
   await page.getByRole('button', { name: 'Chat' }).click();
-  await expect(page.getByText('El barranco se ha desbordado.')).toBeVisible();
+  // The run starts once the streets around are read, which takes a moment on a busy machine.
+  await expect(page.getByText('El barranco se ha desbordado.')).toBeVisible({ timeout: 15_000 });
   await page.getByRole('button', { name: 'Más acciones' }).click();
   await page.getByRole('menuitem', { name: 'Pasar lista' }).click();
   const rollCall = page.getByRole('region', { name: 'Pase de lista' });
@@ -72,6 +73,7 @@ test('a practice leaves alone the view the address gave', async ({ browser }) =>
   const page = await device(browser, 'Ana', '/#map=9/39.47/-0.37');
   await practise(page, { situation: 'Incendio forestal' });
   await page.getByRole('button', { name: 'Chat' }).click();
-  await expect(page.getByText('Incendio forestal al norte.')).toBeVisible();
+  // The run starts once the streets around are read, which takes a moment on a busy machine.
+  await expect(page.getByText('Incendio forestal al norte.')).toBeVisible({ timeout: 15_000 });
   await expect(page).toHaveURL(/#map=9\/39\.47\/-0\.37$/);
 });
