@@ -169,7 +169,10 @@ button.ghost {
   border-color: transparent;
 }
 
+/* Its pictogram in the middle, however wide its row makes it. */
 button.icon {
+  display: inline-grid;
+  place-items: center;
   min-width: var(--control-size);
   padding: 0;
   border-color: transparent;

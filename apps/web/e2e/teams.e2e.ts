@@ -35,5 +35,5 @@ test('a team is made, handed a task, and its members see it as theirs', async ({
   await berta.getByRole('button', { name: /^Yo/ }).click();
   const me = berta.getByRole('region', { name: 'Yo' });
   await expect(me).toContainText('Equipo Norte');
-  await expect(me).toContainText('1 pendiente');
+  await expect(me).toContainText('Revisar el barranco');
 });

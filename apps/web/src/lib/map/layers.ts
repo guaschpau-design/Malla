@@ -1,4 +1,4 @@
-// What the user can show or hide on the map, and how the layers panel groups it. This device and
+// What the user can show or hide on the map, in the layers panel's order. This device and
 // SOS calls are always shown.
 
 import type { MessageKey } from '../i18n/index.ts';
@@ -22,39 +22,23 @@ export type MapFlag = (typeof MAP_FLAGS)[number];
 
 export type LayerSwitch = MapLayer | MapFlag;
 
-export const LAYER_SWITCHES: Readonly<Record<LayerSwitch, { label: MessageKey; icon: GlyphName }>> =
-  {
-    members: { label: 'layerMembers', icon: 'person' },
-    trails: { label: 'layerTrails', icon: 'trail' },
-    objects: { label: 'layerObjects', icon: 'pin' },
-    tasks: { label: 'layerTasks', icon: 'task' },
-    reports: { label: 'layerReports', icon: 'pushpin' },
-    weather: { label: 'layerWeather', icon: 'cloud' },
-    services: { label: 'layerServices', icon: 'cross' },
-    relief: { label: 'layerRelief', icon: 'relief' },
-    cadastre: { label: 'layerCadastre', icon: 'parcel' },
-    radar: { label: 'layerRadar', icon: 'radar' },
-    grid: { label: 'layerGrid', icon: 'grid' },
-  };
-
-/**
- * The switches most used, always in view, and the rest, folded under "More layers". Every switch
- * is in exactly one of the two (a test checks it).
- */
-export const LAYER_SWITCHES_SHOWN: readonly LayerSwitch[] = [
-  'members',
-  'objects',
-  'tasks',
-  'weather',
-  'services',
-];
-export const LAYER_SWITCHES_MORE: readonly LayerSwitch[] = [
-  'trails',
-  'reports',
-  'relief',
-  'cadastre',
-  'radar',
-  'grid',
+/** Every switch of the layers panel, in its order: the team's own first, then the map's. */
+export const LAYER_SWITCHES: readonly {
+  readonly name: LayerSwitch;
+  readonly label: MessageKey;
+  readonly icon: GlyphName;
+}[] = [
+  { name: 'members', label: 'layerMembers', icon: 'person' },
+  { name: 'objects', label: 'layerObjects', icon: 'pin' },
+  { name: 'tasks', label: 'layerTasks', icon: 'task' },
+  { name: 'reports', label: 'layerReports', icon: 'pushpin' },
+  { name: 'trails', label: 'layerTrails', icon: 'trail' },
+  { name: 'services', label: 'layerServices', icon: 'cross' },
+  { name: 'weather', label: 'layerWeather', icon: 'cloud' },
+  { name: 'relief', label: 'layerRelief', icon: 'relief' },
+  { name: 'cadastre', label: 'layerCadastre', icon: 'parcel' },
+  { name: 'radar', label: 'layerRadar', icon: 'radar' },
+  { name: 'grid', label: 'layerGrid', icon: 'grid' },
 ];
 
 export function isFlag(name: LayerSwitch): name is MapFlag {

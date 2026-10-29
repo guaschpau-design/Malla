@@ -1,6 +1,6 @@
 # 0070. A simpler app: one place to add, no alerts or roll calls, a way to start
 
-- Status: Accepted
+- Status: Accepted, amended by [0071](0071-panels-read-whole.md) (Me and the layers unfolded)
 - Date: 2026-10-29
 
 ## Context

@@ -23,7 +23,6 @@ async function standInForCadastre(page: Page): Promise<URL[]> {
 async function turnOnCadastre(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Capas del mapa' }).click();
   const layers = page.getByRole('region', { name: 'Capas del mapa' });
-  await layers.getByText('Más capas', { exact: true }).click();
   const cadastre = layers.getByRole('switch', { name: 'Catastro' });
   await cadastre.click();
   await expect(cadastre).toHaveAttribute('aria-checked', 'true');

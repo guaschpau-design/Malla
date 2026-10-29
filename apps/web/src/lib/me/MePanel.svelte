@@ -47,10 +47,6 @@
   };
 
   const sharing = $derived(group?.sharing ?? null);
-  const positionSummary = $derived.by(() => {
-    if (sharing === null) return t('positionNoGroup');
-    return sharing.mode === 'sharing' ? t('positionSharing') : t('positionNotShared');
-  });
 
   onMount(() => deviceLocation.use());
 </script>
@@ -77,7 +73,6 @@
       team={group ? teamOf(group.state.teams, group.self) : null}
       batteryNote={deviceBattery.supported ? undefined : t('batteryUnsupported')}
       tasks={group ? pendingFor(group.state, group.self, group.self) : null}
-      {positionSummary}
     >
       {#snippet position()}
         {#if sharing}

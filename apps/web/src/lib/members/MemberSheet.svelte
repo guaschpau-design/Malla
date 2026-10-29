@@ -1,7 +1,7 @@
 <!-- What a member tells the team about themselves, the same for this device (in Me, where it is
-     set) and for anyone tapped on the map: profile and status at a glance, whether they have a LoRa
-     radio, which keeps them in touch without coverage, then position, battery, equipment and tasks,
-     each folded into one line until opened. -->
+     set) and for anyone tapped on the map: their status, whether they have a LoRa radio, which
+     keeps them in touch without coverage, then profile, battery, position, equipment and tasks,
+     all in view: the sheet is read at a glance, without opening anything. -->
 <script lang="ts" module>
   import type { DutyStatus, Equipment, Profile } from '@tesel/protocol';
 
@@ -23,10 +23,10 @@
   import { editTask } from '../tasks/task-editor.ts';
   import type { TaskRow } from '../tasks/tasks.ts';
   import { TEAM_COLOURS } from '../teams/teams.ts';
-  import Fold from '../ui/Fold.svelte';
   import Pictogram from '../ui/Pictogram.svelte';
   import StatusDot from '../ui/StatusDot.svelte';
   import { DUTY_STATUSES, EQUIPMENT, PROFILES, profileLabel } from './member-catalog.ts';
+  import SheetPart from './SheetPart.svelte';
 
   interface Props {
     t: Translate;
@@ -39,15 +39,13 @@
     batteryNote?: string | undefined;
     /** Their tasks still to do; none without a group. */
     tasks: readonly TaskRow[] | null;
-    /** The gist of where they are, and what the position section holds. */
-    positionSummary: string;
+    /** Where they are. */
     position: Snippet;
-    /** Further sections, after the tasks. */
+    /** Further parts (SheetPart), after the tasks. */
     more?: Snippet;
   }
 
-  let { t, state, team, edits, batteryNote, tasks, positionSummary, position, more }: Props =
-    $props();
+  let { t, state, team, edits, batteryNote, tasks, position, more }: Props = $props();
 
   /** At or under this, the battery is shown as running out. */
   const LOW_BATTERY = 20;
@@ -101,111 +99,105 @@
   {:else}
     <p class="line">
       <StatusDot tone={status.tone} />
-      {t(status.label)}{#if state.profile !== 'unspecified'}&nbsp;· {t(
-          profileLabel(state.profile),
-        )}{/if}
+      {t(status.label)}
     </p>
   {/if}
 
   <div class="lora" class:on={lora}>
-    <Pictogram name="mast" size={20} />
+    <Pictogram name="mast" size={18} />
     <p>{loraText}</p>
     {#if edits && !lora}
       <button onclick={edits.onconnectradio}>{t('radioConnect')}</button>
     {/if}
   </div>
 
-  <div class="folds">
+  <SheetPart title={t('profileLabel')} inline>
     {#if edits}
       {@const { onprofile } = edits}
-      <!-- Told once, seldom changed: folded, unlike the status above. -->
-      <Fold title={t('profileLabel')} summary={t(profileLabel(state.profile))}>
-        <select
-          aria-label={t('profileLabel')}
-          value={state.profile}
-          onchange={(event) => {
-            const chosen = PROFILES.find((item) => item.value === event.currentTarget.value);
-            if (chosen) onprofile(chosen.value);
-          }}
-        >
-          {#each PROFILES as item (item.value)}
-            <option value={item.value}>{t(item.label)}</option>
-          {/each}
-        </select>
-      </Fold>
-    {/if}
-    <Fold title={t('foldPosition')} summary={positionSummary}>
-      {@render position()}
-    </Fold>
-    <Fold title={t('foldBattery')} summary={batteryText}>
-      <p class="line">
-        {#if state.battery !== null}
-          <StatusDot tone={state.battery <= LOW_BATTERY ? 'poor' : 'good'} />
-        {/if}
-        {batteryText}
-      </p>
-      {#if batteryNote}<p class="hint">{batteryNote}</p>{/if}
-    </Fold>
-    <Fold title={t('foldEquipment')} summary={equipmentSummary}>
-      {#if edits}
-        <div class="chips">
-          {#each EQUIPMENT as item (item.value)}
-            <button
-              class="chip"
-              aria-pressed={state.equipment.includes(item.value)}
-              onclick={() => {
-                toggle(item.value);
-              }}>{t(item.label)}</button
-            >
-          {/each}
-        </div>
-      {:else}
-        <p>{equipmentSummary}</p>
-      {/if}
-    </Fold>
-    {#if tasks}
-      <Fold
-        title={t('foldTasks')}
-        summary={tasks.length === 0 ? t('tasksNone') : t('tasksPending', { count: tasks.length })}
+      <select
+        aria-label={t('profileLabel')}
+        value={state.profile}
+        onchange={(event) => {
+          const chosen = PROFILES.find((item) => item.value === event.currentTarget.value);
+          if (chosen) onprofile(chosen.value);
+        }}
       >
-        {#if tasks.length === 0}
-          <p class="hint">{t('tasksNone')}</p>
-        {:else}
-          <ul class="tasks">
-            {#each tasks as row (row.key)}
-              <li>
-                <button
-                  onclick={() => {
-                    editTask(row.key);
-                  }}
-                >
-                  <span>{row.fields.text}</span>
-                  {#if row.fields.status === 'in-progress'}
-                    <span class="hint">{t('taskInProgress')}</span>
-                  {/if}
-                </button>
-              </li>
-            {/each}
-          </ul>
-        {/if}
-      </Fold>
+        {#each PROFILES as item (item.value)}
+          <option value={item.value}>{t(item.label)}</option>
+        {/each}
+      </select>
+    {:else}
+      <p>{t(profileLabel(state.profile))}</p>
     {/if}
-    {@render more?.()}
-  </div>
+  </SheetPart>
+  <SheetPart title={t('sheetBattery')} inline>
+    <p class="line">
+      {#if state.battery !== null}
+        <StatusDot tone={state.battery <= LOW_BATTERY ? 'poor' : 'good'} />
+      {/if}
+      {batteryText}
+    </p>
+    {#if batteryNote}<p class="hint">{batteryNote}</p>{/if}
+  </SheetPart>
+  <SheetPart title={t('sheetPosition')}>
+    {@render position()}
+  </SheetPart>
+  <SheetPart title={t('sheetEquipment')}>
+    {#if edits}
+      <div class="chips">
+        {#each EQUIPMENT as item (item.value)}
+          <button
+            class="chip"
+            aria-pressed={state.equipment.includes(item.value)}
+            onclick={() => {
+              toggle(item.value);
+            }}>{t(item.label)}</button
+          >
+        {/each}
+      </div>
+    {:else}
+      <p>{equipmentSummary}</p>
+    {/if}
+  </SheetPart>
+  {#if tasks}
+    <SheetPart title={t('sheetTasks')} inline={tasks.length === 0}>
+      {#if tasks.length === 0}
+        <p class="hint">{t('tasksNone')}</p>
+      {:else}
+        <ul class="tasks">
+          {#each tasks as row (row.key)}
+            <li>
+              <button
+                onclick={() => {
+                  editTask(row.key);
+                }}
+              >
+                <span>{row.fields.text}</span>
+                {#if row.fields.status === 'in-progress'}
+                  <span class="hint">{t('taskInProgress')}</span>
+                {/if}
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {/if}
+    </SheetPart>
+  {/if}
+  {@render more?.()}
 </div>
 
 <style>
-  /* Whether they keep in touch without coverage: set apart from the rest, as it decides who can
-     still be reached when the network falls. */
+  /* Whether they keep in touch without coverage: one line set apart from the rest, as it decides
+     who can still be reached when the network falls. */
   .lora {
     display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 0.4rem 0.6rem;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.5rem;
     align-items: center;
-    padding: 0.5rem 0.65rem;
+    padding: 0.3rem 0.3rem 0.3rem 0.55rem;
     color: var(--muted);
     background: var(--bg);
-    border-left: 4px solid var(--control-line);
+    border-left: 3px solid var(--control-line);
     border-radius: var(--radius-control);
   }
 
@@ -216,20 +208,21 @@
 
   .lora p {
     margin: 0;
-    font-size: var(--text-secondary);
+    font-size: var(--text-small);
   }
 
   .lora button {
-    grid-column: 2;
-    justify-self: start;
+    padding: 0.3rem 0.6rem;
     color: var(--fg);
+    font-size: var(--text-small);
+    white-space: nowrap;
   }
 
-  /* One column as wide as the panel: a long line (the gist of a fold) is cut short, never widens it. */
+  /* One column as wide as the panel: a long line wraps, never widens it. */
   .sheet {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: 0.75rem;
+    gap: 0.65rem;
   }
 
   .statuses {
@@ -243,8 +236,9 @@
     gap: 0.4rem;
     align-items: center;
     justify-content: center;
-    padding: 0.5rem 0.3rem;
-    font-size: var(--text-secondary);
+    padding: 0.35rem 0.3rem;
+    font-size: var(--text-small);
+    line-height: 1.2;
   }
 
   .statuses button[aria-checked='true'] {
@@ -274,7 +268,8 @@
   }
 
   .chip {
-    padding: 0.3rem 0.7rem;
+    min-height: 2.25rem;
+    padding: 0.2rem 0.7rem;
     font-size: var(--text-secondary);
     border-radius: var(--radius-pill);
   }

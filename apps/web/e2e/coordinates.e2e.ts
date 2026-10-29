@@ -13,7 +13,6 @@ test('a dictated coordinate is found on the map and read in another format', asy
   // The format is chosen once, in Me, and every coordinate follows it.
   await page.getByRole('button', { name: /^Yo/ }).click();
   const me = page.getByRole('region', { name: 'Yo' });
-  await me.getByText('Posición', { exact: true }).click();
   await me.getByLabel('Formato de coordenadas').selectOption('MGRS');
   await me.getByRole('button', { name: 'Cerrar' }).click();
   await openMore(page, 'Ir a una coordenada');

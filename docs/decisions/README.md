@@ -66,7 +66,7 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0058](0058-no-command-posts.md)                     | Drop command posts: one server per group, radios when there is no internet                  | Accepted                                    |
 | [0059](0059-routes.md)                               | Routes: drawn or read from a file, followed leg by leg, and a task's place may be an object | Accepted                                    |
 | [0060](0060-sweeps.md)                               | Sweeps: parallel lanes over a search area, one strip per team, sent as a recipe             | Accepted                                    |
-| [0061](0061-member-state.md)                         | What members tell about themselves: one event, one card                                     | Accepted, amended by 0069                   |
+| [0061](0061-member-state.md)                         | What members tell about themselves: one event, one card                                     | Accepted, amended by 0069, 0071             |
 | [0062](0062-teams.md)                                | Teams: one event per team, and a task for a team is each member's                           | Accepted                                    |
 | [0063](0063-situation-reports.md)                    | Situation reports: a fixed form in one radio message, pinned in the chat                    | Accepted, amended by 0065, 0070             |
 | [0064](0064-check-in.md)                             | A safety check-in that asks only when it must                                               | Accepted                                    |
@@ -74,5 +74,6 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0066](0066-practice-situations.md)                  | Practice situations, on foot along the streets, with a guide                                | Accepted, amended by 0070                   |
 | [0067](0067-envelope-nonce-from-the-event.md)        | Derive each envelope's nonce from its event                                                 | Accepted                                    |
 | [0068](0068-restorable-copies-and-going-back.md)     | Restore copies under a new identity, and go back across a change of schema                  | Accepted                                    |
-| [0069](0069-who-keeps-in-touch-without-coverage.md)  | Tell who keeps in touch without coverage                                                    | Accepted                                    |
-| [0070](0070-a-simpler-app.md)                        | A simpler app: one place to add, no alerts or roll calls, a way to start                    | Accepted                                    |
+| [0069](0069-who-keeps-in-touch-without-coverage.md)  | Tell who keeps in touch without coverage                                                    | Accepted, amended by 0071                   |
+| [0070](0070-a-simpler-app.md)                        | A simpler app: one place to add, no alerts or roll calls, a way to start                    | Accepted, amended by 0071                   |
+| [0071](0071-panels-read-whole.md)                    | Me and the map layers are read whole, without opening anything                              | Accepted                                    |

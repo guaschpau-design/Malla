@@ -19,10 +19,11 @@
   let situation: Situation = $state('missing-person');
   let role: Role = $state('member');
 
-  const PARTS: readonly { role: Role; name: MessageKey; hint: MessageKey }[] = [
-    { role: 'member', name: 'practiceAsMember', hint: 'practiceAsMemberHint' },
-    { role: 'coordinator', name: 'practiceAsCoordinator', hint: 'practiceAsCoordinatorHint' },
-  ];
+  /** Each part's name, and what it does, told under the choice. */
+  const PARTS: Readonly<Record<Role, { name: MessageKey; hint: MessageKey }>> = {
+    member: { name: 'practiceAsMember', hint: 'practiceAsMemberHint' },
+    coordinator: { name: 'practiceAsCoordinator', hint: 'practiceAsCoordinatorHint' },
+  };
 
   const submission = new Submission();
 </script>
@@ -36,7 +37,7 @@
 >
   <h3>{t('startPractice')}</h3>
   <p class="hint">{t('practiceSetupIntro')}</p>
-  <div class="choices" role="radiogroup" aria-label={t('practiceSituation')}>
+  <div class="situations" role="radiogroup" aria-label={t('practiceSituation')}>
     {#each SITUATIONS as option (option)}
       <button
         type="button"
@@ -44,24 +45,22 @@
         aria-checked={situation === option}
         onclick={() => (situation = option)}
       >
-        <Pictogram name={SITUATION_INFO[option].icon} size={24} />
+        <Pictogram name={SITUATION_INFO[option].icon} size={18} />
         {t(SITUATION_INFO[option].title)}
       </button>
     {/each}
   </div>
   <div class="parts" role="radiogroup" aria-label={t('practiceYourPart')}>
-    {#each PARTS as part (part.role)}
+    {#each Object.entries(PARTS) as [part, text] (part)}
       <button
         type="button"
         role="radio"
-        aria-checked={role === part.role}
-        onclick={() => (role = part.role)}
+        aria-checked={role === part}
+        onclick={() => (role = part as Role)}>{t(text.name)}</button
       >
-        <strong>{t(part.name)}</strong>
-        <span class="hint">{t(part.hint)}</span>
-      </button>
     {/each}
   </div>
+  <p class="hint">{t(PARTS[role].hint)}</p>
   {#if submission.failed}<p class="warning">{t('actionFailed')}</p>{/if}
   <div class="row">
     <button type="submit" class="primary" disabled={submission.busy}>{t('practiceStart')}</button>
@@ -70,37 +69,36 @@
 </form>
 
 <style>
-  /* Three situations side by side, each a pictogram over its name. */
-  .choices {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.5rem;
+  /* The situations as chips, a pictogram before each name; the part as two halves of one row. */
+  .situations {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
   }
 
-  .choices button {
-    display: grid;
-    gap: 0.3rem;
-    place-items: center;
-    padding: 0.6rem 0.3rem;
+  .situations button {
+    display: flex;
+    gap: 0.35rem;
+    align-items: center;
+    min-height: 2.25rem;
+    padding: 0.2rem 0.75rem 0.2rem 0.55rem;
     font-size: var(--text-secondary);
-    font-weight: 600;
-    text-align: center;
+    border-radius: var(--radius-pill);
   }
 
   .parts {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.5rem;
+    gap: 0.35rem;
   }
 
   .parts button {
-    display: grid;
-    gap: 0.15rem;
-    padding: 0.5rem 0.6rem;
-    text-align: left;
+    padding: 0.35rem 0.5rem;
+    font-size: var(--text-secondary);
   }
 
   [role='radio'][aria-checked='true'] {
+    font-weight: 600;
     border-color: var(--accent-line);
     box-shadow: inset 0 0 0 1px var(--accent-line);
   }

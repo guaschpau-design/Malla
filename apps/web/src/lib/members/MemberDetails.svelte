@@ -15,11 +15,11 @@
   import type { Preference } from '../settings/preference.svelte.ts';
   import { pendingFor } from '../tasks/tasks.ts';
   import Actions from '../ui/Actions.svelte';
-  import Fold from '../ui/Fold.svelte';
   import { clockEvery } from '../ui/now.svelte.ts';
   import Panel from '../ui/Panel.svelte';
   import { aliasOf } from './alias.ts';
   import MemberSheet from './MemberSheet.svelte';
+  import SheetPart from './SheetPart.svelte';
 
   interface Props {
     t: Translate;
@@ -62,7 +62,6 @@
       {state}
       team={teamOf(groupState.teams, id)}
       tasks={pendingFor(groupState, id, self)}
-      positionSummary={report?.type === 'position' ? ago(report.time) : t('memberNoPosition')}
     >
       {#snippet position()}
         {#if report?.type === 'position'}
@@ -75,12 +74,7 @@
         {/if}
       {/snippet}
       {#snippet more()}
-        <Fold
-          title={t('heardTitle')}
-          summary={channels.radio === undefined
-            ? t('heardRadioNever')
-            : t('heardRadio', { ago: ago(channels.radio) })}
-        >
+        <SheetPart title={t('heardTitle')}>
           <p>
             {channels.radio === undefined
               ? t('heardRadioNever')
@@ -89,7 +83,7 @@
           {#if channels.internet !== undefined}
             <p>{t('heardInternet', { ago: ago(channels.internet) })}</p>
           {/if}
-        </Fold>
+        </SheetPart>
       {/snippet}
     </MemberSheet>
     {#if report?.type === 'position'}

@@ -91,7 +91,7 @@ export async function twoMembers(
 }
 
 /**
- * Chooses how this device shares its position, in the "Me" panel's position section: sharing,
+ * Chooses how this device shares its position, in the "Me" panel's position part: sharing,
  * paused (the group keeps where it was) or hidden; then closes the panel.
  */
 export async function shareAs(
@@ -100,7 +100,6 @@ export async function shareAs(
 ): Promise<void> {
   await page.getByRole('button', { name: /^Yo/ }).click();
   const panel = page.getByRole('region', { name: 'Yo' });
-  await panel.getByText('Posición', { exact: true }).click();
   await setSwitch(
     panel.getByRole('switch', { name: 'Compartir mi posición' }),
     choice === 'Compartir',

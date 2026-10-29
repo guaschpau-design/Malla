@@ -40,8 +40,8 @@ describe('translations', () => {
     expect(english('logLoaded', { count: 1, total: 4 })).toBe('Log loaded: 1 new event of 4.');
     expect(english('logLoaded', { count: 0, total: 4 })).toBe('Log loaded: 0 new events of 4.');
     const spanish = translator('es');
-    expect(spanish('tasksPending', { count: 1 })).toBe('1 pendiente');
-    expect(spanish('tasksPending', { count: 2 })).toBe('2 pendientes');
+    expect(spanish('chatUnread', { count: 1 })).toBe('Chat: 1 nuevo');
+    expect(spanish('chatUnread', { count: 2 })).toBe('Chat: 2 nuevos');
   });
 
   it('falls back to the "other" form for a category a text does not give', () => {
