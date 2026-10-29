@@ -562,6 +562,13 @@ describe('member states', () => {
     });
   });
 
+  it('carries a linked LoRa radio in bit 13', () => {
+    const linked = encodeOrFail({ ...state, equipment: ['lora'] });
+    expect(toHex(linked.slice(17))).toBe('00200000');
+    const decoded = decodeEvent(linked);
+    expect(decoded.ok && decoded.value).toMatchObject({ equipment: ['lora'] });
+  });
+
   it('refuses a battery that is not a whole percent', () => {
     expect(encodeEvent({ ...state, battery: 101 }).ok).toBe(false);
     expect(encodeEvent({ ...state, battery: 50.5 }).ok).toBe(false);

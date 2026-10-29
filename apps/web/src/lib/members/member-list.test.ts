@@ -69,4 +69,24 @@ describe('member list', () => {
     expect(berta(T0 + 60)).toBe(true);
     expect(berta(T0 + 3600)).toBe(false);
   });
+
+  it('marks who says a LoRa radio is linked to their app', () => {
+    const state = stateOf([
+      {
+        type: 'member-state',
+        origin: BERTA,
+        seq: 3,
+        time: T0,
+        profile: 'volunteer',
+        status: 'active',
+        battery: null,
+        equipment: ['water', 'lora'],
+      },
+      { type: 'position', origin: BERTA, seq: 2, time: T0, ...fix },
+      { type: 'position', origin: CARLA, seq: 2, time: T0, ...fix },
+    ]);
+    const rows = memberRows(state, ANA, T0, NOTHING_HEARD);
+    expect(rows.find((row) => row.id === BERTA)?.lora).toBe(true);
+    expect(rows.find((row) => row.id === CARLA)?.lora).toBe(false);
+  });
 });

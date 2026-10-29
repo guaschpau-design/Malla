@@ -203,6 +203,7 @@ export const EquipmentBit = {
   vehicle: 10,
   drone: 11,
   weapon: 12,
+  lora: 13,
 } as const satisfies Record<Equipment, number>;
 
 /** §3.16 REPORT.incident. Default: other. */

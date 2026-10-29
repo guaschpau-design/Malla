@@ -1,8 +1,11 @@
-// Keeps the active group told what this person has set in Me (profile, status, equipment) and how
-// much battery the device has, in steps of 10 % so the radio is not kept busy with every percent.
+// Keeps the active group told what this person has set in Me (profile, status, equipment), whether
+// a LoRa radio is linked, and how much battery the device has, in steps of 10 % so the radio is not
+// kept busy with every percent.
 
 import { untrack } from 'svelte';
 
+import { ownEquipment } from '../members/member-catalog.ts';
+import { radio } from '../radio/radio.svelte.ts';
 import type { Preferences } from '../settings/preferences.ts';
 import type { GroupFeed } from '../sync/group-feed.svelte.ts';
 import { storageRefusals } from '../storage/storage-space.svelte.ts';
@@ -22,7 +25,7 @@ export function useSelfState(feed: () => GroupFeed | null, preferences: () => Pr
       profile: profile.value,
       status: dutyStatus.value,
       battery: percent === null ? null : Math.floor(percent / BATTERY_STEP) * BATTERY_STEP,
-      equipment: equipment.value,
+      equipment: ownEquipment(equipment.value, radio.linked),
     };
     // Only what is set here starts a change; what the group receives does not.
     untrack(() => current.shareState(state)).catch((error: unknown) => {

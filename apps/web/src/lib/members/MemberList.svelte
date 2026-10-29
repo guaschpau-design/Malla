@@ -1,6 +1,6 @@
 <!-- The members of the active group, team by team, each with an initial, a name (and "coordinator"
-     for those who coordinate) and two signs: whether their position is on the map and whether
-     their news reaches this device by radio. Whoever coordinates creates and changes the teams. -->
+     for those who coordinate) and two signs: whether their position is on the map, and whether
+     they have a LoRa radio linked or their news reaches this device by radio. Whoever coordinates creates and changes the teams. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
   import type { NodeId, TeamEvent } from '@tesel/protocol';
@@ -53,8 +53,11 @@
       {#if row.role === 'coordinator'}<span class="hint">· {t(ROLE_LABELS.coordinator)}</span>{/if}
     </span>
     <span class="signs">
-      {#if row.byRadio}
-        <span title={t('heardByRadio')} aria-label={t('heardByRadio')} role="img">
+      {#if row.lora || row.byRadio}
+        {@const label = [row.lora && t('loraSign'), row.byRadio && t('heardByRadio')]
+          .filter(Boolean)
+          .join(' · ')}
+        <span class="radio" class:lora={row.lora} title={label} aria-label={label} role="img">
           <Pictogram name="mast" size={16} />
         </span>
       {/if}
@@ -186,6 +189,10 @@
     gap: 0.35rem;
     align-items: center;
     color: var(--muted);
+  }
+
+  .radio.lora {
+    color: var(--fg);
   }
 
   .where.live {

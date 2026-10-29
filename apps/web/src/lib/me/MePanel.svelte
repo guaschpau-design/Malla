@@ -9,13 +9,16 @@
   import CoordinateBlock from '../coordinates/CoordinateBlock.svelte';
   import { formatDistance } from '../format.ts';
   import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
+  import { ownEquipment } from '../members/member-catalog.ts';
   import MemberSheet from '../members/MemberSheet.svelte';
   import { accuracyQuality } from '../position/accuracy.ts';
   import { deviceLocation } from '../position/device-location.svelte.ts';
   import type { PositionSharing } from '../position/position-sharing.svelte.ts';
+  import { radio } from '../radio/radio.svelte.ts';
   import type { Preferences } from '../settings/preferences.ts';
   import { pendingFor } from '../tasks/tasks.ts';
   import Panel from '../ui/Panel.svelte';
+  import { openPanel } from '../ui/panels.svelte.ts';
   import StatusDot from '../ui/StatusDot.svelte';
   import SwitchRow from '../ui/SwitchRow.svelte';
   import type { StatusTone } from '../ui/status-tone.ts';
@@ -59,12 +62,16 @@
         profile: preferences.profile.value,
         status: preferences.dutyStatus.value,
         battery: deviceBattery.percent,
-        equipment: preferences.equipment.value,
+        equipment: ownEquipment(preferences.equipment.value, radio.linked),
       }}
       edits={{
         onprofile: (profile: Profile) => void preferences.profile.set(profile),
         onstatus: (status: DutyStatus) => void preferences.dutyStatus.set(status),
-        onequipment: (equipment: readonly Equipment[]) => void preferences.equipment.set(equipment),
+        onequipment: (equipment: readonly Equipment[]) =>
+          void preferences.equipment.set(ownEquipment(equipment, false)),
+        onconnectradio: () => {
+          openPanel('connections');
+        },
       }}
       team={group ? teamOf(group.state.teams, group.self) : null}
       batteryNote={deviceBattery.supported ? undefined : t('batteryUnsupported')}

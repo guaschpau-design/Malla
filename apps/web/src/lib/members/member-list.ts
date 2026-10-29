@@ -18,6 +18,8 @@ export interface MemberRow {
   readonly position: PositionStatus;
   /** Their news reaches this device's radio lately, from their radio or through a bridge. */
   readonly byRadio: boolean;
+  /** They say a LoRa radio is linked to their app (protocol §3.14). */
+  readonly lora: boolean;
 }
 
 /** Everyone the group has heard from, this device first, then by alias. */
@@ -42,6 +44,7 @@ export function memberRows(
       self: id === self,
       position,
       byRadio: radioTime !== undefined && now - radioTime <= STALE_AFTER_S,
+      lora: state.memberStates.get(id)?.equipment.includes('lora') ?? false,
     };
   });
   return rows.sort((a, b) => Number(b.self) - Number(a.self) || a.alias.localeCompare(b.alias));

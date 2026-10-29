@@ -1,6 +1,7 @@
 <!-- What a member tells the team about themselves, the same for this device (in Me, where it is
-     set) and for anyone tapped on the map: profile and status at a glance, then position, battery,
-     equipment and tasks, each folded into one line until opened. -->
+     set) and for anyone tapped on the map: profile and status at a glance, whether they have a LoRa
+     radio, which keeps them in touch without coverage, then position, battery, equipment and tasks,
+     each folded into one line until opened. -->
 <script lang="ts" module>
   import type { DutyStatus, Equipment, Profile } from '@tesel/protocol';
 
@@ -9,6 +10,8 @@
     onprofile: (profile: Profile) => void;
     onstatus: (status: DutyStatus) => void;
     onequipment: (equipment: readonly Equipment[]) => void;
+    /** Opens where a LoRa radio is linked. */
+    onconnectradio: () => void;
   }
 </script>
 
@@ -21,6 +24,7 @@
   import type { TaskRow } from '../tasks/tasks.ts';
   import { TEAM_COLOURS } from '../teams/teams.ts';
   import Fold from '../ui/Fold.svelte';
+  import Pictogram from '../ui/Pictogram.svelte';
   import StatusDot from '../ui/StatusDot.svelte';
   import { DUTY_STATUSES, EQUIPMENT, PROFILES, profileLabel } from './member-catalog.ts';
 
@@ -52,10 +56,16 @@
   const batteryText = $derived(
     state.battery === null ? t('batteryUnknown') : t('batteryPercent', { percent: state.battery }),
   );
+  const lora = $derived(state.equipment.includes('lora'));
   const carried = $derived(EQUIPMENT.filter((item) => state.equipment.includes(item.value)));
   const equipmentSummary = $derived(
     carried.length === 0 ? t('equipmentNone') : carried.map((item) => t(item.label)).join(', '),
   );
+
+  const loraText = $derived.by(() => {
+    if (edits) return lora ? t('loraOwnOn') : t('loraOwnOff');
+    return lora ? t('loraOn') : t('loraOff');
+  });
 
   function toggle(item: Equipment): void {
     const next = state.equipment.includes(item)
@@ -110,6 +120,14 @@
         )}{/if}
     </p>
   {/if}
+
+  <div class="lora" class:on={lora}>
+    <Pictogram name="mast" size={20} />
+    <p>{loraText}</p>
+    {#if edits && !lora}
+      <button onclick={edits.onconnectradio}>{t('radioConnect')}</button>
+    {/if}
+  </div>
 
   <div class="folds">
     <Fold title={t('foldPosition')} summary={positionSummary}>
@@ -173,6 +191,36 @@
 </div>
 
 <style>
+  /* Whether they keep in touch without coverage: set apart from the rest, as it decides who can
+     still be reached when the network falls. */
+  .lora {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.4rem 0.6rem;
+    align-items: center;
+    padding: 0.5rem 0.65rem;
+    color: var(--muted);
+    background: var(--bg);
+    border-left: 4px solid var(--control-line);
+    border-radius: var(--radius-control);
+  }
+
+  .lora.on {
+    color: var(--fg);
+    border-left-color: var(--accent-line);
+  }
+
+  .lora p {
+    margin: 0;
+    font-size: var(--text-secondary);
+  }
+
+  .lora button {
+    grid-column: 2;
+    justify-self: start;
+    color: var(--fg);
+  }
+
   /* One column as wide as the panel: a long line (the gist of a fold) is cut short, never widens it. */
   .sheet {
     display: grid;

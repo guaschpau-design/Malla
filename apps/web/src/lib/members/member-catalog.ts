@@ -43,6 +43,15 @@ export const EQUIPMENT: readonly { readonly value: Equipment; readonly label: Me
   { value: 'weapon', label: 'equipmentWeapon' },
 ];
 
+/**
+ * What this person carries, as the group is told: what they picked by hand, and a LoRa radio while
+ * one is linked to the app (protocol §3.14), which is never picked by hand.
+ */
+export function ownEquipment(picked: readonly Equipment[], radioLinked: boolean): Equipment[] {
+  const byHand = picked.filter((item) => item !== 'lora');
+  return radioLinked ? [...byHand, 'lora'] : byHand;
+}
+
 export function profileLabel(profile: Profile): MessageKey {
   return PROFILES.find((item) => item.value === profile)?.label ?? 'profileUnspecified';
 }
