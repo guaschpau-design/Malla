@@ -6,6 +6,7 @@ import {
   deriveGroupKeys,
   eventKey,
   generateIdentity,
+  generateTeamId,
   nodeIdFromPublicKey,
   openEnvelope,
   sealEnvelope,
@@ -14,6 +15,18 @@ import { ALICE, seededRandom, toHex } from './test-helpers.ts';
 
 // Expected values below were computed with an independent Python implementation of the spec.
 const SECRET = Uint8Array.from({ length: 16 }, (_, i) => i);
+
+describe('team IDs', () => {
+  it('draws again for 00000000 and for an ID already taken', () => {
+    const draws = [
+      [0, 0, 0, 0],
+      [1, 2, 3, 4],
+      [5, 6, 7, 8],
+    ];
+    const random = () => Uint8Array.from(draws.shift() ?? []);
+    expect(generateTeamId((id) => id === '01020304', random)).toBe('05060708');
+  });
+});
 
 describe('identity', () => {
   it('derives the node ID from the public key as the spec defines', () => {

@@ -59,6 +59,20 @@ export function nodeIdFromPublicKey(publicKey: Uint8Array): NodeId {
   return nodeIdFromBytes(sha256(publicKey).slice(0, NODE_ID_SIZE));
 }
 
+/**
+ * §3.15 A new team ID: random bytes in the space of node IDs, never `00000000` and never one that
+ * `taken` says a member or another team has.
+ */
+export function generateTeamId(
+  taken: (id: NodeId) => boolean,
+  random: RandomSource = secureRandom,
+): NodeId {
+  for (;;) {
+    const id = nodeIdFromBytes(random(NODE_ID_SIZE));
+    if (id !== '00000000' && !taken(id)) return id;
+  }
+}
+
 // --- Group keys --------------------------------------------------------------------------
 
 export interface GroupKeys {

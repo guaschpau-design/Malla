@@ -2,7 +2,7 @@
 // for this device through its team, and new team IDs.
 
 import { teamOf, type GroupState } from '@tesel/core';
-import type { NodeId, TeamColour, TeamEvent } from '@tesel/protocol';
+import { generateTeamId, type NodeId, type TeamColour, type TeamEvent } from '@tesel/protocol';
 
 import type { MessageKey } from '../i18n/index.ts';
 import type { Tone } from '../ui/theme.ts';
@@ -39,14 +39,7 @@ export function nextColour(teams: GroupState['teams']): TeamColour {
   return COLOUR_ORDER.find((colour) => !used.has(colour)) ?? 'blue';
 }
 
-/**
- * A new team ID: 4 random bytes, never 00000000 and never the ID of a member or a team the group
- * knows (§3.15).
- */
+/** A new team ID: none of a member or a team the group knows (§3.15). */
 export function newTeamId(state: Pick<GroupState, 'members' | 'teams'>): NodeId {
-  for (;;) {
-    const bytes = crypto.getRandomValues(new Uint8Array(4));
-    const id = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('') as NodeId;
-    if (id !== '00000000' && !state.members.has(id) && !state.teams.has(id)) return id;
-  }
+  return generateTeamId((id) => state.members.has(id) || state.teams.has(id));
 }

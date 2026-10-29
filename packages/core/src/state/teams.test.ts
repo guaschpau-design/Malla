@@ -2,7 +2,7 @@ import type { NodeId, TeamEvent } from '@tesel/protocol';
 import { describe, expect, it } from 'vitest';
 
 import { stateOf } from '../reducer.ts';
-import { teamOf } from './teams.ts';
+import { membersFor, teamOf } from './teams.ts';
 
 const ANA = 'a1b2c3d4' as NodeId;
 const BERTA = '0f1e2d3c' as NodeId;
@@ -37,5 +37,14 @@ describe('teams', () => {
     expect(teamOf(state.teams, ANA)?.team).toBe(NORTE);
     const dissolved = stateOf([team(NORTE, 1, [ANA]), team(NORTE, 3, [ANA], true)]);
     expect(teamOf(dissolved.teams, ANA)).toBeNull();
+  });
+
+  it('gives what is for a team to those in it, and what is for a member to them', () => {
+    const state = stateOf([team(NORTE, 1, [ANA, BERTA]), team(SUR, 2, [BERTA])]);
+    expect(membersFor(state.teams, NORTE)).toEqual([ANA]);
+    expect(membersFor(state.teams, SUR)).toEqual([BERTA]);
+    expect(membersFor(state.teams, ANA)).toEqual([ANA]);
+    const dissolved = stateOf([team(NORTE, 1, [ANA]), team(NORTE, 3, [ANA], true)]);
+    expect(membersFor(dissolved.teams, NORTE)).toEqual([]);
   });
 });

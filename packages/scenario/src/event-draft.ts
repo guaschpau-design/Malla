@@ -2,14 +2,15 @@
 // header, which the sending device fills in with its own origin, sequence number and time. The
 // simulator and the app's practice both send a scenario's actions through a ScenarioPerformer.
 
-import type {
-  EventHeader,
-  EventRef,
-  Identity,
-  NodeId,
-  Place,
-  TaskEvent,
-  TeselEvent,
+import {
+  generateTeamId,
+  type EventHeader,
+  type EventRef,
+  type Identity,
+  type NodeId,
+  type Place,
+  type TaskEvent,
+  type TeselEvent,
 } from '@tesel/protocol';
 
 import type { PlannedAction, PlannedEvent, ScenarioPlace } from './scenario.ts';
@@ -185,19 +186,6 @@ function eventDraft(action: PlannedAction, actor: Actor, named: Named, cast: Cas
 }
 
 /**
- * A team's ID: four random bytes in the space of node IDs (protocol §3.15), none of a member's or
- * another team's.
- */
-function newTeamId(named: Named, cast: Cast): NodeId {
-  const taken = new Set(named.teams.values());
-  for (;;) {
-    const bytes = crypto.getRandomValues(new Uint8Array(4));
-    const id = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('') as NodeId;
-    if (id !== '00000000' && !taken.has(id) && cast(id) === undefined) return id;
-  }
-}
-
-/**
  * Performs a scenario's planned events in order, each sent by its member's device. What the
  * scenario names is remembered as it is sent, for the actions that refer to it: the references
  * of objects, SOS calls, alerts and roll calls, the IDs of teams and the latest of each task.
@@ -221,7 +209,9 @@ export class ScenarioPerformer {
     const named = { refs: this.#refs, teams: this.#teams, tasks: this.#tasks };
     // A new team's ID is chosen before its event is drafted, which names it.
     if (action.type === 'team' && !this.#teams.has(action.id)) {
-      this.#teams.set(action.id, newTeamId(named, this.#cast));
+      const teams = new Set(this.#teams.values());
+      const taken = (id: NodeId) => teams.has(id) || this.#cast(id) !== undefined;
+      this.#teams.set(action.id, generateTeamId(taken));
     }
     const draft = eventDraft(action, actor, named, this.#cast);
     const ref = await send(draft);

@@ -12,7 +12,7 @@ export {
   type Trail,
 } from './reducer.ts';
 export { openSosCalls } from './state/sos.ts';
-export { teamOf } from './state/teams.ts';
+export { membersFor, teamOf } from './state/teams.ts';
 export { simplifyLine, type Simplified } from './simplify.ts';
 export { TRAIL_POINTS } from './state/trails.ts';
 export {

@@ -3,6 +3,7 @@
 
 import {
   compareEvents,
+  membersFor,
   stripLanes,
   sweepLanes,
   sweepPath,
@@ -112,8 +113,9 @@ export function sweptBy(
   state: Pick<GroupState, 'trails' | 'teams'>,
   walker: NodeId,
 ): number {
-  const walkers = state.teams.get(walker)?.members ?? [walker];
-  const trails = walkers.map((member) => state.trails.get(member)?.points ?? []);
+  const trails = membersFor(state.teams, walker).map(
+    (member) => state.trails.get(member)?.points ?? [],
+  );
   return sweptFraction(strip.lanes, trails, strip.sweep.spacing / 2);
 }
 

@@ -1,5 +1,5 @@
-// How the group is split for the work: the latest TEAM of each team (§3.15), and the team each
-// member is in.
+// How the group is split for the work: the latest TEAM of each team (§3.15), the team each
+// member is in, and who is in each.
 
 import type { NodeId, TeamEvent } from '@tesel/protocol';
 
@@ -21,4 +21,14 @@ export function teamOf(state: ReadonlyMap<NodeId, TeamEvent>, member: NodeId): T
     if (found === null || compareEvents(team, found) > 0) found = team;
   }
   return found;
+}
+
+/**
+ * Whom something for `assignee` is for: the members of the team it names, those it lists who are
+ * in it by `teamOf` (none once it is dissolved), or else the member it names.
+ */
+export function membersFor(state: ReadonlyMap<NodeId, TeamEvent>, assignee: NodeId): NodeId[] {
+  const team = state.get(assignee);
+  if (team === undefined) return [assignee];
+  return team.members.filter((member) => teamOf(state, member)?.team === assignee);
 }

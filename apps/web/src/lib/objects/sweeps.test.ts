@@ -110,6 +110,21 @@ describe('sweeps', () => {
     const record = state.objects.get(`${ANA}:2`);
     const first = record?.type === 'sweep' ? stripOf(record, state.objects) : null;
     expect(first && sweptBy(first, state, BERTA)).toBeCloseTo(0.5, 1);
+    // Berta's trail counts for her team, and not for one she has left for another.
+    const team = (seq: number, id: string) => ({
+      type: 'team' as const,
+      origin: ANA,
+      seq,
+      time: T0 + seq,
+      team: id as NodeId,
+      colour: 'blue' as const,
+      dissolved: false,
+      members: [BERTA],
+      name: id,
+    });
+    const moved = stateOf([...PLANNED, ...walk, team(40, '5eed0001'), team(41, '5eed0002')]);
+    expect(first && sweptBy(first, moved, '5eed0001' as NodeId)).toBe(0);
+    expect(first && sweptBy(first, moved, '5eed0002' as NodeId)).toBeCloseTo(0.5, 1);
   });
 
   it('marks the area cleared once every strip is done, from the device that finished last', () => {
