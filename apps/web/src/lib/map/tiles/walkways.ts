@@ -20,7 +20,10 @@ export type BasemapTile = (tile: TileCoord) => Promise<ArrayBuffer | undefined>;
  */
 const WALKABLE = new Set(['major_road', 'minor_road', 'path', 'other']);
 
-/** The streets and paths within `radius` metres of `centre`, in the tiles that can be had. */
+/**
+ * The streets and paths within `radius` metres of `centre`, in the tiles that can be had and read:
+ * a tile that cannot is left out, and the streets of the others kept.
+ */
 export async function walkwaysAround(
   centre: LatLon,
   radius: number,
@@ -33,8 +36,13 @@ export async function walkwaysAround(
   const tiles = [...tilesInBounds(bounds, BASEMAP_MAX_ZOOM, BASEMAP_MAX_ZOOM)];
   const lines = await Promise.all(
     tiles.map(async (tile) => {
-      const bytes = await tileOf(tile);
-      return bytes === undefined ? [] : walkwaysIn(bytes, tile);
+      try {
+        const bytes = await tileOf(tile);
+        return bytes === undefined ? [] : walkwaysIn(bytes, tile);
+      } catch (error) {
+        console.warn('The streets of a base map tile could not be read:', error);
+        return [];
+      }
     }),
   );
   return lines.flat();

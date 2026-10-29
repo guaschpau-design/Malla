@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { distanceMeters, offsetMeters } from '@tesel/core';
 import { WalkNetwork } from '@tesel/scenario';
 import { PMTiles, type RangeResponse, type Source } from 'pmtiles';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { walkwaysAround } from './walkways.ts';
 
@@ -56,5 +56,20 @@ describe('the walkways of the base map', () => {
 
   it('gives nothing where the tiles cannot be had', async () => {
     expect(await walkwaysAround(CENTRE, 400, () => Promise.resolve(undefined))).toEqual([]);
+  });
+
+  it('leaves out a tile it cannot read, and only that one', async () => {
+    const everyTile = await walkwaysAround(CENTRE, 400, tileOf);
+    let first = true;
+    const oneCorrupt = async (tile: { z: number; x: number; y: number }) => {
+      if (!first) return tileOf(tile);
+      first = false;
+      return new Uint8Array([0x0f, 0xff, 0xff]).buffer;
+    };
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const lines = await walkwaysAround(CENTRE, 400, oneCorrupt);
+    expect(lines.length).toBeGreaterThan(0);
+    expect(lines.length).toBeLessThan(everyTile.length);
+    expect(console.warn).toHaveBeenCalledOnce();
   });
 });
