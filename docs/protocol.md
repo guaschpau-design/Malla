@@ -366,7 +366,7 @@ nonce    = HMAC-SHA256(nonceKey, event), truncated to 12 bytes
 
 The ciphertext includes the 16-byte GCM tag, so an envelope is at most 12 + 165 + 16 = 193 bytes. A receiver that fails to open an envelope MUST discard it silently.
 
-The nonce is derived from the event, so the same event always gives the same envelope: a retry, a re-push or a bridge forwarding an event the server already has adds nothing to the server's store (§8). Different events get unrelated nonces, as random ones would be, so a group SHOULD stay well below 2³² distinct events under one secret (the AES-GCM bound for random nonces). An envelope reveals only that it carries the same event as another, which its event key (§5) already does. Receivers do not check how the nonce was made: envelopes sealed by earlier versions, with random nonces, open the same way. Key rotation is future work.
+The nonce is derived from the event, so the same event always gives the same envelope: a retry, a re-push or a bridge forwarding an event the server already has adds nothing to the server's store (§8). Different events get unrelated nonces, as random ones would be, so a group SHOULD stay well below 2³² distinct events under one secret (the AES-GCM bound for random nonces). An envelope reveals only that it carries the same event as another, which its event key (§5) already does. Receivers do not check how the nonce was made: envelopes sealed by earlier versions, with random nonces, open the same way ([ADR-0067](decisions/0067-envelope-nonce-from-the-event.md)). Key rotation is future work.
 
 ## 6. Invitations
 

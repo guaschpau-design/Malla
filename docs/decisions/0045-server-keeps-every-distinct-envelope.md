@@ -1,6 +1,6 @@
 # 0045. The server keeps every distinct envelope pushed under a key
 
-- Status: Accepted
+- Status: Accepted, amended by [0067](0067-envelope-nonce-from-the-event.md) (nonces derived from the event)
 - Date: 2026-10-27
 
 ## Context

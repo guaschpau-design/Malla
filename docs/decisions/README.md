@@ -50,7 +50,7 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0042](0042-remove-radio-line-of-sight.md)           | Remove the radio line of sight                                                              | Accepted                                    |
 | [0043](0043-radio-delivery.md)                       | Deliver over the radio until someone has it                                                 | Accepted                                    |
 | [0044](0044-clocks-and-damaged-events.md)            | Keep each author's events in order, and say when a clock is wrong                           | Accepted                                    |
-| [0045](0045-server-keeps-every-distinct-envelope.md) | The server keeps every distinct envelope pushed under a key                                 | Accepted                                    |
+| [0045](0045-server-keeps-every-distinct-envelope.md) | The server keeps every distinct envelope pushed under a key                                 | Accepted, amended by 0067                   |
 | [0046](0046-store-identity.md)                       | A server's store has an identity, and cursors belong to it                                  | Accepted                                    |
 | [0047](0047-alarms-and-notices.md)                   | Raise the alarm, and say what happened                                                      | Accepted                                    |
 | [0048](0048-how-the-app-shares-state.md)             | One rule for sharing state in the web app, and panels that carry what they show             | Accepted                                    |
@@ -72,4 +72,5 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0064](0064-check-in.md)                             | A safety check-in that asks only when it must                                               | Accepted                                    |
 | [0065](0065-room-for-what-is-read.md)                | Give the room to what is read; what is used now and then waits in a menu                    | Accepted                                    |
 | [0066](0066-practice-situations.md)                  | Practice situations, on foot along the streets, with a guide                                | Accepted                                    |
+| [0067](0067-envelope-nonce-from-the-event.md)        | Derive each envelope's nonce from its event                                                 | Accepted                                    |
 | [0068](0068-restorable-copies-and-going-back.md)     | Restore copies under a new identity, and go back across a change of schema                  | Accepted                                    |

@@ -34,6 +34,7 @@ node -e "const {DatabaseSync}=require('node:sqlite'); new DatabaseSync('data/tes
 | File                    | Job                                                             |
 | ----------------------- | --------------------------------------------------------------- |
 | `src/main.ts`           | Reads the configuration, starts everything and stops it cleanly |
+| `src/config.ts`         | The settings, read from the environment                         |
 | `src/app.ts`            | HTTP routes: `healthz`, the relay, weather, the web files       |
 | `src/relay.ts`          | Joins, backlogs, pushes and fan-out                             |
 | `src/relay-limits.ts`   | Limits on connections, new groups and pushes                    |
