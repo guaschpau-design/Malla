@@ -37,12 +37,32 @@ describe('drawing', () => {
   it('takes a route read from a file, to look over before describing it', () => {
     const drawing = new Drawing();
     drawing.start('route');
-    const route = { name: 'Senda', points: [at(1), at(2), at(3)], read: 300, deviation: 4 };
+    const route = {
+      kind: 'route' as const,
+      name: 'Senda',
+      points: [at(1), at(2), at(3)],
+      read: 300,
+      deviation: 4,
+    };
     drawing.load(route);
     expect(drawing.draft).toEqual({ kind: 'route', points: route.points });
     expect(drawing.placingPoints).toBe(true);
     expect(drawing.imported).toBe(route);
     drawing.stop();
     expect(drawing.imported).toBeNull();
+  });
+
+  it('takes an area read from a file as an area', () => {
+    const drawing = new Drawing();
+    drawing.start('area');
+    const area = {
+      kind: 'area' as const,
+      name: 'Sector',
+      points: [at(1), at(2), at(3)],
+      read: 3,
+      deviation: 0,
+    };
+    drawing.load(area);
+    expect(drawing.draft).toEqual({ kind: 'area', points: area.points });
   });
 });

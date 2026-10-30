@@ -1,4 +1,4 @@
-import { device, expect, openMore, stored, test } from './helpers.ts';
+import { createGroup, device, expect, openMore, stored, tapMapUntil, test } from './helpers.ts';
 
 test('a dictated coordinate is found on the map and read in another format', async ({
   browser,
@@ -37,4 +37,44 @@ test('a coordinate that cannot be read says which formats can', async ({ browser
   await expect(
     page.getByText('Tesel no reconoce estas coordenadas.', { exact: false }),
   ).toBeVisible();
+});
+
+test('a marker and a task’s place are given by their coordinates, typed as dictated', async ({
+  browser,
+}) => {
+  const page = await device(browser, 'Ana', '/#map=15/39.4699/-0.3763');
+  await createGroup(page, 'Norte');
+  await page.getByRole('button', { name: 'Cerrar' }).click();
+
+  // A marker at coordinates read over the radio: it is placed, then described as one tapped.
+  await page.getByRole('button', { name: 'Añadir' }).click();
+  await page.getByRole('menuitem', { name: 'Marcador' }).click();
+  const bar = page.getByRole('region', { name: 'Nuevo marcador' });
+  await bar.getByRole('button', { name: 'Escribir coordenadas' }).click();
+  await bar.getByRole('textbox', { name: 'Coordenadas' }).fill('al lado del puente');
+  await bar.getByRole('button', { name: 'Añadir' }).click();
+  await expect(bar).toContainText('Tesel no reconoce estas coordenadas.');
+  await bar.getByRole('textbox', { name: 'Coordenadas' }).fill('30S 725695 4372210');
+  await bar.getByRole('button', { name: 'Añadir' }).click();
+  const form = page.getByRole('dialog', { name: 'Nuevo marcador' });
+  await form.getByLabel('Etiqueta (opcional)').fill('Fuente');
+  await form.getByRole('button', { name: 'Guardar' }).click();
+  await expect(form).toBeHidden();
+  // The map went to it: it is in the middle, where a tap opens it.
+  const marker = page.getByRole('region', { name: 'Fuente' });
+  await tapMapUntil(page, {}, () => expect(marker).toBeVisible({ timeout: 2000 }));
+  await marker.getByRole('button', { name: 'Cerrar' }).click();
+
+  // A task's place, typed on the card where it is picked.
+  await page.getByRole('button', { name: 'Tareas' }).click();
+  const tasks = page.getByRole('region', { name: 'Tareas' });
+  await tasks.getByRole('button', { name: 'Nueva tarea' }).click();
+  await tasks.getByLabel('Qué hay que hacer').fill('Revisar la fuente');
+  await tasks.getByRole('button', { name: 'Elegir en el mapa' }).click();
+  const picker = page.getByRole('region', { name: 'Elegir en el mapa' });
+  await picker.getByRole('button', { name: 'Escribir coordenadas' }).click();
+  await picker.getByRole('textbox', { name: 'Coordenadas' }).fill('39,4699 -0,3763');
+  await picker.getByRole('button', { name: 'Usar' }).click();
+  await expect(tasks.getByLabel('Qué hay que hacer')).toHaveValue('Revisar la fuente');
+  await expect(tasks.getByText('Lugar: ninguno')).toBeHidden();
 });

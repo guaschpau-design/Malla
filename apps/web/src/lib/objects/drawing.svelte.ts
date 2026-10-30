@@ -1,16 +1,16 @@
-// Drawing a map object: tapping its points (`draft`), or reading a route from a file, then
-// describing it (`describing`) before it is shared with the group.
+// Drawing a map object: tapping its points (`draft`), typing their coordinates, or reading a route
+// or an area from a file, then describing it (`describing`) before it is shared with the group.
 
 import type { LatLon } from '@tesel/protocol';
 
 import { addPoint, isFull, startDraft, undoPoint, type Draft, type DraftKind } from './draft.ts';
-import type { ImportedRoute } from './route-import.ts';
+import type { ImportedShape } from './shape-import.ts';
 
 export class Drawing {
   draft: Draft | null = $state.raw(null);
   describing = $state(false);
-  /** The route read from a file, when the draft came from one. */
-  imported: ImportedRoute | null = $state.raw(null);
+  /** The route or area read from a file, when the draft came from one. */
+  imported: ImportedShape | null = $state.raw(null);
 
   /** Placing its points on the map, before describing. */
   get placingPoints(): boolean {
@@ -23,11 +23,11 @@ export class Drawing {
     this.imported = null;
   }
 
-  /** Takes a route read from a file as the draft, to be looked over on the map and finished. */
-  load(route: ImportedRoute): void {
-    this.draft = { kind: 'route', points: route.points };
+  /** Takes a shape read from a file as the draft, to be looked over on the map and finished. */
+  load(shape: ImportedShape): void {
+    this.draft = { kind: shape.kind, points: shape.points };
     this.describing = false;
-    this.imported = route;
+    this.imported = shape;
   }
 
   /** Adds a tapped point; once no more fit, the object is ready to be described. */

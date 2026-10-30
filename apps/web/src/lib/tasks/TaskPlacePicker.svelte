@@ -1,12 +1,14 @@
 <!-- Picking a task's place on the map, from the task's form: the form steps aside, a tap on the
-     map is the place, and the form opens again as it was left, with the place in it. Closing the
-     card goes back to the form as it was. -->
+     map, or coordinates typed on the card, is the place, and the form opens again as it was left,
+     with the place in it. Closing the card goes back to the form as it was. -->
 <script lang="ts">
   import type { LatLon } from '@tesel/protocol';
   import { onMount } from 'svelte';
 
+  import CoordinateEntry from '../coordinates/CoordinateEntry.svelte';
   import type { Translate } from '../i18n/index.ts';
   import type { MapTaps } from '../map/taps.ts';
+  import Pictogram from '../ui/Pictogram.svelte';
   import ToolCard from '../ui/ToolCard.svelte';
   import { openPanel } from '../ui/panels.svelte.ts';
   import type { TaskEditing } from './tasks.ts';
@@ -33,6 +35,9 @@
     openPanel({ name: 'tasks', editing: picked });
   }
 
+  /** Whether the field for the place's coordinates is open. */
+  let typing = $state(false);
+
   onMount(() =>
     taps.takeAll((at) => {
       back(at);
@@ -47,5 +52,19 @@
     back(null);
   }}
 >
+  {#snippet tools()}
+    <button
+      class="icon"
+      aria-label={t('typeCoordinates')}
+      title={t('typeCoordinates')}
+      aria-expanded={typing}
+      onclick={() => (typing = !typing)}
+    >
+      <Pictogram name="grid" size={22} />
+    </button>
+  {/snippet}
   <p>{t('taskPickPlaceHint')}</p>
+  {#if typing}
+    <CoordinateEntry {t} action={t('use')} onpoint={back} />
+  {/if}
 </ToolCard>

@@ -64,7 +64,7 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0056](0056-storage-and-offline-maps.md)             | Keep room for the log, resume downloads, and never show a blank map                         | Accepted                                    |
 | [0057](0057-accessible-interface.md)                 | Meet WCAG 2.1 AA in the app's colours, keyboard use and texts                               | Accepted                                    |
 | [0058](0058-no-command-posts.md)                     | Drop command posts: one server per group, radios when there is no internet                  | Accepted                                    |
-| [0059](0059-routes.md)                               | Routes: drawn or read from a file, followed leg by leg, and a task's place may be an object | Accepted                                    |
+| [0059](0059-routes.md)                               | Routes: drawn or read from a file, followed leg by leg, and a task's place may be an object | Accepted, amended by 0077                   |
 | [0060](0060-sweeps.md)                               | Sweeps: parallel lanes over a search area, one strip per team, sent as a recipe             | Accepted                                    |
 | [0061](0061-member-state.md)                         | What members tell about themselves: one event, one card                                     | Accepted, amended by 0069, 0071             |
 | [0062](0062-teams.md)                                | Teams: one event per team, and a task for a team is each member's                           | Accepted                                    |
@@ -82,3 +82,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0074](0074-race-exercise.md)                        | A popular race to keep safe                                                                 | Accepted                                    |
 | [0075](0075-mountain-exercise.md)                    | A mountain route, played where the map is                                                   | Accepted                                    |
 | [0076](0076-practice-coverage-loss.md)               | Losing coverage in a practice                                                               | Accepted                                    |
+| [0077](0077-coordinates-and-zone-files.md)           | Points by their coordinates, and zones read from a file                                     | Accepted                                    |

@@ -127,3 +127,30 @@ test('a route read from a file is thinned, followed to its end and its task done
   await page.getByRole('button', { name: 'Tareas' }).click();
   await expect(tasks.getByText('Hechas (1)')).toBeVisible();
 });
+
+test('an area read from a KML file is shown to look over, then saved', async ({ browser }) => {
+  const page = await device(browser, 'Ana', VIEW);
+  await createGroup(page, 'Norte');
+  await page.getByRole('button', { name: 'Cerrar' }).click();
+
+  // A search sector as another app exports it: a polygon, its first corner repeated at its end.
+  const kml = `<?xml version="1.0"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document>
+    <Placemark><name>Sector 3</name><Polygon><outerBoundaryIs><LinearRing><coordinates>
+      -0.3770,39.4690,0 -0.3750,39.4690,0 -0.3750,39.4705,0 -0.3770,39.4705,0 -0.3770,39.4690,0
+    </coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+  </Document></kml>`;
+  await page.getByRole('button', { name: 'Añadir' }).click();
+  await page.getByRole('menuitem', { name: 'Zona' }).click();
+  await page.locator('input[type="file"]').setInputFiles({
+    name: 'sector.kml',
+    mimeType: 'application/vnd.google-earth.kml+xml',
+    buffer: Buffer.from(kml),
+  });
+  const bar = page.getByRole('region', { name: 'Nueva zona' });
+  await expect(bar).toContainText('«Sector 3», 4 puntos');
+  await bar.getByRole('button', { name: 'Terminar' }).click();
+  const form = page.getByRole('dialog', { name: 'Nueva zona' });
+  await expect(form.getByLabel('Etiqueta (opcional)')).toHaveValue('Sector 3');
+  await form.getByRole('button', { name: 'Guardar' }).click();
+  await expect(form).toBeHidden();
+});

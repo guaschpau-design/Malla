@@ -9,7 +9,7 @@ test('a marker drawn by one member can be opened and deleted by another', async 
 
   await ana.getByRole('button', { name: 'Añadir' }).click();
   await ana.getByRole('menuitem', { name: 'Marcador' }).click();
-  await expect(ana.getByText('Toca el mapa donde va.')).toBeVisible();
+  await expect(ana.getByText(/Toca el mapa donde va/)).toBeVisible();
   await tapMap(ana);
   await ana.getByRole('radio', { name: 'Fuego' }).check();
   await ana.getByLabel('Etiqueta (opcional)').fill('Foco norte');

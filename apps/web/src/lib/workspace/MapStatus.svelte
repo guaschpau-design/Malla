@@ -21,7 +21,7 @@
   import type { Drawing } from '../objects/drawing.svelte.ts';
   import DrawLayer from '../objects/DrawLayer.svelte';
   import { objectTitle } from '../objects/object-names.ts';
-  import type { ImportedRoute } from '../objects/route-import.ts';
+  import type { ImportedShape } from '../objects/shape-import.ts';
   import { planSweep, type SweepRecipe } from '../objects/sweep-actions.ts';
   import SweepPlanner from '../objects/SweepPlanner.svelte';
   import type { OfflineMaps } from '../offline/offline-maps.ts';
@@ -105,15 +105,19 @@
       {locale}
       draft={drawing.draft}
       imported={drawing.imported}
+      onpoint={(at: LatLon) => {
+        drawing.add(at);
+        showPoint(map, at);
+      }}
       onundo={() => {
         drawing.undo();
       }}
       onfinish={() => {
         drawing.finish();
       }}
-      onimport={(route: ImportedRoute) => {
-        drawing.load(route);
-        showPoints(map, route.points);
+      onimport={(shape: ImportedShape) => {
+        drawing.load(shape);
+        showPoints(map, shape.points);
       }}
       oncancel={() => {
         drawing.stop();

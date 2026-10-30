@@ -1,29 +1,34 @@
 <!-- The card at the top while drawing: what is drawn, one line of what to do and, once points are
-     tapped, how many of the most there may be. A route can also be read from a file, which is then
-     shown as drawn, to look over before finishing. -->
+     tapped, how many of the most there may be. A point can be typed as coordinates in place of a
+     tap; a route or an area can be read from a file, which is then shown as drawn, to look over
+     before finishing. -->
 <script lang="ts">
-  import { SHAPE_MAX_POINTS } from '@tesel/protocol';
+  import { SHAPE_MAX_POINTS, type LatLon } from '@tesel/protocol';
 
   import { formatDistance } from '../format.ts';
   import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
   import Pictogram from '../ui/Pictogram.svelte';
   import ToolCard from '../ui/ToolCard.svelte';
   import { DRAFT_TITLES, isComplete, type Draft, type DraftKind } from './draft.ts';
-  import { importRoute, type ImportedRoute, type RouteImportError } from './route-import.ts';
+  import CoordinateEntry from '../coordinates/CoordinateEntry.svelte';
+  import { importShape, type ImportedShape, type ShapeImportError } from './shape-import.ts';
 
   interface Props {
     t: Translate;
     locale: Locale;
     draft: Draft;
-    /** The route read from a file, when the draft came from one. */
-    imported: ImportedRoute | null;
+    /** The route or area read from a file, when the draft came from one. */
+    imported: ImportedShape | null;
+    /** A point typed as coordinates, as if tapped. */
+    onpoint: (at: LatLon) => void;
     onundo: () => void;
     onfinish: () => void;
-    onimport: (route: ImportedRoute) => void;
+    onimport: (shape: ImportedShape) => void;
     oncancel: () => void;
   }
 
-  let { t, locale, draft, imported, onundo, onfinish, onimport, oncancel }: Props = $props();
+  let { t, locale, draft, imported, onpoint, onundo, onfinish, onimport, oncancel }: Props =
+    $props();
 
   const HINTS: Readonly<Record<DraftKind, MessageKey>> = {
     marker: 'drawHintMarker',
@@ -31,18 +36,21 @@
     area: 'drawHintArea',
   };
 
-  const IMPORT_FAILURES: Readonly<Record<RouteImportError, MessageKey>> = {
-    'too-big': 'routeFileTooBig',
-    unreadable: 'routeFileUnreadable',
-    unsupported: 'routeFileUnsupported',
-    'no-line': 'routeFileNoLine',
+  const IMPORT_FAILURES: Readonly<Record<ShapeImportError, MessageKey>> = {
+    'too-big': 'shapeFileTooBig',
+    unreadable: 'shapeFileUnreadable',
+    unsupported: 'shapeFileUnsupported',
+    'no-line': 'shapeFileNoLine',
+    'no-area': 'shapeFileNoArea',
   };
 
   let picker: HTMLInputElement | undefined = $state();
   let failure: MessageKey | null = $state(null);
+  /** Whether the field for a point's coordinates is open. */
+  let typing = $state(false);
 
-  async function read(file: File): Promise<void> {
-    const result = await importRoute(file);
+  async function read(file: File, kind: 'route' | 'area'): Promise<void> {
+    const result = await importShape(file, kind);
     failure = result.ok ? null : IMPORT_FAILURES[result.error];
     if (result.ok) onimport(result.value);
   }
@@ -66,11 +74,21 @@
     : { label: t('finish'), disabled: !isComplete(draft), run: onfinish }}
 >
   {#snippet tools()}
-    {#if draft.kind === 'route'}
+    <button
+      class="icon"
+      aria-label={t('typeCoordinates')}
+      title={t('typeCoordinates')}
+      aria-expanded={typing}
+      onclick={() => (typing = !typing)}
+    >
+      <Pictogram name="grid" size={22} />
+    </button>
+    {#if draft.kind !== 'marker'}
+      {@const kind = draft.kind}
       <button
         class="icon"
-        aria-label={t('routeImport')}
-        title={t('routeImport')}
+        aria-label={t('shapeImport')}
+        title={t('shapeImport')}
         onclick={() => picker?.click()}
       >
         <Pictogram name="file" size={22} />
@@ -83,21 +101,21 @@
         onchange={(event) => {
           const [file] = event.currentTarget.files ?? [];
           event.currentTarget.value = '';
-          if (file) void read(file);
+          if (file) void read(file, kind);
         }}
       />
     {/if}
   {/snippet}
   {#if imported}
     <p>
-      <strong>{title}</strong> · {t('routeImported', {
+      <strong>{title}</strong> · {t('shapeImported', {
         name: imported.name,
         points: imported.points.length,
       })}
     </p>
     {#if imported.read > imported.points.length}
       <p class="hint">
-        {t('routeSimplified', {
+        {t('shapeSimplified', {
           read: imported.read,
           deviation: formatDistance(imported.deviation, locale),
         })}
@@ -105,6 +123,9 @@
     {/if}
   {:else}
     <p><strong>{title}</strong> · {progress}</p>
+  {/if}
+  {#if typing}
+    <CoordinateEntry {t} action={t('add')} {onpoint} />
   {/if}
   {#if failure}<p class="warning">{t(failure)}</p>{/if}
 </ToolCard>

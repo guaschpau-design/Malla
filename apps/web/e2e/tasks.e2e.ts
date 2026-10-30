@@ -45,7 +45,7 @@ test('a common task, for anyone, is taken by whoever starts it', async ({ browse
   await expect(anaTasks.getByText('Lugar: ninguno')).toBeVisible();
   await anaTasks.getByRole('button', { name: 'Elegir en el mapa' }).click();
   await expect(anaTasks).toBeHidden();
-  await expect(ana.getByText('Toca el mapa donde es la tarea.')).toBeVisible();
+  await expect(ana.getByText(/Toca el mapa donde es la tarea/)).toBeVisible();
   await tapMap(ana);
   await expect(anaTasks.getByLabel('Qué hay que hacer')).toHaveValue('Llevar material');
   await expect(anaTasks.getByText('Lugar: ninguno')).toBeHidden();

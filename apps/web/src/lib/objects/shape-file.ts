@@ -1,25 +1,44 @@
-// Reading a route from a file made by another app or device: GPX, KML or GeoJSON. Only the way is
-// kept: the longest line in the file, and its name. The files are read as text, without an XML
-// parser, so the same code runs in the browser and in the tests.
+// Reading a route or an area from a file made by another app or device: GPX, KML or GeoJSON. Only
+// the shape is kept, and its name: for a route, the longest line in the file; for an area, the
+// largest polygon, or line that closes on itself, as a track walked round a place does. The files
+// are read as text, without an XML parser, so the same code runs in the browser and in the tests.
 
-import { pathMeters } from '@tesel/core';
+import { areaSquareMeters, distanceMeters, pathMeters } from '@tesel/core';
 import type { LatLon, Result } from '@tesel/protocol';
 
-export interface FileLine {
-  /** The line's own name in the file, or empty. */
+export interface FileShape {
+  /** The shape's own name in the file, or empty. */
   readonly name: string;
   readonly points: readonly LatLon[];
 }
 
-export type RouteFileError =
+export type ShapeFileError =
   /** Not GPX, KML or GeoJSON. */
   | 'unsupported'
-  /** No line of two points or more. */
-  | 'no-line';
+  /** For a route: no line of two points or more. */
+  | 'no-line'
+  /** For an area: no polygon, nor closed line, of three corners or more. */
+  | 'no-area';
 
-export function readRouteFile(text: string): Result<FileLine, RouteFileError> {
-  const lines = linesIn(text.trim());
-  if (lines === null) return { ok: false, error: 'unsupported' };
+/** A line whose ends are this close goes round a place: it is an area. */
+const CLOSES_M = 25;
+
+export function readShapeFile(
+  text: string,
+  kind: 'route' | 'area',
+): Result<FileShape, ShapeFileError> {
+  const shapes = shapesIn(text.trim());
+  if (shapes === null) return { ok: false, error: 'unsupported' };
+  return kind === 'route' ? longestLine(shapes.lines) : largestArea(shapes);
+}
+
+/** The lines and the polygons' outer rings in a file. */
+interface Shapes {
+  readonly lines: readonly FileShape[];
+  readonly rings: readonly FileShape[];
+}
+
+function longestLine(lines: readonly FileShape[]): Result<FileShape, ShapeFileError> {
   const usable = lines.filter((line) => line.points.length >= 2);
   if (usable.length === 0) return { ok: false, error: 'no-line' };
   const longest = usable.reduce((best, line) =>
@@ -28,17 +47,46 @@ export function readRouteFile(text: string): Result<FileLine, RouteFileError> {
   return { ok: true, value: longest };
 }
 
-/** The lines in a file, or null if it is of none of the formats. */
-function linesIn(text: string): FileLine[] | null {
-  if (text.startsWith('{')) return geoJsonLines(text);
-  if (/<(?:[\w.-]+:)?gpx\b/.test(text)) return gpxLines(text);
-  if (/<(?:[\w.-]+:)?kml\b/.test(text)) return kmlLines(text);
+function largestArea({ lines, rings }: Shapes): Result<FileShape, ShapeFileError> {
+  const closed = lines.filter(({ points }) => {
+    const [first] = points;
+    const last = points.at(-1);
+    return (
+      points.length >= 4 &&
+      first !== undefined &&
+      last !== undefined &&
+      distanceMeters(first, last) <= CLOSES_M
+    );
+  });
+  const areas = [...rings, ...closed]
+    .map((shape) => ({ ...shape, points: unclosed(shape.points) }))
+    .filter((shape) => shape.points.length >= 3);
+  if (areas.length === 0) return { ok: false, error: 'no-area' };
+  const largest = areas.reduce((best, area) =>
+    areaSquareMeters(area.points) > areaSquareMeters(best.points) ? area : best,
+  );
+  return { ok: true, value: largest };
+}
+
+/** A ring's corners, without the last when it only closes the ring on the first. */
+function unclosed(points: readonly LatLon[]): readonly LatLon[] {
+  const [first] = points;
+  const last = points.at(-1);
+  const repeats = first !== undefined && last !== undefined && distanceMeters(first, last) < 1;
+  return repeats && points.length > 1 ? points.slice(0, -1) : points;
+}
+
+/** The shapes in a file, or null if it is of none of the formats. */
+function shapesIn(text: string): Shapes | null {
+  if (text.startsWith('{')) return geoJsonShapes(text);
+  if (/<(?:[\w.-]+:)?gpx\b/.test(text)) return { lines: gpxLines(text), rings: [] };
+  if (/<(?:[\w.-]+:)?kml\b/.test(text)) return kmlShapes(text);
   return null;
 }
 
 // --- GPX: tracks, their segments joined, and routes ----------------------------------------
 
-function gpxLines(xml: string): FileLine[] {
+function gpxLines(xml: string): FileShape[] {
   const line = (container: string, child: string) =>
     [...elements(xml, container)].map(({ body }) => ({
       name: ownName(body, child),
@@ -49,22 +97,15 @@ function gpxLines(xml: string): FileLine[] {
   return [...line('trk', 'trkpt'), ...line('rte', 'rtept')];
 }
 
-// --- KML: the line strings and tracks of each placemark --------------------------------------
+// --- KML: the line strings, tracks and polygons of each placemark ---------------------------
 
-function kmlLines(xml: string): FileLine[] {
-  return [...elements(xml, 'Placemark')].flatMap(({ body }) => {
+function kmlShapes(xml: string): Shapes {
+  const placemarks = [...elements(xml, 'Placemark')].map(({ body }) => body);
+  const lines = placemarks.flatMap((body) => {
     const name = ownName(body, 'LineString');
     const strings = [...elements(body, 'LineString')].map((string) => ({
       name,
-      points: [...elements(string.body, 'coordinates')].flatMap((list) =>
-        list.body
-          .trim()
-          .split(/\s+/)
-          .flatMap((tuple) => {
-            const [lon, lat] = tuple.split(',').map(Number);
-            return pointOf(lat, lon);
-          }),
-      ),
+      points: kmlCoordinates(string.body),
     }));
     const tracks = [...elements(body, 'Track')].map((track) => ({
       name,
@@ -75,18 +116,47 @@ function kmlLines(xml: string): FileLine[] {
     }));
     return [...strings, ...tracks];
   });
+  const rings = placemarks.flatMap((body) => {
+    const name = ownName(body, 'Polygon');
+    return [...elements(body, 'Polygon')].flatMap((polygon) =>
+      [...elements(polygon.body, 'outerBoundaryIs')].map((outer) => ({
+        name,
+        points: kmlCoordinates(outer.body),
+      })),
+    );
+  });
+  return { lines, rings };
 }
 
-// --- GeoJSON: line strings and each part of multi-line strings, wherever they are ------------
+/** The points of the `<coordinates>` an element holds: "lon,lat[,alt]" tuples. */
+function kmlCoordinates(body: string): LatLon[] {
+  return [...elements(body, 'coordinates')].flatMap((list) =>
+    list.body
+      .trim()
+      .split(/\s+/)
+      .flatMap((tuple) => {
+        const [lon, lat] = tuple.split(',').map(Number);
+        return pointOf(lat, lon);
+      }),
+  );
+}
 
-function geoJsonLines(text: string): FileLine[] | null {
+// --- GeoJSON: line strings, polygons and the parts of multi ones, wherever they are ----------
+
+function geoJsonShapes(text: string): Shapes | null {
   let json: unknown;
   try {
     json = JSON.parse(text);
   } catch {
     return null;
   }
-  const lines: FileLine[] = [];
+  const lines: FileShape[] = [];
+  const rings: FileShape[] = [];
+  /** A polygon's outer ring, its first. */
+  const outer = (polygon: unknown, name: string) => {
+    const [ring] = arrayOf(polygon);
+    rings.push({ name, points: positions(ring) });
+  };
   const visit = (value: unknown, name: string): void => {
     if (!isRecord(value)) return;
     switch (value['type']) {
@@ -110,10 +180,16 @@ function geoJsonLines(text: string): FileLine[] | null {
           lines.push({ name, points: positions(part) });
         }
         return;
+      case 'Polygon':
+        outer(value['coordinates'], name);
+        return;
+      case 'MultiPolygon':
+        for (const part of arrayOf(value['coordinates'])) outer(part, name);
+        return;
     }
   };
   visit(json, '');
-  return lines;
+  return { lines, rings };
 }
 
 function positions(value: unknown): LatLon[] {

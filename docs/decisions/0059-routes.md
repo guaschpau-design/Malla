@@ -1,6 +1,6 @@
 # 0059. Routes: drawn or read from a file, followed leg by leg, and a task's place may be an object
 
-- Status: Accepted
+- Status: Accepted, amended by [0077](0077-coordinates-and-zone-files.md) (zones from files, typed points)
 - Date: 2026-10-28
 - Amends: [ADR-0025](0025-tasks.md) (a task's place may be an object, which the task follows)
 
