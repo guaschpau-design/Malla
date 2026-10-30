@@ -10,6 +10,7 @@ import { simplifyLine } from '@tesel/core';
 import { SHAPE_MAX_POINTS, ShapeStyleCode, SymbolCode } from '@tesel/protocol';
 import { YOU, type ScenarioStep } from '@tesel/scenario';
 
+import { roundArea } from '../coverage.ts';
 import type { Exercise, Inject, Setting } from '../exercise.ts';
 import {
   CARMEN,
@@ -121,6 +122,15 @@ export function race(setting: Setting): Exercise {
       ...countdown(control),
       ...(user === 'member' ? carmensOrders(world) : []),
       sosToPractise(t, 600, { kind: 'medical', text: 'practiceRaceSos' }),
+    ],
+    outages: [
+      {
+        from: START_S,
+        to: Infinity,
+        area: roundArea(centre, 650),
+        kind: 'busy',
+        says: 'practiceRaceBusy',
+      },
     ],
     findings: raceFindings(world),
     seconds: EXERCISE_SECONDS,

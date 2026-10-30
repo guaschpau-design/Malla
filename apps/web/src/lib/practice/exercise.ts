@@ -8,7 +8,7 @@ import type { GroupState } from '@tesel/core';
 import type { EventDraft, Passable, Scenario, ScenarioAction } from '@tesel/scenario';
 import type { LatLon, NodeId, Role } from '@tesel/protocol';
 
-import type { Locale, Translate } from '../i18n/index.ts';
+import type { Locale, MessageKey, Translate } from '../i18n/index.ts';
 import type { Chance } from './chance.ts';
 import type { Findings } from './debrief/findings.ts';
 import type { Errand } from './errands.ts';
@@ -35,10 +35,24 @@ export interface Exercise {
   readonly personas: Readonly<Record<string, Persona>>;
   readonly world: World;
   readonly injects: readonly Inject[];
+  /** Where and when the mobile network fails. */
+  readonly outages: readonly Outage[];
   /** What the situation tells of how it went, for the report at the end. */
   readonly findings: (stage: Stage) => Findings;
   /** Seconds the exercise lasts at most. */
   readonly seconds: number;
+}
+
+/** An area where the network fails, from one moment to another, in seconds into the exercise. */
+export interface Outage {
+  readonly from: number;
+  /** Infinity: it does not come back before the exercise ends. */
+  readonly to: number;
+  readonly area: readonly LatLon[];
+  /** Down: no coverage at all. Busy: everything goes, but late. */
+  readonly kind: 'down' | 'busy';
+  /** What the control room says when it fails (coverage.ts). */
+  readonly says: MessageKey;
 }
 
 /** What happens in the situation by itself, and what it does to whoever is in it. */
@@ -92,6 +106,8 @@ export interface Stage {
   walk(who: Teammate, job: Job, errand: Errand, speed?: number): number | null;
   /** Runs `run` in `seconds`, unless the exercise has stopped by then. */
   after(seconds: number, run: () => void): void;
+  /** Whether a teammate hears what the group says now: they may have no coverage. */
+  hears(who: Teammate): boolean;
   /** True the first time it is asked about `key`. */
   once(key: string): boolean;
   /** Ends the exercise with the last word of whoever leads it. */

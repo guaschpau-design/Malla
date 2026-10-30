@@ -100,6 +100,15 @@ export function missingPerson(setting: Setting): Exercise {
         },
       },
     ],
+    outages: [
+      {
+        from: 420,
+        to: Infinity,
+        area: sector(world.lastSeen, world.went, 400, 200, 520),
+        kind: 'down',
+        says: 'practiceMissingNoCoverage',
+      },
+    ],
     findings: missingPersonFindings(world),
     seconds: EXERCISE_SECONDS,
   };

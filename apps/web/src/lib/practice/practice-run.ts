@@ -27,9 +27,11 @@ import {
   type ScenarioAction,
 } from '@tesel/scenario';
 
+import type { Channel } from '../links/heard.ts';
 import { aliasOf } from '../members/alias.ts';
 import { debriefOf, type Debrief } from './debrief/debrief.ts';
 import { UserLog } from './debrief/user-log.ts';
+import { Coverage } from './coverage.ts';
 import { Director } from './director.ts';
 import { wayThrough, type Errand } from './errands.ts';
 import type { Crew, Exercise, Setting, Stage, World } from './exercise.ts';
@@ -42,8 +44,11 @@ import { TaskRoutine } from './routines/tasks.ts';
 import { Teammate, type Job } from './teammate.ts';
 import { say, type Saying } from './voice.ts';
 
-/** Where the run hands each event, as if a teammate had sent it: the practice group's feed. */
-type PracticeSink = (bytes: Uint8Array) => Promise<void>;
+/**
+ * Where the run hands each event, as if a teammate had sent it, by the channel it came by: the
+ * practice group's feed.
+ */
+type PracticeSink = (bytes: Uint8Array, channel: Channel) => Promise<void>;
 
 export interface PracticeOptions {
   readonly sink: PracticeSink;
@@ -56,9 +61,6 @@ export interface PracticeOptions {
 
 /** Seconds between the moments the world moves on and the members look round. */
 const TICK_S = 1;
-/** Seconds between the position reports of each teammate, and of one saving their battery. */
-const POSITION_EVERY_S = 10;
-const POSITION_SAVING_S = 60;
 
 export class PracticeRun implements Stage {
   readonly crew: Crew;
@@ -68,6 +70,8 @@ export class PracticeRun implements Stage {
   readonly #world: World;
   readonly #director: Director;
   readonly #findings: Exercise['findings'];
+  /** Where the network fails, and how the teammates' news reaches the user. */
+  readonly #coverage: Coverage;
   /** When the user did what the report at the end weighs. */
   readonly #log = new UserLog();
   readonly #routines: readonly { tick(stage: Stage): void }[];
@@ -98,6 +102,15 @@ export class PracticeRun implements Stage {
     this.#world = exercise.world;
     this.#director = new Director(exercise.injects);
     this.#findings = exercise.findings;
+    const room = teammates.find((teammate) => teammate.remote)?.alias ?? this.crew.lead.alias;
+    this.#coverage = new Coverage(
+      exercise.outages,
+      room,
+      (bytes, channel) => {
+        this.#queue(() => options.sink(bytes, channel));
+      },
+      () => options.setting.chance.next(),
+    );
     this.#routines = [new SosRoutine(), new TaskRoutine(), new TalkRoutine(), new BodyRoutine()];
     this.#options = options;
     this.#performer = new ScenarioPerformer((name) =>
@@ -209,6 +222,10 @@ export class PracticeRun implements Stage {
     this.#timers.add(timer);
   }
 
+  hears(who: Teammate): boolean {
+    return this.#coverage.hears(this, who);
+  }
+
   once(key: string): boolean {
     if (this.#handled.has(key)) return false;
     this.#handled.add(key);
@@ -218,9 +235,15 @@ export class PracticeRun implements Stage {
   finish(text: string): void {
     if (this.#over) return;
     this.say(this.crew.lead.alias, text);
+    // What was still on its way arrives, the last word with it.
+    this.#queue(() => {
+      this.#coverage.flush();
+      return Promise.resolve();
+    });
     this.#over = true;
     this.#log.look(this.#state, this.#options.self, this.elapsed);
-    this.#options.onfinish?.(debriefOf(this, this.#log, this.#findings(this)));
+    const coverage = this.#coverage.tally(this.elapsed);
+    this.#options.onfinish?.(debriefOf(this, this.#log, this.#findings(this), coverage));
   }
 
   // The run's own work.
@@ -232,6 +255,9 @@ export class PracticeRun implements Stage {
   #step(): void {
     if (this.#over || this.#stopped || this.#startMs === 0) return;
     this.#log.look(this.#state, this.#options.self, this.elapsed);
+    attempt(() => {
+      this.#coverage.tick(this);
+    });
     for (const routine of this.#routines)
       attempt(() => {
         routine.tick(this);
@@ -275,12 +301,12 @@ export class PracticeRun implements Stage {
     }
   }
 
-  /** Teammates on the ground say where they are, now and then; less often to save a battery. */
+  /** Teammates on the ground say where they are, now and then, as often as their link allows. */
   #reportPositions(): void {
     const now = Date.now();
     for (const teammate of this.crew.onTheGround.concat(this.#hurt())) {
-      if (teammate.silent) continue;
-      const every = teammate.saving ? POSITION_SAVING_S : POSITION_EVERY_S;
+      const every = teammate.silent ? null : this.#coverage.positionEvery(this, teammate);
+      if (every === null) continue;
       if (now - (this.#reported.get(teammate) ?? -Infinity) < every * 1000) continue;
       this.#reported.set(teammate, now);
       const where = teammate.at(now);
@@ -314,15 +340,18 @@ export class PracticeRun implements Stage {
     );
   }
 
-  /** Sends a teammate's event; whoever calls an SOS is hurt, and stops, until it is over. */
-  async #send(teammate: Teammate, draft: EventDraft): Promise<EventRef> {
+  /**
+   * Sends a teammate's event, as their link allows; whoever calls an SOS is hurt, and stops, until
+   * it is over.
+   */
+  #send(teammate: Teammate, draft: EventDraft): Promise<EventRef> {
     const header = teammate.nextHeader();
     const event = draft(header);
     if (event.type === 'sos') teammate.injure(eventRefKey(header), Date.now());
     const bytes = encodeEvent(event);
     if (!bytes.ok) throw new Error(`a ${event.type} that cannot be sent: ${bytes.error.detail}`);
-    if (!this.#stopped) await this.#options.sink(bytes.value);
-    return { origin: header.origin, seq: header.seq };
+    if (!this.#stopped) this.#coverage.send(this, teammate, bytes.value);
+    return Promise.resolve({ origin: header.origin, seq: header.seq });
   }
 }
 

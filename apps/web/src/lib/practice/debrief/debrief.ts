@@ -3,13 +3,15 @@
 // the person was found, how many homes were warned. The rest is the same in every situation and
 // depends on the user's part: how quickly they answered the teammates' SOS calls (user-log.ts has
 // the times); as a member, whether they did the tasks given to them and sent reports; as the
-// coordinator, how soon they set the team to work, and with what.
+// coordinator, how soon they set the team to work, and with what; and, where the network failed,
+// whether their orders reached anyone.
 
 import type { GroupState } from '@tesel/core';
 import type { NodeId } from '@tesel/protocol';
 
 import { clockTime } from '../clock-time.ts';
 import type { Stage } from '../exercise.ts';
+import type { CoverageTally } from '../coverage.ts';
 import type { Figure, Findings, Note } from './findings.ts';
 import type { UserLog } from './user-log.ts';
 
@@ -31,20 +33,28 @@ const MOST_BETTER = 4;
 type Ending = Pick<Stage, 't' | 'state' | 'user' | 'elapsed'>;
 
 /** The report of an exercise as it ends, the situation's findings first. */
-export function debriefOf(stage: Ending, log: UserLog, findings: Findings): Debrief {
+export function debriefOf(
+  stage: Ending,
+  log: UserLog,
+  findings: Findings,
+  coverage: CoverageTally,
+): Debrief {
   const { t, state, user } = stage;
   const part = user.role === 'member' ? asMember(stage) : asCoordinator(stage, log);
   const sos = answering(stage, log);
+  const network = withoutCoverage(stage, coverage);
   const said = state.chat.filter((message) => message.origin === user.node).length;
   const figures = [
     { label: t('debriefLength'), value: clockTime(stage.elapsed) },
     ...findings.figures,
+    ...network.figures,
     ...sos.figures,
     ...part.figures,
     { label: t('debriefMessages'), value: String(said) },
   ];
   const notes = [
     ...findings.notes,
+    ...network.notes,
     ...sos.notes,
     ...part.notes,
     ...(said === 0 ? [{ good: false, text: t('debriefSilent') }] : []),
@@ -60,6 +70,33 @@ export function debriefOf(stage: Ending, log: UserLog, findings: Findings): Debr
       .map((note) => note.text)
       .slice(0, MOST_BETTER),
   };
+}
+
+/**
+ * How the teammates fared without coverage, and whether the user's orders reached them: given to
+ * someone cut off, an order waits until they have coverage again.
+ */
+function withoutCoverage(stage: Ending, coverage: CoverageTally): Findings {
+  const { t } = stage;
+  const { cut, longestS, stranded, strandedWaitS, reached } = coverage;
+  const figures: Figure[] = [];
+  const notes: Note[] = [];
+  if (cut > 0) {
+    figures.push({
+      label: t('debriefCutOff'),
+      value: t('debriefCutOffValue', { count: cut, time: clockTime(longestS) }),
+    });
+  }
+  if (stranded > 0) {
+    figures.push({
+      label: t('debriefStranded'),
+      value: t('debriefStrandedValue', { count: stranded, time: clockTime(strandedWaitS) }),
+    });
+    notes.push({ good: false, text: t('debriefStrandedNote', { count: stranded }) });
+  } else if (reached > 0) {
+    notes.push({ good: true, text: t('debriefReachedNote') });
+  }
+  return { figures, notes };
 }
 
 /** How the user answered the teammates' SOS calls, leaving out one too recent to weigh. */

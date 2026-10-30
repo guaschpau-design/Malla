@@ -2,6 +2,7 @@
 // is on is taken by those free to do it: a moment later, one of them says so now and then, marks it
 // taken and they all set off, walk it (errands.ts) and say when it is done. A task they cannot get
 // to without crossing what cannot be crossed (water, a fire) they say so of, and leave for a while.
+// Someone cut off from the network hears of a task only once they have coverage again.
 // A search area whose every strip is done is marked cleared. Whoever went to help someone goes back
 // to their task once that is over, and whoever was on a task no longer theirs leaves it.
 
@@ -41,6 +42,8 @@ export class TaskRoutine {
    */
   #leaveWhatIsOver(stage: Stage): void {
     for (const teammate of stage.crew.onTheGround) {
+      // Someone cut off does not know their task is over.
+      if (!stage.hears(teammate)) continue;
       const { job, resume } = teammate;
       if (job?.kind === 'task' && !isFor(stage, job.task, teammate)) teammate.stop(stage.now);
       if (job?.kind === 'help' && stage.state.sosCancels.has(job.sos)) {
@@ -57,7 +60,7 @@ export class TaskRoutine {
       const version = eventRefKey(task);
       if ((this.#leftUntil.get(version) ?? 0) > stage.now) continue;
       const doers = doersFor(stage, task);
-      const free = doers.filter((doer) => doer.free && !doer.silent);
+      const free = doers.filter((doer) => doer.free && !doer.silent && stage.hears(doer));
       if (free.length === 0 || doers.some((doer) => doer.isOn(key))) continue;
       const taking: Job = { kind: 'task', task: key };
       for (const doer of free) doer.go(taking, [], stage.now);

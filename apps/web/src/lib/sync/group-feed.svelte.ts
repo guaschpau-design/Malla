@@ -232,10 +232,12 @@ export class GroupFeed {
   }
 
   /**
-   * An event of a simulated member of a practice (lib/practice), taken like any other; a practice
-   * group has no server and no radio, so it goes nowhere.
+   * An event of a simulated member of a practice (lib/practice), taken like any other, as heard
+   * through the channel the practice says it came by; a practice group has no server and no radio,
+   * so it goes nowhere.
    */
-  async receiveSimulated(bytes: Uint8Array): Promise<void> {
+  async receiveSimulated(bytes: Uint8Array, channel: Channel): Promise<void> {
+    this.#hear(channel, [bytes]);
     await this.#take([bytes]);
   }
 

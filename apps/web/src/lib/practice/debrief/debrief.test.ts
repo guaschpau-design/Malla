@@ -3,6 +3,7 @@ import { generateIdentity, type NodeId, type Role, type TeselEvent } from '@tese
 import { describe, expect, it } from 'vitest';
 
 import { translator } from '../../i18n/index.ts';
+import type { CoverageTally } from '../coverage.ts';
 import { debriefOf } from './debrief.ts';
 import type { Findings } from './findings.ts';
 import { UserLog } from './user-log.ts';
@@ -32,6 +33,15 @@ const jordisSos: TeselEvent = {
 };
 const answered: TeselEvent = { ...by(user, 1), type: 'ack', target: { origin: jordi, seq: 2 } };
 
+/** An exercise where the network never failed. */
+const FULL_COVERAGE: CoverageTally = {
+  cut: 0,
+  longestS: 0,
+  stranded: 0,
+  strandedWaitS: 0,
+  reached: 0,
+};
+
 const stateOf = (events: readonly TeselEvent[]): GroupState => events.reduce(reduce, EMPTY_STATE);
 
 /** The report of an exercise that lasted `elapsed` seconds and ended as `state`. */
@@ -41,8 +51,10 @@ function report(
   log: UserLog,
   elapsed = 1500,
   findings: Findings = { figures: [], notes: [] },
+  coverage: CoverageTally = FULL_COVERAGE,
 ) {
-  return debriefOf({ t, state, user: { node: user, role, name: 'Ana' }, elapsed }, log, findings);
+  const ending = { t, state, user: { node: user, role, name: 'Ana' }, elapsed };
+  return debriefOf(ending, log, findings, coverage);
 }
 
 describe('the report at the end of an exercise', () => {
@@ -102,6 +114,24 @@ describe('the report at the end of an exercise', () => {
       t('debriefSosMissed', { name: 'Jordi' }),
       t('debriefOrderedLate', { time: '04:10' }),
     ]);
+  });
+
+  it('tells a coordinator whose orders went to someone without coverage', () => {
+    const coverage = { cut: 2, longestS: 300, stranded: 1, strandedWaitS: 240, reached: 0 };
+    const { figures, better } = report(
+      'coordinator',
+      stateOf([]),
+      new UserLog(),
+      1500,
+      undefined,
+      coverage,
+    );
+    expect(figures).toContainEqual({ label: 'Sin cobertura ni radio', value: '2 · hasta 05:00' });
+    expect(figures).toContainEqual({
+      label: 'Tareas que no llegaban',
+      value: '1 · esperaron 04:00 de media',
+    });
+    expect(better).toContain(t('debriefStrandedNote', { count: 1 }));
   });
 
   it('leaves out an SOS too recent to have been answered', () => {

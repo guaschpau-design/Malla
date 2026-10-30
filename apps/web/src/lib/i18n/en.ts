@@ -797,6 +797,8 @@ export const en = {
     'Fog coming in. Keep together: everyone sees the one ahead and the one behind.',
   practiceMountainLostDoing: 'Lost in the fog',
   practiceMountainLost: 'I can’t see anyone. I took another path in the fog: I’m {where}.',
+  practiceMountainMissing:
+    'Jordi is missing: he fell behind in the fog and has no coverage. His last position is on the map.',
   practiceMountainStayPut:
     'Jordi, stay where you are. Nuria is coming for you: we have your position on the map.',
   practiceMountainFindJordi: 'Fetch Jordi from his last position',
@@ -832,6 +834,21 @@ export const en = {
   practiceMountainEnd: 'End of the exercise: the group heads down to the trailhead.',
   practiceMountainEndExposed:
     'End of the exercise: the group heads down, but the storm caught it high up.',
+  practiceNoCoverage: 'No mobile coverage',
+  practiceBusyNetwork: 'Mobile network overloaded',
+  practiceCoverageBack: 'Coverage back',
+  practiceCoverageBackChat: 'Mobile coverage is back in the area.',
+  practiceOnRadio: 'I’ve lost coverage: carrying on by radio.',
+  practiceBackOnline: 'I have coverage again. Sending what I had.',
+  practiceMissingNoCoverage:
+    'Note: there is hardly any coverage in sector 2. Whoever has no LoRa radio, go with someone who does.',
+  practiceFloodNoCoverage:
+    'The masts in the low area have lost power: there is no mobile coverage in the floodable area.',
+  practiceFireNoCoverage:
+    'The fire has damaged the hill’s mast: there is no mobile coverage near the front.',
+  practiceRaceBusy: 'With so many people, the mobile network is overloaded: messages come late.',
+  practiceMountainNoCoverage:
+    'There is no mobile coverage on the middle of your route: there we will only hear you by radio.',
   debriefTitle: 'How it went',
   debriefGood: 'Well done',
   debriefBetter: 'To improve',
@@ -924,6 +941,16 @@ export const en = {
     one: 'The fire caught {count} teammate. With smoke near, pulling back in time comes first.',
     other: 'The fire caught {count} teammates. With smoke near, pulling back in time comes first.',
   },
+  debriefCutOff: 'No coverage and no radio',
+  debriefCutOffValue: '{count} · up to {time}',
+  debriefStranded: 'Tasks that did not get through',
+  debriefStrandedValue: '{count} · waited {time} on average',
+  debriefStrandedNote: {
+    one: 'You gave {count} task to someone without coverage: they saw it only once it came back. Without a network, orders go to whoever has a radio, to pass on.',
+    other:
+      'You gave {count} tasks to people without coverage: they saw them only once it came back. Without a network, orders go to whoever has a radio, to pass on.',
+  },
+  debriefReachedNote: 'With the network down, your orders went to those who could hear them.',
   debriefNotCame: 'never came',
   debriefRaceCrossings: 'Crossings guarded when the leaders came',
   debriefRaceCars: 'Cars on the course',

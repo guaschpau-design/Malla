@@ -805,6 +805,8 @@ export const es: Messages = {
   practiceMountainFog: 'Entra niebla. No os separéis: cada uno ve al de delante y al de detrás.',
   practiceMountainLostDoing: 'Perdido en la niebla',
   practiceMountainLost: 'No veo a nadie. Con la niebla me he metido por otra senda: estoy {where}.',
+  practiceMountainMissing:
+    'Falta Jordi: se ha quedado atrás en la niebla y no tiene cobertura. Su última posición está en el mapa.',
   practiceMountainStayPut:
     'Jordi, quédate quieto donde estás. Nuria va a por ti: tenemos tu posición en el mapa.',
   practiceMountainFindJordi: 'Ir a buscar a Jordi a su última posición',
@@ -840,6 +842,21 @@ export const es: Messages = {
   practiceMountainStormTurn: '¡Nos ha pillado la tormenta! Bajamos ya.',
   practiceMountainEnd: 'Fin del ejercicio: el grupo baja hacia el inicio de la ruta.',
   practiceMountainEndExposed: 'Fin del ejercicio: el grupo baja, pero la tormenta lo pilló arriba.',
+  practiceNoCoverage: 'Sin cobertura móvil',
+  practiceBusyNetwork: 'Red móvil saturada',
+  practiceCoverageBack: 'Cobertura recuperada',
+  practiceCoverageBackChat: 'Vuelve la cobertura móvil en la zona.',
+  practiceOnRadio: 'Me quedo sin cobertura: sigo por radio.',
+  practiceBackOnline: 'Vuelvo a tener cobertura. Os mando lo que tenía.',
+  practiceMissingNoCoverage:
+    'Aviso: en el sector 2 apenas hay cobertura. Quien no lleve radio LoRa, que vaya con alguien que la lleve.',
+  practiceFloodNoCoverage:
+    'Las antenas de la zona baja se han quedado sin corriente: no hay cobertura móvil en la zona inundable.',
+  practiceFireNoCoverage:
+    'El fuego ha dañado el repetidor del monte: no hay cobertura móvil cerca del frente.',
+  practiceRaceBusy: 'Con tanta gente, la red móvil va saturada: los mensajes llegan con retraso.',
+  practiceMountainNoCoverage:
+    'En la parte media de vuestra ruta no hay cobertura móvil: allí solo os oiremos por radio.',
   debriefTitle: 'Cómo ha ido',
   debriefGood: 'Bien',
   debriefBetter: 'A mejorar',
@@ -933,6 +950,16 @@ export const es: Messages = {
     other:
       'El fuego alcanzó a {count} compañeros. Con humo cerca, retirarse a tiempo es lo primero.',
   },
+  debriefCutOff: 'Sin cobertura ni radio',
+  debriefCutOffValue: '{count} · hasta {time}',
+  debriefStranded: 'Tareas que no llegaban',
+  debriefStrandedValue: '{count} · esperaron {time} de media',
+  debriefStrandedNote: {
+    one: 'Diste {count} tarea a quien no tenía cobertura: no la vio hasta recuperarla. Sin red, las órdenes van a quien lleva radio, y que las pase.',
+    other:
+      'Diste {count} tareas a quien no tenía cobertura: no las vieron hasta recuperarla. Sin red, las órdenes van a quien lleva radio, y que las pase.',
+  },
+  debriefReachedNote: 'Con la red caída, tus órdenes fueron a quien podía oírlas.',
   debriefNotCame: 'no llegó',
   debriefRaceCrossings: 'Cortes cubiertos al pasar la cabeza',
   debriefRaceCars: 'Coches en el recorrido',

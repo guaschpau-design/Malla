@@ -2,7 +2,7 @@
 // they are, or of how it is going, gets where they are or what they are on; anything else gets a
 // word now and then from whoever leads. A report gets an answer too. When the user coordinates,
 // teammates left with nothing to do ask what to do next, as people waiting at a meeting point do;
-// not those standing guard at a post.
+// not those standing guard at a post. Someone cut off from the network hears none of it.
 
 import { eventRefKey } from '@tesel/protocol';
 
@@ -39,11 +39,13 @@ export class TalkRoutine {
       if (message.origin !== stage.user.node) continue;
       if (!stage.once(`answer ${eventRefKey(message)}`)) continue;
       const named = stage.crew.onTheGround.filter(
-        (teammate) => !teammate.silent && mentions(message.text, teammate.alias),
+        (teammate) =>
+          !teammate.silent && stage.hears(teammate) && mentions(message.text, teammate.alias),
       );
       const asks = WHERE.test(message.text) ? 'where' : HOW.test(message.text) ? 'how' : null;
       if (named.length === 0 && !this.#mayReply(stage)) continue;
       const answering = named.length > 0 ? named.slice(0, MOST_ANSWERS) : [spokesperson(stage)];
+      if (!answering.every((teammate) => teammate.remote || stage.hears(teammate))) continue;
       for (const teammate of answering) {
         const text = asks === null ? stage.line('heard') : this.#about(stage, teammate, asks);
         stage.after(stage.chance.between(...REPLY_S), () => {

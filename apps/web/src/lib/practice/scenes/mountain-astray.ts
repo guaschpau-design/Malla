@@ -1,5 +1,6 @@
 // Someone loses the group in the fog (mountain-world.ts): Jordi takes a path that leads nowhere,
-// or falls behind, and stops there, unable to see anyone. Someone sent to where his phone puts him
+// or falls behind, and stops there, unable to see anyone. He tells the group, if he has coverage;
+// if not, the group misses him. Someone sent to where his phone puts him
 // finds him and brings him back; if nobody comes, he finds his own way back after a while. With the
 // user as a member, Carmen tells him to stay put and sends Nuria; as coordinator, the user must.
 
@@ -56,7 +57,13 @@ export class Astray {
       this.#lost = { at: who.at(stage.now), since: stage.elapsed, who };
       this.#search = new CallOut(this.#lost.at, { people: 2, seconds: 5 });
       const where = stage.ground.where(stage.t, this.#lost.at, landmarkOf(stage));
-      stage.say(who.alias, stage.t('practiceMountainLost', { where }));
+      if (stage.hears(who)) {
+        stage.say(who.alias, stage.t('practiceMountainLost', { where }));
+      } else {
+        // Cut off, he cannot tell: the group misses him, and his last position is on the map.
+        const missed = stage.crew.nearest(this.#lost.at, (one) => one !== who && stage.hears(one));
+        if (missed !== undefined) stage.say(missed.alias, stage.t('practiceMountainMissing'));
+      }
       if (this.#user === 'member') this.#sendNuria(stage);
     });
   }

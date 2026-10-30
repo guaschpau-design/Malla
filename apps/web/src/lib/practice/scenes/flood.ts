@@ -87,6 +87,9 @@ export function flood(setting: Setting): Exercise {
       ...(user === 'member' ? carmensOrders(world) : []),
       sosToPractise(t, 360, { kind: 'trapped', text: 'practiceFloodSos' }),
     ],
+    outages: [
+      { from: 600, to: 1200, area: world.floodable, kind: 'down', says: 'practiceFloodNoCoverage' },
+    ],
     findings: floodFindings(world),
     seconds: EXERCISE_SECONDS,
   };

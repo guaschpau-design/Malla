@@ -21,8 +21,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { translator } from '../i18n/index.ts';
 import { Chance } from './chance.ts';
+import { roundArea } from './coverage.ts';
 import type { Debrief } from './debrief/debrief.ts';
-import type { Exercise, Inject, Setting, World } from './exercise.ts';
+import type { Exercise, Inject, Outage, Setting, World } from './exercise.ts';
 import { Ground } from './ground.ts';
 import { PracticeRun } from './practice-run.ts';
 import type { Persona } from './teammate.ts';
@@ -45,6 +46,7 @@ interface Options {
   /** Carmen coordinates, and the user is a member; or the user coordinates. */
   readonly user?: 'member' | 'coordinator';
   readonly seconds?: number;
+  readonly outages?: readonly Outage[];
 }
 
 /**
@@ -59,6 +61,7 @@ function practice({
   personas = {},
   user: part = 'member',
   seconds = 3600,
+  outages = [],
 }: Options = {}) {
   const sent: TeselEvent[] = [];
   const own: TeselEvent[] = [];
@@ -96,13 +99,17 @@ function practice({
     world,
     injects,
     findings: () => ({ figures: [{ label: 'Situación', value: 'Bajo control' }], notes: [] }),
+    outages,
     seconds,
   };
+  /** What came by radio, rather than through the network. */
+  const byRadio: TeselEvent[] = [];
   let debrief: Debrief | null = null;
   const run = new PracticeRun(exercise, {
-    sink: (bytes) => {
+    sink: (bytes, channel) => {
       const event = decodeEvent(bytes);
       if (event.ok) sent.push(event.value);
+      if (event.ok && channel === 'radio') byRadio.push(event.value);
       return Promise.resolve();
     },
     self: user.nodeId,
@@ -160,6 +167,7 @@ function practice({
     lastPosition,
     statuses,
     said,
+    byRadio,
     finished: () => debrief !== null,
     debrief: () => debrief,
   };
@@ -590,6 +598,38 @@ describe('practice run', () => {
     await wait(31);
     expect(finished()).toBe(true);
     expect(said().at(-1)).toBe(`Carmen: ${t('practiceTimeUp')}`);
+    run.stop();
+  });
+
+  it('carries by radio the news of whoever has one where coverage fails, and cuts off the rest', async () => {
+    const kit = (radio: boolean): Persona => ({
+      profile: 'volunteer',
+      equipment: radio ? ['lora'] : [],
+      battery: 90,
+      drain: 0,
+    });
+    const { run, own, nodeOf, wait, said, byRadio, statuses } = practice({
+      personas: { Jordi: kit(true), Carmen: kit(false) },
+      outages: [
+        { from: 5, to: 60, area: roundArea(HERE, 300), kind: 'down', says: 'practiceTimeUp' },
+      ],
+      steps: [
+        { at: 10, by: 'Jordi', action: { type: 'chat', text: 'Por radio' } },
+        { at: 10, by: 'Carmen', action: { type: 'chat', text: 'Sin red' } },
+      ],
+    });
+    run.start();
+    await wait(15);
+    expect(said()).toContain('Jordi: Por radio');
+    expect(byRadio.some((event) => event.type === 'chat' && event.text === 'Por radio')).toBe(true);
+    expect(said()).not.toContain('Carmen: Sin red');
+    // A task for Carmen waits for her to have coverage again.
+    own.push(userTask(1, { assignee: nodeOf('Carmen'), place: null, text: 'Ven' }));
+    await wait(30);
+    expect(statuses()).toEqual([]);
+    await wait(30);
+    expect(said()).toContain('Carmen: Sin red');
+    expect(statuses()).toContain('Carmen Ven: in-progress');
     run.stop();
   });
 

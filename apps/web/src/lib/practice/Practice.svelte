@@ -84,7 +84,7 @@
       }));
       const built = exercise(setting);
       playing = new PracticeRun(built, {
-        sink: (bytes) => feed.receiveSimulated(bytes),
+        sink: (bytes, channel) => feed.receiveSimulated(bytes, channel),
         self,
         setting,
         onfinish: (report) => {

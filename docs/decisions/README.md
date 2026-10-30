@@ -81,3 +81,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0073](0073-exercise-report.md)                      | The report at the end of an exercise                                                        | Accepted                                    |
 | [0074](0074-race-exercise.md)                        | A popular race to keep safe                                                                 | Accepted                                    |
 | [0075](0075-mountain-exercise.md)                    | A mountain route, played where the map is                                                   | Accepted                                    |
+| [0076](0076-practice-coverage-loss.md)               | Losing coverage in a practice                                                               | Accepted                                    |

@@ -3,7 +3,7 @@
 // who drops what they were doing and goes; once they have been with them a while, and the user has
 // acknowledged it too, so that answering it is always there to practise, it ends and whoever
 // called it is well again. If the user has not acknowledged a teammate's SOS after a while,
-// someone asks them whether they have seen it.
+// someone asks them whether they have seen it. Only those who hear the group answer.
 
 import { openSosCalls } from '@tesel/core';
 import type { EventRef, LatLon, SosEvent } from '@tesel/protocol';
@@ -47,7 +47,7 @@ export class SosRoutine {
   #answerUser(stage: Stage, key: string, sos: EventRef, at: LatLon): void {
     if (!stage.once(`sos ${key}`)) return;
     stage.after(ANSWER_USER_S, () => {
-      const helper = stage.crew.nearest(at, (who) => !who.silent);
+      const helper = stage.crew.nearest(at, (who) => !who.silent && stage.hears(who));
       if (helper === undefined || stage.state.sosCancels.has(key)) return;
       stage.send(helper, ack(sos));
       stage.say(helper.alias, stage.line('onTheWay'));
@@ -59,7 +59,10 @@ export class SosRoutine {
     if (stage.once(`sos ${key}`)) {
       stage.after(stage.chance.between(...ANSWER_TEAMMATE_S), () => {
         if (stage.state.sosCancels.has(key)) return;
-        const helper = stage.crew.nearest(at, (who) => who !== called && !who.silent);
+        const helper = stage.crew.nearest(
+          at,
+          (who) => who !== called && !who.silent && stage.hears(who),
+        );
         if (helper === undefined) return;
         stage.send(helper, ack(sos));
         const job = { kind: 'help', sos: key } as const;

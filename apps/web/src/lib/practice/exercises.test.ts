@@ -148,6 +148,11 @@ async function play(situation: Situation, part: Role, ground = town(), seed = 7)
   return { sent, state, said, finished: debrief !== null, debrief, user: user.nodeId };
 }
 
+/** What the lead said to end the exercise: news held up on the way may come after it. */
+function ending(said: readonly string[]): string | undefined {
+  return said.find((line) => line.startsWith('Fin del ejercicio'));
+}
+
 /** Markers by their label, as they ended up. */
 function markers(state: GroupState, label: string): LatLon[] {
   return [...state.objects.values()].flatMap((record) =>
@@ -190,7 +195,7 @@ describe('exercises played through', { timeout: PLAYING_MS }, () => {
     // Someone called an SOS to practise answering, and Rosa was found and taken to safety.
     expect(sent.some((event) => event.type === 'sos')).toBe(true);
     expect(markers(state, 'Rosa')).toHaveLength(1);
-    expect(said.at(-1)).toMatch(/^Fin del ejercicio: (Rosa ha aparecido|a Rosa la ha encontrado)/);
+    expect(ending(said)).toMatch(/^Fin del ejercicio: (Rosa ha aparecido|a Rosa la ha encontrado)/);
   });
 
   it('leaves the search to a coordinator, whose idle team asks what to do', async () => {
@@ -228,7 +233,7 @@ describe('exercises played through', { timeout: PLAYING_MS }, () => {
         (line) => line.startsWith('Avisados los vecinos') || line.startsWith('En el bajo del n.º'),
       ),
     ).toBe(true);
-    expect(said.at(-1)).toMatch(
+    expect(ending(said)).toMatch(
       /^Fin del ejercicio: el agua baja\. Vecinos avisados a tiempo: \d de \d/,
     );
   });
@@ -249,7 +254,7 @@ describe('exercises played through', { timeout: PLAYING_MS }, () => {
         (record) => record.type === 'marker' && record.symbol === SymbolCode.HELICOPTER,
       ),
     ).toBe(false);
-    expect(said.at(-1)).toMatch(/^Fin del ejercicio: incendio estabilizado/);
+    expect(ending(said)).toMatch(/^Fin del ejercicio: incendio estabilizado/);
   });
 
   it('runs a race round the streets, with a runner down and a van on the course', async () => {
@@ -266,19 +271,22 @@ describe('exercises played through', { timeout: PLAYING_MS }, () => {
       label: 'Cortes cubiertos al pasar la cabeza',
       value: expect.stringMatching(/^\d de 4$/) as unknown,
     });
-    expect(said.at(-1)).toMatch(/^Fin del ejercicio: la carrera sigue/);
+    expect(ending(said)).toMatch(/^Fin del ejercicio: la carrera sigue/);
   });
 
   it('climbs a mountain into fog and a storm, with someone lost and someone hurt', async () => {
     const ground = town(await slope());
     const { said, finished, debrief } = await play('mountain', 'member', ground);
     expect(finished).toBe(true);
-    expect(said.some((line) => line.startsWith('No veo a nadie'))).toBe(true);
+    // Jordi says he is lost; or, cut off from the network, the group misses him.
+    expect(
+      said.some((line) => line.startsWith('No veo a nadie') || line.startsWith('Falta Jordi')),
+    ).toBe(true);
     expect(said.some((line) => line.includes('ha resbalado en la pedrera'))).toBe(true);
     expect(said.some((line) => line.startsWith('Damos la vuelta'))).toBe(true);
     // The user sent no report: Carmen did, late, and the helicopter may or may not make it.
     expect(debrief?.better).toContain(t('debriefMountainCarmenCalled'));
-    expect(said.at(-1)).toMatch(/^Fin del ejercicio: el grupo baja/);
+    expect(ending(said)).toMatch(/^Fin del ejercicio: el grupo baja/);
   });
 
   it('leaves the turn back to a coordinator, whom the storm overtakes', async () => {

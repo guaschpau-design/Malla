@@ -9,6 +9,7 @@
 import { ShapeStyleCode, SymbolCode } from '@tesel/protocol';
 import { YOU, type ScenarioStep } from '@tesel/scenario';
 
+import { roundArea } from '../coverage.ts';
 import type { Exercise, Inject, Setting, Stage } from '../exercise.ts';
 import {
   CARMEN,
@@ -76,6 +77,15 @@ export function wildfire(setting: Setting): Exercise {
       ...story(world, at(220, 240)),
       ...(user === 'member' ? carmensOrders() : []),
       sosToPractise(t, 360, { kind: 'medical', text: 'practiceWildfireSos' }),
+    ],
+    outages: [
+      {
+        from: 840,
+        to: Infinity,
+        area: roundArea(at(250, -100), 350),
+        kind: 'down',
+        says: 'practiceFireNoCoverage',
+      },
     ],
     findings: wildfireFindings(world),
     seconds: EXERCISE_SECONDS,

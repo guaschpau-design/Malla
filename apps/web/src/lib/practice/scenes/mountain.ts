@@ -8,6 +8,7 @@
 import { simplifyLine } from '@tesel/core';
 import { SHAPE_MAX_POINTS, ShapeStyleCode, SymbolCode } from '@tesel/protocol';
 
+import { roundArea } from '../coverage.ts';
 import type { Exercise, Setting } from '../exercise.ts';
 import {
   CARMEN,
@@ -33,6 +34,9 @@ import { MountainWorld } from './mountain-world.ts';
 /** Ids of the outing's objects. */
 const ROUTE = 'route';
 const TOP = 'top';
+/** The stretch of the route without coverage: round this share of the way up, this wide. */
+const DEAD_ALONG = 0.6;
+const DEAD_RADIUS = 0.3;
 
 /** Whether the place has a mountain to climb, with paths up it: what the outing needs. */
 export function suitsMountain(setting: Pick<Setting, 'ground' | 'centre'>): boolean {
@@ -97,6 +101,15 @@ export function mountain(setting: Setting): Exercise {
     personas: people,
     world,
     injects: [sosToPractise(t, 420, { kind: 'general', text: 'practiceMountainSos' })],
+    outages: [
+      {
+        from: 60,
+        to: Infinity,
+        area: roundArea(route.pointAt(route.length * DEAD_ALONG), route.length * DEAD_RADIUS),
+        kind: 'down',
+        says: 'practiceMountainNoCoverage',
+      },
+    ],
     findings: mountainFindings(world),
     seconds: EXERCISE_SECONDS,
   };
