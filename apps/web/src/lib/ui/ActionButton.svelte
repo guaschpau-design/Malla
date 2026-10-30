@@ -6,13 +6,14 @@
   interface Props {
     icon: GlyphName;
     label: string;
+    disabled?: boolean;
     onclick: () => void;
   }
 
-  let { icon, label, onclick }: Props = $props();
+  let { icon, label, disabled = false, onclick }: Props = $props();
 </script>
 
-<button class="action" {onclick}>
+<button class="action" {disabled} {onclick}>
   <Pictogram name={icon} size={18} />
   {label}
 </button>

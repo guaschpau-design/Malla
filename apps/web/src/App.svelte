@@ -32,6 +32,7 @@
   import { activeSos } from './lib/incidents/incidents.ts';
   import Announcer from './lib/ui/Announcer.svelte';
   import ConfirmDialog from './lib/ui/ConfirmDialog.svelte';
+  import Pictogram from './lib/ui/Pictogram.svelte';
   import StartupProblem from './lib/ui/StartupProblem.svelte';
   import type { StartupFailure, VersionChange } from './lib/storage/version-change.ts';
   import { radio } from './lib/radio/radio.svelte.ts';
@@ -176,7 +177,8 @@
     const group = session?.activeGroup;
     const identity = session?.identity;
     if (!group || !identity) return null;
-    return [group.id, group.server ?? '', group.role, identity.alias, openings].join('|');
+    // Not the alias: a new name is told to the open group (rename), without opening it again.
+    return [group.id, group.server ?? '', group.role, identity.nodeId, openings].join('|');
   });
 
   $effect(() => {
@@ -247,6 +249,11 @@
     await session?.createIdentity(alias);
   }
 
+  async function rename(alias: string): Promise<void> {
+    await session?.renameIdentity(alias);
+    await feed?.rename(alias);
+  }
+
   async function join(invitation: Invitation): Promise<void> {
     if (!session) return;
     const outcome = await session.join(invitation);
@@ -270,6 +277,21 @@
       <img class="lockup" src={lockupUrl} alt="Tesel" />
       <img class="mark" src={markUrl} alt="Tesel" />
     </span>
+    {#if session?.identity}
+      {@const groupLabel = session.activeGroup?.name ?? t('noGroup')}
+      <button
+        class="group"
+        onclick={() => {
+          togglePanel({ name: 'groups', start: 'home' });
+        }}
+        aria-expanded={isOpen('groups')}
+        aria-label="{t('group')}: {groupLabel}"
+      >
+        <span class="caption">{t('group')}</span>
+        <span class="name">{groupLabel}</span>
+        <Pictogram name="chevron" size={16} />
+      </button>
+    {/if}
     <LinkButton
       {t}
       {link}
@@ -280,19 +302,6 @@
         togglePanel('connections');
       }}
     />
-    {#if session?.identity}
-      {@const groupLabel = session.activeGroup?.name ?? t('noGroup')}
-      <button
-        class="group"
-        onclick={() => {
-          togglePanel({ name: 'groups', start: 'home' });
-        }}
-        aria-expanded={isOpen('groups')}
-        aria-label="{t('groups')}: {groupLabel}"
-      >
-        {groupLabel}
-      </button>
-    {/if}
   </header>
 
   <main>
@@ -317,6 +326,7 @@
         {mapOpenedWide}
         group={workspaceGroup}
         groupless={session?.identity !== undefined && session.activeGroup === undefined}
+        selfName={session?.identity ? { alias: session.identity.alias, rename } : null}
         {preferences}
         {offline}
         {weather}
@@ -398,18 +408,20 @@
     height: 100dvh;
   }
 
+  /* The logo, the group in use, and on the right how this device reaches it. */
   .bar {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.6rem;
     align-items: center;
     /* Clear of a notch at the top, or at a side when the phone is held sideways. */
     padding: calc(0.3rem + env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) 0.3rem
       max(1rem, env(safe-area-inset-left));
   }
 
-  /* A slim bar leaves the map the room: its two buttons are lower than the others. */
+  /* A slim bar leaves the map the room: its two buttons are lower than the others, and alike. */
   .bar :global(button) {
-    min-height: 2.25rem;
+    min-height: 2.5rem;
+    border-color: var(--chrome-line);
   }
 
   .brand {
@@ -446,16 +458,35 @@
     }
   }
 
+  /* Says what it is above the group's name, which is cut short rather than crowd the bar. */
   .group {
+    display: grid;
+    grid-template-columns: minmax(0, auto) auto;
+    column-gap: 0.4rem;
+    align-items: center;
     min-width: 0;
-    max-width: 45vw;
-    padding: 0.3rem 0.65rem;
+    padding: 0.15rem 0.5rem 0.15rem 0.65rem;
+    line-height: 1.15;
+    text-align: left;
+  }
+
+  .group .caption {
+    grid-column: 1;
+    color: var(--chrome-muted);
+    font-size: var(--text-small);
+  }
+
+  .group .name {
+    grid-column: 1;
     overflow: hidden;
     font-size: var(--text-secondary);
     font-weight: 600;
-    color: inherit;
     text-overflow: ellipsis;
     white-space: nowrap;
-    border-color: var(--chrome-line);
+  }
+
+  .group :global(svg) {
+    grid-row: 1 / span 2;
+    grid-column: 2;
   }
 </style>

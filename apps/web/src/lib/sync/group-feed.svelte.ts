@@ -97,7 +97,7 @@ export class GroupFeed {
 
   readonly #db: AppDb;
   readonly #group: StoredGroup;
-  readonly #identity: LocalIdentity;
+  #identity: LocalIdentity;
   readonly #keys: GroupKeys;
   readonly #client: RelayClient | null;
   /** Outbox entries pushed on this connection, by event key, until the server stores them. */
@@ -405,6 +405,12 @@ export class GroupFeed {
   /** Creates or changes a team (protocol §3.15). */
   async writeTeam(team: TeamFields): Promise<void> {
     await this.#publish((header) => ({ ...header, type: 'team', ...team }));
+  }
+
+  /** This device goes by another name from now on: the group is told (MEMBER_INFO). */
+  async rename(alias: string): Promise<void> {
+    this.#identity = { ...this.#identity, alias };
+    await this.#announceSelf();
   }
 
   /** Publishes MEMBER_INFO if the group does not know this device's current alias and role. */

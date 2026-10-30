@@ -1,7 +1,9 @@
 <!-- The choices of this device, opened from the dock's "More" menu: alarm sound, notifications,
-     keeping the screen on, full screen and the language. Each is remembered. -->
+     keeping the screen on, full screen, the language and how coordinates are written. Each is
+     remembered. -->
 <script lang="ts">
   import { guideUrl } from '../config.ts';
+  import CoordinateFormatSelect from '../coordinates/CoordinateFormatSelect.svelte';
   import type { LocalIdentity } from '../identity/identity.ts';
   import { allowNotifications, notificationsSupported } from '../incidents/alarm.ts';
   import { LOCALE_NAMES, nextLocale, type Locale, type Translate } from '../i18n/index.ts';
@@ -87,6 +89,7 @@
       <span>{t('language')}</span>
       <span class="value">{LOCALE_NAMES[locale]}</span>
     </button>
+    <CoordinateFormatSelect {t} format={preferences.coordinateFormat} />
   </div>
   <p class="hint device">
     {#if identity}{identity.alias} · {t('deviceId', { node: identity.nodeId })} ·{/if}

@@ -129,7 +129,7 @@
       <p class="title">{t('sweepPlanOf', { name: objectTitle(area, groupState.objects, t) })}</p>
       <fieldset>
         <legend>{t('sweepTerrain')}</legend>
-        <div class="row" role="radiogroup" aria-label={t('sweepTerrain')}>
+        <div class="chips" role="radiogroup" aria-label={t('sweepTerrain')}>
           {#each TERRAINS as terrain (terrain.spacing)}
             <button
               type="button"
@@ -217,30 +217,6 @@
 <style>
   .title {
     font-weight: 600;
-  }
-
-  fieldset {
-    margin: 0;
-    padding: 0;
-    border: none;
-  }
-
-  legend {
-    margin-bottom: 0.3rem;
-    padding: 0;
-    font-size: var(--text-secondary);
-  }
-
-  .chip {
-    padding: 0.3rem 0.7rem;
-    font-size: var(--text-secondary);
-    border-radius: var(--radius-pill);
-  }
-
-  .chip[aria-checked='true'] {
-    font-weight: 600;
-    border-color: var(--accent-line);
-    box-shadow: inset 0 0 0 1px var(--accent-line);
   }
 
   .settings {

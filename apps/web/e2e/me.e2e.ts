@@ -1,6 +1,15 @@
 // "Me": what a member tells the team about themselves, and how the others see it.
 
-import { createGroup, device, expect, shareAs, tapMapUntil, test, twoMembers } from './helpers.ts';
+import {
+  createGroup,
+  device,
+  expect,
+  openMore,
+  shareAs,
+  tapMapUntil,
+  test,
+  twoMembers,
+} from './helpers.ts';
 
 const VIEW = '/#map=15/39.4699/-0.3763';
 
@@ -28,7 +37,7 @@ test('a member’s profile, status and equipment reach the others', async ({ bro
   await expect(card).toContainText('Protección Civil');
   await expect(card).toContainText('Botiquín, Agua');
   // Her app has no LoRa radio linked: without coverage she cannot be reached, and the card says so.
-  await expect(card).toContainText('Sin radio LoRa');
+  await expect(card.getByText('No conectada')).toBeVisible();
   await expect(card.getByText('Tareas', { exact: true })).toBeVisible();
 });
 
@@ -50,9 +59,30 @@ test('Me says whether a LoRa radio keeps this person in touch, and leads to link
   const page = await device(browser, 'Ana');
   await page.getByRole('button', { name: /^Yo/ }).click();
   const me = page.getByRole('region', { name: 'Yo' });
-  await expect(me).toContainText('Sin radio LoRa: sin cobertura');
+  await expect(me.getByText('No conectada')).toBeVisible();
   // Not something to pick by hand: the app knows whether a radio is linked.
   await expect(me.getByRole('button', { name: /LoRa/ })).toHaveCount(0);
   await me.getByRole('button', { name: 'Conectar radio' }).click();
   await expect(page.getByRole('region', { name: 'LoRa' })).toBeVisible();
+});
+
+test('a member changes their name in Me, and the group knows them by it', async ({ browser }) => {
+  const { ana, berta } = await twoMembers(browser);
+  await ana.getByRole('button', { name: /^Yo/ }).click();
+  const me = ana.getByRole('region', { name: 'Yo' });
+  await expect(me.getByRole('heading', { name: 'Ana' })).toBeVisible();
+  await me.getByRole('button', { name: 'Cambiar tu nombre' }).click();
+  await me.getByLabel('Tu nombre en el grupo').fill('Ana G.');
+  await me.getByRole('button', { name: 'Guardar' }).click();
+  await expect(me.getByRole('heading', { name: 'Ana G.' })).toBeVisible();
+  await expect(me.getByLabel('Tu nombre en el grupo')).toBeHidden();
+
+  // Berta's diary says so, and the name stays after Ana opens the app again.
+  await openMore(berta, 'Diario de la operación');
+  await expect(berta.getByRole('region', { name: 'Diario de la operación' })).toContainText(
+    'Ahora es Ana G.',
+  );
+  await ana.reload();
+  await ana.getByRole('button', { name: /^Yo/ }).click();
+  await expect(ana.getByRole('heading', { name: 'Ana G.' })).toBeVisible();
 });

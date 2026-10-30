@@ -243,15 +243,6 @@
   .extras {
     display: grid;
     gap: 0.35rem;
-    margin: 0;
-    padding: 0;
-    border: 0;
-  }
-
-  .extras legend {
-    margin-bottom: 0.25rem;
-    padding: 0;
-    font-size: var(--text-secondary);
   }
 
   .check {

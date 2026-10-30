@@ -10,6 +10,7 @@ test('a situation report is sent from Add and pinned for the group', async ({ br
   await berta.getByRole('menuitem', { name: 'Parte' }).click();
   const form = berta.getByRole('region', { name: 'Nuevo parte' });
   await form.getByRole('radio', { name: 'Incendio' }).click();
+  await form.getByText('Víctimas', { exact: true }).click();
   await form.getByRole('button', { name: 'Rojo: uno más' }).click();
   await form.getByText('Peligros', { exact: true }).click();
   await form.getByRole('button', { name: 'Humo' }).click();

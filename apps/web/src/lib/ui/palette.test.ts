@@ -70,6 +70,7 @@ const PAIRS: readonly (readonly [string, string, number])[] = [
   ['link', 'surface', TEXT],
   ['link', 'bg', TEXT],
   ['chrome-fg', 'chrome-bg', TEXT],
+  ['chrome-muted', 'chrome-bg', TEXT],
   ['on-accent', 'accent', TEXT],
   ['focus', 'surface', GRAPHIC],
   ['focus', 'bg', GRAPHIC],

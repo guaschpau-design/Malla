@@ -42,10 +42,15 @@
 
 <div class="stack section">
   <h3>{t('inviteTitle', { group: group.name })}</h3>
-  <div class="roles" role="radiogroup" aria-label={t('inviteRole')}>
+  <div class="chips roles" role="radiogroup" aria-label={t('inviteRole')}>
     <span>{t('inviteRole')}</span>
     {#each ROLES as option (option)}
-      <button role="radio" aria-checked={role === option} onclick={() => (role = option)}>
+      <button
+        class="chip"
+        role="radio"
+        aria-checked={role === option}
+        onclick={() => (role = option)}
+      >
         {t(ROLE_LABELS[option])}
       </button>
     {/each}
@@ -84,22 +89,11 @@
 
 <style>
   .roles {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
     align-items: center;
   }
 
   .roles button {
-    padding: 0.35rem 0.8rem;
     text-transform: capitalize;
-    border-radius: var(--radius-pill);
-  }
-
-  .roles button[aria-checked='true'] {
-    font-weight: 600;
-    border-color: var(--accent-line);
-    box-shadow: inset 0 0 0 1px var(--accent-line);
   }
 
   .link {

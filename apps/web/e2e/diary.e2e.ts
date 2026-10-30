@@ -21,7 +21,7 @@ test('the diary tells what happened and downloads as text for the report', async
   await expect(diary).toContainText('Se une al grupo (coordinador).');
 
   const download = ana.waitForEvent('download');
-  await diary.getByRole('button', { name: 'Descargar el diario' }).click();
+  await diary.getByRole('button', { name: 'Descargar' }).click();
   const file = await download;
   expect(file.suggestedFilename()).toMatch(/^tesel-rescate-valencia-\d{4}-\d{2}-\d{2}\.txt$/);
   const text = await readFile(await file.path(), 'utf8');
@@ -34,13 +34,14 @@ test('the group log is saved, and loading it adds only what is missing', async (
   await openDiary(ana);
   const diary = ana.getByRole('region', { name: 'Diario de la operación' });
 
+  await diary.getByText('Registro cifrado').click();
   const download = ana.waitForEvent('download');
-  await diary.getByRole('button', { name: 'Guardar una copia del registro' }).click();
+  await diary.getByRole('button', { name: 'Guardar copia' }).click();
   const saved = await readFile(await (await download).path(), 'utf8');
   expect(saved).toContain('"tesel":"log"');
   expect(saved).not.toContain('Rescate Valencia');
 
-  const loader = diary.getByLabel('Cargar un registro');
+  const loader = diary.locator('input[type="file"]');
   await loader.setInputFiles({
     name: 'copia.tesel',
     mimeType: 'application/json',

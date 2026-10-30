@@ -18,7 +18,7 @@ test('a second device joins a group through its invitation link', async ({ brows
   await coordinator.goto('/');
   await chooseAlias(coordinator, 'Ana');
   await createGroup(coordinator, 'Rescate Valencia');
-  await expect(coordinator.getByRole('button', { name: 'Grupos: Rescate Valencia' })).toBeVisible();
+  await expect(coordinator.getByRole('button', { name: 'Grupo: Rescate Valencia' })).toBeVisible();
   const memberLink = await invitationLink(coordinator, 'miembro');
   expect(new URL(memberLink).pathname).toBe('/join');
 
@@ -38,7 +38,7 @@ test('a second device joins a group through its invitation link', async ({ brows
 
   // Membership survives a restart, and members do not invite.
   await member.reload();
-  await member.getByRole('button', { name: 'Grupos: Rescate Valencia' }).click();
+  await member.getByRole('button', { name: 'Grupo: Rescate Valencia' }).click();
   await expect(member.getByText('miembro', { exact: true })).toBeVisible();
   await expect(member.getByRole('button', { name: 'Invitar' })).toHaveCount(0);
 

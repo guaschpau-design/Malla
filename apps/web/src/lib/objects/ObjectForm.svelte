@@ -93,18 +93,6 @@
 </Dialog>
 
 <style>
-  fieldset {
-    margin: 0;
-    padding: 0;
-    border: none;
-  }
-
-  legend {
-    margin-bottom: 0.4rem;
-    padding: 0;
-    font-size: var(--text-secondary);
-  }
-
   /* A grid of tiles, a pictogram over a short name, so every choice is in view at once. */
   .choices {
     display: grid;

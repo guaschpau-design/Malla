@@ -96,6 +96,13 @@ describe('a group feed', () => {
     expect(feed.state.chat).toHaveLength(MEMBERS.length);
   });
 
+  it('tells the group a new name, which it then knows this member by', async () => {
+    const { db, group, identity } = await setUp();
+    const feed = await GroupFeed.open(db, group, identity);
+    await feed.rename('Ana G.');
+    expect(feed.state.members.get(identity.nodeId)?.alias).toBe('Ana G.');
+  });
+
   describe('with a server', () => {
     beforeEach(() => {
       // The server is never reached: what the device knows of it comes from nowhere.

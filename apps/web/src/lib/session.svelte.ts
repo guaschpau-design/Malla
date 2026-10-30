@@ -62,6 +62,14 @@ export class Session {
     await keepStorage();
   }
 
+  /** This device goes by another name. Each group learns it as it is next opened (MEMBER_INFO). */
+  async renameIdentity(alias: string): Promise<void> {
+    if (this.identity === undefined) return;
+    const identity = { ...this.identity, alias };
+    await saveIdentity(this.#db, identity);
+    this.identity = identity;
+  }
+
   async createGroup(name: string, server: string | null): Promise<StoredGroup> {
     const group = await startGroup(this.#db, name, server, Date.now());
     await this.#refreshGroups();

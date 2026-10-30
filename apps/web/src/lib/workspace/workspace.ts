@@ -21,6 +21,13 @@ export interface WorkspaceGroup {
   readonly practice: Situation | null;
 }
 
+/** The name this device goes by, which Me shows and changes. */
+export interface SelfName {
+  readonly alias: string;
+  /** Changes it; rejects if it could not be saved. */
+  readonly rename: (alias: string) => Promise<void>;
+}
+
 /**
  * A tool in use on the map, which takes its taps: measuring, or planning the
  * sweep of a search area, by its key.

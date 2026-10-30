@@ -6,6 +6,7 @@
   import { defaultServerUrl } from '../config.ts';
   import type { Translate } from '../i18n/index.ts';
   import type { Session } from '../session.svelte.ts';
+  import Fold from '../ui/Fold.svelte';
   import { Submission } from '../ui/submission.svelte.ts';
   import { normalizeGroupName, normalizeServerUrl } from './group.ts';
 
@@ -49,21 +50,22 @@
     <input bind:value={newName} maxlength={GROUP_NAME_MAX_BYTES} autofocus />
   </label>
   {#if nameTooLong}<p class="warning">{t('nameInvalid')}</p>{/if}
-  <details open={server === undefined}>
-    <summary>{t('server')}</summary>
-    <div class="stack">
-      <input
-        bind:value={serverText}
-        aria-label={t('server')}
-        inputmode="url"
-        autocomplete="off"
-        placeholder="https://"
-      />
-      <p class:warning={server === undefined} class:hint={server !== undefined}>
-        {server === undefined ? t('serverInvalid') : t('serverHint')}
-      </p>
-    </div>
-  </details>
+  <Fold
+    title={t('server')}
+    summary={serverText.trim() || t('serverNone')}
+    open={server === undefined}
+  >
+    <input
+      bind:value={serverText}
+      aria-label={t('server')}
+      inputmode="url"
+      autocomplete="off"
+      placeholder="https://"
+    />
+    <p class:warning={server === undefined} class:hint={server !== undefined}>
+      {server === undefined ? t('serverInvalid') : t('serverHint')}
+    </p>
+  </Fold>
   {#if submission.failed}<p class="warning">{t('sendFailed')}</p>{/if}
   <div class="row">
     <button
@@ -76,15 +78,3 @@
     <button type="button" onclick={onclose}>{t('cancel')}</button>
   </div>
 </form>
-
-<style>
-  summary {
-    cursor: pointer;
-    color: var(--muted);
-    font-size: var(--text-secondary);
-  }
-
-  details .stack {
-    margin-top: 0.5rem;
-  }
-</style>

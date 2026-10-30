@@ -51,13 +51,12 @@
     flex-shrink: 0;
     gap: 0.45rem;
     align-items: center;
-    margin-right: auto;
+    margin-left: auto;
     padding: 0.3rem 0.65rem;
     font-size: var(--text-secondary);
     font-weight: 600;
     color: inherit;
     white-space: nowrap;
-    border-color: var(--chrome-line);
   }
 
   /* On a phone the signs say it: the names are left to screen readers. */

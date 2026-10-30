@@ -1,6 +1,6 @@
 # 0069. Tell who keeps in touch without coverage
 
-- Status: Accepted, amended by [0071](0071-panels-read-whole.md) (one line)
+- Status: Accepted, amended by [0071](0071-panels-read-whole.md) (one line) and [0078](0078-one-look-and-straight-to-the-point.md) (a line of the sheet)
 - Date: 2026-10-29
 
 ## Context

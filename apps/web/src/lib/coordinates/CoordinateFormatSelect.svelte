@@ -1,8 +1,9 @@
 <!-- How coordinates are written everywhere in the app: degrees, degrees-minutes-seconds, UTM or MGRS.
-     Chosen once, in Me, and remembered. -->
+     One row of Settings, laid out like the switches above it, and remembered. -->
 <script lang="ts">
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
+  import Pictogram from '../ui/Pictogram.svelte';
   import { COORDINATE_FORMATS, type CoordinateFormat } from './coordinates.ts';
 
   interface Props {
@@ -20,8 +21,9 @@
   };
 </script>
 
-<label>
-  {t('coordinateFormat')}
+<label class="format">
+  <Pictogram name="grid" size={20} />
+  <span>{t('coordinateFormat')}</span>
   <select
     value={format.value}
     onchange={(event) => {
@@ -35,3 +37,14 @@
     {/each}
   </select>
 </label>
+
+<style>
+  .format {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.3rem 0.4rem;
+    font-size: inherit;
+  }
+</style>

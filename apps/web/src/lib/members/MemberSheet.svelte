@@ -1,6 +1,6 @@
 <!-- What a member tells the team about themselves, the same for this device (in Me, where it is
-     set) and for anyone tapped on the map: their status, whether they have a LoRa radio, which
-     keeps them in touch without coverage, then profile, battery, position, equipment and tasks,
+     set) and for anyone tapped on the map: their status, then profile, battery, whether a LoRa
+     radio is linked (which keeps them in touch without coverage), position, equipment and tasks,
      all in view: the sheet is read at a glance, without opening anything. -->
 <script lang="ts" module>
   import type { DutyStatus, Equipment, Profile } from '@tesel/protocol';
@@ -23,7 +23,6 @@
   import { editTask } from '../tasks/task-editor.ts';
   import type { TaskRow } from '../tasks/tasks.ts';
   import { TEAM_COLOURS } from '../teams/teams.ts';
-  import Pictogram from '../ui/Pictogram.svelte';
   import StatusDot from '../ui/StatusDot.svelte';
   import { DUTY_STATUSES, EQUIPMENT, PROFILES, profileLabel } from './member-catalog.ts';
   import SheetPart from './SheetPart.svelte';
@@ -60,11 +59,6 @@
     carried.length === 0 ? t('equipmentNone') : carried.map((item) => t(item.label)).join(', '),
   );
 
-  const loraText = $derived.by(() => {
-    if (edits) return lora ? t('loraOwnOn') : t('loraOwnOff');
-    return lora ? t('loraOn') : t('loraOff');
-  });
-
   function toggle(item: Equipment): void {
     const next = state.equipment.includes(item)
       ? state.equipment.filter((value) => value !== item)
@@ -82,7 +76,7 @@
   {/if}
   {#if edits}
     {@const { onstatus } = edits}
-    <div class="statuses" role="radiogroup" aria-label={t('dutyLabel')}>
+    <div class="segments" role="radiogroup" aria-label={t('dutyLabel')}>
       {#each Object.entries(DUTY_STATUSES) as [value, item] (value)}
         <button
           role="radio"
@@ -102,14 +96,6 @@
       {t(status.label)}
     </p>
   {/if}
-
-  <div class="lora" class:on={lora}>
-    <Pictogram name="mast" size={18} />
-    <p>{loraText}</p>
-    {#if edits && !lora}
-      <button onclick={edits.onconnectradio}>{t('radioConnect')}</button>
-    {/if}
-  </div>
 
   <SheetPart title={t('profileLabel')} inline>
     {#if edits}
@@ -138,6 +124,21 @@
       {batteryText}
     </p>
     {#if batteryNote}<p class="hint">{batteryNote}</p>{/if}
+  </SheetPart>
+  <SheetPart title={t('sheetRadio')} inline>
+    <p class="line">
+      {#if lora}
+        <StatusDot tone="good" />
+        {t('loraLinked')}
+      {:else}
+        <span class="hint">{t('loraNotLinked')}</span>
+        {#if edits}
+          <button class="small" onclick={edits.onconnectradio} aria-label={t('radioConnect')}
+            >{t('connect')}</button
+          >
+        {/if}
+      {/if}
+    </p>
   </SheetPart>
   <SheetPart title={t('sheetPosition')}>
     {@render position()}
@@ -187,64 +188,11 @@
 </div>
 
 <style>
-  /* Whether they keep in touch without coverage: one line set apart from the rest, as it decides
-     who can still be reached when the network falls. */
-  .lora {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 0.5rem;
-    align-items: center;
-    padding: 0.3rem 0.3rem 0.3rem 0.55rem;
-    color: var(--muted);
-    background: var(--bg);
-    border-left: 3px solid var(--control-line);
-    border-radius: var(--radius-control);
-  }
-
-  .lora.on {
-    color: var(--fg);
-    border-left-color: var(--accent-line);
-  }
-
-  .lora p {
-    margin: 0;
-    font-size: var(--text-small);
-  }
-
-  .lora button {
-    padding: 0.3rem 0.6rem;
-    color: var(--fg);
-    font-size: var(--text-small);
-    white-space: nowrap;
-  }
-
   /* One column as wide as the panel: a long line wraps, never widens it. */
   .sheet {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 0.65rem;
-  }
-
-  .statuses {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.35rem;
-  }
-
-  .statuses button {
-    display: flex;
-    gap: 0.4rem;
-    align-items: center;
-    justify-content: center;
-    padding: 0.35rem 0.3rem;
-    font-size: var(--text-small);
-    line-height: 1.2;
-  }
-
-  .statuses button[aria-checked='true'] {
-    font-weight: 600;
-    border-color: var(--accent-line);
-    box-shadow: inset 0 0 0 1px var(--accent-line);
   }
 
   .line {
@@ -254,30 +202,15 @@
     margin: 0;
   }
 
+  .line .small {
+    margin-left: auto;
+  }
+
   .swatch {
     width: 0.8rem;
     height: 0.8rem;
     background: var(--swatch);
     border-radius: 50%;
-  }
-
-  .chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-  }
-
-  .chip {
-    min-height: 2.25rem;
-    padding: 0.2rem 0.7rem;
-    font-size: var(--text-secondary);
-    border-radius: var(--radius-pill);
-  }
-
-  .chip[aria-pressed='true'] {
-    font-weight: 600;
-    border-color: var(--accent-line);
-    box-shadow: inset 0 0 0 1px var(--accent-line);
   }
 
   .tasks {

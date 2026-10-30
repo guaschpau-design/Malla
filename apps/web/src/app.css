@@ -31,6 +31,7 @@
   --chrome-bg: var(--ink);
   --chrome-fg: var(--pale);
   --chrome-line: rgb(230 235 232 / 25%);
+  --chrome-muted: #a6aeb0;
   --chrome-pressed: rgb(230 235 232 / 14%);
   /* What has the keyboard's focus is ringed in the line colour; on the chrome, in lime (.chrome). */
   --focus: var(--accent-line);
@@ -100,6 +101,8 @@
   --dock-clearance: calc(5.5rem + env(safe-area-inset-bottom));
   /* The height of a button, an input or a map control: large enough for a gloved finger. */
   --control-size: 2.75rem;
+  /* A chip is lower: many sit together, and each is a short word wide. */
+  --chip-size: 2.4rem;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -163,6 +166,13 @@ button.danger {
 button.danger-text {
   margin-left: auto;
   color: var(--danger);
+}
+
+/* An action inside a line of text, as low as a chip: "Connect" beside "Not linked". */
+button.small {
+  min-height: var(--chip-size);
+  padding: 0.2rem 0.7rem;
+  font-size: var(--text-secondary);
 }
 
 button.ghost {
@@ -305,6 +315,66 @@ textarea {
 .stack > p,
 .stack > h3 {
   margin: 0;
+}
+
+/* A group of fields under one name, as a label names one field. */
+fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+legend {
+  margin-bottom: 0.4rem;
+  padding: 0;
+  font-size: var(--text-secondary);
+}
+
+/* Choices as pills, in a row that wraps: the kind of a report, what a member carries. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.chip {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  min-height: var(--chip-size);
+  padding: 0.2rem 0.75rem;
+  font-size: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+}
+
+/* Two or three choices as equal parts of one row: a status, a role. */
+.segments {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 0.35rem;
+}
+
+.segments > button {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.3rem;
+  font-size: var(--text-secondary);
+  line-height: 1.2;
+}
+
+/* What is chosen, among chips or segments: outlined in the line colour, in bold. */
+.chip[aria-pressed='true'],
+.chip[aria-checked='true'],
+.chip:has(input:checked),
+.segments > [aria-checked='true'] {
+  font-weight: 600;
+  border-color: var(--accent-line);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
 }
 
 /* A row of buttons. */

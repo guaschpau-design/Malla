@@ -55,3 +55,16 @@ describe('a practice in the session', () => {
     expect(reopened.activeGroupId).toBe(team.id);
   });
 });
+
+describe('the name of this device', () => {
+  it('changes, and keeps its key, after the app is opened again', async () => {
+    const db = await openAppDb(`session-test-${String(dbCounter++)}`);
+    const ana = await Session.load(db);
+    await ana.createIdentity('Ana');
+    const node = ana.identity?.nodeId;
+    await ana.renameIdentity('Ana G.');
+    const reopened = await Session.load(db);
+    expect(reopened.identity?.alias).toBe('Ana G.');
+    expect(reopened.identity?.nodeId).toBe(node);
+  });
+});

@@ -10,7 +10,7 @@ test('a member still for too long is asked, and an SOS goes out unanswered', asy
   // Berta's clock is the test's, from here on, to let half an hour go by at once.
   await berta.clock.install();
 
-  await ana.getByRole('button', { name: /^Grupos/ }).click();
+  await ana.getByRole('button', { name: /^Grupo:/ }).click();
   await ana.getByText('Organizar', { exact: true }).click();
   const check = ana.getByRole('switch', { name: 'Aviso «¿Sigues bien?»' });
   await check.click();

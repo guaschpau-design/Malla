@@ -17,13 +17,14 @@
   import WarningList from '../weather/WarningList.svelte';
   import type { WeatherFeed } from '../weather/weather-feed.svelte.ts';
   import { warningsAt } from '../weather/weather-warnings.ts';
-  import type { WorkspaceGroup } from './workspace.ts';
+  import type { SelfName, WorkspaceGroup } from './workspace.ts';
 
   interface Props {
     t: Translate;
     locale: Locale;
     map: MapLibreMap;
     group: WorkspaceGroup | null;
+    selfName: SelfName | null;
     preferences: Preferences;
     /** Weather warnings, while their layer is shown: a point tells those in force there. */
     weather: WeatherFeed | null;
@@ -35,7 +36,8 @@
     onmark: (at: LatLon) => void;
   }
 
-  let { t, locale, map, group, preferences, weather, credits, onfind, onmark }: Props = $props();
+  let { t, locale, map, group, selfName, preferences, weather, credits, onfind, onmark }: Props =
+    $props();
 </script>
 
 {#if panels.open?.name === 'point'}
@@ -75,6 +77,7 @@
   <MePanel
     {t}
     {locale}
+    name={selfName}
     {preferences}
     group={group && { state: group.feed.state, self: group.self, sharing: group.sharing }}
     onclose={closePanel}

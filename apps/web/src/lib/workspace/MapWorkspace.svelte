@@ -65,7 +65,7 @@
   import MapPanels from './MapPanels.svelte';
   import MapStatus from './MapStatus.svelte';
   import { stateSlices } from './state-slices.svelte.ts';
-  import type { MapTool, WorkspaceGroup } from './workspace.ts';
+  import type { MapTool, SelfName, WorkspaceGroup } from './workspace.ts';
 
   interface Props {
     t: Translate;
@@ -77,6 +77,8 @@
     group: WorkspaceGroup | null;
     /** This device is in no group: the ways to start are offered on the map. */
     groupless: boolean;
+    /** The name this device goes by, once it has one. */
+    selfName: SelfName | null;
     preferences: Preferences;
     /** Downloaded maps: the operation area is offered for download. */
     offline: OfflineMaps;
@@ -92,6 +94,7 @@
     mapOpenedWide,
     group,
     groupless,
+    selfName,
     preferences,
     offline,
     weather,
@@ -360,6 +363,7 @@
   {locale}
   {map}
   {group}
+  {selfName}
   {preferences}
   weather={shown.weather ? weather : null}
   {credits}

@@ -151,7 +151,7 @@
   {#if existing}
     <fieldset>
       <legend>{t('taskStatus')}</legend>
-      <div class="row">
+      <div class="chips">
         {#each STATUSES as option (option.status)}
           <label class="chip">
             <input type="radio" name="status" value={option.status} bind:group={status} />
@@ -200,34 +200,6 @@
     display: block;
     width: 100%;
     margin-top: 0.25rem;
-  }
-
-  fieldset {
-    margin: 0;
-    padding: 0;
-    border: none;
-  }
-
-  legend {
-    margin-bottom: 0.4rem;
-    padding: 0;
-    font-size: var(--text-secondary);
-  }
-
-  .chip {
-    display: inline-flex;
-    gap: 0.35rem;
-    align-items: center;
-    padding: 0.35rem 0.7rem;
-    font-size: var(--text-secondary);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
-  }
-
-  .chip:has(input:checked) {
-    font-weight: 600;
-    border-color: var(--accent-line);
-    box-shadow: inset 0 0 0 1px var(--accent-line);
   }
 
   .place {

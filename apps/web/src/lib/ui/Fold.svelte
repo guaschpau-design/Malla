@@ -3,20 +3,25 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
+  import Pictogram from './Pictogram.svelte';
+
   interface Props {
     title: string;
     /** The gist, shown beside the title. */
     summary: string;
+    /** Opens it, as when what it holds needs looking at. */
+    open?: boolean;
     children: Snippet;
   }
 
-  let { title, summary, children }: Props = $props();
+  let { title, summary, open = false, children }: Props = $props();
 </script>
 
-<details class="fold">
+<details class="fold" {open}>
   <summary>
     <span class="title">{title}</span>
     <span class="summary">{summary}</span>
+    <span class="chevron"><Pictogram name="chevron" size={18} /></span>
   </summary>
   <div class="content stack">{@render children()}</div>
 </details>
@@ -41,16 +46,17 @@
     display: none;
   }
 
-  /* A chevron that turns when the section opens. */
-  summary::after {
+  /* A chevron, the same as the top bar's, that points down once the section opens. */
+  .chevron {
     flex: none;
+    align-self: center;
     margin-left: auto;
-    content: '›';
+    rotate: -90deg;
     transition: rotate 0.15s;
   }
 
-  .fold[open] > summary::after {
-    rotate: 90deg;
+  .fold[open] > summary .chevron {
+    rotate: 0deg;
   }
 
   .title {

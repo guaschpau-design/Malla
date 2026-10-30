@@ -1,5 +1,5 @@
-<!-- A situation report, in the order emergency services ask for it: what happens, casualties by
-     triage category, then, folded, the dangers, the way in and the help needed, and a note. Only
+<!-- A situation report, in the order emergency services ask for it: what happens, then, folded,
+     casualties by triage category, the dangers, the way in and the help needed, and a note. Only
      what happens is needed; it goes from where this device is. -->
 <script lang="ts">
   import {
@@ -54,6 +54,14 @@
     casualties = { ...casualties, [key]: next };
   }
 
+  /** The casualties counted, by category: "Red 1 · Green 2". */
+  const counted = $derived(
+    TRIAGE.flatMap((category) => {
+      const value = casualties[category.value];
+      return value === null ? [] : [`${t(category.label)} ${String(value)}`];
+    }).join(' · '),
+  );
+
   function send(chosen: IncidentType): void {
     void submission.run(async () => {
       await onsend({
@@ -92,9 +100,8 @@
       {/each}
     </div>
   </fieldset>
-  <fieldset>
-    <legend>{t('reportCasualtiesTitle')}</legend>
-    <div class="counts">
+  <div>
+    <Fold title={t('reportCasualtiesTitle')} summary={counted || t('reportNoneMarked')}>
       {#each TRIAGE as category (category.value)}
         {@const value = casualties[category.value]}
         <div class="count {category.value}" role="group" aria-label={t(category.label)}>
@@ -116,9 +123,7 @@
           >
         </div>
       {/each}
-    </div>
-  </fieldset>
-  <div>
+    </Fold>
     <Fold
       title={t('reportHazardsTitle')}
       summary={hazards.length === 0
@@ -196,53 +201,14 @@
 </form>
 
 <style>
-  fieldset {
-    margin: 0;
-    padding: 0;
-    border: none;
-  }
-
-  legend {
-    margin-bottom: 0.4rem;
-    padding: 0;
-    font-size: var(--text-secondary);
-  }
-
-  .chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-  }
-
-  .chip {
-    padding: 0.3rem 0.7rem;
-    font-size: var(--text-secondary);
-    border-radius: var(--radius-pill);
-  }
-
-  .chip[aria-pressed='true'],
-  .chip[aria-checked='true'] {
-    font-weight: 600;
-    border-color: var(--accent-line);
-    box-shadow: inset 0 0 0 1px var(--accent-line);
-  }
-
-  /* Two to a row where they fit, one under another on a narrow phone. */
-  .counts {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
-    gap: 0.4rem;
-  }
-
+  /* One category to a row: its colour and name, then the count between "less" and "more". */
   .count {
     display: grid;
-    grid-template-columns: 1fr auto 2rem auto;
+    grid-template-columns: 1fr auto 2.5rem auto;
     gap: 0.35rem;
     align-items: center;
-    padding: 0.25rem 0.25rem 0.25rem 0.6rem;
-    font-size: var(--text-secondary);
+    padding-left: 0.6rem;
     border-left: 4px solid var(--triage);
-    border-radius: var(--radius-control);
   }
 
   .count strong {
@@ -250,8 +216,8 @@
   }
 
   .count button {
-    min-width: 2rem;
-    padding: 0.15rem;
+    min-width: var(--control-size);
+    padding: 0;
   }
 
   .red {

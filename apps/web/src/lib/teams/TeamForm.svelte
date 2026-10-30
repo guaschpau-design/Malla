@@ -146,18 +146,6 @@
 </Dialog>
 
 <style>
-  fieldset {
-    margin: 0;
-    padding: 0;
-    border: none;
-  }
-
-  legend {
-    margin-bottom: 0.4rem;
-    padding: 0;
-    font-size: var(--text-secondary);
-  }
-
   .colours {
     display: flex;
     gap: 0.5rem;

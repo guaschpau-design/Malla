@@ -147,6 +147,9 @@ export const GLYPHS = {
   trash: glyph(['M4.5 7h15', 'M9.5 7V4.5h5V7', 'M6.5 7l1 12.5h9l1-12.5', 'M10 11v5M14 11v5']),
   settings: glyph(['M4 7h9M17 7h3M4 17h3M11 17h9', 'M15 4.5v5M9 14.5v5']),
   undo: glyph(['M9 5L4.5 9.5 9 14', 'M4.5 9.5H14a5 5 0 0 1 0 10h-3']),
+  pencil: glyph(['M5 19l1-4.5L15.5 5a2.1 2.1 0 0 1 3 3L9 17.5z', 'M13.5 7l3 3']),
+  /** Opens what lies below, as a list of choices. */
+  chevron: glyph(['M7 9.5l5 5 5-5']),
   file: glyph(['M6 3.5h8l4 4v13H6z', 'M14 3.5v4h4', 'M12 17.5v-6M9.5 14l2.5-2.5 2.5 2.5']),
   send: glyph(['M4 4.5l16.5 7.5L4 19.5l2.8-7.5z', 'M6.8 12h6']),
   mic: glyph([

@@ -100,7 +100,7 @@ test('an area is drawn point by point and described before it is shared', async 
   await expect(form).toBeHidden();
 
   // The triangle left after undoing covers the point to the right of the centre.
-  const details = ana.getByRole('region', { name: 'Zona de peligro' });
+  const details = ana.getByRole('region', { name: 'Zona de peligro', exact: true });
   await tapMapUntil(ana, { dx: 40, dy: -20 }, () => expect(details).toBeVisible({ timeout: 2000 }));
 });
 

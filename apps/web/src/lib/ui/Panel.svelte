@@ -14,7 +14,7 @@
     closeLabel: string;
     onclose: () => void;
     /** Shown in place of the title, beside the close button. */
-    header?: Snippet;
+    header?: Snippet | undefined;
     /** Takes all the height there is, rather than that of its content. */
     fill?: boolean;
     children: Snippet;

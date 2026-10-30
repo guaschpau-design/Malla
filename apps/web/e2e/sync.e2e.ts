@@ -5,7 +5,7 @@ import { SERVER_URL } from './ports.ts';
 
 test('new groups propose the build’s own server', async ({ browser }) => {
   const ana = await device(browser, 'Ana');
-  await ana.getByRole('button', { name: 'Grupos: Sin grupo' }).click();
+  await ana.getByRole('button', { name: 'Grupo: Sin grupo' }).click();
   await ana
     .getByRole('region', { name: 'Grupos' })
     .getByRole('button', { name: 'Crear grupo' })
@@ -34,7 +34,7 @@ test('members of a group chat and see who shares their position', async ({ brows
   await shareAs(berta, 'Compartir');
   await expect(berta.getByRole('button', { name: 'Yo: Compartiendo posición' })).toBeVisible();
   await ana.getByRole('button', { name: 'Cerrar' }).click();
-  await ana.getByRole('button', { name: /^Grupos:/ }).click();
+  await ana.getByRole('button', { name: /^Grupo:/ }).click();
   // The member list says it with a sign, named for screen readers.
   const bertaRow = ana.getByRole('listitem').filter({ hasText: /^B\s*Berta/ });
   await expect(bertaRow.getByRole('img', { name: 'comparte posición', exact: true })).toBeVisible();
@@ -55,7 +55,7 @@ test('sharing resumes by itself after the app restarts', async ({ browser }) => 
   await expect(berta.getByRole('button', { name: 'Yo: Compartiendo posición' })).toBeVisible();
   await berta.reload();
   await expect(berta.getByRole('button', { name: 'Yo: Compartiendo posición' })).toBeVisible();
-  await ana.getByRole('button', { name: /^Grupos:/ }).click();
+  await ana.getByRole('button', { name: /^Grupo:/ }).click();
   await expect(
     ana
       .getByRole('listitem')

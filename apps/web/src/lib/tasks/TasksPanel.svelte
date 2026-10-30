@@ -9,6 +9,7 @@
   import { objectDestination } from '../navigation/target.ts';
   import type { Preference } from '../settings/preference.svelte.ts';
   import ActionButton from '../ui/ActionButton.svelte';
+  import Fold from '../ui/Fold.svelte';
   import Panel from '../ui/Panel.svelte';
   import Pictogram from '../ui/Pictogram.svelte';
   import { attempt } from '../ui/submission.svelte.ts';
@@ -134,12 +135,11 @@
         </ul>
       {/if}
       {#if list.done.length > 0}
-        <details>
-          <summary>{t('tasksDone', { count: list.done.length })}</summary>
+        <Fold title={t('tasksDone', { count: list.done.length })} summary="">
           <ul class="cards">
             {#each list.done as row (row.key)}{@render item(row)}{/each}
           </ul>
-        </details>
+        </Fold>
       {/if}
     </div>
   {/if}
@@ -194,13 +194,5 @@
 
   .next {
     white-space: nowrap;
-  }
-
-  details > .cards {
-    margin-top: 0.5rem;
-  }
-
-  summary {
-    cursor: pointer;
   }
 </style>

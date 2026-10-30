@@ -47,7 +47,7 @@ test('a member is guided through a practice and given a task by its coordinator'
 
   await card.getByRole('button', { name: 'Terminar práctica' }).click();
   await expect(card).toBeHidden();
-  await expect(page.getByRole('button', { name: 'Grupos: Sin grupo' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Grupo: Sin grupo' })).toBeVisible();
 });
 
 test('a coordinator talks to the team, which answers', async ({ browser }) => {

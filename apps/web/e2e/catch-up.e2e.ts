@@ -60,7 +60,7 @@ test('a device catches up with thousands of waiting events in seconds', async ({
     .toBeGreaterThanOrEqual(EVENTS);
   expect(Date.now() - start).toBeLessThan(CATCH_UP_LIMIT_MS);
   await expect(ana.getByTitle('Conectado al servidor del grupo')).toBeVisible();
-  await ana.getByRole('button', { name: 'Grupos: Operativo largo' }).click();
+  await ana.getByRole('button', { name: 'Grupo: Operativo largo' }).click();
   await expect(ana.getByRole('group', { name: `Miembros (${String(MEMBERS + 1)})` })).toBeVisible();
 });
 

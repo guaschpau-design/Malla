@@ -1,5 +1,5 @@
-<!-- The operation diary: everything that has happened in the group, newest first, to read, to
-     download for the report, and the group's log to save or load on another device. -->
+<!-- The operation diary: everything that has happened in the group, newest first, to read and to
+     download for the report; folded below it, the group's log to save or load on another device. -->
 <script lang="ts">
   import type { CoordinateFormat } from '../coordinates/coordinates.ts';
   import { formatTime } from '../format.ts';
@@ -7,7 +7,9 @@
   import type { Preference } from '../settings/preference.svelte.ts';
   import type { GroupFeed } from '../sync/group-feed.svelte.ts';
   import type { LogImport } from '../sync/log-file.ts';
+  import ActionButton from '../ui/ActionButton.svelte';
   import { downloadFile } from '../ui/download.ts';
+  import Fold from '../ui/Fold.svelte';
   import Panel from '../ui/Panel.svelte';
   import { diaryLines } from './diary.ts';
   import { diaryText, fileName } from './diary-text.ts';
@@ -26,6 +28,7 @@
   const lines = $derived(diaryLines(feed.state, t));
   const newestFirst = $derived([...lines].reverse());
   let loaded: LogImport | null = $state(null);
+  let picker: HTMLInputElement | undefined = $state();
 
   const OUTCOMES: Readonly<Record<Exclude<LogImport['kind'], 'loaded'>, MessageKey>> = {
     'other-group': 'logOtherGroup',
@@ -61,9 +64,13 @@
 
 <Panel title={t('diary')} closeLabel={t('close')} {onclose}>
   <div class="stack section">
-    <p class="intro">{t('diaryIntro')}</p>
     <div class="row">
-      <button onclick={downloadDiary} disabled={lines.length === 0}>{t('diaryDownload')}</button>
+      <ActionButton
+        icon="download"
+        label={t('diaryDownload')}
+        disabled={lines.length === 0}
+        onclick={downloadDiary}
+      />
     </div>
 
     {#if newestFirst.length === 0}
@@ -80,22 +87,26 @@
     {/if}
   </div>
 
-  <section class="stack section" aria-labelledby="log-title">
-    <h3 id="log-title">{t('logTitle')}</h3>
-    <p class="hint">{t('logHint')}</p>
-    <div class="row">
-      <button onclick={saveLog}>{t('logSave')}</button>
-      <label class="file">
-        <input type="file" accept=".tesel,application/json" onchange={loadLog} />
-        <span>{t('logLoad')}</span>
-      </label>
-    </div>
-    {#if loaded?.kind === 'loaded'}
-      <p role="status">{t('logLoaded', { count: loaded.added, total: loaded.total })}</p>
-    {:else if loaded}
-      <p class="warning" role="status">{t(OUTCOMES[loaded.kind])}</p>
-    {/if}
-  </section>
+  <div class="section">
+    <Fold title={t('logTitle')} summary={t('logSummary')}>
+      <div class="row">
+        <button onclick={saveLog}>{t('logSave')}</button>
+        <button onclick={() => picker?.click()}>{t('logLoad')}</button>
+        <input
+          bind:this={picker}
+          type="file"
+          accept=".tesel,application/json"
+          hidden
+          onchange={loadLog}
+        />
+      </div>
+      {#if loaded?.kind === 'loaded'}
+        <p role="status">{t('logLoaded', { count: loaded.added, total: loaded.total })}</p>
+      {:else if loaded}
+        <p class="warning" role="status">{t(OUTCOMES[loaded.kind])}</p>
+      {/if}
+    </Fold>
+  </div>
 </Panel>
 
 <style>
@@ -116,26 +127,5 @@
 
   .diary .hint {
     font-size: var(--text-small);
-  }
-
-  /* A file input that looks like the buttons beside it. */
-  .file {
-    display: inline-flex;
-    padding: 0.5rem 0.8rem;
-    cursor: pointer;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-control);
-  }
-
-  .file input {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    opacity: 0;
-  }
-
-  .file:focus-within {
-    outline: 2px solid var(--focus);
-    outline-offset: 2px;
   }
 </style>
