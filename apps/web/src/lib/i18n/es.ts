@@ -622,7 +622,7 @@ export const es: Messages = {
   endPractice: 'Terminar práctica',
   practiceGroupName: 'Práctica',
   practiceSetupIntro:
-    'Un ejercicio de unos 25 minutos donde estás, con siete compañeros simulados y la sala del 112. Nada sale de este dispositivo.',
+    'Un ejercicio de unos 25 minutos con siete compañeros simulados, en un sitio de verdad. Nada sale de este dispositivo.',
   practiceSituation: 'Situación',
   practiceYourPart: 'Tu papel',
   practiceAsMember: 'Miembro',
@@ -785,6 +785,61 @@ export const es: Messages = {
   practiceRaceNoWaterLate:
     'Sin agua en el avituallamiento: tres corredores se han retirado mareados.',
   practiceRaceSos: 'Me ha arrollado un corredor en el cruce: creo que me he roto la muñeca.',
+  practiceMountainTitle: 'Ruta de montaña',
+  practiceMountainWhere:
+    'Se juega donde está el mapa: antes de empezar, llévalo a una sierra con senderos.',
+  practiceNoMountain:
+    'Aquí no hay montaña con senderos, o no se ha podido leer el relieve. Termina, lleva el mapa a una sierra y vuelve a empezar.',
+  practiceMountain:
+    'Salida del club a la cima ({height} m): {distance} km de senda y {rise} m de desnivel, con tormentas en la previsión.',
+  practiceMountainArrived:
+    'Buenos días. Subimos a la cima, {height} m: {rise} m de desnivel. Yo abro y Pablo cierra. Nadie se adelanta.',
+  practiceMountainCall:
+    'Estamos todos. Hoy guías tú: subimos a la cima ({height} m, {rise} m de desnivel). Hay tormentas en la previsión.',
+  practiceMountainTrailhead: 'Inicio de la ruta',
+  practiceMountainRoute: 'Ruta a la cima',
+  practiceMountainTop: 'Cima, {height} m',
+  practiceMountainSos: 'Me ha dado un calambre fuerte en la pierna. Necesito parar un momento.',
+  practiceMountainForecast:
+    'AEMET adelanta las tormentas: pueden empezar a mediodía, con rayos y granizo en las cimas.',
+  practiceMountainFog: 'Entra niebla. No os separéis: cada uno ve al de delante y al de detrás.',
+  practiceMountainLostDoing: 'Perdido en la niebla',
+  practiceMountainLost: 'No veo a nadie. Con la niebla me he metido por otra senda: estoy {where}.',
+  practiceMountainStayPut:
+    'Jordi, quédate quieto donde estás. Nuria va a por ti: tenemos tu posición en el mapa.',
+  practiceMountainFindJordi: 'Ir a buscar a Jordi a su última posición',
+  practiceMountainFound: 'Tengo a Jordi. Volvemos con el grupo.',
+  practiceMountainBackAlone: 'He encontrado el camino. Vuelvo con el grupo.',
+  practiceMountainHurtDoing: 'Esperando el rescate',
+  practiceMountainWithHurt: 'Con {name}, esperando el rescate',
+  practiceMountainHurtLabel: '{name}: no puede andar',
+  practiceMountainHurt:
+    '{name} ha resbalado en la pedrera: el tobillo, no puede apoyar. Me quedo a su lado. Hay que pedir rescate al 112.',
+  practiceMountainAskUser:
+    '{name}, manda tú el parte al 112 y marca en el mapa dónde puede tomar el helicóptero.',
+  practiceMountainSendReport: 'Mandar al 112 el parte del herido',
+  practiceMountainMarkLanding: 'Marcar dónde puede tomar el helicóptero',
+  practiceMountainCarmenReport:
+    'Senderista con el tobillo lesionado, no puede andar. Grupo de 8. El tiempo empeora.',
+  practiceMountainCarmenCalls: 'Mando yo el parte al 112.',
+  practiceMountainHelicopter:
+    'Recibido el parte: os vemos en la app. Sale el helicóptero de rescate, llega en unos 5 minutos.',
+  practiceMountainSeeking:
+    'El helicóptero está encima y no encuentra dónde tomar cerca. Busca sitio: un par de minutos más.',
+  practiceMountainLifted: 'El helicóptero se ha llevado a {name} al hospital. Buen trabajo.',
+  practiceMountainLiftedDoing: 'En el helicóptero',
+  practiceMountainNoFlying:
+    'Con la tormenta encima, el helicóptero no puede volar. Sube un equipo de rescate a pie: más de una hora.',
+  practiceMountainThunder: 'Se oyen truenos al oeste. Se está cerrando muy deprisa.',
+  practiceMountainTurnBack: 'Damos la vuelta: bajamos ya, juntos y sin correr.',
+  practiceMountainTurning: 'De acuerdo: media vuelta, bajamos todos.',
+  practiceMountainSummit: 'Estamos en la cima: {height} m.',
+  practiceMountainLightning: '¡Un rayo ha caído en la cresta, muy cerca! Seguíamos arriba.',
+  practiceMountainStormBelow:
+    'La tormenta está encima. Por suerte ya estamos por debajo de la cresta.',
+  practiceMountainStormTurn: '¡Nos ha pillado la tormenta! Bajamos ya.',
+  practiceMountainEnd: 'Fin del ejercicio: el grupo baja hacia el inicio de la ruta.',
+  practiceMountainEndExposed: 'Fin del ejercicio: el grupo baja, pero la tormenta lo pilló arriba.',
   debriefTitle: 'Cómo ha ido',
   debriefGood: 'Bien',
   debriefBetter: 'A mejorar',
@@ -911,6 +966,48 @@ export const es: Messages = {
   debriefRaceReported: 'Avisaste cuando pasó la cabeza de carrera por tu corte.',
   debriefRaceNotReported:
     'No avisaste del paso de la cabeza por tu corte: con esos avisos, control sabe por dónde va la carrera.',
+  debriefAt: 'A los {time}',
+  debriefMountainTurned: 'Media vuelta',
+  debriefMountainNotTurned: 'Nunca',
+  debriefMountainTurnedByStorm: 'Con la tormenta encima',
+  debriefMountainTurnedInTime:
+    'Diste la vuelta al oír los truenos: en montaña, la tormenta no se espera arriba.',
+  debriefMountainTurnedLate:
+    'Diste la vuelta tarde. Con los primeros truenos se baja de cimas y crestas, sin esperar.',
+  debriefMountainNeverTurned:
+    'Nadie dio la orden de bajar: la tormenta decidió por vosotros. Con los primeros truenos, se baja.',
+  debriefMountainExposed: 'Arriba con la tormenta',
+  debriefMountainExposedNote: {
+    one: '{count} persona seguía en la parte alta con la tormenta encima. Con rayos, crestas y cimas son el peor sitio.',
+    other:
+      '{count} personas seguían en la parte alta con la tormenta encima. Con rayos, crestas y cimas son el peor sitio.',
+  },
+  debriefMountainJordi: 'Jordi, perdido en la niebla',
+  debriefMountainJordiFound: '{time}, hasta que fueron a por él',
+  debriefMountainJordiAlone: '{time}, y volvió solo',
+  debriefMountainJordiStill: '{time}, y sigue perdido',
+  debriefMountainJordiFoundNote:
+    'Jordi esperó quieto y fueron a por él a su posición: así se encuentra a alguien en la niebla.',
+  debriefMountainJordiLostNote:
+    'Nadie fue a por Jordi. Su posición estaba en el mapa: él, quieto, y alguien a buscarle.',
+  debriefMountainRescue: 'Rescate del herido',
+  debriefMountainCalled: 'Parte a los {time} · {ended}',
+  debriefMountainByHelicopter: 'en helicóptero',
+  debriefMountainOnFoot: 'a pie, por la tormenta',
+  debriefMountainWaiting: 'esperando',
+  debriefMountainNoCall: 'Nadie lo pidió',
+  debriefMountainLanding: 'Zona del helicóptero',
+  debriefMountainLandingMarked: 'Marcada',
+  debriefMountainLandingNone: 'Sin marcar',
+  debriefMountainNoCallNote:
+    'Nadie pidió rescate para el herido. Alguien que no puede andar en montaña es un parte al 112 enseguida.',
+  debriefMountainCarmenCalled:
+    'Carmen tuvo que mandar el parte por ti. Con un herido, el parte sale en el primer minuto.',
+  debriefMountainLiftedNote: 'El parte salió a tiempo y el helicóptero llegó antes de la tormenta.',
+  debriefMountainOnFootNote:
+    'El parte salió tarde: con la tormenta, el helicóptero ya no podía volar.',
+  debriefMountainLandingNote:
+    'Nadie marcó dónde podía tomar el helicóptero: en montaña, un sitio llano y despejado ahorra minutos.',
   practiceTimeUp: 'Se acabó el tiempo del ejercicio. Gracias a todos.',
   practiceMissingCall:
     'Activación: buscamos a Rosa Martínez, 78 años, con principio de demencia. Os toca coordinar.',

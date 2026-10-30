@@ -50,6 +50,9 @@
       </button>
     {/each}
   </div>
+  {#if SITUATION_INFO[situation].place === 'map'}
+    <p class="hint">{t('practiceMountainWhere')}</p>
+  {/if}
   <div class="parts" role="radiogroup" aria-label={t('practiceYourPart')}>
     {#each Object.entries(PARTS) as [part, text] (part)}
       <button

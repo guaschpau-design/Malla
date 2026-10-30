@@ -80,3 +80,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0072](0072-practice-as-an-exercise.md)              | Practice as an exercise: a world that changes, people with their own lives, and a director  | Accepted                                    |
 | [0073](0073-exercise-report.md)                      | The report at the end of an exercise                                                        | Accepted                                    |
 | [0074](0074-race-exercise.md)                        | A popular race to keep safe                                                                 | Accepted                                    |
+| [0075](0075-mountain-exercise.md)                    | A mountain route, played where the map is                                                   | Accepted                                    |

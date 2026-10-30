@@ -31,14 +31,16 @@
     /** The user's part: a member of the team or its coordinator. */
     role: Role;
     situation: Situation;
-    /** Where the practice takes place: this device, or the middle of the map. */
-    centre: LatLon;
+    /** Where this device is; null without a position. */
+    here: LatLon | null;
+    /** The middle of the map, where a practice takes place without a position, or the mountain. */
+    mapCentre: LatLon;
     /** The base map's and the elevation's tiles, for the streets and the lie of the land. */
     offline: OfflineMaps;
     onend: () => void;
   }
 
-  let { t, locale, feed, self, role, situation, centre, offline, onend }: Props = $props();
+  let { t, locale, feed, self, role, situation, here, mapCentre, offline, onend }: Props = $props();
 
   const info = $derived(SITUATION_INFO[situation]);
   /** The exercise's run, once the place is read, and when it started, in milliseconds. */
@@ -47,6 +49,8 @@
   /** How the exercise went, once it is over. */
   let debrief: Debrief | null = $state.raw(null);
   let description = $state('');
+  /** Whether the place is not fit for the situation: no mountain where the map is. */
+  let unfit = $state(false);
 
   // One exercise and one run for the life of the component, where and in the language it started:
   // the life of the practice, which ends when another group is used (session.svelte.ts).
@@ -54,7 +58,8 @@
     let ended = false;
     let playing: PracticeRun | null = null;
     const { store, archives } = untrack(() => offline);
-    const { heights, exercise } = untrack(() => SITUATION_INFO[situation]);
+    const { heights, exercise, place, suits } = untrack(() => SITUATION_INFO[situation]);
+    const centre = untrack(() => (place === 'map' ? mapCentre : (here ?? mapCentre)));
     const elevations = new ElevationReader((tile) => findTile('terrain', tile, store, archives));
     void untrack(() =>
       groundAround(
@@ -65,6 +70,10 @@
       ),
     ).then((ground) => {
       if (ended) return;
+      if (suits !== undefined && !suits({ ground, centre })) {
+        unfit = true;
+        return;
+      }
       const setting = untrack(() => ({
         t,
         locale,
@@ -122,7 +131,9 @@
     </strong>
     <button class="ghost" onclick={onend}>{t('endPractice')}</button>
   </div>
-  {#if run === null}
+  {#if unfit}
+    <p>{t('practiceNoMountain')}</p>
+  {:else if run === null}
     <p class="hint">{t('practicePreparing')}</p>
   {:else if debrief !== null}
     <DebriefView {t} {debrief} />

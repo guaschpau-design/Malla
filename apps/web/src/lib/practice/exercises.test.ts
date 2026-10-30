@@ -3,7 +3,7 @@
 
 import { appendFileSync } from 'node:fs';
 
-import { EMPTY_STATE, offsetMeters, reduce, type GroupState } from '@tesel/core';
+import { EMPTY_STATE, eastNorthMeters, offsetMeters, reduce, type GroupState } from '@tesel/core';
 import {
   decodeEvent,
   generateIdentity,
@@ -19,6 +19,7 @@ import { translator } from '../i18n/index.ts';
 import { Chance } from './chance.ts';
 import type { Debrief } from './debrief/debrief.ts';
 import { Ground } from './ground.ts';
+import { HeightGrid } from './heights.ts';
 import { PracticeRun } from './practice-run.ts';
 import { SITUATION_INFO, type Situation } from './situations.ts';
 
@@ -28,14 +29,16 @@ const t = translator('es');
 
 /**
  * A town of streets every 100 m for 700 m round here, drawn through their corners, named "Calle"
- * east–west and "Avenida" north–south; a stream 300 m north; a park south-east.
+ * east–west and "Avenida" north–south; a stream 300 m north; a park south-east. On a slope, it is a
+ * mountain, its streets its paths, with one more that leads nowhere.
  */
-function town(): Ground {
+function town(slope: HeightGrid | null = null): Ground {
   const steps = Array.from({ length: 15 }, (_, index) => -700 + index * 100);
   const ways = steps.flatMap((offset, index) => [
     { points: steps.map((east) => at(offset, east)), name: `Calle ${String(index + 1)}` },
     { points: steps.map((north) => at(north, offset)), name: `Avenida ${String(index + 1)}` },
   ]);
+  if (slope !== null) ways.push({ points: [at(400, 0), at(450, -50)], name: 'Senda Perdida' });
   return new Ground(
     {
       ways,
@@ -47,13 +50,20 @@ function town(): Ground {
         },
       ],
     },
-    null,
+    slope,
     'es',
   );
 }
 
+/** The land rising northwards round here, half a metre a metre: three hundred up in six hundred. */
+function slope(): Promise<HeightGrid | null> {
+  return HeightGrid.around(HERE, 700, 20, (points) =>
+    Promise.resolve(points.map((point) => 900 + 0.5 * eastNorthMeters(HERE, point).north)),
+  );
+}
+
 /** Plays a situation to its end, the user acknowledging every teammate's SOS. */
-async function play(situation: Situation, part: Role, seed = 7) {
+async function play(situation: Situation, part: Role, ground = town(), seed = 7) {
   const user = generateIdentity();
   const sent: TeselEvent[] = [];
   let state: GroupState = EMPTY_STATE;
@@ -62,7 +72,7 @@ async function play(situation: Situation, part: Role, seed = 7) {
     locale: 'es' as const,
     centre: HERE,
     user: part,
-    ground: town(),
+    ground,
     chance: new Chance(seed),
   };
   const outcome: { debrief: Debrief | null } = { debrief: null };
@@ -257,6 +267,26 @@ describe('exercises played through', { timeout: PLAYING_MS }, () => {
       value: expect.stringMatching(/^\d de 4$/) as unknown,
     });
     expect(said.at(-1)).toMatch(/^Fin del ejercicio: la carrera sigue/);
+  });
+
+  it('climbs a mountain into fog and a storm, with someone lost and someone hurt', async () => {
+    const ground = town(await slope());
+    const { said, finished, debrief } = await play('mountain', 'member', ground);
+    expect(finished).toBe(true);
+    expect(said.some((line) => line.startsWith('No veo a nadie'))).toBe(true);
+    expect(said.some((line) => line.includes('ha resbalado en la pedrera'))).toBe(true);
+    expect(said.some((line) => line.startsWith('Damos la vuelta'))).toBe(true);
+    // The user sent no report: Carmen did, late, and the helicopter may or may not make it.
+    expect(debrief?.better).toContain(t('debriefMountainCarmenCalled'));
+    expect(said.at(-1)).toMatch(/^Fin del ejercicio: el grupo baja/);
+  });
+
+  it('leaves the turn back to a coordinator, whom the storm overtakes', async () => {
+    const ground = town(await slope());
+    const { finished, debrief } = await play('mountain', 'coordinator', ground);
+    expect(finished).toBe(true);
+    expect(debrief?.better).toContain(t('debriefMountainNeverTurned'));
+    expect(debrief?.better).toContain(t('debriefMountainNoCallNote'));
   });
 
   it('plays the flood, the fire and the race to their end for a coordinator too', async () => {

@@ -40,7 +40,8 @@ test('a member is guided through a practice and given a task by its coordinator'
   await expect(chat.getByText(HEARD)).toBeVisible({ timeout: 20_000 });
   await expect(card).toContainText('Paso 3 de 5');
   await chat.getByRole('button', { name: 'Cerrar' }).click();
-  await expect(page.getByRole('button', { name: /^Tareas/ })).toContainText('1', {
+  // Tasks for the user, or for the team they are in: the dock counts them.
+  await expect(page.getByRole('button', { name: /^Tareas: \d+ para ti$/ })).toBeVisible({
     timeout: 60_000,
   });
 
@@ -93,9 +94,24 @@ test('a race is drawn round the streets, with its crossings given out', async ({
   // The run starts once the streets around are read, which takes a moment on a busy machine.
   await expect(page.getByText(/Hoy cubrimos la carrera popular/)).toBeVisible({ timeout: 15_000 });
   await page.getByRole('button', { name: 'Cerrar' }).click();
-  await expect(page.getByRole('button', { name: /^Tareas/ })).toContainText('1', {
+  // Tasks for the user, or for the team they are in: the dock counts them.
+  await expect(page.getByRole('button', { name: /^Tareas: \d+ para ti$/ })).toBeVisible({
     timeout: 60_000,
   });
+});
+
+test('a mountain route is played where the map is, and only on a mountain', async ({ browser }) => {
+  const page = await device(browser, 'Ana', VALENCIA);
+  await page
+    .getByRole('region', { name: 'Para empezar' })
+    .getByRole('button', { name: 'Practicar sin nadie' })
+    .click();
+  await page.getByRole('radio', { name: 'Ruta de montaña' }).click();
+  await expect(page.getByText('Se juega donde está el mapa')).toBeVisible();
+  await page.getByRole('button', { name: 'Empezar' }).click();
+  // The synthetic map is flat: there is no mountain to climb.
+  const card = page.getByRole('region', { name: 'Práctica' });
+  await expect(card).toContainText('Aquí no hay montaña', { timeout: 15_000 });
 });
 
 test('a practice started on the wide view the map opens on brings the teammates into view', async ({

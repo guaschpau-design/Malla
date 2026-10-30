@@ -206,7 +206,8 @@
         self={group.self}
         role={group.role}
         situation={group.practice}
-        centre={deviceLocation.fix?.at ?? mapCentre(map)}
+        here={deviceLocation.fix?.at ?? null}
+        mapCentre={mapCentre(map)}
         {offline}
         onend={onendpractice}
       />
