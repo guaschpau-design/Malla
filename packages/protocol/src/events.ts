@@ -165,7 +165,19 @@ export type Equipment =
   | 'drone'
   | 'weapon'
   /** A LoRa radio linked to the app now: set by the app itself, never by hand. */
-  | 'lora';
+  | 'lora'
+  | 'four-by-four'
+  | 'boat'
+  | 'search-dog'
+  | 'thermal-camera'
+  | 'satellite-phone'
+  | 'generator'
+  | 'power-bank'
+  | 'chainsaw'
+  | 'pump'
+  | 'tools'
+  | 'oxygen'
+  | 'megaphone';
 
 /** §3.14 A member's profile, status, battery and equipment; each newer one replaces the last. */
 export interface MemberStateEvent extends EventHeader {

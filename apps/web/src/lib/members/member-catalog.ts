@@ -27,21 +27,68 @@ export const DUTY_STATUSES: Readonly<
   'off-duty': { label: 'dutyOffDuty', tone: 'poor' },
 };
 
-export const EQUIPMENT: readonly { readonly value: Equipment; readonly label: MessageKey }[] = [
-  { value: 'first-aid', label: 'equipmentFirstAid' },
-  { value: 'defibrillator', label: 'equipmentDefibrillator' },
-  { value: 'stretcher', label: 'equipmentStretcher' },
-  { value: 'blankets', label: 'equipmentBlankets' },
-  { value: 'water', label: 'equipmentWater' },
-  { value: 'food', label: 'equipmentFood' },
-  { value: 'light', label: 'equipmentLight' },
-  { value: 'rope', label: 'equipmentRope' },
-  { value: 'radio', label: 'equipmentRadio' },
-  { value: 'extinguisher', label: 'equipmentExtinguisher' },
-  { value: 'vehicle', label: 'equipmentVehicle' },
-  { value: 'drone', label: 'equipmentDrone' },
-  { value: 'weapon', label: 'equipmentWeapon' },
+interface EquipmentItem {
+  readonly value: Equipment;
+  readonly label: MessageKey;
+}
+
+/**
+ * What can be picked, in four groups so that the list reads at a glance: looking after people,
+ * finding and rescuing them, working on the ground, and getting there and keeping in touch.
+ */
+export const EQUIPMENT_GROUPS: readonly {
+  readonly label: MessageKey;
+  readonly items: readonly EquipmentItem[];
+}[] = [
+  {
+    label: 'equipmentGroupCare',
+    items: [
+      { value: 'first-aid', label: 'equipmentFirstAid' },
+      { value: 'defibrillator', label: 'equipmentDefibrillator' },
+      { value: 'oxygen', label: 'equipmentOxygen' },
+      { value: 'stretcher', label: 'equipmentStretcher' },
+      { value: 'blankets', label: 'equipmentBlankets' },
+      { value: 'water', label: 'equipmentWater' },
+      { value: 'food', label: 'equipmentFood' },
+    ],
+  },
+  {
+    label: 'equipmentGroupRescue',
+    items: [
+      { value: 'light', label: 'equipmentLight' },
+      { value: 'rope', label: 'equipmentRope' },
+      { value: 'search-dog', label: 'equipmentSearchDog' },
+      { value: 'thermal-camera', label: 'equipmentThermalCamera' },
+      { value: 'drone', label: 'equipmentDrone' },
+      { value: 'extinguisher', label: 'equipmentExtinguisher' },
+      { value: 'weapon', label: 'equipmentWeapon' },
+    ],
+  },
+  {
+    label: 'equipmentGroupTools',
+    items: [
+      { value: 'tools', label: 'equipmentTools' },
+      { value: 'chainsaw', label: 'equipmentChainsaw' },
+      { value: 'pump', label: 'equipmentPump' },
+      { value: 'generator', label: 'equipmentGenerator' },
+      { value: 'power-bank', label: 'equipmentPowerBank' },
+    ],
+  },
+  {
+    label: 'equipmentGroupTransport',
+    items: [
+      { value: 'vehicle', label: 'equipmentVehicle' },
+      { value: 'four-by-four', label: 'equipmentFourByFour' },
+      { value: 'boat', label: 'equipmentBoat' },
+      { value: 'radio', label: 'equipmentRadio' },
+      { value: 'satellite-phone', label: 'equipmentSatellitePhone' },
+      { value: 'megaphone', label: 'equipmentMegaphone' },
+    ],
+  },
 ];
+
+/** Everything that can be picked, group after group. */
+export const EQUIPMENT: readonly EquipmentItem[] = EQUIPMENT_GROUPS.flatMap((group) => group.items);
 
 /**
  * What this person carries, as the group is told: what they picked by hand, and a LoRa radio while

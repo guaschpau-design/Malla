@@ -66,7 +66,7 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0058](0058-no-command-posts.md)                     | Drop command posts: one server per group, radios when there is no internet                  | Accepted                                    |
 | [0059](0059-routes.md)                               | Routes: drawn or read from a file, followed leg by leg, and a task's place may be an object | Accepted, amended by 0077                   |
 | [0060](0060-sweeps.md)                               | Sweeps: parallel lanes over a search area, one strip per team, sent as a recipe             | Accepted                                    |
-| [0061](0061-member-state.md)                         | What members tell about themselves: one event, one card                                     | Accepted, amended by 0069, 0071             |
+| [0061](0061-member-state.md)                         | What members tell about themselves: one event, one card                                     | Accepted, amended by 0069, 0071, 0079       |
 | [0062](0062-teams.md)                                | Teams: one event per team, and a task for a team is each member's                           | Accepted                                    |
 | [0063](0063-situation-reports.md)                    | Situation reports: a fixed form in one radio message, pinned in the chat                    | Accepted, amended by 0065, 0070             |
 | [0064](0064-check-in.md)                             | A safety check-in that asks only when it must                                               | Accepted                                    |
@@ -84,3 +84,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0076](0076-practice-coverage-loss.md)               | Losing coverage in a practice                                                               | Accepted                                    |
 | [0077](0077-coordinates-and-zone-files.md)           | Points by their coordinates, and zones read from a file                                     | Accepted                                    |
 | [0078](0078-one-look-and-straight-to-the-point.md)   | One look, and straight to the point                                                         | Accepted                                    |
+| [0079](0079-more-equipment-in-groups.md)             | More equipment, offered in groups                                                           | Accepted                                    |

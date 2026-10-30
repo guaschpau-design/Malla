@@ -1,3 +1,4 @@
+import { EquipmentBit } from '@tesel/protocol';
 import { describe, expect, it } from 'vitest';
 
 import { EQUIPMENT, ownEquipment } from './member-catalog.ts';
@@ -12,5 +13,11 @@ describe('what this person carries', () => {
 
   it('never offers the LoRa radio to pick by hand', () => {
     expect(EQUIPMENT.map((item) => item.value)).not.toContain('lora');
+  });
+
+  it('offers every other item once, in one group', () => {
+    const offered = EQUIPMENT.map((item) => item.value);
+    const all = Object.keys(EquipmentBit).filter((item) => item !== 'lora');
+    expect([...offered].sort()).toEqual(all.sort());
   });
 });

@@ -569,6 +569,14 @@ describe('member states', () => {
     expect(decoded.ok && decoded.value).toMatchObject({ equipment: ['lora'] });
   });
 
+  it('carries the equipment added later in the higher bits', () => {
+    const bytes = encodeOrFail({ ...state, equipment: ['four-by-four', 'megaphone'] });
+    // Bits 14 and 25.
+    expect(toHex(bytes.slice(17))).toBe('00400002');
+    const decoded = decodeEvent(bytes);
+    expect(decoded.ok && decoded.value).toMatchObject({ equipment: ['four-by-four', 'megaphone'] });
+  });
+
   it('refuses a battery that is not a whole percent', () => {
     expect(encodeEvent({ ...state, battery: 101 }).ok).toBe(false);
     expect(encodeEvent({ ...state, battery: 50.5 }).ok).toBe(false);

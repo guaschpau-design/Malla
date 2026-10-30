@@ -1,6 +1,6 @@
 # 0061. What members tell about themselves: one event, one card
 
-- Status: Accepted, amended by [0069](0069-who-keeps-in-touch-without-coverage.md) (a LoRa radio linked, told by the app) and [0071](0071-panels-read-whole.md) (nothing folded)
+- Status: Accepted, amended by [0069](0069-who-keeps-in-touch-without-coverage.md) (a LoRa radio linked, told by the app) [0071](0071-panels-read-whole.md) (nothing folded) and [0079](0079-more-equipment-in-groups.md) (more equipment, in groups)
 - Date: 2026-10-28
 
 ## Context

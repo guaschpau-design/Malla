@@ -24,7 +24,13 @@
   import type { TaskRow } from '../tasks/tasks.ts';
   import { TEAM_COLOURS } from '../teams/teams.ts';
   import StatusDot from '../ui/StatusDot.svelte';
-  import { DUTY_STATUSES, EQUIPMENT, PROFILES, profileLabel } from './member-catalog.ts';
+  import {
+    DUTY_STATUSES,
+    EQUIPMENT,
+    EQUIPMENT_GROUPS,
+    PROFILES,
+    profileLabel,
+  } from './member-catalog.ts';
   import SheetPart from './SheetPart.svelte';
 
   interface Props {
@@ -145,17 +151,22 @@
   </SheetPart>
   <SheetPart title={t('sheetEquipment')}>
     {#if edits}
-      <div class="chips">
-        {#each EQUIPMENT as item (item.value)}
-          <button
-            class="chip"
-            aria-pressed={state.equipment.includes(item.value)}
-            onclick={() => {
-              toggle(item.value);
-            }}>{t(item.label)}</button
-          >
-        {/each}
-      </div>
+      {#each EQUIPMENT_GROUPS as group (group.label)}
+        <fieldset>
+          <legend>{t(group.label)}</legend>
+          <div class="chips">
+            {#each group.items as item (item.value)}
+              <button
+                class="chip"
+                aria-pressed={state.equipment.includes(item.value)}
+                onclick={() => {
+                  toggle(item.value);
+                }}>{t(item.label)}</button
+              >
+            {/each}
+          </div>
+        </fieldset>
+      {/each}
     {:else}
       <p>{equipmentSummary}</p>
     {/if}
@@ -204,6 +215,12 @@
 
   .line .small {
     margin-left: auto;
+  }
+
+  /* The groups of equipment are named small, under the part's own title. */
+  legend {
+    color: var(--muted);
+    font-size: var(--text-small);
   }
 
   .swatch {
