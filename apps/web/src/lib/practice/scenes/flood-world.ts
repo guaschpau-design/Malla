@@ -61,7 +61,8 @@ export class FloodWorld implements World {
   #drawn: { readonly points: number; readonly elapsed: number } | null = null;
   /** The street the water was last said to have reached. */
   #front: string | null = null;
-  #underpassClosed = false;
+  /** How the underpass ended: closed in time, or with a car caught in it; null while open. */
+  #underpass: 'closed' | 'car' | null = null;
   #routeCut = false;
   /** Teammates the water has caught, by alias, with when, in seconds into the exercise. */
   readonly #caught = new Map<string, number>();
@@ -103,6 +104,16 @@ export class FloodWorld implements World {
   /** What the water will cover at its highest, as the technicians foresee it. */
   get floodable(): LatLon[] {
     return this.#water.edge(this.#water.flooding(FloodWater.level(EXERCISE_SECONDS / 2)));
+  }
+
+  /** How the underpass ended: closed in time, or with a car caught in it; null while open. */
+  get underpassEnded(): 'closed' | 'car' | null {
+    return this.#underpass;
+  }
+
+  /** How many teammates the water caught. */
+  get caught(): number {
+    return this.#caught.size;
   }
 
   passable(who: Teammate): Passable {
@@ -154,14 +165,14 @@ export class FloodWorld implements World {
 
   /** The underpass floods first: closed by whoever got there before, or a car gets caught. */
   #checkUnderpass(stage: Stage): void {
-    if (this.#underpassClosed) return;
+    if (this.#underpass !== null) return;
     const there = stage.crew.onTheGround.find(
       (who) => !who.silent && who.distanceTo(this.underpass, stage.now) <= 30,
     );
     const checked = there !== undefined || this.#userChecked(stage);
     const flooded = this.#water.depthAt(this.underpass, this.#flood) >= CUTS_M;
     if (!checked && !flooded) return;
-    this.#underpassClosed = true;
+    this.#underpass = checked ? 'closed' : 'car';
     const by = there?.alias ?? dispatch(stage.t);
     stage.act(by, {
       type: 'marker',
@@ -263,7 +274,8 @@ export class FloodWorld implements World {
   #end(stage: Stage): void {
     const safe = this.homes.safe && stage.crew.all.every((who) => !who.hurt);
     if (stage.elapsed < EXERCISE_SECONDS && !(safe && stage.elapsed >= 1320)) return;
-    stage.finish(stage.t('practiceFloodEnd', this.homes.warned));
+    const { warned, homes } = this.homes.tally;
+    stage.finish(stage.t('practiceFloodEnd', { warned, homes }));
   }
 }
 

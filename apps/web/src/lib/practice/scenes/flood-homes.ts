@@ -91,9 +91,19 @@ export class FloodHomes {
     return this.#homes.every((home) => home.warned || home.ended !== null);
   }
 
-  /** How many homes were warned in time, of how many. */
-  get warned(): { warned: number; homes: number } {
-    return { warned: this.#homes.filter((home) => home.warned).length, homes: this.#homes.length };
+  /**
+   * How the homes fared, of how many: warned in time, or reached by the water first, and then
+   * their people got out by the team or by the boat.
+   */
+  get tally(): { warned: number; trapped: number; rescued: number; boat: number; homes: number } {
+    const count = (fared: (home: Home) => boolean) => this.#homes.filter(fared).length;
+    return {
+      warned: count((home) => home.warned),
+      trapped: count((home) => home.trapped !== null),
+      rescued: count((home) => home.ended === 'rescued'),
+      boat: count((home) => home.ended === 'boat'),
+      homes: this.#homes.length,
+    };
   }
 
   /** Each home is warned, trapped or got out of, as the water, `deep` metres at a point, rises. */

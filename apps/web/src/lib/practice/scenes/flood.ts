@@ -32,6 +32,7 @@ import {
   teams,
 } from './cast.ts';
 import { EVACUATION, FLOODABLE, FloodWorld, UNDERPASS } from './flood-world.ts';
+import { floodFindings } from './flood-findings.ts';
 
 export function flood(setting: Setting): Exercise {
   const { t, centre, user } = setting;
@@ -86,6 +87,7 @@ export function flood(setting: Setting): Exercise {
       ...(user === 'member' ? carmensOrders(world) : []),
       sosToPractise(t, 360, { kind: 'trapped', text: 'practiceFloodSos' }),
     ],
+    findings: floodFindings(world),
     seconds: EXERCISE_SECONDS,
   };
 }

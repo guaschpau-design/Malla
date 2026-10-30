@@ -1,7 +1,7 @@
 <!-- A practice in progress (ADR-0031, ADR-0066, ADR-0072): an exercise of some twenty-five minutes
      played around where the user is, on the streets of the map, read first. A card on the map
      says what is going on and for how long, guides the user through five things to try, one at a
-     time, says when the exercise is over, and ends the practice. -->
+     time, tells how it went once the exercise is over (ADR-0073), and ends the practice. -->
 <script lang="ts">
   import type { LatLon, NodeId, Role } from '@tesel/protocol';
   import { untrack } from 'svelte';
@@ -15,6 +15,9 @@
   import { clockEvery } from '../ui/now.svelte.ts';
   import { panels } from '../ui/panels.svelte.ts';
   import { Chance } from './chance.ts';
+  import { clockTime } from './clock-time.ts';
+  import type { Debrief } from './debrief/debrief.ts';
+  import DebriefView from './debrief/DebriefView.svelte';
   import { groundAround } from './ground-around.ts';
   import { guideSteps } from './guide.ts';
   import { PracticeRun } from './practice-run.ts';
@@ -41,7 +44,8 @@
   /** The exercise's run, once the place is read, and when it started, in milliseconds. */
   let run: PracticeRun | null = $state.raw(null);
   let started = $state(0);
-  let finished = $state(false);
+  /** How the exercise went, once it is over. */
+  let debrief: Debrief | null = $state.raw(null);
   let description = $state('');
 
   // One exercise and one run for the life of the component, where and in the language it started:
@@ -74,8 +78,8 @@
         sink: (bytes) => feed.receiveSimulated(bytes),
         self,
         setting,
-        onfinish: () => {
-          finished = true;
+        onfinish: (report) => {
+          debrief = report;
         },
       });
       playing.start();
@@ -107,25 +111,21 @@
 
   const clock = clockEvery(1000);
   /** How long the exercise has run, in minutes and seconds. */
-  const elapsed = $derived.by(() => {
-    const seconds = Math.max(0, Math.floor(clock.seconds - started / 1000));
-    const [minutes, rest] = [Math.floor(seconds / 60), seconds % 60];
-    return `${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`;
-  });
+  const elapsed = $derived(clockTime(clock.seconds - started / 1000));
 </script>
 
 <MapCard label={t('practice')} edge="var(--info)">
   <div class="head">
     <strong>
       {t(info.title)}
-      {#if run !== null && !finished}<span class="clock">{elapsed}</span>{/if}
+      {#if run !== null && debrief === null}<span class="clock">{elapsed}</span>{/if}
     </strong>
     <button class="ghost" onclick={onend}>{t('endPractice')}</button>
   </div>
   {#if run === null}
     <p class="hint">{t('practicePreparing')}</p>
-  {:else if finished}
-    <p>{t('practiceOver')}</p>
+  {:else if debrief !== null}
+    <DebriefView {t} {debrief} />
   {:else if guiding}
     {@const step = steps[current]}
     <div class="guide">

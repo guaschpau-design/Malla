@@ -21,6 +21,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { translator } from '../i18n/index.ts';
 import { Chance } from './chance.ts';
+import type { Debrief } from './debrief/debrief.ts';
 import type { Exercise, Inject, Setting, World } from './exercise.ts';
 import { Ground } from './ground.ts';
 import { PracticeRun } from './practice-run.ts';
@@ -94,9 +95,10 @@ function practice({
     personas,
     world,
     injects,
+    findings: () => ({ figures: [{ label: 'Situación', value: 'Bajo control' }], notes: [] }),
     seconds,
   };
-  let finished = false;
+  let debrief: Debrief | null = null;
   const run = new PracticeRun(exercise, {
     sink: (bytes) => {
       const event = decodeEvent(bytes);
@@ -105,8 +107,8 @@ function practice({
     },
     self: user.nodeId,
     setting,
-    onfinish: () => {
-      finished = true;
+    onfinish: (report) => {
+      debrief = report;
     },
   });
   const state = (): GroupState => reduceAll(EMPTY_STATE, [...sent, ...own]);
@@ -158,7 +160,8 @@ function practice({
     lastPosition,
     statuses,
     said,
-    finished: () => finished,
+    finished: () => debrief !== null,
+    debrief: () => debrief,
   };
 }
 
@@ -564,11 +567,16 @@ describe('practice run', () => {
     ];
     const ticks: number[] = [];
     const world: World = { passable: () => () => true, tick: (stage) => ticks.push(stage.elapsed) };
-    const { run, wait, said, finished } = practice({ injects, world });
+    const { run, wait, said, finished, debrief } = practice({ injects, world });
     run.start();
     await wait(12);
     expect(said()).toEqual(['Carmen: Llamada del 112', 'Carmen: Fin']);
     expect(finished()).toBe(true);
+    // The report tells how long it lasted, then what the situation tells.
+    expect(debrief()?.figures.slice(0, 2)).toEqual([
+      { label: 'Duración', value: '00:10' },
+      { label: 'Situación', value: 'Bajo control' },
+    ]);
     expect(ticks.length).toBeGreaterThan(9);
     const after = ticks.length;
     await wait(10);

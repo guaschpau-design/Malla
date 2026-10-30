@@ -17,6 +17,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { translator } from '../i18n/index.ts';
 import { Chance } from './chance.ts';
+import type { Debrief } from './debrief/debrief.ts';
 import { Ground } from './ground.ts';
 import { PracticeRun } from './practice-run.ts';
 import { SITUATION_INFO, type Situation } from './situations.ts';
@@ -64,7 +65,7 @@ async function play(situation: Situation, part: Role, seed = 7) {
     ground: town(),
     chance: new Chance(seed),
   };
-  const outcome = { finished: false };
+  const outcome: { debrief: Debrief | null } = { debrief: null };
   const run = new PracticeRun(SITUATION_INFO[situation].exercise(setting), {
     sink: (bytes) => {
       const event = decodeEvent(bytes);
@@ -76,13 +77,13 @@ async function play(situation: Situation, part: Role, seed = 7) {
     },
     self: user.nodeId,
     setting,
-    onfinish: () => {
-      outcome.finished = true;
+    onfinish: (debrief) => {
+      outcome.debrief = debrief;
     },
   });
   let seq = 0;
   run.start();
-  for (let second = 0; second < 26 * 60 && !outcome.finished; second += 1) {
+  for (let second = 0; second < 26 * 60 && outcome.debrief === null; second += 1) {
     await vi.advanceTimersByTimeAsync(1000);
     for (const [key, sos] of state.sos) {
       if (state.acks.get(key)?.has(user.nodeId) || state.sosCancels.has(key)) continue;
@@ -123,14 +124,18 @@ async function play(situation: Situation, part: Role, seed = 7) {
     appendFileSync(
       show,
       [
-        `== ${situation} as ${part} (finished ${String(outcome.finished)}, over ${String(run.over)}, ${String(run.elapsed)} s)`,
+        `== ${situation} as ${part} (over ${String(run.over)}, ${String(run.elapsed)} s)`,
         ...lines,
         ...warned,
+        ...(outcome.debrief?.figures.map((figure) => `  ${figure.label}: ${figure.value}`) ?? []),
+        ...(outcome.debrief?.good.map((text) => `  + ${text}`) ?? []),
+        ...(outcome.debrief?.better.map((text) => `  - ${text}`) ?? []),
         '',
       ].join('\n'),
     );
   }
-  return { sent, state, said, finished: outcome.finished, user: user.nodeId };
+  const { debrief } = outcome;
+  return { sent, state, said, finished: debrief !== null, debrief, user: user.nodeId };
 }
 
 /** Markers by their label, as they ended up. */
@@ -162,8 +167,12 @@ describe('exercises played through', { timeout: PLAYING_MS }, () => {
   });
 
   it('finds Rosa when Carmen moves the search the way she went', async () => {
-    const { state, said, finished, sent, user } = await play('missing-person', 'member');
+    const { state, said, finished, sent, user, debrief } = await play('missing-person', 'member');
     expect(finished).toBe(true);
+    expect(debrief?.figures).toContainEqual({
+      label: 'Rosa',
+      value: expect.stringMatching(/^La encontró el (equipo|la unidad canina)/) as unknown,
+    });
     // The user was given the neighbours to ask, and the search moved to a second sector.
     expect(sent.some((event) => event.type === 'task' && event.assignee === user)).toBe(true);
     expect(versions(sent, t('practiceMissingSector', { sector: 2 }))).toBeGreaterThan(0);
@@ -175,8 +184,10 @@ describe('exercises played through', { timeout: PLAYING_MS }, () => {
   });
 
   it('leaves the search to a coordinator, whose idle team asks what to do', async () => {
-    const { said, finished, sent } = await play('missing-person', 'coordinator');
+    const { said, finished, sent, debrief } = await play('missing-person', 'coordinator');
     expect(finished).toBe(true);
+    // The report tells the coordinator they gave no order, and who found Rosa.
+    expect(debrief?.better).toContain(t('debriefNoOrders'));
     expect(sent.filter((event) => event.type === 'team' || event.type === 'task')).toEqual([]);
     expect(
       said.some((line) => line.includes('¿Qué hacemos?') || line.includes('¿Nos das algo?')),
@@ -188,8 +199,12 @@ describe('exercises played through', { timeout: PLAYING_MS }, () => {
   });
 
   it('floods the low streets from the stream, warns or loses the homes, and says how it went', async () => {
-    const { sent, said, finished, state } = await play('flood', 'member');
+    const { sent, said, finished, state, debrief } = await play('flood', 'member');
     expect(finished).toBe(true);
+    expect(debrief?.figures).toContainEqual({
+      label: 'Viviendas avisadas a tiempo',
+      value: expect.stringMatching(/^\d de 6$/) as unknown,
+    });
     expect(said[0]).toContain('el Barranco de Prueba');
     // The water was drawn again and again as it rose.
     expect(versions(sent, t('practiceFloodArea'))).toBeGreaterThan(3);
@@ -209,8 +224,9 @@ describe('exercises played through', { timeout: PLAYING_MS }, () => {
   });
 
   it('spreads a fire that turns with the wind, and empties houses before it', async () => {
-    const { sent, said, finished, state } = await play('wildfire', 'member');
+    const { sent, said, finished, state, debrief } = await play('wildfire', 'member');
     expect(finished).toBe(true);
+    expect(debrief?.figures).toContainEqual({ label: 'Zona del helicóptero', value: 'Sin marcar' });
     expect(versions(sent, t('practiceFireFront'))).toBeGreaterThan(15);
     expect(said.some((line) => line.startsWith('¡Ha rolado el viento!'))).toBe(true);
     expect(said.some((line) => line.startsWith('Desalojado el n.º'))).toBe(true);

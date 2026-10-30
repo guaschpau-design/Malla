@@ -50,6 +50,12 @@ const FALL_OFFER_S = 90;
 /** Where she ends up: what the one who finds her sees. */
 type Spot = 'park' | 'water' | 'street';
 
+/** When she was found, in seconds into the exercise, and whether by the dog unit. */
+interface Finding {
+  readonly elapsed: number;
+  readonly byDogs: boolean;
+}
+
 export class MissingPersonWorld implements World {
   readonly lastSeen: LatLon;
   /** Which way she went, in degrees, as a witness will tell; and the other way, as her daughter guesses. */
@@ -59,8 +65,8 @@ export class MissingPersonWorld implements World {
   readonly #spot: Spot;
   readonly #stick: LatLon;
   #stickFound = false;
-  /** When she was found, in seconds into the exercise, and by whom; null while she is lost. */
-  #found: { readonly elapsed: number; readonly by: string } | null = null;
+  /** When she was found, in seconds into the exercise, and whether by the dog unit. */
+  #found: Finding | null = null;
   /** Where the neighbour falls, and the call-out once they have. */
   readonly #fallAt: LatLon;
   #fall: CallOut | null = null;
@@ -82,9 +88,19 @@ export class MissingPersonWorld implements World {
     return this.#fall;
   }
 
-  /** Whether she has been found, by the team or the dogs. */
-  get found(): boolean {
-    return this.#found !== null;
+  /** When she was found and by whom; null while she is lost. */
+  get finding(): Finding | null {
+    return this.#found;
+  }
+
+  /**
+   * How the neighbour who fell fared by `elapsed` seconds: seen to by the team, left to the
+   * ambulance, or still waiting; null if they have not fallen.
+   */
+  neighbour(elapsed: number): 'helped' | 'ambulance' | 'waiting' | null {
+    if (this.#fall === null) return null;
+    if (this.#fall.seen) return 'helped';
+    return elapsed >= FALL_S + FALL_WAITS_S ? 'ambulance' : 'waiting';
   }
 
   /** Nothing in this situation stands in anyone's way. */
@@ -165,7 +181,7 @@ export class MissingPersonWorld implements World {
       this.#near(stage, this.#rosa, SEEN_M) ??
       (stage.chance.odds(GLIMPSE_ODDS) ? this.#near(stage, this.#rosa, GLIMPSED_M) : undefined);
     if (finder === undefined) return;
-    this.#found = { elapsed: stage.elapsed, by: finder.alias };
+    this.#found = { elapsed: stage.elapsed, byDogs: false };
     finder.go({ kind: 'scene', what: stage.t('practiceMissingWithHer') }, [this.#rosa], stage.now);
     const where = stage.ground.where(stage.t, this.#rosa, landmarkOf(stage));
     const seen = {
@@ -202,7 +218,7 @@ export class MissingPersonWorld implements World {
   }
 
   #foundByDogs(stage: Stage): void {
-    this.#found = { elapsed: stage.elapsed, by: dispatch(stage.t) };
+    this.#found = { elapsed: stage.elapsed, byDogs: true };
     const where = stage.ground.where(stage.t, this.#rosa, landmarkOf(stage));
     this.#mark(stage, dispatch(stage.t));
     stage.say(dispatch(stage.t), stage.t('practiceMissingFoundByDogs', { where }));

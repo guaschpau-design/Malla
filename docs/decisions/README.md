@@ -78,3 +78,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0070](0070-a-simpler-app.md)                        | A simpler app: one place to add, no alerts or roll calls, a way to start                    | Accepted, amended by 0071                   |
 | [0071](0071-panels-read-whole.md)                    | Me and the map layers are read whole, without opening anything                              | Accepted                                    |
 | [0072](0072-practice-as-an-exercise.md)              | Practice as an exercise: a world that changes, people with their own lives, and a director  | Accepted                                    |
+| [0073](0073-exercise-report.md)                      | The report at the end of an exercise                                                        | Accepted                                    |

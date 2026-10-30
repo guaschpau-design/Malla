@@ -108,6 +108,32 @@ export class WildfireWorld implements World {
     }));
   }
 
+  /**
+   * How the houses fared, of how many: emptied in time, or reached by the fire first, and then
+   * their people got out by the team or by the firefighters.
+   */
+  get tally(): {
+    emptied: number;
+    trapped: number;
+    rescued: number;
+    firefighters: number;
+    houses: number;
+  } {
+    const count = (fared: (house: House) => boolean) => this.#houses.filter(fared).length;
+    return {
+      emptied: count((house) => house.emptied),
+      trapped: count((house) => house.trapped !== null),
+      rescued: count((house) => house.ended === 'rescued'),
+      firefighters: count((house) => house.ended === 'firefighters'),
+      houses: this.#houses.length,
+    };
+  }
+
+  /** How many teammates the fire caught. */
+  get caught(): number {
+    return this.#caught.size;
+  }
+
   /** The way the fire runs now, in words. */
   heading(stage: Stage): string {
     return heading(stage.t, this.#fire.phaseAt(stage.elapsed)?.towards ?? 0);
@@ -257,7 +283,7 @@ export class WildfireWorld implements World {
 
   #end(stage: Stage): void {
     if (stage.elapsed < EXERCISE_SECONDS) return;
-    const emptied = this.#houses.filter((house) => house.emptied).length;
-    stage.finish(stage.t('practiceFireEnd', { emptied, houses: this.#houses.length }));
+    const { emptied, houses } = this.tally;
+    stage.finish(stage.t('practiceFireEnd', { emptied, houses }));
   }
 }

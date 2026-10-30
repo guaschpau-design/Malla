@@ -33,12 +33,11 @@ import {
   step,
   teams,
 } from './cast.ts';
+import { HELIPAD_S, HELIPAD_WAITS_S, helipadMarkedAt } from './helipad.ts';
 import { AIRCRAFT_S, AT_RISK, WildfireWorld, WIND_TURNS_S } from './wildfire-world.ts';
+import { wildfireFindings } from './wildfire-findings.ts';
 
 const CLOSURE = 'road-closure';
-/** When the helicopter asks for somewhere to land, and how long it can wait. */
-const HELIPAD_S = 960;
-const HELIPAD_WAITS_S = 240;
 
 export function wildfire(setting: Setting): Exercise {
   const { t, centre, user } = setting;
@@ -78,6 +77,7 @@ export function wildfire(setting: Setting): Exercise {
       ...(user === 'member' ? carmensOrders() : []),
       sosToPractise(t, 360, { kind: 'medical', text: 'practiceWildfireSos' }),
     ],
+    findings: wildfireFindings(world),
     seconds: EXERCISE_SECONDS,
   };
 }
@@ -154,9 +154,9 @@ function story(world: WildfireWorld, closure: { lat: number; lon: number }): Inj
     },
     {
       at: HELIPAD_S + 5,
-      when: (stage) => helipadMarked(stage) || stage.elapsed >= HELIPAD_S + HELIPAD_WAITS_S,
+      when: (stage) => marked(stage) || stage.elapsed >= HELIPAD_S + HELIPAD_WAITS_S,
       run: (stage) => {
-        room(stage, helipadMarked(stage) ? 'practiceFireHelipadOk' : 'practiceFireHelipadLate');
+        room(stage, marked(stage) ? 'practiceFireHelipadOk' : 'practiceFireHelipadLate');
       },
     },
     {
@@ -233,8 +233,6 @@ function carmensOrders(): Inject[] {
 }
 
 /** Whether someone has marked where the helicopter can land. */
-function helipadMarked(stage: Stage): boolean {
-  return [...stage.state.objects.values()].some(
-    (record) => record.type === 'marker' && record.symbol === SymbolCode.HELICOPTER,
-  );
+function marked(stage: Stage): boolean {
+  return helipadMarkedAt(stage) !== null;
 }

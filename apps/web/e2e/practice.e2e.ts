@@ -1,7 +1,7 @@
 // Practice mode: an exercise played by seven simulated teammates and the 112 control room around
 // this device, who keep to the streets of the map, talk, take tasks, call an SOS and answer the
 // user; a guide on the practice's card leads the user through five things to try, and the card
-// tells how long the exercise has run. Ending it forgets the group.
+// tells how long the exercise has run and, at its end, how it went. Ending it forgets the group.
 
 import { device, expect, practise, tapMapUntil, test } from './helpers.ts';
 
@@ -66,6 +66,22 @@ test('a coordinator talks to the team, which answers', async ({ browser }) => {
   await chat.getByRole('button', { name: 'Enviar', exact: true }).click();
   await expect(chat.getByText(HEARD)).toBeVisible({ timeout: 20_000 });
   await expect(card).toContainText('Paso 1 de 5');
+});
+
+test('an exercise ends with a report of how it went', async ({ browser }) => {
+  const page = await device(browser, 'Ana', VALENCIA);
+  // The page's clock is the test's, to let the exercise's twenty-five minutes go by at once.
+  await page.clock.install();
+  await practise(page, { as: 'Coordinador' });
+  const card = page.getByRole('region', { name: 'Práctica' });
+  await expect(card).toContainText(/\d\d:\d\d/, { timeout: 15_000 });
+
+  // A coordinator who gave no order is told so, with the figures of the search.
+  await page.clock.fastForward('25:05');
+  await expect(card).toContainText('Cómo ha ido');
+  await expect(card).toContainText('Rosa');
+  await expect(card).toContainText(/Primera orden\s*Ninguna/);
+  await expect(card).toContainText('No diste ninguna orden');
 });
 
 test('a practice started on the wide view the map opens on brings the teammates into view', async ({

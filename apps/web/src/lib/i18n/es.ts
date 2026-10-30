@@ -621,7 +621,8 @@ export const es: Messages = {
   startPractice: 'Practicar con un grupo simulado',
   endPractice: 'Terminar práctica',
   practiceGroupName: 'Práctica',
-  practiceSetupIntro: 'Cuatro compañeros simulados, cerca de ti. Nada sale de este dispositivo.',
+  practiceSetupIntro:
+    'Un ejercicio de unos 25 minutos donde estás, con siete compañeros simulados y la sala del 112. Nada sale de este dispositivo.',
   practiceSituation: 'Situación',
   practiceYourPart: 'Tu papel',
   practiceAsMember: 'Miembro',
@@ -716,7 +717,99 @@ export const es: Messages = {
   practiceBreak: 'Llevo un buen rato sin parar: descanso {minutes} minutos y bebo agua.',
   practiceBackFromBreak: 'Ya estoy, sigo.',
   practiceBackFromBreak2: 'Listo, disponible otra vez.',
-  practiceOver: 'Ejercicio terminado. Repasa el chat y el diario para ver qué pasó.',
+  debriefTitle: 'Cómo ha ido',
+  debriefGood: 'Bien',
+  debriefBetter: 'A mejorar',
+  debriefOf: '{count} de {total}',
+  debriefNone: 'Ninguna',
+  debriefLength: 'Duración',
+  debriefMessages: 'Mensajes en el chat',
+  debriefSilent:
+    'No escribiste nada en el chat. Contar qué haces y qué ves mantiene a todos al tanto.',
+  debriefSos: 'SOS atendidos',
+  debriefSosAverage: '{count} de {total}, en {seconds} s de media',
+  debriefSosQuick: 'Atendiste los SOS enseguida.',
+  debriefSosSlow:
+    'Tardaste {seconds} s de media en atender los SOS. Pulsa «Recibido» en cuanto llegue uno, aunque no puedas ir: así quien lo pide sabe que lo habéis visto.',
+  debriefSosMissed:
+    'No atendiste el SOS de {name}. Un SOS siempre se responde, aunque sea para decir que no puedes ir.',
+  debriefYourTasks: 'Tus tareas, hechas',
+  debriefReports: 'Partes enviados',
+  debriefTasksDone: 'Terminaste las tareas que te dieron y las marcaste como hechas.',
+  debriefTaskLeft:
+    'Quedó sin marcar como hecha «{task}». Al acabar una tarea, márcala: así quien coordina sabe con quién puede contar.',
+  debriefReported: 'Enviaste partes: quien coordinaba supo lo que veías.',
+  debriefNoReport:
+    'No enviaste ningún parte. Uno corto, con lo que ves y lo que necesitas, ayuda mucho a quien coordina.',
+  debriefFirstOrder: 'Primera orden',
+  debriefTeams: 'Equipos formados',
+  debriefTasksGiven: 'Tareas dadas',
+  debriefOnMap: 'Marcas y zonas en el mapa',
+  debriefOrderedSoon: 'Pusiste al equipo a trabajar a los {time}.',
+  debriefOrderedLate:
+    'Tu primera orden llegó a los {time}: hasta entonces, el equipo esperó. Reparte tareas en los primeros minutos.',
+  debriefNoOrders: 'No diste ninguna orden: el equipo esperó sin saber qué hacer.',
+  debriefNoTeams:
+    'No formaste equipos. Con equipos, una tarea llega a varios a la vez y cada uno sabe con quién va.',
+  debriefRosa: 'Rosa',
+  debriefRosaTeam: 'La encontró el equipo a los {time}',
+  debriefRosaDogs: 'La encontró la unidad canina a los {time}',
+  debriefRosaLost: 'Sin encontrar',
+  debriefRosaFoundNote: 'El equipo encontró a Rosa: la búsqueda fue hacia donde ella había ido.',
+  debriefRosaDogsNote:
+    'A Rosa no la encontró el equipo. El testigo y el bastón decían hacia dónde fue: llevar la búsqueda hacia allí la habría encontrado antes.',
+  debriefNeighbour: 'Vecino herido',
+  debriefNeighbourHelped: 'Atendido por el equipo',
+  debriefNeighbourAmbulance: 'Esperó solo a la ambulancia',
+  debriefNeighbourWaiting: 'Aún esperando',
+  debriefNeighbourHelpedNote: 'Alguien del equipo fue a atender al vecino herido.',
+  debriefNeighbourAloneNote:
+    'El vecino herido esperó solo a la ambulancia. Un aviso así merece mandar a alguien con botiquín, aunque se esté buscando a otra persona.',
+  debriefNoSweep:
+    'No planificaste ninguna batida. Dibuja la zona de búsqueda y repártela en franjas: así nadie busca dos veces el mismo sitio.',
+  debriefHomesWarned: 'Viviendas avisadas a tiempo',
+  debriefHomesTrapped: 'Viviendas atrapadas',
+  debriefFloodRescues: '{trapped} · rescates: {rescued} del equipo, {boat} de los bomberos',
+  debriefHomesAllWarned: 'Avisasteis a todas las viviendas antes de que llegara el agua.',
+  debriefHomesReached: {
+    one: 'El agua llegó a {count} vivienda antes que el aviso. Id puerta a puerta por las calles más bajas primero.',
+    other:
+      'El agua llegó a {count} viviendas antes que el aviso. Id puerta a puerta por las calles más bajas primero.',
+  },
+  debriefUnderpass: 'Paso inferior',
+  debriefUnderpassClosed: 'Cerrado a tiempo',
+  debriefUnderpassCar: 'Un coche quedó atrapado',
+  debriefUnderpassClosedNote: 'El paso inferior se cerró antes de que se inundara.',
+  debriefUnderpassCarNote:
+    'Un coche quedó atrapado en el paso inferior. En una riada, cerrar los pasos bajos es de lo primero.',
+  debriefTeammatesCaught: 'Compañeros atrapados',
+  debriefFloodCaught: {
+    one: 'El agua atrapó a {count} compañero. Nadie se mete en agua que corre: con 30 cm ya arrastra.',
+    other:
+      'El agua atrapó a {count} compañeros. Nadie se mete en agua que corre: con 30 cm ya arrastra.',
+  },
+  debriefHousesEmptied: 'Casas desalojadas a tiempo',
+  debriefHousesTrapped: 'Casas con gente atrapada',
+  debriefFireRescues:
+    '{trapped} · rescates: {rescued} del equipo, {firefighters} de los bomberos forestales',
+  debriefHousesAllEmptied: 'Desalojasteis todas las casas antes de que llegara el fuego.',
+  debriefHousesReached: {
+    one: 'El fuego llegó a {count} casa con gente dentro. Desalojad primero hacia donde va el fuego y, cuando rola el viento, las casas del nuevo frente.',
+    other:
+      'El fuego llegó a {count} casas con gente dentro. Desalojad primero hacia donde va el fuego y, cuando rola el viento, las casas del nuevo frente.',
+  },
+  debriefHelipad: 'Zona del helicóptero',
+  debriefHelipadInTime: 'Marcada a tiempo',
+  debriefHelipadLate: 'Marcada tarde',
+  debriefHelipadNone: 'Sin marcar',
+  debriefHelipadInTimeNote: 'La zona del helicóptero se marcó a tiempo.',
+  debriefHelipadLateNote:
+    'El helicóptero tuvo que aterrizar lejos: nadie marcó a tiempo dónde podía hacerlo.',
+  debriefFireCaught: {
+    one: 'El fuego alcanzó a {count} compañero. Con humo cerca, retirarse a tiempo es lo primero.',
+    other:
+      'El fuego alcanzó a {count} compañeros. Con humo cerca, retirarse a tiempo es lo primero.',
+  },
   practiceTimeUp: 'Se acabó el tiempo del ejercicio. Gracias a todos.',
   practiceMissingCall:
     'Activación: buscamos a Rosa Martínez, 78 años, con principio de demencia. Os toca coordinar.',

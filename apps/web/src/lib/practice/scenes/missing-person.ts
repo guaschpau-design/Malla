@@ -37,6 +37,7 @@ import {
   teams,
 } from './cast.ts';
 import { MissingPersonWorld } from './missing-person-world.ts';
+import { missingPersonFindings } from './missing-person-findings.ts';
 
 /** The ids of what the exercise creates, for later actions to refer to. */
 const LAST_SEEN = 'last-seen';
@@ -99,6 +100,7 @@ export function missingPerson(setting: Setting): Exercise {
         },
       },
     ],
+    findings: missingPersonFindings(world),
     seconds: EXERCISE_SECONDS,
   };
 }

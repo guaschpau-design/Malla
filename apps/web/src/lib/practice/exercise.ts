@@ -10,6 +10,7 @@ import type { LatLon, NodeId, Role } from '@tesel/protocol';
 
 import type { Locale, Translate } from '../i18n/index.ts';
 import type { Chance } from './chance.ts';
+import type { Findings } from './debrief/findings.ts';
 import type { Errand } from './errands.ts';
 import type { Ground } from './ground.ts';
 import type { Job, Persona, Teammate } from './teammate.ts';
@@ -34,6 +35,8 @@ export interface Exercise {
   readonly personas: Readonly<Record<string, Persona>>;
   readonly world: World;
   readonly injects: readonly Inject[];
+  /** What the situation tells of how it went, for the report at the end. */
+  readonly findings: (stage: Stage) => Findings;
   /** Seconds the exercise lasts at most. */
   readonly seconds: number;
 }

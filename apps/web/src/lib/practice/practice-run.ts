@@ -4,7 +4,8 @@
 // world moves on (water rises, a fire spreads), its director plays the turns of the story, and the
 // members behave as people would about what happens in the group, whoever starts it (routines/).
 // They report where they are as they walk the streets of the map (@tesel/scenario's WalkNetwork).
-// Everything goes out through one queue, in order. Nothing leaves the device.
+// Everything goes out through one queue, in order. At the end, it says how it went (ADR-0073).
+// Nothing leaves the device.
 
 import { EMPTY_STATE, type GroupState } from '@tesel/core';
 import {
@@ -27,6 +28,8 @@ import {
 } from '@tesel/scenario';
 
 import { aliasOf } from '../members/alias.ts';
+import { debriefOf, type Debrief } from './debrief/debrief.ts';
+import { UserLog } from './debrief/user-log.ts';
 import { Director } from './director.ts';
 import { wayThrough, type Errand } from './errands.ts';
 import type { Crew, Exercise, Setting, Stage, World } from './exercise.ts';
@@ -47,8 +50,8 @@ export interface PracticeOptions {
   /** The user's node ID, whom the scenario names `YOU`. */
   readonly self: NodeId;
   readonly setting: Setting;
-  /** Called once the exercise is over. */
-  readonly onfinish?: () => void;
+  /** Called once the exercise is over, with how it went. */
+  readonly onfinish?: (debrief: Debrief) => void;
 }
 
 /** Seconds between the moments the world moves on and the members look round. */
@@ -64,6 +67,9 @@ export class PracticeRun implements Stage {
   readonly #seconds: number;
   readonly #world: World;
   readonly #director: Director;
+  readonly #findings: Exercise['findings'];
+  /** When the user did what the report at the end weighs. */
+  readonly #log = new UserLog();
   readonly #routines: readonly { tick(stage: Stage): void }[];
   readonly #options: PracticeOptions;
   readonly #performer: ScenarioPerformer;
@@ -91,6 +97,7 @@ export class PracticeRun implements Stage {
     this.#seconds = exercise.seconds;
     this.#world = exercise.world;
     this.#director = new Director(exercise.injects);
+    this.#findings = exercise.findings;
     this.#routines = [new SosRoutine(), new TaskRoutine(), new TalkRoutine(), new BodyRoutine()];
     this.#options = options;
     this.#performer = new ScenarioPerformer((name) =>
@@ -212,14 +219,19 @@ export class PracticeRun implements Stage {
     if (this.#over) return;
     this.say(this.crew.lead.alias, text);
     this.#over = true;
-    this.#options.onfinish?.();
+    this.#log.look(this.#state, this.#options.self, this.elapsed);
+    this.#options.onfinish?.(debriefOf(this, this.#log, this.#findings(this)));
   }
 
   // The run's own work.
 
-  /** Moves the exercise on: the routines, the world and the director, then its end, if due. */
+  /**
+   * Moves the exercise on: notes what the user has done, then the routines, the world and the
+   * director, then its end, if due.
+   */
   #step(): void {
     if (this.#over || this.#stopped || this.#startMs === 0) return;
+    this.#log.look(this.#state, this.#options.self, this.elapsed);
     for (const routine of this.#routines)
       attempt(() => {
         routine.tick(this);
