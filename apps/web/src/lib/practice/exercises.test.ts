@@ -242,8 +242,25 @@ describe('exercises played through', { timeout: PLAYING_MS }, () => {
     expect(said.at(-1)).toMatch(/^Fin del ejercicio: incendio estabilizado/);
   });
 
-  it('plays the flood and the fire to their end for a coordinator too', async () => {
-    for (const situation of ['flood', 'wildfire'] as const) {
+  it('runs a race round the streets, with a runner down and a van on the course', async () => {
+    const { sent, said, finished, debrief } = await play('race', 'member');
+    expect(finished).toBe(true);
+    // Four crossings were marked and given out, the user's among them.
+    expect(
+      sent.filter((event) => event.type === 'marker' && event.label.startsWith('Corte ')),
+    ).toHaveLength(4);
+    expect(said.some((line) => line.startsWith('¡Salida!'))).toBe(true);
+    expect(said.some((line) => line.startsWith('¡Corredor desplomado'))).toBe(true);
+    expect(said.some((line) => line.startsWith('Empiezo la RCP'))).toBe(true);
+    expect(debrief?.figures).toContainEqual({
+      label: 'Cortes cubiertos al pasar la cabeza',
+      value: expect.stringMatching(/^\d de 4$/) as unknown,
+    });
+    expect(said.at(-1)).toMatch(/^Fin del ejercicio: la carrera sigue/);
+  });
+
+  it('plays the flood, the fire and the race to their end for a coordinator too', async () => {
+    for (const situation of ['flood', 'wildfire', 'race'] as const) {
       const { finished, sent } = await play(situation, 'coordinator');
       expect(finished).toBe(true);
       expect(sent.filter((event) => event.type === 'task')).toEqual([]);

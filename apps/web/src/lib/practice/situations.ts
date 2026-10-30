@@ -6,9 +6,10 @@ import type { GlyphName } from '../ui/glyphs.ts';
 import type { Exercise, Setting } from './exercise.ts';
 import { flood } from './scenes/flood.ts';
 import { missingPerson } from './scenes/missing-person.ts';
+import { race } from './scenes/race.ts';
 import { wildfire } from './scenes/wildfire.ts';
 
-export const SITUATIONS = ['missing-person', 'flood', 'wildfire'] as const;
+export const SITUATIONS = ['missing-person', 'flood', 'wildfire', 'race'] as const;
 export type Situation = (typeof SITUATIONS)[number];
 
 interface SituationInfo {
@@ -41,6 +42,13 @@ export const SITUATION_INFO: Readonly<Record<Situation, SituationInfo>> = {
     title: 'practiceWildfireTitle',
     icon: 'flame',
     exercise: wildfire,
+    search: false,
+    heights: false,
+  },
+  race: {
+    title: 'practiceRaceTitle',
+    icon: 'flag',
+    exercise: race,
     search: false,
     heights: false,
   },

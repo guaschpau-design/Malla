@@ -64,6 +64,8 @@ export class Teammate {
   #status: DutyStatus = 'active';
   /** When the teammate was last given something to do, or the run started; null while busy. */
   #idleSince: number | null = 0;
+  /** What the teammate stands guard at, by its id, until sent elsewhere; null if nothing. */
+  #post: string | null = null;
 
   constructor(member: ScenarioMember, identity: Identity, persona: Persona | null) {
     const start = member.route?.[0];
@@ -120,6 +122,16 @@ export class Teammate {
     return this.#job === null ? this.#idleSince : null;
   }
 
+  /** What the teammate stands guard at, by its id (a closed crossing); null if nothing. */
+  get post(): string | null {
+    return this.#post;
+  }
+
+  /** The teammate stands guard at a post, free to be sent elsewhere, and asks for nothing more. */
+  guard(post: string): void {
+    this.#post = post;
+  }
+
   get battery(): number {
     return Math.max(0, Math.round(this.#battery));
   }
@@ -161,6 +173,7 @@ export class Teammate {
     if (job.kind !== 'task' && this.#job?.kind === 'task') this.#resume = this.#job.task;
     if (job.kind === 'task') this.#resume = null;
     this.#job = job;
+    this.#post = null;
     return this.walker.go(way, now, speed);
   }
 

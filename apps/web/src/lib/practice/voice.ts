@@ -27,6 +27,7 @@ const SAYINGS = {
   flatBattery: ['practiceFlatBattery'],
   break: ['practiceBreak'],
   backFromBreak: ['practiceBackFromBreak', 'practiceBackFromBreak2'],
+  raceHeadPasses: ['practiceRaceHeadPasses', 'practiceRaceHeadPasses2'],
 } as const satisfies Record<string, readonly Exclude<MessageKey, PluralKey>[]>;
 
 export type Saying = keyof typeof SAYINGS;

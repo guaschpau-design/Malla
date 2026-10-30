@@ -714,6 +714,68 @@ export const en = {
   practiceBreak: 'I’ve been at it a while: taking {minutes} minutes to rest and drink.',
   practiceBackFromBreak: 'Back, carrying on.',
   practiceBackFromBreak2: 'Ready, available again.',
+  practiceRaceTitle: 'Popular race',
+  practiceRace:
+    'A {distance} km popular race through the streets here: stop the traffic at the crossings, look after the runners and keep the course clear.',
+  practiceRaceControl: 'Race control',
+  practiceRaceArrived:
+    'Today we cover the popular race: {distance} km, about {runners} runners. The start is in {minutes} minutes.',
+  practiceRaceCall:
+    'Popular race: {runners} runners, {distance} km. Start in {minutes} minutes. The safety of the course is yours.',
+  practiceRacePlan:
+    'I need someone at each crossing before the start, medics at the medical post and someone with the other defibrillator at the aid station.',
+  practiceRaceCourse: 'Course',
+  practiceRaceStart: 'Start and finish',
+  practiceRaceMedicalPost: 'Medical post',
+  practiceRaceAidStation: 'Aid station',
+  practiceRaceCrossingLabel: 'Crossing {number}',
+  practiceRaceCrossing: '{a} and {b}',
+  practiceRaceCrossingNumber: 'crossing {number}',
+  practiceRaceGuard: 'Guard crossing {number}: {crossing}',
+  practiceRaceStaffAid: 'Staff the aid station',
+  practiceRaceStaffMedical: 'Set up the medical post',
+  practiceRaceOrders:
+    'To your posts before the start. {name}, you take crossing {number}. Tell us when the leaders pass.',
+  practiceRaceTwoMinutes: 'Two minutes to the start. Is every crossing guarded?',
+  practiceRaceStarted: 'And they’re off! {runners} runners on the course.',
+  practiceRaceHeat: 'It’s 27 °C already. Watch for runners who look unwell: water and shade.',
+  practiceRaceHeadPasses: 'Leaders passing crossing {number}.',
+  practiceRaceHeadPasses2: 'Leaders through crossing {number}. All in order.',
+  practiceRaceCarIn:
+    'A car got onto the course at {crossing}! The runners dodged it. Nobody is at that crossing.',
+  practiceRaceCarStopped:
+    'Stopped a car at crossing {number}: it wanted to cross with runners passing.',
+  practiceRaceHead: 'Leaders',
+  practiceRaceSweeper: 'Sweeper bike',
+  practiceRaceWinner: 'The winner is in: {time}. On with the rest.',
+  practiceRaceEnd:
+    'End of the exercise: the race goes on. Crossings guarded when the leaders came: {guarded} of {crossings}.',
+  practiceRaceCollapseLabel: 'Unconscious runner',
+  practiceRaceCollapse: 'Runner down {where}! Not responding, not breathing normally. 112 called.',
+  practiceRaceRunningOver: 'I’m close: running over to start CPR.',
+  practiceRaceRunningOverShock: 'I’m close and have the defibrillator: running over.',
+  practiceRacePolice: 'The local police are taking crossing {number}. That one is no longer yours.',
+  practiceRaceDoingCpr: 'Giving the runner CPR',
+  practiceRaceCprStarted: 'Starting CPR: hard and fast compressions. Bring the defibrillator!',
+  practiceRaceTakeDefibrillator: 'Take the defibrillator to the runner down {where}',
+  practiceRaceSendDefibrillator:
+    '{name}, run with the defibrillator to the runner. Every minute counts.',
+  practiceRaceOfferDefibrillator: 'I have a defibrillator. Shall I go to the runner?',
+  practiceRaceRevived: 'Shock given… Pulse is back! Breathing. Putting him on his side.',
+  practiceRaceShockNoPulse: 'Shock given, still no pulse. Carrying on with CPR.',
+  practiceRaceAmbulanceRevived: 'The ambulance is here: the runner leaves conscious. Good work.',
+  practiceRaceAmbulanceCritical: 'The ambulance is here: the runner leaves in a critical state.',
+  practiceRaceVanLabel: 'Van on the course',
+  practiceRaceVan: 'A delivery van has stopped on the course {where}, with runners passing.',
+  practiceRaceMoveVan: 'Get the van moved {where}',
+  practiceRaceVanMoved: 'Talked to the driver: the van is off the course.',
+  practiceRaceVanGone: 'Van moved',
+  practiceRaceVanHurt: 'A runner hit the van’s mirror {where}. A minor injury.',
+  practiceRaceNoWater: 'The aid station has run out of water. There are jugs in Pablo’s car.',
+  practiceRaceBringWater: 'Take water to the aid station',
+  practiceRaceWaterBrought: 'Water at the aid station. The runners are drinking.',
+  practiceRaceNoWaterLate: 'No water at the aid station: three runners have dropped out, dizzy.',
+  practiceRaceSos: 'A runner knocked me over at the crossing: I think I’ve broken my wrist.',
   debriefTitle: 'How it went',
   debriefGood: 'Well done',
   debriefBetter: 'To improve',
@@ -806,6 +868,39 @@ export const en = {
     one: 'The fire caught {count} teammate. With smoke near, pulling back in time comes first.',
     other: 'The fire caught {count} teammates. With smoke near, pulling back in time comes first.',
   },
+  debriefNotCame: 'never came',
+  debriefRaceCrossings: 'Crossings guarded when the leaders came',
+  debriefRaceCars: 'Cars on the course',
+  debriefRaceAllGuarded: 'Every crossing was guarded when the runners came.',
+  debriefRaceUnguarded: {
+    one: 'When the leaders came, {count} crossing had nobody at it. Before the start, one person at each crossing.',
+    other:
+      'When the leaders came, {count} crossings had nobody at them. Before the start, one person at each crossing.',
+  },
+  debriefRaceCarsNote: {
+    one: '{count} car got onto the course at an unguarded crossing. If someone leaves their crossing, someone else takes it.',
+    other:
+      '{count} cars got onto the course at unguarded crossings. If someone leaves their crossing, someone else takes it.',
+  },
+  debriefRaceCollapse: 'Runner in cardiac arrest',
+  debriefRaceCollapseValue: 'CPR: {cpr} · defibrillator: {shock}',
+  debriefRaceRevived:
+    'The runner’s pulse came back: CPR at once and the defibrillator within six minutes. That is how a cardiac arrest is survived.',
+  debriefRaceNotRevived:
+    'The runner’s pulse did not come back. In a cardiac arrest, CPR starts at once and the defibrillator sets off as soon as it is known: each minute without them costs 10 % of the chance to survive.',
+  debriefRaceVan: 'Van on the course',
+  debriefRaceVanMoved: 'Moved in time',
+  debriefRaceVanHit: 'A runner hurt',
+  debriefRaceVanNote:
+    'Nobody reached the van in time and a runner hit it. Something in the way on the course is seen to at once.',
+  debriefRaceWater: 'Aid station',
+  debriefRaceWatered: 'Water brought in time',
+  debriefRaceDry: 'Ran dry',
+  debriefRaceDryNote:
+    'The aid station ran dry and runners dropped out in the heat. In the heat, water is safety.',
+  debriefRaceReported: 'You told the team when the leaders passed your crossing.',
+  debriefRaceNotReported:
+    'You did not tell when the leaders passed your crossing: those messages tell the race control where the race is.',
   practiceTimeUp: 'Time’s up for the exercise. Thanks, everyone.',
   practiceMissingCall:
     'Call-out: we’re looking for Rosa Martínez, 78, in the early stages of dementia. It’s yours to coordinate.',

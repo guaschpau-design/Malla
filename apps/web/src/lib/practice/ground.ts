@@ -14,6 +14,8 @@ import type { HeightGrid } from './heights.ts';
 
 /** A street is called by its name within this distance of it. */
 const STREET_NEAR_M = 30;
+/** Streets that come this close to a point cross there. */
+const CROSSING_NEAR_M = 8;
 
 /** The eight directions, clockwise from north, as the members say them. */
 const DIRECTIONS: readonly MessageKey[] = [
@@ -108,6 +110,17 @@ export class Ground {
       if (meters < nearestM) [nearest, nearestM] = [segment, meters];
     }
     return nearest === null ? null : this.said(nearest.name);
+  }
+
+  /** The two streets that cross at a point, by name, if two named ones meet there. */
+  crossingAt(at: LatLon): readonly [string, string] | null {
+    const names = new Set(
+      this.#named
+        .filter((segment) => nearestOnSegment(at, segment.a, segment.b).meters <= CROSSING_NEAR_M)
+        .map((segment) => segment.name),
+    );
+    const [one, other] = names;
+    return one === undefined || other === undefined ? null : [one, other];
   }
 
   /** The river, stream or canal within `metres` of a point, if any. */

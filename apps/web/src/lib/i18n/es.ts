@@ -717,6 +717,74 @@ export const es: Messages = {
   practiceBreak: 'Llevo un buen rato sin parar: descanso {minutes} minutos y bebo agua.',
   practiceBackFromBreak: 'Ya estoy, sigo.',
   practiceBackFromBreak2: 'Listo, disponible otra vez.',
+  practiceRaceTitle: 'Carrera popular',
+  practiceRace:
+    'Carrera popular de {distance} km por las calles de aquí: cortar el tráfico en los cruces, atender a los corredores y mantener el recorrido despejado.',
+  practiceRaceControl: 'Control de carrera',
+  practiceRaceArrived:
+    'Hoy cubrimos la carrera popular: {distance} km, unos {runners} corredores. Salida en {minutes} minutos.',
+  practiceRaceCall:
+    'Carrera popular: {runners} corredores, {distance} km. Salida en {minutes} minutos. La seguridad del recorrido es vuestra.',
+  practiceRacePlan:
+    'Necesito a alguien en cada corte antes de la salida, sanitarios en el puesto y alguien con el otro DEA en el avituallamiento.',
+  practiceRaceCourse: 'Recorrido',
+  practiceRaceStart: 'Salida y meta',
+  practiceRaceMedicalPost: 'Puesto sanitario',
+  practiceRaceAidStation: 'Avituallamiento',
+  practiceRaceCrossingLabel: 'Corte {number}',
+  practiceRaceCrossing: '{a} con {b}',
+  practiceRaceCrossingNumber: 'el corte {number}',
+  practiceRaceGuard: 'Cubrir el corte {number}: {crossing}',
+  practiceRaceStaffAid: 'Atender el avituallamiento',
+  practiceRaceStaffMedical: 'Montar el puesto sanitario',
+  practiceRaceOrders:
+    'A vuestros puestos antes de la salida. {name}, tú al corte {number}. Avisad cuando pase la cabeza de carrera.',
+  practiceRaceTwoMinutes: 'Dos minutos para la salida. ¿Están todos los cortes cubiertos?',
+  practiceRaceStarted: '¡Salida! {runners} corredores en carrera.',
+  practiceRaceHeat: 'Ya hacemos 27 °C. Atentos a corredores con mala cara: agua y sombra.',
+  practiceRaceHeadPasses: 'Pasa la cabeza de carrera por el corte {number}.',
+  practiceRaceHeadPasses2: 'Cabeza de carrera por el corte {number}. Todo en orden.',
+  practiceRaceCarIn:
+    '¡Un coche se ha metido en el recorrido por {crossing}! Los corredores lo han esquivado. Ese corte está sin nadie.',
+  practiceRaceCarStopped:
+    'He parado un coche en el corte {number}: quería cruzar con corredores pasando.',
+  practiceRaceHead: 'Cabeza de carrera',
+  practiceRaceSweeper: 'Bici escoba',
+  practiceRaceWinner: 'El ganador ya está en meta: {time}. Seguimos con los demás.',
+  practiceRaceEnd:
+    'Fin del ejercicio: la carrera sigue. Cortes cubiertos al pasar la cabeza: {guarded} de {crossings}.',
+  practiceRaceCollapseLabel: 'Corredor inconsciente',
+  practiceRaceCollapse:
+    '¡Corredor desplomado {where}! No responde ni respira bien. Avisado el 112.',
+  practiceRaceRunningOver: 'Estoy cerca: voy corriendo a hacerle la RCP.',
+  practiceRaceRunningOverShock: 'Estoy cerca y llevo el DEA: voy corriendo.',
+  practiceRacePolice: 'La Policía Local se queda en el corte {number}. Ese ya no es vuestro.',
+  practiceRaceDoingCpr: 'Haciendo la RCP al corredor',
+  practiceRaceCprStarted: 'Empiezo la RCP: compresiones fuertes y rápidas. ¡Que traigan el DEA!',
+  practiceRaceTakeDefibrillator: 'Llevar el DEA al corredor desplomado {where}',
+  practiceRaceSendDefibrillator: '{name}, corre con el DEA al corredor. Cada minuto cuenta.',
+  practiceRaceOfferDefibrillator: 'Llevo un DEA. ¿Voy al corredor?',
+  practiceRaceRevived: 'Descarga hecha… ¡Ha recuperado el pulso! Respira. Lo ponemos de lado.',
+  practiceRaceShockNoPulse: 'Descarga hecha, pero sigue sin pulso. Seguimos con la RCP.',
+  practiceRaceAmbulanceRevived:
+    'Ha llegado la ambulancia: se llevan al corredor consciente. Buen trabajo.',
+  practiceRaceAmbulanceCritical:
+    'Ha llegado la ambulancia: se llevan al corredor en estado crítico.',
+  practiceRaceVanLabel: 'Furgoneta en el recorrido',
+  practiceRaceVan:
+    'Una furgoneta de reparto ha parado en el recorrido {where}, con corredores pasando.',
+  practiceRaceMoveVan: 'Que retiren la furgoneta {where}',
+  practiceRaceVanMoved: 'Hablado con el conductor: furgoneta fuera del recorrido.',
+  practiceRaceVanGone: 'Furgoneta retirada',
+  practiceRaceVanHurt:
+    'Un corredor se ha golpeado con el retrovisor de la furgoneta {where}. Herida leve.',
+  practiceRaceNoWater:
+    'El avituallamiento se ha quedado sin agua. Hay garrafas en el coche de Pablo.',
+  practiceRaceBringWater: 'Llevar agua al avituallamiento',
+  practiceRaceWaterBrought: 'Agua en el avituallamiento. Los corredores ya beben.',
+  practiceRaceNoWaterLate:
+    'Sin agua en el avituallamiento: tres corredores se han retirado mareados.',
+  practiceRaceSos: 'Me ha arrollado un corredor en el cruce: creo que me he roto la muñeca.',
   debriefTitle: 'Cómo ha ido',
   debriefGood: 'Bien',
   debriefBetter: 'A mejorar',
@@ -810,6 +878,39 @@ export const es: Messages = {
     other:
       'El fuego alcanzó a {count} compañeros. Con humo cerca, retirarse a tiempo es lo primero.',
   },
+  debriefNotCame: 'no llegó',
+  debriefRaceCrossings: 'Cortes cubiertos al pasar la cabeza',
+  debriefRaceCars: 'Coches en el recorrido',
+  debriefRaceAllGuarded: 'Todos los cortes estaban cubiertos cuando llegaron los corredores.',
+  debriefRaceUnguarded: {
+    one: 'Al pasar la cabeza de carrera, {count} corte estaba sin nadie. Antes de la salida, una persona en cada corte.',
+    other:
+      'Al pasar la cabeza de carrera, {count} cortes estaban sin nadie. Antes de la salida, una persona en cada corte.',
+  },
+  debriefRaceCarsNote: {
+    one: 'Entró {count} coche en el recorrido por un corte sin nadie. Si alguien deja su corte, otro ocupa su sitio.',
+    other:
+      'Entraron {count} coches en el recorrido por cortes sin nadie. Si alguien deja su corte, otro ocupa su sitio.',
+  },
+  debriefRaceCollapse: 'Corredor en parada',
+  debriefRaceCollapseValue: 'RCP: {cpr} · DEA: {shock}',
+  debriefRaceRevived:
+    'El corredor recuperó el pulso: RCP enseguida y el DEA en menos de seis minutos. Así se salva una parada.',
+  debriefRaceNotRevived:
+    'El corredor no recuperó el pulso. En una parada, la RCP empieza al momento y el DEA sale en cuanto se sabe: cada minuto sin ellos resta un 10 % de supervivencia.',
+  debriefRaceVan: 'Furgoneta en el recorrido',
+  debriefRaceVanMoved: 'Retirada a tiempo',
+  debriefRaceVanHit: 'Un corredor herido',
+  debriefRaceVanNote:
+    'Nadie llegó a tiempo a la furgoneta y un corredor se golpeó. Un obstáculo en el recorrido se atiende enseguida.',
+  debriefRaceWater: 'Avituallamiento',
+  debriefRaceWatered: 'Agua repuesta a tiempo',
+  debriefRaceDry: 'Sin agua',
+  debriefRaceDryNote:
+    'El avituallamiento se quedó sin agua y hubo retirados por el calor. Con calor, el agua es seguridad.',
+  debriefRaceReported: 'Avisaste cuando pasó la cabeza de carrera por tu corte.',
+  debriefRaceNotReported:
+    'No avisaste del paso de la cabeza por tu corte: con esos avisos, control sabe por dónde va la carrera.',
   practiceTimeUp: 'Se acabó el tiempo del ejercicio. Gracias a todos.',
   practiceMissingCall:
     'Activación: buscamos a Rosa Martínez, 78 años, con principio de demencia. Os toca coordinar.',

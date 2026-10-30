@@ -77,8 +77,11 @@ export function leader(t: Translate, user: Role): string {
   return user === 'member' ? CARMEN : dispatch(t);
 }
 
-/** Everyone, gathered at the meeting point, and the control room, which never shows on the map. */
-export function cast(t: Translate, at: Place, user: Role): ScenarioMember[] {
+/**
+ * Everyone, gathered at the meeting point, and the control room, which never shows on the map: the
+ * 112 room, or `room`.
+ */
+export function cast(t: Translate, at: Place, user: Role, room = dispatch(t)): ScenarioMember[] {
   const gathered = (alias: string, north: number, east: number, pace = PACE): ScenarioMember => ({
     alias,
     route: [at(north, east)],
@@ -92,7 +95,7 @@ export function cast(t: Translate, at: Place, user: Role): ScenarioMember[] {
     gathered(NURIA, -75, -100, 1.5),
     gathered(PABLO, -45, -95, 1.3),
     gathered(SARA, -90, -85, 1.4),
-    { alias: dispatch(t), route: [at(-60, -80)], hidden: true },
+    { alias: room, route: [at(-60, -80)], hidden: true },
   ];
 }
 

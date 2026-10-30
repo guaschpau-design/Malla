@@ -84,6 +84,20 @@ test('an exercise ends with a report of how it went', async ({ browser }) => {
   await expect(card).toContainText('No diste ninguna orden');
 });
 
+test('a race is drawn round the streets, with its crossings given out', async ({ browser }) => {
+  const page = await device(browser, 'Ana', VALENCIA);
+  await practise(page, { situation: 'Carrera popular' });
+  const card = page.getByRole('region', { name: 'Práctica' });
+  await expect(card).toContainText('Carrera popular');
+  await page.getByRole('button', { name: 'Chat' }).click();
+  // The run starts once the streets around are read, which takes a moment on a busy machine.
+  await expect(page.getByText(/Hoy cubrimos la carrera popular/)).toBeVisible({ timeout: 15_000 });
+  await page.getByRole('button', { name: 'Cerrar' }).click();
+  await expect(page.getByRole('button', { name: /^Tareas/ })).toContainText('1', {
+    timeout: 60_000,
+  });
+});
+
 test('a practice started on the wide view the map opens on brings the teammates into view', async ({
   browser,
 }) => {

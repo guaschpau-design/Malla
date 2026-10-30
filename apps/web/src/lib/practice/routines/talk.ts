@@ -1,7 +1,8 @@
 // What the teammates say to the user. Someone named in a message answers it; a question of where
 // they are, or of how it is going, gets where they are or what they are on; anything else gets a
 // word now and then from whoever leads. A report gets an answer too. When the user coordinates,
-// teammates left with nothing to do ask what to do next, as people waiting at a meeting point do.
+// teammates left with nothing to do ask what to do next, as people waiting at a meeting point do;
+// not those standing guard at a post.
 
 import { eventRefKey } from '@tesel/protocol';
 
@@ -94,7 +95,11 @@ export class TalkRoutine {
     const idle = stage.crew.onTheGround.filter((teammate) => {
       const since = teammate.idleSince;
       return (
-        teammate.free && !teammate.silent && since !== null && stage.now - since > IDLE_ASK_S * 1000
+        teammate.free &&
+        !teammate.silent &&
+        teammate.post === null &&
+        since !== null &&
+        stage.now - since > IDLE_ASK_S * 1000
       );
     });
     const [speaker] = idle;
