@@ -16,54 +16,105 @@ import {
   type TaskEvent,
   type TeselEvent,
 } from '@tesel/protocol';
-import { WalkNetwork, YOU, type Scenario, type ScenarioStep } from '@tesel/scenario';
+import { YOU, type ScenarioStep } from '@tesel/scenario';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { translator } from '../i18n/index.ts';
+import { Chance } from './chance.ts';
+import type { Exercise, Inject, Setting, World } from './exercise.ts';
+import { Ground } from './ground.ts';
 import { PracticeRun } from './practice-run.ts';
+import type { Persona } from './teammate.ts';
 
 const HERE = { lat: 39.47, lon: -0.37 };
 const at = (north: number, east: number) => offsetMeters(HERE, north, east);
 const t = translator('es');
 const user = generateIdentity();
 
-function scenario(steps: readonly ScenarioStep[] = []): Scenario {
-  return {
-    name: 'test',
-    description: 'Two teammates.',
-    center: HERE,
-    duration: 600,
-    members: [
-      { alias: 'Jordi', route: [HERE], speed: 2 },
-      { alias: 'Carmen', role: 'coordinator', route: [at(100, 0)], speed: 2 },
-    ],
-    steps,
-  };
+/** Nothing in the way, and nothing happening by itself. */
+const CALM: World = { passable: () => () => true, tick: () => undefined };
+
+interface Options {
+  readonly steps?: readonly ScenarioStep[];
+  /** Streets the teammates keep to; none, and they walk straight. */
+  readonly streets?: readonly (readonly LatLon[])[];
+  readonly world?: World;
+  readonly injects?: readonly Inject[];
+  readonly personas?: Readonly<Record<string, Persona>>;
+  /** Carmen coordinates, and the user is a member; or the user coordinates. */
+  readonly user?: 'member' | 'coordinator';
+  readonly seconds?: number;
 }
 
 /**
- * A run whose events land in a list, decoded, with the user's own events beside them; `react`
- * shows the run the group as both make it.
+ * A run of two teammates, Jordi here and Carmen 100 m north, whose events land in a list, decoded,
+ * with the user's own events beside them; `wait` shows the run the group as both make it.
  */
-function practice(steps: readonly ScenarioStep[] = [], network: WalkNetwork | null = null) {
+function practice({
+  steps = [],
+  streets = [],
+  world = CALM,
+  injects = [],
+  personas = {},
+  user: part = 'member',
+  seconds = 3600,
+}: Options = {}) {
   const sent: TeselEvent[] = [];
   const own: TeselEvent[] = [];
-  const run = new PracticeRun(scenario(steps), {
+  const ground = new Ground(
+    { ways: streets.map((points) => ({ points, name: null })), waterways: [], greens: [] },
+    null,
+    'es',
+  );
+  const setting: Setting = {
+    t,
+    locale: 'es',
+    centre: HERE,
+    user: part,
+    ground,
+    chance: new Chance(1),
+  };
+  const exercise: Exercise = {
+    scenario: {
+      name: 'test',
+      description: 'Two teammates.',
+      center: HERE,
+      duration: seconds,
+      members: [
+        { alias: 'Jordi', route: [HERE], speed: 2 },
+        {
+          alias: 'Carmen',
+          role: part === 'member' ? 'coordinator' : 'member',
+          route: [at(100, 0)],
+          speed: 2,
+        },
+      ],
+      steps,
+    },
+    personas,
+    world,
+    injects,
+    seconds,
+  };
+  let finished = false;
+  const run = new PracticeRun(exercise, {
     sink: (bytes) => {
       const event = decodeEvent(bytes);
       if (event.ok) sent.push(event.value);
       return Promise.resolve();
     },
     self: user.nodeId,
-    t,
-    network,
+    setting,
+    onfinish: () => {
+      finished = true;
+    },
   });
   const state = (): GroupState => reduceAll(EMPTY_STATE, [...sent, ...own]);
   const node = (alias: string): NodeId | undefined =>
     sent.find((event) => event.type === 'member-info' && event.alias === alias)?.origin;
   /** Lets `seconds` go by a second at a time, the run seeing the group change as it would. */
-  async function wait(seconds: number): Promise<void> {
-    for (let second = 0; second < seconds; second += 1) {
+  async function wait(time: number): Promise<void> {
+    for (let second = 0; second < time; second += 1) {
       await vi.advanceTimersByTimeAsync(1000);
       run.react(state());
     }
@@ -81,6 +132,10 @@ function practice(steps: readonly ScenarioStep[] = [], network: WalkNetwork | nu
     if (found === undefined) throw new Error(`no ${alias}`);
     return found;
   };
+  const aliasOfNode = (origin: NodeId) => {
+    const info = sent.find((event) => event.type === 'member-info' && event.origin === origin);
+    return info?.type === 'member-info' ? info.alias : '?';
+  };
   /** The statuses the teammates have given tasks, with the alias of whoever gave each. */
   const statuses = () =>
     sent.flatMap((event) =>
@@ -88,11 +143,23 @@ function practice(steps: readonly ScenarioStep[] = [], network: WalkNetwork | nu
         ? [`${aliasOfNode(event.origin)} ${event.text}: ${event.status}`]
         : [],
     );
-  const aliasOfNode = (origin: NodeId) => {
-    const info = sent.find((event) => event.type === 'member-info' && event.origin === origin);
-    return info?.type === 'member-info' ? info.alias : '?';
+  /** What each teammate has said, as "Alias: text". */
+  const said = () =>
+    sent.flatMap((event) =>
+      event.type === 'chat' ? [`${aliasOfNode(event.origin)}: ${event.text}`] : [],
+    );
+  return {
+    run,
+    sent,
+    own,
+    state,
+    nodeOf,
+    wait,
+    lastPosition,
+    statuses,
+    said,
+    finished: () => finished,
   };
-  return { run, sent, own, state, node, nodeOf, wait, lastPosition, statuses };
 }
 
 /** The header of the user's event number `seq`, sent now. */
@@ -102,23 +169,28 @@ const userEvent = (seq: number) => ({
   time: Math.floor(Date.now() / 1000),
 });
 
-/** A task the user creates, or changes, as their event number `seq`. */
-function userTask(
-  seq: number,
-  fields: Pick<TaskEvent, 'assignee' | 'place' | 'text'> & { readonly task?: number },
-  status: TaskEvent['status'] = 'open',
-): TaskEvent {
-  const { task = seq, ...rest } = fields;
+/** A task the user creates, as their event number `seq`. */
+function userTask(seq: number, fields: Pick<TaskEvent, 'assignee' | 'place' | 'text'>): TaskEvent {
   return {
     ...userEvent(seq),
     type: 'task',
-    task: { origin: user.nodeId, seq: task },
-    status,
-    ...rest,
+    task: { origin: user.nodeId, seq },
+    status: 'open',
+    ...fields,
   };
 }
 
-const point = (at: LatLon) => ({ kind: 'point' as const, at });
+const point = (where: LatLon) => ({ kind: 'point' as const, at: where });
+
+/** An SOS of the user's, as their event number `seq`, at a place. */
+const userSos = (seq: number, where: LatLon): TeselEvent => ({
+  ...userEvent(seq),
+  type: 'sos',
+  kind: 'medical',
+  ...where,
+  accuracy: null,
+  text: '',
+});
 
 describe('practice run', () => {
   beforeEach(() => {
@@ -128,10 +200,10 @@ describe('practice run', () => {
     vi.useRealTimers();
   });
 
-  it('plays the scenario as time goes by, and says where everyone is', async () => {
-    const { run, sent, wait } = practice([
-      { at: 20, by: 'Carmen', action: { type: 'chat', text: 'Sin novedad' } },
-    ]);
+  it('plays the opening as time goes by, and says where everyone is', async () => {
+    const { run, sent, wait } = practice({
+      steps: [{ at: 20, by: 'Carmen', action: { type: 'chat', text: 'Sin novedad' } }],
+    });
     run.start();
     await wait(1);
     expect(sent.filter((event) => event.type === 'member-info')).toHaveLength(2);
@@ -146,14 +218,7 @@ describe('practice run', () => {
     const { run, sent, own, wait, lastPosition } = practice();
     run.start();
     // Nearer Carmen, who stands 100 m north of Jordi.
-    own.push({
-      ...userEvent(1),
-      type: 'sos',
-      kind: 'medical',
-      ...at(90, 0),
-      accuracy: null,
-      text: '',
-    });
+    own.push(userSos(1, at(90, 0)));
     await wait(9);
     expect(sent.filter((event) => event.type === 'ack' || event.type === 'chat')).toHaveLength(2);
     await wait(20);
@@ -162,59 +227,57 @@ describe('practice run', () => {
     run.stop();
   });
 
+  it('does not answer the user’s SOS once the user has cancelled it', async () => {
+    const { run, sent, own, wait } = practice();
+    run.start();
+    own.push(userSos(1, at(90, 0)));
+    await wait(2);
+    own.push({ ...userEvent(2), type: 'sos-cancel', sos: { origin: user.nodeId, seq: 1 } });
+    await wait(10);
+    expect(sent.filter((event) => event.type === 'ack' || event.type === 'chat')).toEqual([]);
+    run.stop();
+  });
+
   it('takes a task, walks to it, works there and says it is done', async () => {
-    const { run, sent, own, node, wait, lastPosition } = practice();
+    const { run, sent, own, nodeOf, wait, lastPosition, said } = practice();
     run.start();
     await wait(1);
-    const jordi = node('Jordi');
-    if (jordi === undefined) throw new Error('no Jordi');
-    const task: TaskEvent = {
-      ...userEvent(1),
-      type: 'task',
-      task: { origin: user.nodeId, seq: 1 },
-      status: 'open',
-      assignee: jordi,
-      place: { kind: 'point', at: at(0, 60) },
-      text: 'Revisar el portal',
-    };
-    own.push(task);
+    own.push(
+      userTask(1, {
+        assignee: nodeOf('Jordi'),
+        place: point(at(0, 60)),
+        text: 'Revisar el portal',
+      }),
+    );
     await wait(7);
     expect(sent.findLast((event) => event.type === 'task')).toMatchObject({
-      origin: jordi,
+      origin: nodeOf('Jordi'),
       status: 'in-progress',
     });
-    // 60 m at 2 m/s, then 45 s of work.
+    // 60 m at 2 m/s, then 75 s of work.
     await wait(40);
     expect(distanceMeters(lastPosition('Jordi') ?? HERE, at(0, 60))).toBeLessThan(1);
     expect(sent.findLast((event) => event.type === 'task')).toMatchObject({
       status: 'in-progress',
     });
-    await wait(40);
+    await wait(70);
     expect(sent.findLast((event) => event.type === 'task')).toMatchObject({ status: 'done' });
-    expect(sent.findLast((event) => event.type === 'chat')).toMatchObject({
-      text: 'Hecho: Revisar el portal.',
-    });
+    expect(said().at(-1)).toMatch(/^Jordi: .*Revisar el portal/);
     run.stop();
   });
 
   it('leaves the user’s own tasks, and those for anyone, to the user', async () => {
-    const { run, sent, own, wait } = practice([
-      {
-        at: 1,
-        by: 'Carmen',
-        action: { type: 'task', id: 'yours', text: 'Para ti', assignee: YOU, place: null },
-      },
-    ]);
-    run.start();
-    own.push({
-      ...userEvent(1),
-      type: 'task',
-      task: { origin: user.nodeId, seq: 1 },
-      status: 'open',
-      assignee: null,
-      place: null,
-      text: 'Para cualquiera',
+    const { run, sent, own, wait } = practice({
+      steps: [
+        {
+          at: 1,
+          by: 'Carmen',
+          action: { type: 'task', id: 'yours', text: 'Para ti', assignee: YOU, place: null },
+        },
+      ],
     });
+    run.start();
+    own.push(userTask(1, { assignee: null, place: null, text: 'Para cualquiera' }));
     await wait(20);
     expect(sent.flatMap((event) => (event.type === 'task' ? [event.status] : []))).toEqual([
       'open',
@@ -222,74 +285,81 @@ describe('practice run', () => {
     run.stop();
   });
 
-  it('sends whoever answers a teammate’s SOS to them, and ends it once the user has seen it', async () => {
-    const { run, sent, own, state, wait, lastPosition } = practice([
-      { at: 2, by: 'Jordi', action: { type: 'sos', id: 'sos', kind: 'medical', text: 'Tobillo' } },
-      { at: 5, by: 'Carmen', action: { type: 'ack', of: 'sos' } },
-    ]);
+  it('answers a teammate’s SOS by itself, and ends it once the user has seen it', async () => {
+    const { run, sent, own, state, nodeOf, wait, lastPosition, said } = practice({
+      steps: [
+        {
+          at: 2,
+          by: 'Jordi',
+          action: { type: 'sos', id: 'sos', kind: 'medical', text: 'Tobillo' },
+        },
+      ],
+    });
     run.start();
-    await wait(6);
+    await wait(3);
     const [sos] = state().sos.values();
     if (sos === undefined) throw new Error('no SOS');
-    // 100 m at 2 m/s, then half a minute with Jordi; positions go out every 10 s.
+    // Carmen answers within 35 s, walks 100 m at 2 m/s and stays half a minute.
+    await wait(40);
+    expect(sent.find((event) => event.type === 'ack')).toMatchObject({ origin: nodeOf('Carmen') });
+    expect(said().at(-1)).toMatch(/^Carmen: .*Jordi/);
     await wait(60);
     expect(distanceMeters(lastPosition('Carmen') ?? HERE, HERE)).toBeLessThan(1);
-    // Answering it is the user's to practise: it stays open until they have.
-    await wait(120);
+    // Answering it is the user's to practise: it stays open until they have, and someone asks.
+    await wait(60);
     expect(state().sosCancels.size).toBe(0);
+    expect(said().some((line) => line.includes('¿has visto el SOS de Jordi?'))).toBe(true);
     own.push({ ...userEvent(1), type: 'ack', target: { origin: sos.origin, seq: sos.seq } });
     await wait(2);
     expect(state().sosCancels.size).toBe(1);
-    expect(sent.findLast((event) => event.type === 'chat')).toMatchObject({
-      text: 'Ya estoy con Jordi. Está atendida.',
-    });
+    expect(said().at(-1)).toMatch(/^Carmen: .*con Jordi/);
     run.stop();
   });
 
   it('keeps to the streets on the way', async () => {
     // One street east from Jordi, then north to where he is sent: never across the block.
-    const network = WalkNetwork.from([
+    const streets = [
       [HERE, at(0, 100), at(100, 100)],
       [at(100, 0), at(100, 100)],
-    ]);
-    const { run, own, node, wait, lastPosition } = practice([], network);
+    ];
+    const { run, own, nodeOf, wait, lastPosition } = practice({ streets });
     run.start();
     await wait(1);
-    const jordi = node('Jordi');
-    if (jordi === undefined) throw new Error('no Jordi');
-    own.push({
-      ...userEvent(1),
-      type: 'task',
-      task: { origin: user.nodeId, seq: 1 },
-      status: 'open',
-      assignee: jordi,
-      place: { kind: 'point', at: at(100, 100) },
-      text: 'Ir a la esquina',
-    });
+    own.push(
+      userTask(1, {
+        assignee: nodeOf('Jordi'),
+        place: point(at(100, 100)),
+        text: 'Ir a la esquina',
+      }),
+    );
     for (let second = 0; second < 110; second += 10) {
       await wait(10);
-      const where = lastPosition('Jordi') ?? HERE;
-      expect(distanceMeters(network?.snap(where) ?? where, where)).toBeLessThan(1);
+      const where = eastNorthMeters(HERE, lastPosition('Jordi') ?? HERE);
+      // On the street east, or on the one north: never inside the block.
+      expect(Math.min(Math.abs(where.north), Math.abs(where.east - 100))).toBeLessThan(1);
     }
     expect(distanceMeters(lastPosition('Jordi') ?? HERE, at(100, 100))).toBeLessThan(1);
     run.stop();
   });
 
-  it('does not answer the user’s SOS once the user has cancelled it', async () => {
-    const { run, sent, own, wait } = practice();
-    run.start();
-    own.push({
-      ...userEvent(1),
-      type: 'sos',
-      kind: 'medical',
-      ...at(90, 0),
-      accuracy: null,
-      text: '',
+  it('says there is no way to a task beyond what cannot be crossed, and leaves it', async () => {
+    // The only street east is under water half-way along.
+    const flooded: World = {
+      passable: () => (where) => distanceMeters(where, at(0, 50)) > 20,
+      tick: () => undefined,
+    };
+    const { run, own, nodeOf, wait, statuses, said } = practice({
+      streets: [[HERE, at(0, 100)]],
+      world: flooded,
     });
-    await wait(2);
-    own.push({ ...userEvent(2), type: 'sos-cancel', sos: { origin: user.nodeId, seq: 1 } });
-    await wait(10);
-    expect(sent.filter((event) => event.type === 'ack' || event.type === 'chat')).toEqual([]);
+    run.start();
+    await wait(1);
+    own.push(
+      userTask(1, { assignee: nodeOf('Jordi'), place: point(at(0, 100)), text: 'Al fondo' }),
+    );
+    await wait(30);
+    expect(statuses()).toEqual([]);
+    expect(said().at(-1)).toMatch(/^Jordi: .*Al fondo/);
     run.stop();
   });
 
@@ -303,12 +373,12 @@ describe('practice run', () => {
     own.push(userTask(2, { assignee: jordi, place: point(at(0, -20)), text: 'Cerca' }));
     await wait(8);
     expect(statuses()).toEqual(['Jordi Lejos: in-progress']);
-    // Taken at 7 s, reached at 57 s, done 45 s later, where it is.
-    await wait(95);
+    // Taken at 7 s, reached at 57 s, done 75 s later, where it is.
+    await wait(125);
     expect(statuses()).toEqual(['Jordi Lejos: in-progress', 'Jordi Lejos: done']);
     expect(distanceMeters(lastPosition('Jordi') ?? HERE, at(0, 100))).toBeLessThan(1);
-    // Then the other: 6 s to take it, 60 s to walk there, 45 s there.
-    await wait(115);
+    // Then the other: 6 s to take it, 60 s to walk there, 75 s there.
+    await wait(145);
     expect(statuses().slice(2)).toEqual(['Jordi Cerca: in-progress', 'Jordi Cerca: done']);
     run.stop();
   });
@@ -328,8 +398,8 @@ describe('practice run', () => {
       name: 'Norte',
     });
     own.push(userTask(2, { assignee: north, place: point(at(0, 40)), text: 'Portal' }));
-    // Taken at 7 s, reached at 27 s, done 45 s later; Carmen, in no team, stays where she is.
-    await wait(75);
+    // Taken at 7 s, reached at 27 s, done 75 s later; Carmen, in no team, stays where she is.
+    await wait(105);
     expect(statuses()).toEqual(['Jordi Portal: in-progress', 'Jordi Portal: done']);
     expect(distanceMeters(lastPosition('Carmen') ?? HERE, at(100, 0))).toBeLessThan(1);
     run.stop();
@@ -347,8 +417,8 @@ describe('practice run', () => {
     own.push({ ...taken, ...userEvent(2), assignee: nodeOf('Carmen') });
     await wait(1);
     const stopped = lastPosition('Jordi') ?? HERE;
-    // Carmen takes it 6 s later, walks some 117 m in 58 s, and works there 45 s.
-    await wait(115);
+    // Carmen takes it 6 s later, walks some 117 m in 58 s, and works there 75 s.
+    await wait(145);
     expect(statuses()).toEqual(['Jordi Ir: in-progress', 'Carmen Ir: done']);
     expect([...state().tasks.values()][0]?.status).toBe('done');
     expect(distanceMeters(lastPosition('Carmen') ?? HERE, at(0, 60))).toBeLessThan(1);
@@ -357,53 +427,33 @@ describe('practice run', () => {
   });
 
   it('goes back to a task left to help, and is done only once through it', async () => {
-    const { run, own, state, nodeOf, wait, lastPosition, statuses } = practice([
-      { at: 30, by: 'Carmen', action: { type: 'sos', id: 'sos', kind: 'medical', text: '' } },
-      { at: 31, by: 'Jordi', action: { type: 'ack', of: 'sos' } },
-    ]);
+    const { run, own, state, nodeOf, wait, lastPosition, statuses } = practice({
+      steps: [
+        { at: 30, by: 'Carmen', action: { type: 'sos', id: 'sos', kind: 'medical', text: '' } },
+      ],
+    });
     run.start();
     await wait(1);
     own.push(userTask(1, { assignee: nodeOf('Jordi'), place: point(at(0, 200)), text: 'Este' }));
-    // Taken at 7 s; at 31 s, 48 m on, Jordi leaves it for Carmen, 100 m north of where he set off.
     await wait(40);
     const [sos] = state().sos.values();
     if (sos === undefined) throw new Error('no SOS');
     own.push({ ...userEvent(2), type: 'ack', target: { origin: sos.origin, seq: sos.seq } });
-    // With her from 87 s to 117 s; then back to the task, 224 m in 112 s, and 45 s there.
+    // Jordi answers within 35 s, walks to Carmen, stays half a minute, and goes back to his task.
     await wait(180);
     expect(state().sosCancels.size).toBe(1);
     expect(statuses()).toEqual(['Jordi Este: in-progress']);
-    await wait(60);
+    await wait(270);
     expect(statuses()).toEqual(['Jordi Este: in-progress', 'Jordi Este: done']);
     expect(distanceMeters(lastPosition('Jordi') ?? HERE, at(0, 200))).toBeLessThan(1);
     run.stop();
   });
 
-  it('leaves a task given just before calling an SOS, and takes tasks again once it is over', async () => {
-    const { run, own, state, nodeOf, wait, lastPosition, statuses } = practice([
-      { at: 4, by: 'Jordi', action: { type: 'sos', id: 'sos', kind: 'medical', text: '' } },
-      { at: 5, by: 'Carmen', action: { type: 'ack', of: 'sos' } },
-    ]);
-    run.start();
-    await wait(2);
-    own.push(userTask(1, { assignee: nodeOf('Jordi'), place: point(at(0, 100)), text: 'Antes' }));
-    await wait(20);
-    expect(statuses()).toEqual([]);
-    expect(distanceMeters(lastPosition('Jordi') ?? HERE, HERE)).toBeLessThan(1);
-    const [sos] = state().sos.values();
-    if (sos === undefined) throw new Error('no SOS');
-    own.push({ ...userEvent(2), type: 'ack', target: { origin: sos.origin, seq: sos.seq } });
-    // Carmen with him from 55 s to 85 s: the SOS ends, and Jordi is well again.
-    await wait(70);
-    expect(state().sosCancels.size).toBe(1);
-    expect(statuses()).toEqual(['Jordi Antes: in-progress']);
-    run.stop();
-  });
-
   it('sweeps a strip lane by lane across the blocks, and marks the area cleared', async () => {
     // One street, along the south edge of the area: the lanes run north across the block.
-    const network = WalkNetwork.from([[at(0, -50), at(0, 150)]]);
-    const { run, sent, own, state, nodeOf, wait, lastPosition, statuses } = practice([], network);
+    const { run, sent, own, state, nodeOf, wait, lastPosition, statuses } = practice({
+      streets: [[at(0, -50), at(0, 150)]],
+    });
     run.start();
     await wait(1);
     const area = { origin: user.nodeId, seq: 1 };
@@ -444,12 +494,105 @@ describe('practice run', () => {
     run.stop();
   });
 
-  it('plays on past a step that cannot be played', async () => {
+  it('answers what the user says, by name when named, and not every time otherwise', async () => {
+    const { run, own, wait, said } = practice();
+    run.start();
+    own.push({ ...userEvent(1), type: 'chat', text: 'Hola' });
+    own.push({ ...userEvent(2), type: 'chat', text: '¿Me oís?' });
+    await wait(10);
+    expect(said()).toHaveLength(1);
+    expect(said()[0]).toMatch(/^Carmen: (Recibido|Entendido|De acuerdo)\.$/);
+    own.push({ ...userEvent(3), type: 'chat', text: 'Jordi, ¿dónde estás?' });
+    await wait(10);
+    expect(said()).toHaveLength(2);
+    expect(said()[1]).toMatch(/^Jordi: .*«Punto de encuentro»|^Jordi: /);
+    run.stop();
+  });
+
+  it('has teammates with nothing to do ask a coordinating user for work', async () => {
+    const { run, wait, said } = practice({ user: 'coordinator' });
+    run.start();
+    await wait(80);
+    expect(said()).toEqual([]);
+    await wait(20);
+    expect(said()).toHaveLength(1);
+    expect(said()[0]).toMatch(/Jordi y Carmen|Carmen y Jordi/);
+    await wait(120);
+    expect(said()).toHaveLength(1);
+    run.stop();
+  });
+
+  it('runs a phone down, says so, and goes quiet when it is flat', async () => {
+    const jordi: Persona = { profile: 'volunteer', equipment: ['light'], battery: 22, drain: 1 };
+    const { run, sent, nodeOf, wait, said } = practice({ personas: { Jordi: jordi } });
+    run.start();
+    await wait(3 * 60);
+    // One word to the team as its battery drops below 20 %.
+    const states = sent.filter(
+      (event) => event.type === 'member-state' && event.origin === nodeOf('Jordi'),
+    );
+    expect(states).toHaveLength(1);
+    await wait(8 * 60);
+    expect(said().some((line) => line.startsWith('Jordi: Me queda un 15 %'))).toBe(true);
+    const before = sent.filter(
+      (event) => event.type === 'position' && event.origin === nodeOf('Jordi'),
+    ).length;
+    await wait(10 * 60);
+    expect(said().some((line) => line.startsWith('Jordi: Me quedo sin batería'))).toBe(true);
+    const after = sent.filter(
+      (event) => event.type === 'position' && event.origin === nodeOf('Jordi'),
+    ).length;
+    // Once a minute while saving its battery, for some eight minutes, then nothing.
+    expect(after - before).toBeLessThan(10);
+    run.stop();
+  });
+
+  it('plays its injects, lets its world act, and ends', async () => {
+    const injects: Inject[] = [
+      {
+        at: 5,
+        run: (stage) => {
+          stage.say('Carmen', 'Llamada del 112');
+        },
+      },
+      {
+        at: 10,
+        run: (stage) => {
+          stage.finish('Fin');
+        },
+      },
+    ];
+    const ticks: number[] = [];
+    const world: World = { passable: () => () => true, tick: (stage) => ticks.push(stage.elapsed) };
+    const { run, wait, said, finished } = practice({ injects, world });
+    run.start();
+    await wait(12);
+    expect(said()).toEqual(['Carmen: Llamada del 112', 'Carmen: Fin']);
+    expect(finished()).toBe(true);
+    expect(ticks.length).toBeGreaterThan(9);
+    const after = ticks.length;
+    await wait(10);
+    expect(ticks.length).toBe(after);
+    run.stop();
+  });
+
+  it('ends once its time is up', async () => {
+    const { run, wait, said, finished } = practice({ seconds: 30 });
+    run.start();
+    await wait(31);
+    expect(finished()).toBe(true);
+    expect(said().at(-1)).toBe(`Carmen: ${t('practiceTimeUp')}`);
+    run.stop();
+  });
+
+  it('plays on past an action that cannot be done', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    const { run, sent, wait } = practice([
-      { at: 2, by: 'Jordi', action: { type: 'ack', of: 'nothing' } },
-      { at: 3, by: 'Carmen', action: { type: 'chat', text: 'Sigo aquí' } },
-    ]);
+    const { run, sent, wait } = practice({
+      steps: [
+        { at: 2, by: 'Jordi', action: { type: 'ack', of: 'nothing' } },
+        { at: 3, by: 'Carmen', action: { type: 'chat', text: 'Sigo aquí' } },
+      ],
+    });
     run.start();
     await wait(4);
     expect(sent.find((event) => event.type === 'chat')).toMatchObject({ text: 'Sigo aquí' });
@@ -465,17 +608,5 @@ describe('practice run', () => {
     own.push({ ...userEvent(1), type: 'chat', text: '¿Me oís?' });
     run.react(state());
     expect(vi.getTimerCount()).toBe(0);
-  });
-
-  it('answers what the user says, but not every time', async () => {
-    const { run, sent, own, wait } = practice();
-    run.start();
-    own.push({ ...userEvent(1), type: 'chat', text: 'Hola' });
-    own.push({ ...userEvent(2), type: 'chat', text: '¿Me oís?' });
-    await wait(10);
-    const replies = sent.filter((event) => event.type === 'chat');
-    expect(replies).toHaveLength(1);
-    expect(replies[0]).toMatchObject({ text: 'Recibido.' });
-    run.stop();
   });
 });

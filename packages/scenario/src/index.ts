@@ -14,4 +14,4 @@ export {
   type ScenarioPlace,
   type ScenarioStep,
 } from './scenario.ts';
-export { onFoot, WalkNetwork } from './walkways.ts';
+export { onFoot, WalkNetwork, type Passable } from './walkways.ts';

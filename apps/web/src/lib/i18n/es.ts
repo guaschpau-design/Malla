@@ -634,56 +634,240 @@ export const es: Messages = {
   practiceFloodTitle: 'Inundación',
   practiceWildfireTitle: 'Incendio forestal',
   practiceMissingPerson: 'Buscáis a una mujer mayor que salió a pasear y no ha vuelto.',
-  practiceFlood: 'Un barranco se ha desbordado y hay vecinos atrapados.',
+  practiceFlood: 'Se ha desbordado el agua y sube hacia las calles bajas.',
   practiceWildfire: 'Un incendio forestal avanza hacia las casas.',
   practiceTeamNorth: 'Norte',
   practiceTeamSouth: 'Sur',
   practiceMeetingPoint: 'Punto de encuentro',
-  practiceBlocked: 'Paso cortado',
   practiceEvacuation: 'Evacuación',
   practiceOrders: 'Norte y Sur: a vuestras tareas. A ti te he pasado una.',
-  practiceAwaitingOrders: 'Estamos en el punto de encuentro, esperando instrucciones.',
-  practiceGoingToMarta: 'Voy hacia Marta.',
-  practiceSosAttended: 'Ya estoy con {name}. Está atendida.',
+  practiceSosAttended: 'Ya estoy con {name}. Lo tenemos controlado.',
   practiceOnTheWay: 'Recibido. Voy hacia ti.',
   practiceTaskDone: 'Hecho: {task}.',
   practiceHeard: 'Recibido.',
   practiceReportHeard: 'Recibido el parte, gracias.',
   practiceThanks: 'Gracias, {name}.',
   practiceMissingArrived:
-    'Estamos en el punto de encuentro. Buscamos a Rosa, de 78 años: salió a pasear esta mañana y no ha vuelto.',
+    'Estamos en el punto de encuentro. Buscamos a Rosa, 78 años, con principio de demencia.',
   practiceMissingLastSeen: 'Vista por última vez',
-  practiceMissingSector: 'Sector 1',
-  practiceMissingStrip: 'Batir la franja {strip} del sector 1',
+  practiceMissingSector: 'Sector {sector}',
+  practiceMissingStrip: 'Batir la franja {strip} del sector {sector}',
   practiceMissingAskAround: 'Preguntar en los portales cercanos si han visto a Rosa',
-  practiceMissingSectorReady: 'He dibujado el sector 1. ¿Cómo nos repartimos?',
+  practiceMissingSectorReady:
+    'He dibujado el sector 1 hacia donde dice la hija. ¿Cómo nos repartimos?',
   practiceMissingSos: 'Me he torcido un tobillo, no puedo andar',
-  practiceMissingWarning: 'La unidad canina llega en 20 minutos.',
-  practiceMissingReport: 'Huellas de zapatilla junto a la acequia',
   practiceFloodArrived:
-    'El barranco se ha desbordado. Hay vecinos atrapados en los bajos de la zona norte.',
-  practiceFloodStreet: 'Calle inundada',
-  practiceFloodStreetChat: 'La calle está inundada: el agua llega a la rodilla.',
+    'Se ha desbordado {river}. El agua avanza hacia las calles bajas y hay vecinos en bajos.',
   practiceFloodArea: 'Zona inundada',
-  practiceFloodWarnNeighbours: 'Avisar a los vecinos de la zona inundada',
   practiceFloodCheckRoute: 'Revisar la ruta de evacuación',
-  practiceFloodUnderpass: 'Comprobar si el paso subterráneo está cortado',
-  practiceFloodAreaReady: 'He marcado la zona inundada. ¿Quién avisa a los vecinos?',
-  practiceFloodSos: 'Estoy atrapada en un portal, el agua sube',
-  practiceFloodWarning: 'Sube el agua: salid de la zona inundada.',
-  practiceFloodReport: 'Bajos inundados en toda la calle',
-  practiceWildfireArrived: 'Incendio forestal al norte. El viento lo empuja hacia las casas.',
+  practiceFloodUnderpass: 'Cortar el paso subterráneo antes de que se inunde',
+  practiceFloodSos: 'No puedo salir de un portal, el agua sube',
+  practiceWildfireArrived:
+    'Incendio forestal al norte. El viento lo empuja hacia las casas: nos toca desalojar y cortar el paso.',
   practiceWildfireMeetingPoint: 'Punto de evacuación',
-  practiceWildfireFront: 'Frente del incendio',
   practiceWildfireArea: 'Zona de riesgo',
   practiceWildfireClosure: 'Carretera cortada',
   practiceWildfireClearHouses: 'Desalojar las casas de la zona de riesgo',
   practiceWildfireHoldClosure: 'Cortar el paso en el cruce',
   practiceWildfireWater: 'Llevar agua al punto de evacuación',
-  practiceWildfireAreaReady: 'He marcado la zona de riesgo. ¿Quién desaloja las casas?',
   practiceWildfireSos: 'El humo no me deja respirar',
-  practiceWildfireWarning: 'El viento ha cambiado: evacuad ya la zona de riesgo.',
-  practiceWildfireReport: 'Llamas a 200 m de las primeras casas',
+  practiceNorth: 'norte',
+  practiceNorthEast: 'noreste',
+  practiceEast: 'este',
+  practiceSouthEast: 'sureste',
+  practiceSouth: 'sur',
+  practiceSouthWest: 'suroeste',
+  practiceWest: 'oeste',
+  practiceNorthWest: 'noroeste',
+  practiceOnStreet: 'en {street}',
+  practiceInPlace: 'en {place}',
+  practiceFromPlace: 'a {metres} m al {direction} de «{place}»',
+  practiceDispatch: 'Sala 112',
+  practiceHeard2: 'Entendido.',
+  practiceHeard3: 'De acuerdo.',
+  practiceReportHeard2: 'Parte recibido. Lo tenemos en cuenta.',
+  practiceOnTheWay2: 'Visto tu SOS. Voy para allá.',
+  practiceGoingTo: 'Voy hacia {name}.',
+  practiceGoingTo2: 'Estoy cerca de {name}, voy yo.',
+  practiceGoingTo3: 'Salgo hacia {name}. Llego en unos minutos.',
+  practiceNoWayTo: 'No llego hasta {name}: no hay paso seguro. Que vaya alguien por otro lado.',
+  practiceSosAttended2: 'Estoy con {name}: nada grave, puede seguir.',
+  practiceTaken: 'Vamos con «{task}».',
+  practiceTaken2: 'Recibido, nos ponemos con ello.',
+  practiceTaken3: 'Salimos ya.',
+  practiceTaskDone2: 'Terminado: {task}.',
+  practiceTaskDone3: 'Ya está: {task}. ¿Algo más?',
+  practiceNoWay: 'No hay forma segura de llegar para «{task}». Lo dejamos de momento.',
+  practiceNoWay2: 'Por ahí no se puede pasar: «{task}» tendrá que esperar.',
+  practiceThanks2: 'Buen trabajo, {name}.',
+  practiceIdle: '{names}: estamos libres {where}. ¿Qué hacemos?',
+  practiceIdle2: 'Seguimos esperando {where} ({names}). ¿Nos das algo?',
+  practiceWhereAnswer: 'Estoy {where}.',
+  practiceWhereAnswer2: 'Ahora mismo, {where}.',
+  practiceDoing: 'Estoy con «{task}».',
+  practiceDoing2: 'Sigo con «{task}», va bien.',
+  practiceHelping: 'Estoy con {name}, atendiendo su SOS.',
+  practiceFree: 'Ahora mismo estoy libre.',
+  practiceFree2: 'Sin nada entre manos. Dime.',
+  practiceSosNudge: '{user}, ¿has visto el SOS de {name}? Confírmalo, por favor.',
+  practiceLowBattery:
+    'Me queda un {percent} % de batería: mando la posición solo de vez en cuando.',
+  practiceFlatBattery: 'Me quedo sin batería. Sigo en lo mío, pero no me vais a ver en el mapa.',
+  practiceBreak: 'Llevo un buen rato sin parar: descanso {minutes} minutos y bebo agua.',
+  practiceBackFromBreak: 'Ya estoy, sigo.',
+  practiceBackFromBreak2: 'Listo, disponible otra vez.',
+  practiceOver: 'Ejercicio terminado. Repasa el chat y el diario para ver qué pasó.',
+  practiceTimeUp: 'Se acabó el tiempo del ejercicio. Gracias a todos.',
+  practiceMissingCall:
+    'Activación: buscamos a Rosa Martínez, 78 años, con principio de demencia. Os toca coordinar.',
+  practiceMissingDaughter:
+    'La hija de Rosa cree que pudo ir hacia el {direction}, a casa de una amiga. No está segura.',
+  practiceMissingNeighbour:
+    '{name} ha hablado con una vecina: vio a Rosa ir hacia el {direction} sobre las diez.',
+  practiceMissingWitness:
+    'Llama un panadero que trabaja {where}: vio a una señora con bastón ir hacia el {direction} a las diez.',
+  practiceMissingReplan:
+    'Cambio de plan: Norte y Sur, dejad el sector 1. Os paso el sector 2, hacia el {direction}.',
+  practiceMissingStick: 'Bastón',
+  practiceMissingStickFound: 'He encontrado un bastón tirado {where}. Puede ser de Rosa.',
+  practiceMissingStickHers: 'Su hija confirma que es el de Rosa. Vamos bien: seguid por esa zona.',
+  practiceMissingStickConfirmed: 'La hija confirma que el bastón es de Rosa.',
+  practiceMissingFoundPark:
+    '¡La tenemos! Rosa está {where}, sentada en un banco. Desorientada y con frío, pero consciente.',
+  practiceMissingFoundWater:
+    '¡La tenemos! Rosa está {where}, junto al agua. Desorientada y mojada hasta las rodillas, pero consciente.',
+  practiceMissingFoundStreet:
+    '¡La tenemos! Rosa está {where}, al final de la calle, apoyada en una valla. Desorientada, pero consciente.',
+  practiceMissingFoundReport: 'Encontrada: consciente, desorientada, con frío. Pide agua.',
+  practiceMissingWithHer: 'Estoy con Rosa, esperando.',
+  practiceMissingAmbulance:
+    'La ambulancia que está en el punto de encuentro va hacia vosotros: llega en unos 3 minutos.',
+  practiceMissingSafe: 'Rosa ya está en la ambulancia. La llevan al hospital para que la revisen.',
+  practiceMissingEnd:
+    'Fin del ejercicio: Rosa ha aparecido a los {minutes} minutos y está a salvo. ¡Buen trabajo, equipo!',
+  practiceMissingDogs:
+    'Ha llegado la unidad canina: empieza a rastrear desde donde la vieron por última vez.',
+  practiceMissingFoundByDogs:
+    'La unidad canina ha encontrado a Rosa {where}. Está bien; la recoge la ambulancia.',
+  practiceMissingEndDogs:
+    'Fin del ejercicio: a Rosa la encontró la unidad canina a los {minutes} minutos.',
+  practiceMissingFall:
+    'Llama una vecina: un hombre se ha caído en su portal, {where}, y sangra de la cabeza. ¿Alguien con botiquín?',
+  practiceMissingFallLabel: 'Vecino herido',
+  practiceMissingFallSeen:
+    'Estoy con el vecino: brecha en la frente, consciente. Le hago una cura y espero a la ambulancia.',
+  practiceMissingFallLate:
+    'La ambulancia ya está con el vecino que se cayó. Ha esperado {minutes} minutos sin nadie del equipo.',
+  practiceMissingSeeToFall: 'Atender al vecino caído',
+  practiceMissingSendSara:
+    'Sara, ve tú con el botiquín al vecino caído. Los demás, seguid buscando.',
+  practiceMissingDusk: 'Anochece en media hora: aprovechad la luz que queda.',
+  practiceFloodRavine: 'el barranco',
+  practiceFloodCall:
+    'Activación: se ha desbordado {river} tras una noche de tormentas. Os toca coordinar.',
+  practiceFloodSpreads: 'Ya hay agua en {street}.',
+  practiceFloodRecedes: 'Baja el agua en {street}.',
+  practiceFloodHomes:
+    'Hay vecinos en bajos que el agua puede alcanzar: {streets}. Avisadles para que suban.',
+  practiceFloodHomeKnown: 'Vecinos en bajo, n.º {number}',
+  practiceFloodHomeWarned: 'Avisados, n.º {number}',
+  practiceFloodHomeTrapped: 'Atrapados, n.º {number}',
+  practiceFloodHomeRescued: 'Rescatados, n.º {number}',
+  practiceFloodWarnedKnown:
+    'Avisados los vecinos del n.º {number}, {where}: suben a los pisos altos.',
+  practiceFloodWarnedFound:
+    'En el bajo del n.º {number}, {where}, había un matrimonio mayor que no sabía nada. Ya suben.',
+  practiceFloodTrapped:
+    'Familia atrapada en el bajo del n.º {number}, {where}. El agua les llega a la cintura.',
+  practiceFloodRescue: 'Sacar a la familia del n.º {number}, {where}',
+  practiceFloodSendRescue: '{name}, te he pasado el rescate. Ve con cuerda y con cuidado.',
+  practiceFloodRescued:
+    'Hemos sacado a la familia del n.º {number}: tres personas, empapadas pero bien.',
+  practiceFloodNeedRope:
+    'Estoy en el n.º {number}, pero sin cuerda no puedo sacarlos: la corriente es fuerte.',
+  practiceFloodBoat:
+    'Los bomberos han sacado con una barca a la familia del n.º {number}, {where}.',
+  practiceFloodUnderpassLabel: 'Paso subterráneo',
+  practiceFloodUnderpassShut: 'Paso cortado',
+  practiceFloodUnderpassClosed:
+    'He cortado el paso subterráneo con cinta: es lo primero que se va a inundar.',
+  practiceFloodUnderpassCar:
+    'Un coche ha quedado atrapado en el paso subterráneo: nadie lo había cortado. El conductor salió por su pie.',
+  practiceFloodRouteCut: 'La ruta de evacuación está cortada {where}: el agua llega a la rodilla.',
+  practiceFloodRouteChanged:
+    'He cambiado la ruta de evacuación para evitar el agua. Miradla en el mapa.',
+  practiceFloodNoRoute:
+    'No encuentro otra ruta seca. Que nadie salga hacia allí hasta nueva orden.',
+  practiceFloodCaught:
+    'El agua me ha cortado el paso {where}. Me llega a la cintura y no puedo salir.',
+  practiceFloodBoatTeammate:
+    'Los bomberos han sacado a {name} con una barca. Está bien, pero hay que tener más cuidado.',
+  practiceFloodFloodable: 'Zona inundable',
+  practiceFloodFloodableChat:
+    'Os paso la zona que puede inundarse según los técnicos. Los vecinos de dentro tienen que estar avisados.',
+  practiceFloodRedAlert: 'AEMET mantiene el aviso rojo: siguen las tormentas aguas arriba.',
+  practiceFloodRising:
+    'El caudal sigue subiendo. Contad con más agua en el próximo cuarto de hora.',
+  practiceFloodPowerCut:
+    'Se ha cortado la luz en la zona baja: no funcionan ni los ascensores ni el alumbrado.',
+  practiceFloodDark:
+    'Sin luz, los portales están a oscuras: usad las linternas y no bajéis a sótanos ni garajes.',
+  practiceFloodSteady: 'El caudal se estabiliza. No sube más, pero tampoco baja.',
+  practiceFloodFalling:
+    'Empieza a bajar el agua. Seguid atentos: el barro y las alcantarillas abiertas son un peligro.',
+  practiceFloodEnd:
+    'Fin del ejercicio: el agua baja. Vecinos avisados a tiempo: {warned} de {homes}.',
+  practiceWildfireCall:
+    'Activación: incendio forestal al norte. El viento lo empuja hacia las casas. Os toca coordinar el desalojo.',
+  practiceFireFront: 'Incendio',
+  practiceFireHeading: 'Frente activo avanzando hacia el {direction}. Con este viento, corre.',
+  practiceFireRoadClosed: 'La Guardia Civil ha cortado la carretera. Os lo marco en el mapa.',
+  practiceFireAircraft: 'Medios aéreos activados: llegarán en unos quince minutos.',
+  practiceFireWindForecast:
+    'AEMET avisa: rolada de viento en los próximos minutos. Atentos a los flancos.',
+  practiceFireWindTurned:
+    '¡Ha rolado el viento! El fuego gira hacia el {direction}. Hay casas nuevas en peligro.',
+  practiceFireNewFront: 'Desalojar las casas del nuevo frente',
+  practiceFireNewFrontChat:
+    'Sur, dejad el corte de carretera: desalojad las casas del nuevo frente. ¡Ya!',
+  practiceFireEmptied:
+    'Desalojado el n.º {number}, {where}: {people} personas, van al punto de evacuación.',
+  practiceFireTrapped: 'Una familia no ha salido del n.º {number}, {where}, y el humo ya llega.',
+  practiceFireHouseLabel: 'Sin evacuar, n.º {number}',
+  practiceFireHouseSafe: 'Evacuados, n.º {number}',
+  practiceFireGetOut: 'Sacar a la familia del n.º {number}, {where}',
+  practiceFireSendSomeone:
+    '{name}, te he pasado una casa con gente dentro. Entra y sal rápido, sin meterte en el humo.',
+  practiceFireRescued: 'Sacada la familia del n.º {number}: tosen, pero están bien.',
+  practiceFireFirefighters:
+    'Los forestales han tenido que sacar entre el humo a la familia del n.º {number}, {where}.',
+  practiceFirePullBack:
+    'Me retiro al punto de evacuación: el fuego está muy cerca, {where}, y no se respira.',
+  practiceFirePullingBack: 'Retirándome del fuego.',
+  practiceFireCaught: 'El fuego me ha cortado el paso {where}. Mucho humo, no veo la salida.',
+  practiceFireHelipad:
+    'El helicóptero sanitario necesita dónde aterrizar cerca del punto de evacuación. Marcadlo en el mapa.',
+  practiceFireHelipadOk: 'Recibido: el helicóptero va hacia la zona que habéis marcado.',
+  practiceFireHelipadLate:
+    'El helicóptero ha tenido que aterrizar lejos, sin zona marcada. Se ha perdido un tiempo precioso.',
+  practiceFireMarkHelipad: 'Marcar en el mapa dónde puede aterrizar el helicóptero',
+  practiceFireMarkHelipadChat:
+    '{name}, marca en el mapa un sitio despejado para el helicóptero: «Añadir», «Marcador», «Helipuerto».',
+  practiceFireAircraftWorking:
+    'Los medios aéreos ya están descargando sobre la cabeza del incendio: se frena.',
+  practiceFireEnd:
+    'Fin del ejercicio: incendio estabilizado. Casas desalojadas a tiempo: {emptied} de {houses}.',
+  practiceFloodGetOut: 'El agua sube {where}: salgo hacia terreno seco.',
+  practiceFloodGettingOut: 'Saliendo del agua.',
+  practiceMissingDescribed:
+    'Salió a pasear esta mañana y no ha vuelto. Lleva chaqueta azul y bastón.',
+  practiceFloodCancelRescue: 'Ya no hace falta: a esa familia la han sacado los bomberos.',
+  practiceFloodWarnHome: 'Avisar a los vecinos del n.º {number}, {where}',
+  practiceFloodDoorToDoor: 'Recorrer la zona inundable avisando puerta a puerta',
+  practiceFloodDoorToDoorChat:
+    'Pablo, recorre la zona inundable puerta a puerta: puede haber más gente que no sabe nada.',
+  practiceFireCancelGetOut: 'Ya no hace falta: los forestales han sacado a esa familia.',
+  practiceMissingFallOffer: 'Si quieres, voy yo al vecino que se ha caído: llevo botiquín.',
   guideStep: 'Paso {step} de {steps}',
   guideSkip: 'Saltar la guía',
   guideDone: '¡Hecho! Sigue practicando a tu aire.',
@@ -691,10 +875,12 @@ export const es: Messages = {
   guideTalk: 'Escribe algo en el chat.',
   guideDoTask: 'Carmen te ha pasado una tarea: ábrela en «Tareas» y márcala como hecha.',
   guideAnswerSos: 'Cuando alguien pida ayuda, pulsa «Recibido» en su aviso.',
-  guideReport: 'Envía un parte: en el chat, «+» y «Nuevo parte».',
-  guideFormTeam: 'Forma un equipo: toca el nombre del grupo, arriba, y «Nuevo equipo».',
+  guideReport: 'Envía un parte: «Añadir» y «Parte».',
+  guideFormTeam:
+    'Forma un equipo: toca el nombre del grupo, arriba, luego «Organizar» y «Nuevo equipo».',
   guideGiveTask: 'Pasa una tarea a un equipo o a un compañero: «Tareas» y «Nueva tarea».',
   guidePlanSweep: 'Planifica la batida: toca el sector 1 en el mapa y «Planificar batida».',
-  guideCheckIn: 'Activa el aviso «¿Sigues bien?»: toca el nombre del grupo, arriba.',
+  guideCheckIn:
+    'Activa el aviso «¿Sigues bien?»: toca el nombre del grupo, arriba, y luego «Organizar».',
   thirdPartyLicences: 'Licencias de terceros',
 };

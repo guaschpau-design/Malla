@@ -36,7 +36,7 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0028](0028-roll-call.md)                            | Roll call: one event, answered with an ACK by each member                                   | Superseded by 0070                          |
 | [0029](0029-operation-area.md)                       | The operation area: an area style that offers its map                                       | Accepted                                    |
 | [0030](0030-weather-warnings.md)                     | Official weather warnings, gathered by the server from MeteoAlarm                           | Accepted, amended by 0038                   |
-| [0031](0031-practice-mode.md)                        | Practice mode: a simulated group played on the device                                       | Accepted, amended by 0066                   |
+| [0031](0031-practice-mode.md)                        | Practice mode: a simulated group played on the device                                       | Accepted, amended by 0066, 0072             |
 | [0032](0032-radio-line-of-sight.md)                  | Radio line of sight from the terrain, sure only when it says no                             | Superseded by 0042, amended before by 0037  |
 | [0033](0033-danger-area-warning.md)                  | Warning on entering a danger area, worked out on each device                                | Accepted                                    |
 | [0034](0034-vector-topographic-map.md)               | Topographic map from vector data, relief shaded from IGN's terrain model                    | Accepted, amended by 0037                   |
@@ -71,9 +71,10 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0063](0063-situation-reports.md)                    | Situation reports: a fixed form in one radio message, pinned in the chat                    | Accepted, amended by 0065, 0070             |
 | [0064](0064-check-in.md)                             | A safety check-in that asks only when it must                                               | Accepted                                    |
 | [0065](0065-room-for-what-is-read.md)                | Give the room to what is read; what is used now and then waits in a menu                    | Accepted, amended by 0070                   |
-| [0066](0066-practice-situations.md)                  | Practice situations, on foot along the streets, with a guide                                | Accepted, amended by 0070                   |
+| [0066](0066-practice-situations.md)                  | Practice situations, on foot along the streets, with a guide                                | Accepted, amended by 0070, 0072             |
 | [0067](0067-envelope-nonce-from-the-event.md)        | Derive each envelope's nonce from its event                                                 | Accepted                                    |
 | [0068](0068-restorable-copies-and-going-back.md)     | Restore copies under a new identity, and go back across a change of schema                  | Accepted                                    |
 | [0069](0069-who-keeps-in-touch-without-coverage.md)  | Tell who keeps in touch without coverage                                                    | Accepted, amended by 0071                   |
 | [0070](0070-a-simpler-app.md)                        | A simpler app: one place to add, no alerts or roll calls, a way to start                    | Accepted, amended by 0071                   |
 | [0071](0071-panels-read-whole.md)                    | Me and the map layers are read whole, without opening anything                              | Accepted                                    |
+| [0072](0072-practice-as-an-exercise.md)              | Practice as an exercise: a world that changes, people with their own lives, and a director  | Accepted                                    |

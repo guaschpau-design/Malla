@@ -201,6 +201,7 @@
     {#key group.feed}
       <Practice
         {t}
+        {locale}
         feed={group.feed}
         self={group.self}
         role={group.role}

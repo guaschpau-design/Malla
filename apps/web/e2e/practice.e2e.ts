@@ -1,11 +1,14 @@
-// Practice mode: a situation played by four simulated teammates around this device, who keep to
-// the streets of the map, talk, take tasks, call an SOS and answer the user; a guide on the
-// practice's card leads the user through five things to try. Ending it forgets the group.
+// Practice mode: an exercise played by seven simulated teammates and the 112 control room around
+// this device, who keep to the streets of the map, talk, take tasks, call an SOS and answer the
+// user; a guide on the practice's card leads the user through five things to try, and the card
+// tells how long the exercise has run. Ending it forgets the group.
 
 import { device, expect, practise, tapMapUntil, test } from './helpers.ts';
 
 /** Where the tests' device stands, on the synthetic map's streets. */
 const VALENCIA = '/#map=16/39.4699/-0.3763';
+/** What someone says to what the user tells everyone, in one of its ways. */
+const HEARD = /^(Recibido|Entendido|De acuerdo)\.$/;
 
 test('a member is guided through a practice and given a task by its coordinator', async ({
   browser,
@@ -15,22 +18,26 @@ test('a member is guided through a practice and given a task by its coordinator'
   const card = page.getByRole('region', { name: 'Práctica' });
   await expect(card).toContainText('Persona desaparecida');
   await expect(card).toContainText('Paso 1 de 5');
+  await expect(card).toContainText(/\d\d:\d\d/);
 
   // A teammate tapped on the map ticks off the first step: Jordi waits on the footpath 45 m
   // south-west, some 50 px away at this zoom.
   await tapMapUntil(page, { dx: -51, dy: 51 }, async () => {
-    await expect(page.getByRole('region', { name: /^(Carmen|Jordi|Luis|Marta)$/ })).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: /^(Carmen|Jordi|Luis|Marta|Nuria|Pablo|Sara)$/ }),
+    ).toBeVisible();
   });
   await expect(card).toContainText('Paso 2 de 5');
   await page.getByRole('button', { name: 'Cerrar' }).click();
 
-  // Carmen, who coordinates, talks, answers and gives the user a task.
+  // Carmen, who coordinates, talks, answers (some seconds later, as people do) and gives the user
+  // a task.
   await page.getByRole('button', { name: 'Chat' }).click();
   const chat = page.getByRole('region', { name: 'Chat' });
   await expect(chat).toContainText('Buscamos a Rosa');
   await chat.getByLabel('Mensaje').fill('Voy para allá');
   await chat.getByRole('button', { name: 'Enviar', exact: true }).click();
-  await expect(chat.getByText('Recibido.')).toBeVisible({ timeout: 10_000 });
+  await expect(chat.getByText(HEARD)).toBeVisible({ timeout: 20_000 });
   await expect(card).toContainText('Paso 3 de 5');
   await chat.getByRole('button', { name: 'Cerrar' }).click();
   await expect(page.getByRole('button', { name: /^Tareas/ })).toContainText('1', {
@@ -52,10 +59,12 @@ test('a coordinator talks to the team, which answers', async ({ browser }) => {
   await page.getByRole('button', { name: 'Chat' }).click();
   const chat = page.getByRole('region', { name: 'Chat' });
   // The run starts once the streets around are read, which takes a moment on a busy machine.
-  await expect(chat.getByText('El barranco se ha desbordado.')).toBeVisible({ timeout: 15_000 });
+  await expect(chat.getByText(/se ha desbordado el Barranco de Prueba/)).toBeVisible({
+    timeout: 15_000,
+  });
   await chat.getByLabel('Mensaje').fill('Todos al punto de encuentro');
   await chat.getByRole('button', { name: 'Enviar', exact: true }).click();
-  await expect(chat.getByText('Recibido.')).toBeVisible({ timeout: 10_000 });
+  await expect(chat.getByText(HEARD)).toBeVisible({ timeout: 20_000 });
   await expect(card).toContainText('Paso 1 de 5');
 });
 

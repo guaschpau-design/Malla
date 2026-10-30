@@ -46,14 +46,28 @@ with open(out,'wb') as f:
         # between them, from zoom 14: where the practice's members walk (practice.e2e.ts).
         if z>=14:
             m_lat=1/111320; m_lon=1/(111320*math.cos(math.radians(CENTRE[1])))
+            # The streets running east–west are named "Calle 1" to "Calle 13" from south to north,
+            # those running north–south "Avenida 1" to "Avenida 13" from west to east.
             for i in range(-6,7):
                 lat=CENTRE[1]+i*100*m_lat; lon=CENTRE[0]+i*100*m_lon
-                roads.append({'geometry':LineString([(CENTRE[0]-600*m_lon,lat),(CENTRE[0]+600*m_lon,lat)]).intersection(tb),'properties':{'kind':'minor_road','min_zoom':14}})
-                roads.append({'geometry':LineString([(lon,CENTRE[1]-600*m_lat),(lon,CENTRE[1]+600*m_lat)]).intersection(tb),'properties':{'kind':'minor_road','min_zoom':14}})
+                roads.append({'geometry':LineString([(CENTRE[0]-600*m_lon,lat),(CENTRE[0]+600*m_lon,lat)]).intersection(tb),'properties':{'kind':'minor_road','min_zoom':14,'name':'Calle %d'%(i+7)}})
+                roads.append({'geometry':LineString([(lon,CENTRE[1]-600*m_lat),(lon,CENTRE[1]+600*m_lat)]).intersection(tb),'properties':{'kind':'minor_road','min_zoom':14,'name':'Avenida %d'%(i+7)}})
             roads.append({'geometry':LineString([(CENTRE[0]-300*m_lon,CENTRE[1]-300*m_lat),(CENTRE[0]+300*m_lon,CENTRE[1]+300*m_lat)]).intersection(tb),'properties':{'kind':'path','min_zoom':14}})
             roads.append({'geometry':LineString([(CENTRE[0]-600*m_lon,CENTRE[1]+350*m_lat),(CENTRE[0]+600*m_lon,CENTRE[1]+350*m_lat)]).intersection(tb),'properties':{'kind':'highway','min_zoom':14}})
         roads=[r for r in roads if not r['geometry'].is_empty]
         if roads: layers.append({'name':'roads','features':roads})
+        # From zoom 14, a stream 250 m north of the centre and a park in the block 150 m south-east of
+        # it: what the practice's situations read of the surroundings (map/tiles/surroundings.ts).
+        if z>=14:
+            m_lat=1/111320; m_lon=1/(111320*math.cos(math.radians(CENTRE[1])))
+            stream=LineString([(CENTRE[0]-600*m_lon,CENTRE[1]+250*m_lat),(CENTRE[0]+600*m_lon,CENTRE[1]+250*m_lat)]).intersection(tb)
+            if not stream.is_empty:
+                water=[f for f in layers if f['name']=='water']
+                feature={'geometry':stream,'properties':{'kind':'stream','name':'Barranco de Prueba','min_zoom':14}}
+                if water: water[0]['features'].append(feature)
+                else: layers.append({'name':'water','features':[feature]})
+            park=box(CENTRE[0]+105*m_lon,CENTRE[1]-195*m_lat,CENTRE[0]+195*m_lon,CENTRE[1]-105*m_lat).intersection(tb)
+            if not park.is_empty: layers.append({'name':'landuse','features':[{'geometry':park,'properties':{'kind':'park','name':'Parque de Prueba','min_zoom':14}}]})
         p=Point(*CENTRE)
         if tb.contains(p): layers.append({'name':'places','features':[{'geometry':p,'properties':{'kind':'locality','name':'Valencia','name:es':'Valencia','min_zoom':4,'population_rank':12}}]})
         # Public services, for the services layer: a hospital a little north-east of the centre and,

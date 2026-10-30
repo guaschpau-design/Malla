@@ -78,24 +78,28 @@ function eventDraft(action: PlannedAction, actor: Actor, named: Named, cast: Cas
       });
     case 'chat':
       return (header) => ({ ...header, type: 'chat', text: action.text });
-    case 'marker':
+    case 'marker': {
+      const object = named.refs.get(action.id);
       return (header) => ({
         ...header,
         type: 'marker',
-        object: { origin: header.origin, seq: header.seq },
+        object: object ?? { origin: header.origin, seq: header.seq },
         symbol: action.symbol,
         label: action.label,
         ...action.where,
       });
-    case 'shape':
+    }
+    case 'shape': {
+      const object = named.refs.get(action.id);
       return (header) => ({
         ...header,
         type: 'shape',
-        object: { origin: header.origin, seq: header.seq },
+        object: object ?? { origin: header.origin, seq: header.seq },
         style: action.style,
         label: action.label,
         geometry: action.geometry,
       });
+    }
     case 'sos':
       return (header) => ({
         ...header,
@@ -184,7 +188,8 @@ function eventDraft(action: PlannedAction, actor: Actor, named: Named, cast: Cas
 /**
  * Performs a scenario's planned events in order, each sent by its member's device. What the
  * scenario names is remembered as it is sent, for the actions that refer to it: the references
- * of objects and SOS calls, the IDs of teams and the latest of each task.
+ * of objects and SOS calls, the IDs of teams and the latest of each task. A marker or a shape
+ * with an `id` already sent changes that object: water that spreads, a fire that grows.
  */
 export class ScenarioPerformer {
   readonly #cast: Cast;
@@ -211,7 +216,8 @@ export class ScenarioPerformer {
     }
     const draft = eventDraft(action, actor, named, this.#cast);
     const ref = await send(draft);
-    if ('id' in action) this.#refs.set(action.id, ref);
+    // A marker or a shape sent again under its `id` is a new version of the same object.
+    if ('id' in action && !this.#refs.has(action.id)) this.#refs.set(action.id, ref);
     // A task as it now stands, for its next change: a change carries the whole task again.
     const id =
       action.type === 'task' ? action.id : action.type === 'task-status' ? action.of : null;

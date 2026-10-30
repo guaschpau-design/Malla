@@ -137,6 +137,28 @@ describe('performing a scenario', () => {
     });
   });
 
+  it('changes a shape sent again under its id, which a sweep of it still names', async () => {
+    const wider = { kind: 'polygon', points: [HERE, HERE, HERE, HERE] } as const;
+    const grown: Scenario = {
+      ...SCENARIO,
+      steps: [
+        ...SCENARIO.steps,
+        {
+          at: 9,
+          by: 'Luis',
+          action: { type: 'shape', id: 'sector', style: 1, label: 'Sector', geometry: wider },
+        },
+      ],
+    };
+    const sent = await perform(grown);
+    const [first, second] = sent.filter((event) => event.type === 'shape');
+    expect(second).toMatchObject({
+      origin: LUIS,
+      object: { origin: ANA, seq: first?.seq },
+      geometry: wider,
+    });
+  });
+
   it('refuses a name nobody has', async () => {
     const stray: Scenario = {
       ...SCENARIO,

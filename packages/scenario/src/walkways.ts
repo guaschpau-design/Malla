@@ -20,6 +20,12 @@ const JOIN_M = 1.5;
  */
 const SPLICE_M = 4;
 
+/** How often a street is checked along its length for whether it can be walked. */
+const CHECK_EVERY_M = 10;
+
+/** Whether a person can walk at a point: above the water, clear of a fire. */
+export type Passable = (at: LatLon) => boolean;
+
 interface Edge {
   readonly a: number;
   readonly b: number;
@@ -83,26 +89,51 @@ export class WalkNetwork {
     return this.#latLon(this.#meet(at).at);
   }
 
+  /** Every junction and end of the network's streets and paths. */
+  get points(): LatLon[] {
+    return this.#nodes.map((node) => this.#latLon(node));
+  }
+
+  /** The ends of streets and paths that lead nowhere: a cul-de-sac, a path into a field. */
+  get deadEnds(): LatLon[] {
+    return this.#nodes.flatMap((node, index) =>
+      this.#at[index]?.length === 1 ? [this.#latLon(node)] : [],
+    );
+  }
+
   /**
    * The way along the network through each of `points` in turn, from where each meets it: the
-   * nearest point of the network for a single one.
+   * nearest point of the network for a single one. Null if one of them cannot be reached along
+   * streets where `passable` holds (see `way`).
    */
-  through(points: readonly LatLon[]): LatLon[] {
+  through(points: readonly LatLon[], passable?: Passable): LatLon[] | null {
     const [first, ...rest] = points.map((point) => this.snap(point));
     if (first === undefined) return [];
     const way = [first];
-    for (const next of rest) way.push(...this.way(way.at(-1) ?? first, next).slice(1));
+    for (const next of rest) {
+      const leg = this.way(way.at(-1) ?? first, next, passable);
+      if (leg === null) return null;
+      way.push(...leg.slice(1));
+    }
     return way;
   }
 
   /**
    * The shortest way along the network from where `from` meets it to where `to` does, as the
-   * points to walk through, both ends included.
+   * points to walk through, both ends included. With `passable`, it keeps to the streets that
+   * can be walked all along (checked every few metres), but for the one it starts on, which
+   * whoever is there walks off, and the stretch into `to` must be clear too; null if there is no
+   * such way.
    */
-  way(from: LatLon, to: LatLon): LatLon[] {
+  way(from: LatLon, to: LatLon, passable?: Passable): LatLon[] | null {
     const start = this.#meet(from);
     const end = this.#meet(to);
-    if (start.edge === end.edge) return [start.at, end.at].map((point) => this.#latLon(point));
+    const open = passable ? this.#walkable(passable) : () => true;
+    const clear = (a: Plane, b: Plane) => passable === undefined || this.#clear(a, b, passable);
+    if (start.edge === end.edge) {
+      if (!clear(start.at, end.at)) return null;
+      return [start.at, end.at].map((point) => this.#latLon(point));
+    }
     const startEdge = this.#edge(start.edge);
     const endEdge = this.#edge(end.edge);
     const { cost, previous } = this.#shortestFrom(
@@ -111,10 +142,14 @@ export class WalkNetwork {
         [startEdge.b, (1 - start.along) * startEdge.length],
       ],
       [endEdge.a, endEdge.b],
+      open,
     );
     // Into the last edge by whichever of its ends is reached for less, all the way to the point.
-    const viaA = (cost[endEdge.a] ?? Infinity) + end.along * endEdge.length;
-    const viaB = (cost[endEdge.b] ?? Infinity) + (1 - end.along) * endEdge.length;
+    const into = (node: number, part: number) =>
+      clear(this.#node(node), end.at) ? (cost[node] ?? Infinity) + part : Infinity;
+    const viaA = into(endEdge.a, end.along * endEdge.length);
+    const viaB = into(endEdge.b, (1 - end.along) * endEdge.length);
+    if (viaA === Infinity && viaB === Infinity) return null;
     const nodes: number[] = [];
     for (let node = viaA <= viaB ? endEdge.a : endEdge.b; node !== -1;) {
       nodes.push(node);
@@ -132,6 +167,7 @@ export class WalkNetwork {
   #shortestFrom(
     sources: readonly (readonly [number, number])[],
     targets: readonly number[],
+    open: (edge: number) => boolean,
   ): {
     cost: number[];
     previous: number[];
@@ -151,6 +187,7 @@ export class WalkNetwork {
       if (reached > (cost[node] ?? Infinity)) continue;
       unsettled.delete(node);
       for (const index of this.#at[node] ?? []) {
+        if (!open(index)) continue;
         const edge = this.#edge(index);
         const other = edge.a === node ? edge.b : edge.a;
         const through = reached + edge.length;
@@ -162,6 +199,37 @@ export class WalkNetwork {
       }
     }
     return { cost, previous };
+  }
+
+  /** Whether each edge, by its index, can be walked all along, worked out once for each. */
+  #walkable(passable: Passable): (edge: number) => boolean {
+    const known = new Map<number, boolean>();
+    return (index) => {
+      let open = known.get(index);
+      if (open === undefined) {
+        const edge = this.#edge(index);
+        open = this.#clear(this.#node(edge.a), this.#node(edge.b), passable);
+        known.set(index, open);
+      }
+      return open;
+    };
+  }
+
+  /** Whether the straight way from `a` to `b` can be walked, checked every few metres. */
+  #clear(a: Plane, b: Plane, passable: Passable): boolean {
+    const steps = Math.max(
+      1,
+      Math.ceil(Math.hypot(b.north - a.north, b.east - a.east) / CHECK_EVERY_M),
+    );
+    for (let step = 0; step <= steps; step += 1) {
+      const along = step / steps;
+      const point = {
+        north: a.north + (b.north - a.north) * along,
+        east: a.east + (b.east - a.east) * along,
+      };
+      if (!passable(this.#latLon(point))) return false;
+    }
+    return true;
   }
 
   #meet(at: LatLon): Meeting {
@@ -200,14 +268,17 @@ export class WalkNetwork {
  */
 export function onFoot(scenario: Scenario, network: WalkNetwork): Scenario {
   const walk = (member: ScenarioMember): ScenarioMember =>
-    member.route === undefined ? member : { ...member, route: network.through(member.route) };
+    member.route === undefined
+      ? member
+      : { ...member, route: network.through(member.route) ?? member.route };
   const place = (where: ScenarioPlace | null): ScenarioPlace | null =>
     where?.kind === 'point' ? { kind: 'point', at: network.snap(where.at) } : where;
   const act = (action: ScenarioAction): ScenarioAction => {
     if (action.type === 'marker') return { ...action, where: network.snap(action.where) };
     if (action.type === 'task') return { ...action, place: place(action.place) };
     if (action.type === 'shape' && action.geometry.kind === 'polyline') {
-      const { points } = simplifyLine(network.through(action.geometry.points), SHAPE_MAX_POINTS);
+      const way = network.through(action.geometry.points) ?? action.geometry.points;
+      const { points } = simplifyLine(way, SHAPE_MAX_POINTS);
       return { ...action, geometry: { kind: 'polyline', points } };
     }
     return action;

@@ -24,7 +24,7 @@ describe('walking the streets', () => {
 
   it('takes the streets round a block, never through it', () => {
     // From one corner of a block to the opposite one: 200 m round it, not 141 m across.
-    const way = network.way(at(0, 0), at(100, 100));
+    const way = network.way(at(0, 0), at(100, 100)) ?? [];
     expect(pathMeters(way)).toBeCloseTo(200, 0);
     for (const point of way) {
       const onAStreet = [0, 100, 200].some(
@@ -43,7 +43,7 @@ describe('walking the streets', () => {
   });
 
   it('starts and ends where each point meets the network, mid-street too', () => {
-    const way = network.way(at(5, 50), at(195, 150));
+    const way = network.way(at(5, 50), at(195, 150)) ?? [];
     expect(distanceMeters(way[0] ?? CORNER, at(0, 50))).toBeLessThan(0.5);
     expect(distanceMeters(way.at(-1) ?? CORNER, at(200, 150))).toBeLessThan(0.5);
     expect(pathMeters(way)).toBeCloseTo(300, 0);
@@ -65,6 +65,28 @@ describe('walking the streets', () => {
     const withIsland = WalkNetwork.from([...GRID, [at(600, 600), at(600, 700)]]);
     expect(withIsland?.length).toBeCloseTo(1200, 0);
     expect(distanceMeters(withIsland?.snap(at(600, 650)) ?? CORNER, at(200, 200))).toBeLessThan(1);
+  });
+
+  it('goes round a street that cannot be walked, and finds no way when none is left', () => {
+    // The middle of the southern street is under water: from its west end to its east end, the
+    // way goes up and round the first row of blocks.
+    const dry = (point: LatLon) => distanceMeters(point, at(0, 100)) > 30;
+    const way = network.way(at(0, 0), at(0, 200), dry) ?? [];
+    expect(pathMeters(way)).toBeCloseTo(400, 0);
+    expect(way.every(dry)).toBe(true);
+    // Every street round the destination's is under water: there is no way there.
+    const flooded = (point: LatLon) => distanceMeters(point, at(200, 200)) > 120;
+    expect(network.way(at(0, 0), at(200, 150), flooded)).toBeNull();
+    expect(network.through([at(0, 0), at(200, 150)], flooded)).toBeNull();
+  });
+
+  it('knows where its streets meet and where they lead nowhere', () => {
+    expect(network.points).toHaveLength(9);
+    expect(network.deadEnds).toEqual([]);
+    const lane = WalkNetwork.from([...GRID, [at(200, 200), at(260, 200)]]);
+    expect(lane?.deadEnds.map((end) => distanceMeters(end, at(260, 200)))).toEqual([
+      expect.closeTo(0, 1),
+    ]);
   });
 
   it('is no network without lines', () => {

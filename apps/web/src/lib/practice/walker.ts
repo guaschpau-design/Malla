@@ -7,13 +7,17 @@ import type { LatLon } from '@tesel/protocol';
 import { pointAlong, WALKING_SPEED } from '@tesel/scenario';
 
 export class Walker {
-  readonly #speed: number;
+  /** Their own pace, in metres per second. */
+  readonly #pace: number;
+  /** The pace along the way now: theirs, or slower, beside someone who can hardly walk. */
+  #speed: number;
   #way: readonly LatLon[];
   /** When the walker set off along the way, in milliseconds. */
   #since: number;
 
-  constructor(at: LatLon, speed = WALKING_SPEED) {
-    this.#speed = speed;
+  constructor(at: LatLon, pace = WALKING_SPEED) {
+    this.#pace = pace;
+    this.#speed = pace;
     this.#way = [at];
     this.#since = 0;
   }
@@ -26,13 +30,19 @@ export class Walker {
   }
 
   /**
-   * Sets off at `now` along `way`, from wherever the walker is then to the way's start first.
-   * Returns when the walker will reach its end, in milliseconds.
+   * Sets off at `now` along `way`, from wherever the walker is then to the way's start first, at
+   * their pace or `speed`. Returns when the walker will reach its end, in milliseconds.
    */
-  go(way: readonly LatLon[], now: number): number {
+  go(way: readonly LatLon[], now: number, speed = this.#pace): number {
     this.#way = [this.at(now), ...way];
     this.#since = now;
+    this.#speed = speed;
     return now + (pathMeters(this.#way) / this.#speed) * 1000;
+  }
+
+  /** Whether the walker is still on their way at `now`. */
+  moving(now: number): boolean {
+    return now < this.#since + (pathMeters(this.#way) / this.#speed) * 1000;
   }
 
   /** Stops where the walker is at `now`. */

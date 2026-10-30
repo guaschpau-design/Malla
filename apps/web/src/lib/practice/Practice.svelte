@@ -1,24 +1,28 @@
-<!-- A practice in progress (ADR-0031, ADR-0066): its simulated teammates play their part around
-     where the user is, on the streets of the map, read first. A card on the map says what is
-     going on, guides the user through five things to try, one at a time, and ends the practice. -->
+<!-- A practice in progress (ADR-0031, ADR-0066, ADR-0072): an exercise of some twenty-five minutes
+     played around where the user is, on the streets of the map, read first. A card on the map
+     says what is going on and for how long, guides the user through five things to try, one at a
+     time, says when the exercise is over, and ends the practice. -->
 <script lang="ts">
   import type { LatLon, NodeId, Role } from '@tesel/protocol';
-  import { WalkNetwork } from '@tesel/scenario';
   import { untrack } from 'svelte';
 
-  import type { Translate } from '../i18n/index.ts';
+  import type { Locale, Translate } from '../i18n/index.ts';
   import { findTile } from '../map/tiles/protocol.ts';
-  import { walkwaysAround } from '../map/tiles/walkways.ts';
   import type { OfflineMaps } from '../offline/offline-maps.ts';
   import type { GroupFeed } from '../sync/group-feed.svelte.ts';
+  import { ElevationReader } from '../terrain/elevation.ts';
   import MapCard from '../ui/MapCard.svelte';
+  import { clockEvery } from '../ui/now.svelte.ts';
   import { panels } from '../ui/panels.svelte.ts';
+  import { Chance } from './chance.ts';
+  import { groundAround } from './ground-around.ts';
   import { guideSteps } from './guide.ts';
   import { PracticeRun } from './practice-run.ts';
   import { SITUATION_INFO, type Situation } from './situations.ts';
 
   interface Props {
     t: Translate;
+    locale: Locale;
     feed: GroupFeed;
     self: NodeId;
     /** The user's part: a member of the team or its coordinator. */
@@ -26,44 +30,62 @@
     situation: Situation;
     /** Where the practice takes place: this device, or the middle of the map. */
     centre: LatLon;
-    /** The base map's tiles, for its streets. */
+    /** The base map's and the elevation's tiles, for the streets and the lie of the land. */
     offline: OfflineMaps;
     onend: () => void;
   }
 
-  let { t, feed, self, role, situation, centre, offline, onend }: Props = $props();
-
-  /** Metres round the centre whose streets are read: as far as the scenes reach, and some. */
-  const STREETS_RADIUS_M = 700;
+  let { t, locale, feed, self, role, situation, centre, offline, onend }: Props = $props();
 
   const info = $derived(SITUATION_INFO[situation]);
-  // One scenario and one run for the life of the component, where and in the language it started:
-  // the life of the practice, which ends when another group is used (session.svelte.ts).
-  const scenario = untrack(() => SITUATION_INFO[situation].scenario(t, centre, role));
+  /** The exercise's run, once the place is read, and when it started, in milliseconds. */
   let run: PracticeRun | null = $state.raw(null);
+  let started = $state(0);
+  let finished = $state(false);
+  let description = $state('');
 
+  // One exercise and one run for the life of the component, where and in the language it started:
+  // the life of the practice, which ends when another group is used (session.svelte.ts).
   $effect(() => {
     let ended = false;
-    let started: PracticeRun | null = null;
+    let playing: PracticeRun | null = null;
     const { store, archives } = untrack(() => offline);
+    const { heights, exercise } = untrack(() => SITUATION_INFO[situation]);
+    const elevations = new ElevationReader((tile) => findTile('terrain', tile, store, archives));
     void untrack(() =>
-      walkwaysAround(centre, STREETS_RADIUS_M, (tile) =>
-        findTile('basemap', tile, store, archives),
+      groundAround(
+        centre,
+        locale,
+        (tile) => findTile('basemap', tile, store, archives),
+        heights ? (points) => elevations.elevations(points) : null,
       ),
-    ).then((lines) => {
+    ).then((ground) => {
       if (ended) return;
-      started = new PracticeRun(scenario, {
+      const setting = untrack(() => ({
+        t,
+        locale,
+        centre,
+        user: role,
+        ground,
+        chance: new Chance(Date.now()),
+      }));
+      const built = exercise(setting);
+      playing = new PracticeRun(built, {
         sink: (bytes) => feed.receiveSimulated(bytes),
         self,
-        t,
-        network: WalkNetwork.from(lines),
+        setting,
+        onfinish: () => {
+          finished = true;
+        },
       });
-      started.start();
-      run = started;
+      playing.start();
+      description = built.scenario.description;
+      started = Date.now();
+      run = playing;
     });
     return () => {
       ended = true;
-      started?.stop();
+      playing?.stop();
     };
   });
 
@@ -82,15 +104,28 @@
   const current = $derived(
     steps.findIndex((step) => !step.done(feed.state, self, { teammate: teammateSeen })),
   );
+
+  const clock = clockEvery(1000);
+  /** How long the exercise has run, in minutes and seconds. */
+  const elapsed = $derived.by(() => {
+    const seconds = Math.max(0, Math.floor(clock.seconds - started / 1000));
+    const [minutes, rest] = [Math.floor(seconds / 60), seconds % 60];
+    return `${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`;
+  });
 </script>
 
 <MapCard label={t('practice')} edge="var(--info)">
   <div class="head">
-    <strong>{t(info.title)}</strong>
+    <strong>
+      {t(info.title)}
+      {#if run !== null && !finished}<span class="clock">{elapsed}</span>{/if}
+    </strong>
     <button class="ghost" onclick={onend}>{t('endPractice')}</button>
   </div>
   {#if run === null}
     <p class="hint">{t('practicePreparing')}</p>
+  {:else if finished}
+    <p>{t('practiceOver')}</p>
   {:else if guiding}
     {@const step = steps[current]}
     <div class="guide">
@@ -105,7 +140,7 @@
       {/if}
     </div>
   {:else}
-    <p>{scenario.description}</p>
+    <p>{description}</p>
   {/if}
 </MapCard>
 
@@ -133,6 +168,15 @@
     position: absolute;
     inset: -0.6rem -0.25rem;
     content: '';
+  }
+
+  /* How long the exercise has run, beside its name, in figures that do not jump about. */
+  .clock {
+    margin-left: 0.4rem;
+    color: var(--muted);
+    font-size: var(--text-small);
+    font-variant-numeric: tabular-nums;
+    font-weight: 400;
   }
 
   /* The step to take now, with the way to skip the guide under it. */

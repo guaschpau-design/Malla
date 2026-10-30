@@ -1,11 +1,9 @@
-// The situations a practice can play, each a scenario around where the user is, with the user as a
-// member of the team or as its coordinator (ADR-0066).
+// The situations a practice can play, each an exercise around where the user is, with the user as a
+// member of the team or as its coordinator (ADR-0066, ADR-0072).
 
-import type { LatLon, Role } from '@tesel/protocol';
-import type { Scenario } from '@tesel/scenario';
-
-import type { MessageKey, Translate } from '../i18n/index.ts';
+import type { MessageKey } from '../i18n/index.ts';
 import type { GlyphName } from '../ui/glyphs.ts';
+import type { Exercise, Setting } from './exercise.ts';
 import { flood } from './scenes/flood.ts';
 import { missingPerson } from './scenes/missing-person.ts';
 import { wildfire } from './scenes/wildfire.ts';
@@ -17,18 +15,33 @@ interface SituationInfo {
   /** Its name, as the practice's choices show it. */
   readonly title: MessageKey;
   readonly icon: GlyphName;
-  readonly scenario: (t: Translate, centre: LatLon, user: Role) => Scenario;
+  readonly exercise: (setting: Setting) => Exercise;
   /** Whether it has a search area, which a coordinator sweeps (the practice guide's last step). */
   readonly search: boolean;
+  /** Whether it needs the lie of the land, which water follows. */
+  readonly heights: boolean;
 }
 
 export const SITUATION_INFO: Readonly<Record<Situation, SituationInfo>> = {
   'missing-person': {
     title: 'practiceMissingPersonTitle',
     icon: 'search',
-    scenario: missingPerson,
+    exercise: missingPerson,
     search: true,
+    heights: false,
   },
-  flood: { title: 'practiceFloodTitle', icon: 'waves', scenario: flood, search: false },
-  wildfire: { title: 'practiceWildfireTitle', icon: 'flame', scenario: wildfire, search: false },
+  flood: {
+    title: 'practiceFloodTitle',
+    icon: 'waves',
+    exercise: flood,
+    search: false,
+    heights: true,
+  },
+  wildfire: {
+    title: 'practiceWildfireTitle',
+    icon: 'flame',
+    exercise: wildfire,
+    search: false,
+    heights: false,
+  },
 };

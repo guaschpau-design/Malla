@@ -71,33 +71,85 @@ describe('errands of simulated teammates', () => {
     expect(doersOf(task(null, null), state.teams, simulated)).toEqual([]);
   });
 
+  it('goes through the streets of an area, door to door', () => {
+    // Streets every 50 m, drawn through their junctions as a map does: the one junction inside
+    // the area is at its middle.
+    const steps = [-50, 0, 50, 100, 150];
+    const grid = WalkNetwork.from(
+      steps.flatMap((offset) => [
+        steps.map((along) => at(offset, along)),
+        steps.map((along) => at(along, offset)),
+      ]),
+    );
+    const inner = {
+      kind: 'polygon',
+      points: [at(10, 10), at(10, 90), at(90, 90), at(90, 10)],
+    } as const;
+    const area = { ...AREA, geometry: inner } as const;
+    const errand = errandOf(
+      task(LUIS, { kind: 'object', object: area.object }),
+      stateOf([area]).objects,
+      grid,
+    );
+    expect(errand).toMatchObject({ kind: 'visit', points: [expect.anything()] });
+    expect(errand.points[0]?.lat).toBeCloseTo(at(50, 50).lat, 5);
+  });
+
   it('goes round an area and back to where it started', () => {
-    const errand = errandOf(task(LUIS, { kind: 'object', object: AREA.object }), state.objects);
+    const errand = errandOf(
+      task(LUIS, { kind: 'object', object: AREA.object }),
+      state.objects,
+      null,
+    );
     expect(errand.points).toHaveLength(5);
     expect(errand.points.at(-1)).toEqual(errand.points[0]);
-    expect(errand.across).toBe(false);
+    expect(errand.kind).toBe('along');
   });
 
   it('walks a strip of a sweep lane by lane, across whatever is there', () => {
-    const errand = errandOf(task(LUIS, { kind: 'object', object: STRIP.object }), state.objects);
+    const errand = errandOf(
+      task(LUIS, { kind: 'object', object: STRIP.object }),
+      state.objects,
+      null,
+    );
     // Half of an area 100 m wide, in lanes 25 m apart: two lanes, each walked end to end.
     expect(errand.points.length).toBeGreaterThanOrEqual(4);
-    expect(errand.across).toBe(true);
+    expect(errand.kind).toBe('across');
   });
 
   it('goes to a point, and nowhere for a task without a place', () => {
-    expect(errandOf(task(LUIS, { kind: 'point', at: HERE }), state.objects).points).toEqual([HERE]);
-    expect(errandOf(task(LUIS, null), state.objects).points).toEqual([]);
+    expect(errandOf(task(LUIS, { kind: 'point', at: HERE }), state.objects, null).points).toEqual([
+      HERE,
+    ]);
+    expect(errandOf(task(LUIS, null), state.objects, null).points).toEqual([]);
   });
 
   it('keeps to the streets on the way, and to the lanes of a strip once there', () => {
     // One street, east–west along the south edge of the area.
     const network = WalkNetwork.from([[at(0, -50), at(0, 150)]]);
     const lanes = [at(20, 10), at(80, 10), at(80, 30), at(20, 30)];
-    const swept = wayThrough(at(-30, 0), { points: lanes, across: true }, network);
+    const swept = wayThrough(at(-30, 0), { kind: 'across', points: lanes }, network) ?? [];
     expect(swept.slice(-4)).toEqual(lanes);
     expect(swept[0]).toEqual(network?.snap(at(-30, 0)));
-    const walked = wayThrough(at(-30, 0), { points: lanes, across: false }, network);
+    const walked = wayThrough(at(-30, 0), { kind: 'along', points: lanes }, network) ?? [];
     expect(walked.every((point) => point.lat <= at(0.1, 0).lat)).toBe(true);
+  });
+
+  it('visits the stops it can reach, nearest first, and leaves out the rest', () => {
+    const network = WalkNetwork.from([[at(0, -100), at(0, 0), at(0, 100), at(0, 200)]]);
+    const clear = (point: { lat: number; lon: number }) => point.lon > at(0, -50).lon;
+    const stops = [at(0, 200), at(0, -100), at(0, 100)];
+    const way = wayThrough(at(0, 0), { kind: 'visit', points: stops }, network, clear) ?? [];
+    // East to 100 m, then to 200 m; the stop west, in the fire, is left out.
+    expect(way.at(-1)?.lon).toBeCloseTo(at(0, 200).lon, 6);
+    expect(way.every(clear)).toBe(true);
+  });
+
+  it('finds no way when what is in between cannot be crossed', () => {
+    const network = WalkNetwork.from([[at(0, -50), at(0, 150)]]);
+    const flooded = (point: { lat: number; lon: number }) => point.lon < at(0, 50).lon;
+    expect(
+      wayThrough(at(0, 100), { kind: 'along', points: [at(0, -40)] }, network, flooded),
+    ).toBeNull();
   });
 });
