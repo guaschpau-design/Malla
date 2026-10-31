@@ -10,8 +10,13 @@ test('a situation report is sent from Add and pinned for the group', async ({ br
   await berta.getByRole('menuitem', { name: 'Parte' }).click();
   const form = berta.getByRole('region', { name: 'Nuevo parte' });
   await form.getByRole('radio', { name: 'Incendio' }).click();
+  // Counting stays open under the finger: two in one colour, then another.
   await form.getByText('Víctimas', { exact: true }).click();
   await form.getByRole('button', { name: 'Rojo: uno más' }).click();
+  await form.getByRole('button', { name: 'Rojo: uno más' }).click();
+  await form.getByRole('button', { name: 'Rojo: uno menos' }).click();
+  await form.getByRole('button', { name: 'Verde: uno más' }).click();
+  await form.getByRole('button', { name: 'Verde: uno menos' }).click();
   await form.getByText('Peligros', { exact: true }).click();
   await form.getByRole('button', { name: 'Humo' }).click();
   await form.getByText('Hace falta', { exact: true }).click();

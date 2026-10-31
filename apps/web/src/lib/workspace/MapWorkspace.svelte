@@ -61,6 +61,7 @@
   import type { WeatherFeed } from '../weather/weather-feed.svelte.ts';
   import WeatherLayer from '../weather/WeatherLayer.svelte';
   import Dock from './Dock.svelte';
+  import GroupNews from '../groups/GroupNews.svelte';
   import GroupPanels from './GroupPanels.svelte';
   import MapPanels from './MapPanels.svelte';
   import MapStatus from './MapStatus.svelte';
@@ -294,6 +295,9 @@
       {self}
       visible={shown.tasks}
     />
+    {#if role === 'coordinator'}
+      <GroupNews {t} {locale} state={slices} {self} />
+    {/if}
   {/key}
   <ReportLayer
     {t}

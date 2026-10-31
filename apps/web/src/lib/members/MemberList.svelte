@@ -1,6 +1,6 @@
 <!-- The members of the active group, team by team, each with an initial, a name (and "coordinator"
-     for those who coordinate) and two signs: whether their position is on the map, and whether
-     they have a LoRa radio linked or their news reaches this device by radio. Whoever coordinates
+     for those who coordinate) and two signs: whether their position is on the map, in words when it
+     is not, and whether they have a LoRa radio linked or their news reaches this device by radio. Whoever coordinates
      can open each team to change it. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
@@ -44,8 +44,14 @@
       {initialOf(row.alias)}
     </span>
     <span class="name">
-      {row.alias}{#if row.self}&nbsp;({t('you')}){/if}
-      {#if row.role === 'coordinator'}<span class="hint">· {t(ROLE_LABELS.coordinator)}</span>{/if}
+      <span>
+        {row.alias}{#if row.self}&nbsp;({t('you')}){/if}
+        {#if row.role === 'coordinator'}<span class="hint">· {t(ROLE_LABELS.coordinator)}</span
+          >{/if}
+      </span>
+      {#if row.position !== 'live'}
+        <small class:warning={row.position !== 'stale'}>{t(POSITION_LABELS[row.position])}</small>
+      {/if}
     </span>
     <span class="signs">
       {#if row.lora || row.byRadio}
@@ -163,7 +169,18 @@
   }
 
   .name {
+    display: grid;
     overflow-wrap: anywhere;
+  }
+
+  .name small {
+    color: var(--muted);
+    font-size: var(--text-small);
+  }
+
+  /* Not on the map at all: the team should know, as they cannot be found. */
+  .name small.warning {
+    color: var(--danger);
   }
 
   .signs {

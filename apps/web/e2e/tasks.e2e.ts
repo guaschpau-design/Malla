@@ -25,11 +25,14 @@ test('a task at a point reaches its assignee, who starts and finishes it', async
   const task = bertaTasks.getByRole('listitem').filter({ hasText: 'Revisar el almacén' });
   await task.getByRole('button', { name: 'Empezar' }).click();
   await expect(task).toContainText('En curso');
+  // Ana, who coordinates, is told without going to look.
+  await expect(ana.getByText('Berta ha empezado «Revisar el almacén».')).toBeVisible();
   await task.getByRole('button', { name: 'Hecha' }).click();
   await expect(task).toBeHidden();
   await expect(berta.getByRole('button', { name: 'Tareas', exact: true })).toBeVisible();
 
-  // Ana sees it done.
+  // Ana is told it is done, and sees it among the done ones.
+  await expect(ana.getByText('Berta ha terminado «Revisar el almacén».')).toBeVisible();
   await expect(anaTasks.getByText('Hechas (1)')).toBeVisible();
 });
 

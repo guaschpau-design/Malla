@@ -1,10 +1,12 @@
-<!-- Active SOS calls, on top of the map until they are cancelled. -->
+<!-- Active SOS calls, on top of the map until they are cancelled. Another member's call says how
+     far it is and which way, and guides there in one tap; this device's own shows where it is. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
   import type { EventRef, LatLon, NodeId } from '@tesel/protocol';
 
   import { formatTime } from '../format.ts';
   import type { Locale, Translate } from '../i18n/index.ts';
+  import FromHere from '../navigation/FromHere.svelte';
   import { confirmations } from '../ui/confirmations.svelte.ts';
   import MapCard from '../ui/MapCard.svelte';
   import { activeSos } from './incidents.ts';
@@ -23,6 +25,8 @@
     undelivered: ReadonlySet<string>;
     /** Shows where an SOS is on the map. */
     onshow: (at: LatLon) => void;
+    /** Guides to where an SOS is, named after its caller. */
+    onguide: (at: LatLon, name: string) => void;
   }
 
   let {
@@ -35,6 +39,7 @@
     oncancel,
     undelivered,
     onshow,
+    onguide,
   }: Props = $props();
 
   const calls = $derived(activeSos(groupState, self));
@@ -57,6 +62,9 @@
       {:else if where.kind === 'unknown'}
         <p class="where warning">{t('sosPlaceUnknown')}</p>
       {/if}
+      {#if !call.mine && where.kind !== 'unknown'}
+        <FromHere {t} {locale} at={where.at} />
+      {/if}
       {#if call.mine && undelivered.has(call.key)}
         <p class="warning">{t('sosNotSentYet')}</p>
       {/if}
@@ -75,11 +83,19 @@
           >
         {/if}
         {#if where.kind !== 'unknown'}
-          <button
-            onclick={() => {
-              onshow(where.at);
-            }}>{t('showOnMap')}</button
-          >
+          {#if call.mine}
+            <button
+              onclick={() => {
+                onshow(where.at);
+              }}>{t('showOnMap')}</button
+            >
+          {:else}
+            <button
+              onclick={() => {
+                onguide(where.at, call.author);
+              }}>{t('guideMe')}</button
+            >
+          {/if}
         {/if}
         {#if call.mine || canCancelOthers}
           <button

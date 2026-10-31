@@ -86,3 +86,20 @@ test('a member changes their name in Me, and the group knows them by it', async 
   await ana.getByRole('button', { name: /^Yo/ }).click();
   await expect(ana.getByRole('heading', { name: 'Ana G.' })).toBeVisible();
 });
+
+test('a member not on the map is told so, and shows themselves in one tap', async ({ browser }) => {
+  const { ana, berta } = await twoMembers(browser, VIEW);
+  const prompt = berta.getByRole('region', { name: 'No compartes tu posición' });
+  await expect(prompt).toContainText('El grupo no te ve en el mapa.');
+  // Ana's list says it in words.
+  await ana.getByRole('button', { name: /^Grupo:/ }).click();
+  const row = ana
+    .getByRole('region', { name: 'Grupos' })
+    .getByRole('listitem')
+    .filter({ hasText: 'Berta' });
+  await expect(row).toContainText('aún no comparte posición');
+
+  await prompt.getByRole('button', { name: 'Compartir', exact: true }).click();
+  await expect(prompt).toBeHidden();
+  await expect(row).not.toContainText('aún no comparte posición');
+});

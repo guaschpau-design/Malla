@@ -85,3 +85,4 @@ Template: copy [`template.md`](template.md), use the next number, keep it under 
 | [0077](0077-coordinates-and-zone-files.md)           | Points by their coordinates, and zones read from a file                                     | Accepted                                    |
 | [0078](0078-one-look-and-straight-to-the-point.md)   | One look, and straight to the point                                                         | Accepted                                    |
 | [0079](0079-more-equipment-in-groups.md)             | More equipment, offered in groups                                                           | Accepted                                    |
+| [0080](0080-told-without-looking.md)                 | Told without having to look                                                                 | Accepted                                    |

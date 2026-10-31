@@ -35,18 +35,26 @@ test('a marker drawn by one member can be opened and deleted by another', async 
 test('an SOS is acknowledged by the group and cancelled by its sender', async ({ browser }) => {
   const { ana, berta } = await twoMembers(browser, VIEW);
 
+  // Berta is in the chat when she calls for help: sending it, the chat makes way for her call.
+  await berta.getByRole('button', { name: /^Chat/ }).click();
   await berta.getByRole('button', { name: 'SOS', exact: true }).click();
   const dialog = berta.getByRole('dialog', { name: 'Enviar un SOS' });
   await dialog.getByLabel('Qué pasa').selectOption({ label: 'Médica' });
   await dialog.getByLabel('Detalles (opcional)').fill('Tobillo roto');
   await expect(dialog.getByText(/Se envía tu posición/)).toBeVisible();
   await dialog.getByRole('button', { name: 'Enviar SOS' }).click();
+  await expect(berta.getByRole('region', { name: 'Chat' })).toBeHidden();
+  await expect(berta.getByRole('region', { name: 'SOS' })).toContainText('Nadie lo ha confirmado');
 
   const call = ana.getByRole('region', { name: 'SOS' });
   await expect(call).toContainText('SOS · Berta · Médica');
   await expect(call).toContainText('Tobillo roto');
+  // How far it is and which way, and the way there in one tap.
+  await expect(call).toContainText('desde ti');
   await call.getByRole('button', { name: 'Recibido' }).click();
   await expect(berta.getByRole('region', { name: 'SOS' })).toContainText('Recibido por Ana');
+  await call.getByRole('button', { name: 'Guíame' }).click();
+  await expect(ana.getByText('Hacia Berta')).toBeVisible();
 
   await berta.getByRole('button', { name: 'Cancelar SOS' }).click();
   const confirm = berta.getByRole('dialog', { name: '¿Cancelar este SOS para todo el grupo?' });

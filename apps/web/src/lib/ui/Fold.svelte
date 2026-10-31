@@ -1,7 +1,7 @@
 <!-- A section that opens with a tap: closed, one line says what it holds and the gist of it, so a
      panel stays short and can be read at a glance. -->
 <script lang="ts">
-  import type { Snippet } from 'svelte';
+  import { onMount, type Snippet } from 'svelte';
 
   import Pictogram from './Pictogram.svelte';
 
@@ -9,15 +9,26 @@
     title: string;
     /** The gist, shown beside the title. */
     summary: string;
-    /** Opens it, as when what it holds needs looking at. */
+    /**
+     * Opens it at first, as when what it holds needs looking at; from then on it is the person's
+     * to open and close, whatever changes inside.
+     */
     open?: boolean;
     children: Snippet;
   }
 
   let { title, summary, open = false, children }: Props = $props();
+
+  let details: HTMLDetailsElement;
+
+  // Set once, by hand: as an attribute, Svelte sets it again with the title and the gist, and a
+  // change inside would close the fold under the finger.
+  onMount(() => {
+    details.open = open;
+  });
 </script>
 
-<details class="fold" {open}>
+<details class="fold" bind:this={details}>
   <summary>
     <span class="title">{title}</span>
     <span class="summary">{summary}</span>

@@ -1,11 +1,13 @@
 <!-- Calling for help: the SOS dialog while `open`, and a notice of what became of the call once
-     sent (protocol §3.8). -->
+     sent (protocol §3.8). Once sent, any open panel closes: the call's card, which says who has
+     received it and cancels it, must be in view. -->
 <script lang="ts">
   import type { LatLon, SosKind } from '@tesel/protocol';
 
   import type { MessageKey, Translate } from '../i18n/index.ts';
   import type { Delivery } from '../sync/group-feed.svelte.ts';
   import { notices } from '../ui/notices.svelte.ts';
+  import { closePanel } from '../ui/panels.svelte.ts';
   import type { WorkspaceGroup } from '../workspace/workspace.ts';
   import { callForHelp } from './call-for-help.ts';
   import SosDialog from './SosDialog.svelte';
@@ -29,6 +31,7 @@
   ): Promise<void> {
     await callForHelp(group.feed, kind, at === null ? null : { at, accuracy }, text);
     onclose();
+    closePanel();
     notices.show(t(OUTCOMES[group.feed.delivery]));
   }
 

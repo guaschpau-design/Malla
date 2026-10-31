@@ -1,6 +1,6 @@
 <!-- The top of the map, in order of what needs attention first: the tool in use (drawing,
-     measuring), the incidents, a danger area entered, guidance, a practice, weather where this
-     device is, the operation area's map, then the app's notices. The stack never runs under the
+     measuring), the incidents, a danger area entered, guidance, a practice, whether the group sees
+     this device, weather where this device is, the operation area's map, then the app's notices. The stack never runs under the
      dock: past its height it scrolls. -->
 <script lang="ts">
   import type { GroupState } from '@tesel/core';
@@ -16,6 +16,7 @@
   import type { MapTaps } from '../map/taps.ts';
   import Measuring from '../measure/Measuring.svelte';
   import Navigation from '../navigation/Navigation.svelte';
+  import { navigateTo } from '../navigation/navigation.svelte.ts';
   import DangerZoneAlert from '../objects/DangerZoneAlert.svelte';
   import DrawBar from '../objects/DrawBar.svelte';
   import type { Drawing } from '../objects/drawing.svelte.ts';
@@ -27,6 +28,7 @@
   import type { OfflineMaps } from '../offline/offline-maps.ts';
   import OperationAreaOffer from '../offline/OperationAreaOffer.svelte';
   import { deviceLocation } from '../position/device-location.svelte.ts';
+  import SharePrompt from '../position/SharePrompt.svelte';
   import Practice from '../practice/Practice.svelte';
   import TaskPlacePicker from '../tasks/TaskPlacePicker.svelte';
   import { noticeSent } from '../sync/sent-notice.ts';
@@ -166,6 +168,9 @@
         onshow={(at: LatLon) => {
           showPoint(map, at);
         }}
+        onguide={(at: LatLon, name: string) => {
+          navigateTo({ kind: 'point', at, name });
+        }}
       />
     {:else if groupless}
       <StartCard {t} />
@@ -218,6 +223,9 @@
     {/key}
   {/if}
   <div class="aside" hidden={drawingOrMeasuring}>
+    {#if group}
+      <SharePrompt {t} sharing={group.sharing} />
+    {/if}
     {#if weather}
       <WeatherCard {t} {locale} {weather} />
     {/if}
